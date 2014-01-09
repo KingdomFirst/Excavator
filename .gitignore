@@ -1,0 +1,17 @@
+#file types
+*.DS_Store
+*.tlog
+*.vsp
+*.psess
+*.v11.suo
+*.user
+*.suo
+#*.Framework.XML
+
+#specific files
+web.[Cc]onnectionStrings.config
+
+#specific folders
+[Oo]bj/
+[Dd]ebug*/
+[Rr]elease*/
