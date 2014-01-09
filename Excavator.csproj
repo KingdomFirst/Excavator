@@ -44,14 +44,46 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Form1.cs">
+    <Compile Include="Excavator.cs" />
+    <Compile Include="Main.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Program.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="Program.Designer.cs">
+      <DependentUpon>Program.cs</DependentUpon>
     </Compile>
-    <Compile Include="Program.cs" />
+    <Compile Include="F1\F1.cs" />
+    <Compile Include="F1\Model\ActivityAssignment.cs" />
+    <Compile Include="F1\Model\ActivityMinistry.cs" />
+    <Compile Include="F1\Model\Activity_Group.cs" />
+    <Compile Include="F1\Model\Activity_Schedule.cs" />
+    <Compile Include="F1\Model\Attendance.cs" />
+    <Compile Include="F1\Model\Attribute.cs" />
+    <Compile Include="F1\Model\Authorizations.cs" />
+    <Compile Include="F1\Model\Batch.cs" />
+    <Compile Include="F1\Model\Communication.cs" />
+    <Compile Include="F1\Model\Company.cs" />
+    <Compile Include="F1\Model\ContactFormData.cs" />
+    <Compile Include="F1\Model\Contribution.cs" />
+    <Compile Include="F1\Model\GroupManager.cs" />
+    <Compile Include="F1\Model\Groups.cs" />
+    <Compile Include="F1\Model\Household_Address.cs" />
+    <Compile Include="F1\Model\IndividualContactNotes.cs" />
+    <Compile Include="F1\Model\Individual_Household.cs" />
+    <Compile Include="F1\Model\Job.cs" />
+    <Compile Include="F1\Model\JobInformation.cs" />
+    <Compile Include="F1\Model\Notes.cs" />
+    <Compile Include="F1\Model\Pledge.cs" />
+    <Compile Include="F1\Model\Requirement.cs" />
+    <Compile Include="F1\Model\RLC.cs" />
+    <Compile Include="F1\Model\Staffing_Assignment.cs" />
+    <Compile Include="F1\Model\Users.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Program.resx">
+      <DependentUpon>Program.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

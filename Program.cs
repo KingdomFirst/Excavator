@@ -16,5 +16,10 @@ namespace Excavator
         {
             InitializeComponent();
         }
+
+        private void Program_Load( object sender, EventArgs e )
+        {
+
+        }
     }
 }

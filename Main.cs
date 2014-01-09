@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace Excavator
 {
-    static class Main
+    static class Start
     {
         /// <summary>
         /// The main entry point for the application.

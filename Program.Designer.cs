@@ -41,6 +41,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Program";
             this.Text = "Rock Excavator v.1";
+            this.Load += new System.EventHandler(this.Program_Load);
             this.ResumeLayout(false);
 
         }
