@@ -7,17 +7,21 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace F1Convert
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
     
-    public partial class Groups
+    public partial class Company
     {
-        public string Group_Name { get; set; }
-        public Nullable<int> Group_ID { get; set; }
-        public Nullable<int> Individual_ID { get; set; }
+        public Nullable<int> Household_ID { get; set; }
+        public string Household_Name { get; set; }
+        public string Household_Sort_Name { get; set; }
+        public Nullable<System.DateTime> Last_Activity_Date { get; set; }
+        public string Old_ID { get; set; }
+        public string CompanyType { get; set; }
+        public string Contact_Name { get; set; }
         public Nullable<System.DateTime> Created_Date { get; set; }
-        public string Group_Type_Name { get; set; }
+        public Nullable<System.DateTime> Last_Updated_Date { get; set; }
     }
 }

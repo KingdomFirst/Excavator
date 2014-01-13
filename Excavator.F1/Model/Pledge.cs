@@ -7,19 +7,22 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace F1Convert
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
     
-    public partial class Attribute
+    public partial class Pledge
     {
-        public string Attribute_Group_Name { get; set; }
-        public string Attribute_Name { get; set; }
-        public Nullable<int> Individual_Id { get; set; }
+        public Nullable<int> Individual_ID { get; set; }
+        public Nullable<int> Household_ID { get; set; }
+        public string Pledge_Drive_Name { get; set; }
+        public string Fund_Name { get; set; }
+        public string Sub_Fund_Name { get; set; }
+        public Nullable<decimal> Per_Payment_Amount { get; set; }
+        public string Pledge_Frequency_Name { get; set; }
+        public Nullable<decimal> Total_Pledge { get; set; }
         public Nullable<System.DateTime> Start_Date { get; set; }
         public Nullable<System.DateTime> End_Date { get; set; }
-        public string Comment { get; set; }
-        public Nullable<int> Staff_Individual_ID { get; set; }
     }
 }

@@ -7,25 +7,25 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace F1Convert
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
     
-    public partial class Staffing_Assignment
+    public partial class ActivityAssignment
     {
+        public string Activity_Name { get; set; }
+        public string Ministry_Name { get; set; }
+        public string RLC_Name { get; set; }
         public string Activity_Time_Name { get; set; }
         public Nullable<System.DateTime> Activity_Start_Time { get; set; }
         public Nullable<System.DateTime> Activity_End_Time { get; set; }
         public Nullable<int> Individual_ID { get; set; }
-        public string Job_Title { get; set; }
-        public string Staffing_Schedule_Name { get; set; }
-        public Nullable<bool> Is_Active { get; set; }
-        public Nullable<int> Ministry_ID { get; set; }
         public Nullable<int> Activity_ID { get; set; }
-        public Nullable<int> Activity_Group_ID { get; set; }
         public Nullable<int> RLC_ID { get; set; }
-        public Nullable<int> Activity_Schedule_ID { get; set; }
-        public Nullable<int> JobID { get; set; }
+        public Nullable<int> Ministry_ID { get; set; }
+        public Nullable<System.DateTime> AssignmentDateTime { get; set; }
+        public string BreakoutGroupName { get; set; }
+        public Nullable<int> Activity_Time_ID { get; set; }
     }
 }

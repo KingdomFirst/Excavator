@@ -7,18 +7,17 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace F1Convert
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
     
-    public partial class JobInformation
+    public partial class Groups
     {
-        public Nullable<int> JobID { get; set; }
-        public Nullable<System.DateTime> CreatedDate { get; set; }
-        public Nullable<System.DateTime> LastUpdatedDate { get; set; }
-        public string JobInformationName { get; set; }
-        public Nullable<int> Sort { get; set; }
-        public string JobInformationText { get; set; }
+        public string Group_Name { get; set; }
+        public Nullable<int> Group_ID { get; set; }
+        public Nullable<int> Individual_ID { get; set; }
+        public Nullable<System.DateTime> Created_Date { get; set; }
+        public string Group_Type_Name { get; set; }
     }
 }

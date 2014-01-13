@@ -7,17 +7,19 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace F1Convert
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
     
-    public partial class Activity_Schedule
+    public partial class Authorizations
     {
-        public string Activity_Time_Name { get; set; }
-        public Nullable<System.DateTime> Activity_Start_Time { get; set; }
-        public Nullable<System.DateTime> Activity_End_Time { get; set; }
-        public Nullable<int> Activity_ID { get; set; }
-        public Nullable<int> Activity_Schedule_ID { get; set; }
+        public Nullable<int> AuthorizationID { get; set; }
+        public Nullable<int> HouseholdID { get; set; }
+        public Nullable<int> ChurchID { get; set; }
+        public string PersonName { get; set; }
+        public Nullable<System.DateTime> AuthorizationDate { get; set; }
+        public Nullable<System.DateTime> CreatedDate { get; set; }
+        public Nullable<System.DateTime> LastUpdatedDate { get; set; }
     }
 }

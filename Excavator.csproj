@@ -44,72 +44,72 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Excavator.cs" />
-    <Compile Include="Main.cs">
+    <Compile Include="Excavator.F1\F1.cs" />
+    <Compile Include="Excavator.F1\Model\ActivityAssignment.cs" />
+    <Compile Include="Excavator.F1\Model\ActivityMinistry.cs" />
+    <Compile Include="Excavator.F1\Model\Activity_Group.cs" />
+    <Compile Include="Excavator.F1\Model\Activity_Schedule.cs" />
+    <Compile Include="Excavator.F1\Model\Attendance.cs" />
+    <Compile Include="Excavator.F1\Model\Attribute.cs" />
+    <Compile Include="Excavator.F1\Model\Authorizations.cs" />
+    <Compile Include="Excavator.F1\Model\Batch.cs" />
+    <Compile Include="Excavator.F1\Model\Communication.cs" />
+    <Compile Include="Excavator.F1\Model\Company.cs" />
+    <Compile Include="Excavator.F1\Model\ContactFormData.cs" />
+    <Compile Include="Excavator.F1\Model\Contribution.cs" />
+    <Compile Include="Excavator.F1\Model\GroupManager.cs" />
+    <Compile Include="Excavator.F1\Model\Groups.cs" />
+    <Compile Include="Excavator.F1\Model\Household_Address.cs" />
+    <Compile Include="Excavator.F1\Model\IndividualContactNotes.cs" />
+    <Compile Include="Excavator.F1\Model\Individual_Household.cs" />
+    <Compile Include="Excavator.F1\Model\Job.cs" />
+    <Compile Include="Excavator.F1\Model\JobInformation.cs" />
+    <Compile Include="Excavator.F1\Model\Notes.cs" />
+    <Compile Include="Excavator.F1\Model\Pledge.cs" />
+    <Compile Include="Excavator.F1\Model\Requirement.cs" />
+    <Compile Include="Excavator.F1\Model\RLC.cs" />
+    <Compile Include="Excavator.F1\Model\Staffing_Assignment.cs" />
+    <Compile Include="Excavator.F1\Model\Users.cs" />
+    <Compile Include="Excavator\Excavator.cs" />
+    <Compile Include="Excavator\Main.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Program.cs">
+    <Compile Include="Excavator\Program.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Program.Designer.cs">
+    <Compile Include="Excavator\Program.Designer.cs">
       <DependentUpon>Program.cs</DependentUpon>
     </Compile>
-    <Compile Include="F1\F1.cs" />
-    <Compile Include="F1\Model\ActivityAssignment.cs" />
-    <Compile Include="F1\Model\ActivityMinistry.cs" />
-    <Compile Include="F1\Model\Activity_Group.cs" />
-    <Compile Include="F1\Model\Activity_Schedule.cs" />
-    <Compile Include="F1\Model\Attendance.cs" />
-    <Compile Include="F1\Model\Attribute.cs" />
-    <Compile Include="F1\Model\Authorizations.cs" />
-    <Compile Include="F1\Model\Batch.cs" />
-    <Compile Include="F1\Model\Communication.cs" />
-    <Compile Include="F1\Model\Company.cs" />
-    <Compile Include="F1\Model\ContactFormData.cs" />
-    <Compile Include="F1\Model\Contribution.cs" />
-    <Compile Include="F1\Model\GroupManager.cs" />
-    <Compile Include="F1\Model\Groups.cs" />
-    <Compile Include="F1\Model\Household_Address.cs" />
-    <Compile Include="F1\Model\IndividualContactNotes.cs" />
-    <Compile Include="F1\Model\Individual_Household.cs" />
-    <Compile Include="F1\Model\Job.cs" />
-    <Compile Include="F1\Model\JobInformation.cs" />
-    <Compile Include="F1\Model\Notes.cs" />
-    <Compile Include="F1\Model\Pledge.cs" />
-    <Compile Include="F1\Model\Requirement.cs" />
-    <Compile Include="F1\Model\RLC.cs" />
-    <Compile Include="F1\Model\Staffing_Assignment.cs" />
-    <Compile Include="F1\Model\Users.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Program.resx">
+    <Compile Include="Excavator\Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Excavator\Program.resx">
       <DependentUpon>Program.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
+    <EmbeddedResource Include="Excavator\Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
+    <Compile Include="Excavator\Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="Resources\fontawesome-webfont.ttf" />
-    <None Include="Resources\OpenSans-Regular.ttf" />
-    <None Include="Properties\Settings.settings">
+    <None Include="Excavator\Resources\fontawesome-webfont.ttf" />
+    <None Include="Excavator\Resources\OpenSans-Regular.ttf" />
+    <None Include="Excavator\Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <Compile Include="Properties\Settings.Designer.cs">
+    <Compile Include="Excavator\Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="Excavator\App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\icon.ico" />
+    <Content Include="Excavator\Resources\icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
