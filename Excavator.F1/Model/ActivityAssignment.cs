@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator.F1
+namespace Excavator
 {
     using System;
     using System.Collections.Generic;

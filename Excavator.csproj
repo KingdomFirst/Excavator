@@ -70,19 +70,19 @@
     <Compile Include="Excavator.F1\Model\RLC.cs" />
     <Compile Include="Excavator.F1\Model\Staffing_Assignment.cs" />
     <Compile Include="Excavator.F1\Model\Users.cs" />
-    <Compile Include="Excavator\Excavator.cs" />
-    <Compile Include="Excavator\Main.cs">
+    <Compile Include="Excavator\ExcavatorComponent.cs" />
+    <Compile Include="Excavator\Program.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Excavator\Program.cs">
+    <Compile Include="Excavator\FrontEndLoader.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Excavator\Program.Designer.cs">
-      <DependentUpon>Program.cs</DependentUpon>
+    <Compile Include="Excavator\FrontEndLoader.Designer.cs">
+      <DependentUpon>FrontEndLoader.cs</DependentUpon>
     </Compile>
     <Compile Include="Excavator\Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Excavator\Program.resx">
-      <DependentUpon>Program.cs</DependentUpon>
+    <EmbeddedResource Include="Excavator\FrontEndLoader.resx">
+      <DependentUpon>FrontEndLoader.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Excavator\Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
