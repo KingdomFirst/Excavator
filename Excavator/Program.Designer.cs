@@ -29,7 +29,18 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Program));
+            this.btnUpload = new System.Windows.Forms.Button();
             this.SuspendLayout();
+            // 
+            // btnUpload
+            // 
+            this.btnUpload.Location = new System.Drawing.Point(448, 254);
+            this.btnUpload.Name = "btnUpload";
+            this.btnUpload.Size = new System.Drawing.Size(90, 35);
+            this.btnUpload.TabIndex = 0;
+            this.btnUpload.Text = "button1";
+            this.btnUpload.UseVisualStyleBackColor = true;
+            this.btnUpload.Click += new System.EventHandler(this.btnUpload_Click);
             // 
             // Program
             // 
@@ -38,9 +49,10 @@
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackColor = System.Drawing.SystemColors.ControlDark;
             this.ClientSize = new System.Drawing.Size(884, 561);
+            this.Controls.Add(this.btnUpload);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.MinimumSize = new System.Drawing.Size(550, 350);
             this.Name = "Program";
             this.Text = "Rock Excavator v.1";
@@ -50,6 +62,8 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.Button btnUpload;
     }
 }
 

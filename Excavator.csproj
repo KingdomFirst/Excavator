@@ -111,6 +111,12 @@
   <ItemGroup>
     <Content Include="Excavator\Resources\icon.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="OrcaMDF\OrcaMDF.Core\OrcaMDF.Core.csproj">
+      <Project>{829a5c51-cb21-4de2-9021-44f6d804d231}</Project>
+      <Name>OrcaMDF.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
