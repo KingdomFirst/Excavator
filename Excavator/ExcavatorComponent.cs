@@ -11,6 +11,19 @@ namespace Excavator
     /// </summary>
     public abstract class ExcavatorComponent
     {
+        #region Fields 
+        
+        /// <summary>
+        /// Gets the full name of the excavator type.
+        /// </summary>
+        /// <value>
+        /// The full name.
+        /// </value>
+        public abstract string FullName 
+        {
+            get;
+        }  
+
         /// <summary>
         /// Gets the error message.
         /// </summary>
@@ -21,6 +34,10 @@ namespace Excavator
         {
             get { return string.Empty; }
         }
+
+        #endregion
+
+        #region Methods 
 
         /// <summary>
         /// Loads the data for this instance.
@@ -33,5 +50,18 @@ namespace Excavator
         /// </summary>
         /// <returns></returns>
         public abstract bool Save();
+
+        /// <summary>
+        /// Returns the full name of this excavator type.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            return FullName;
+        }   
+        
+        #endregion
     }
 }

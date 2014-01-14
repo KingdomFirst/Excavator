@@ -11,12 +11,24 @@ namespace Excavator
     /// </summary>    
     class F1 : ExcavatorComponent
     {
-        
+        /// <summary>
+        /// Gets the full name of the excavator type.
+        /// </summary>
+        /// <value>
+        /// The full name.
+        /// </value>
+        public override string FullName
+        {
+            get { return "FellowshipOne";  }
+        }
+
+        #region Methods
+
         /// <summary>
         /// Loads the data for this instance.
         /// </summary>
         /// <returns></returns>
-        public override bool Load()
+        public override bool Load( )
         {
             return false;
         }
@@ -29,6 +41,8 @@ namespace Excavator
         {
             return false;
         }
-        
+            
+
+        #endregion
     }
 }
