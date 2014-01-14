@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Excavator", "Excavator.csproj", "{A1D1BEE7-1B78-4D95-9BF1-F257550802FD}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3242E8A3-0FB6-4866-81E2-F840039F20BC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrcaMDF.Core", "OrcaMDF\OrcaMDF.Core\OrcaMDF.Core.csproj", "{829A5C51-CB21-4DE2-9021-44F6D804D231}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrcaMDF.Framework", "OrcaMDF\OrcaMDF.Framework\OrcaMDF.Framework.csproj", "{4D581CDB-A39C-4C0C-AE2C-6A3070B8983C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Excavator", "Excavator.csproj", "{6C4100B7-6B6B-40D7-A150-DEBA50512C95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A1D1BEE7-1B78-4D95-9BF1-F257550802FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1D1BEE7-1B78-4D95-9BF1-F257550802FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1D1BEE7-1B78-4D95-9BF1-F257550802FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1D1BEE7-1B78-4D95-9BF1-F257550802FD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{829A5C51-CB21-4DE2-9021-44F6D804D231}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{829A5C51-CB21-4DE2-9021-44F6D804D231}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{829A5C51-CB21-4DE2-9021-44F6D804D231}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -29,6 +25,10 @@ Global
 		{4D581CDB-A39C-4C0C-AE2C-6A3070B8983C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D581CDB-A39C-4C0C-AE2C-6A3070B8983C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D581CDB-A39C-4C0C-AE2C-6A3070B8983C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C4100B7-6B6B-40D7-A150-DEBA50512C95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C4100B7-6B6B-40D7-A150-DEBA50512C95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C4100B7-6B6B-40D7-A150-DEBA50512C95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C4100B7-6B6B-40D7-A150-DEBA50512C95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
