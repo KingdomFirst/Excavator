@@ -1,8 +1,5 @@
 ﻿<Application x:Class="Excavator.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="FrontEndLoader.xaml">
-    <Application.Resources>
-         
-    </Application.Resources>
+             StartupUri="Excavator/FrontEndLoader.xaml">
 </Application>

@@ -1,6 +1,7 @@
-﻿<Window x:Name="FrontEndLoader" x:Class="Excavator.FrontEndLoader"
+﻿<Window x:Name="MainWindow" x:Class="Excavator.FrontEndLoader"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:control="clr-namespace:ProgressBar"
         Title="Rock Excavator v.1" Height="480" Width="744" MinHeight="350" MinWidth="550" FontFamily="Open Sans" FontSize="14">
     <Grid x:Name="frmExcavator">
         <Grid.Background>
@@ -15,6 +16,6 @@
         <Label x:Name="lblDatabaseType" Content="Select the database type:" HorizontalAlignment="Left" Margin="48,81,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
         <Label x:Name="lblDatabaseConnect" Content="Connect to a SQL Server:" HorizontalAlignment="Left" Margin="50,193,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
         <Label x:Name="lblDatabaseUpload" Content="Upload the database file:" HorizontalAlignment="Left" Margin="50,278,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
-
+        <ProgressBar ItemsSource="{Binding Steps}" Foreground="#FF086398" Progress="{Binding Progress}" SnapsToDevicePixels="True" Margin="40"/>
     </Grid>
 </Window>

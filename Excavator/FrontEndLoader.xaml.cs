@@ -3,26 +3,52 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using OrcaMDF.Core.Engine;
+using System.ComponentModel;
+using System.Collections.ObjectModel;
+using ProgressBar;
 
 namespace Excavator
 {
     /// <summary>
     /// Interaction logic for FrontEndLoader.xaml
     /// </summary>
-    public partial class FrontEndLoader : Window
+    public partial class FrontEndLoader : Window, INotifyPropertyChanged
     {
+        #region Fields
+
+        /// <summary>
+        /// Numeric value of the current progress 
+        /// </summary>
+        private int numProgress;
+
+        /// <summary>
+        /// Gets or sets the progress indicator.
+        /// </summary>
+        public int Progress
+        {
+            get { return numProgress; }
+            set
+            {
+                numProgress = value;
+                OnPropertyChanged( "Progress" );
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the process steps.
+        /// </summary>        
+        public ObservableCollection<string> Process { get; set; }
+
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion
+
+        #region Initializer Methods
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
@@ -40,7 +66,19 @@ namespace Excavator
             }
 
             lstDatabaseType.ItemsSource = excavatorTypes;
+
+            Process = new ObservableCollection<string>();
+            Process.Add( "Connection" );
+            Process.Add( "Transformation" );
+            Process.Add( "Preview" );
+            Process.Add( "Save" );
+            Process.Add( "Complete" );
+            this.DataContext = this;
         }
+
+        #endregion
+
+        #region Events
 
         /// <summary>
         /// Handles the Click event of the btnUpload control.
@@ -67,6 +105,18 @@ namespace Excavator
             }
         }
 
-        
+        /// <summary>
+        /// Called when the indicated property is changed.
+        /// </summary>
+        /// <param name="propertyName">Name of the property.</param>
+        private void OnPropertyChanged( string propertyName )
+        {
+            if ( PropertyChanged != null )
+            {
+                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
+            }
+        }
+
+        #endregion
     }
 }

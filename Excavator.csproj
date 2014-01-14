@@ -53,6 +53,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Excavator\ProgressBar\IsLastItemConverter.cs" />
+    <Compile Include="Excavator\ProgressBar\IsProgressedConverter.cs" />
+    <Compile Include="Excavator\ProgressBar\ProgressBar.cs" />
+    <Compile Include="Test.xaml.cs">
+      <DependentUpon>Test.xaml</DependentUpon>
+    </Compile>
     <Page Include="Excavator\FrontEndLoader.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -92,6 +98,14 @@
       <DependentUpon>FrontEndLoader.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Excavator\ProgressBar\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Test.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Excavator\Properties\AssemblyInfo.cs">
@@ -119,6 +133,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Excavator\App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Packages\OrcaMDF.Core\OrcaMDF.Core.csproj">
+      <Project>{829a5c51-cb21-4de2-9021-44f6d804d231}</Project>
+      <Name>OrcaMDF.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
