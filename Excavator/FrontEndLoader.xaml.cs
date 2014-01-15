@@ -2,12 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Media;
 using System.Reflection;
 using System.Windows;
 using OrcaMDF.Core.Engine;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using ProgressBar;
 
 namespace Excavator
 {
@@ -17,6 +17,11 @@ namespace Excavator
     public partial class FrontEndLoader : Window, INotifyPropertyChanged
     {
         #region Fields
+
+        /// <summary>
+        /// Stores the progress bar style 
+        /// </summary>
+        private ResourceDictionary styles;
 
         /// <summary>
         /// Numeric value of the current progress 
@@ -57,6 +62,9 @@ namespace Excavator
         {
             InitializeComponent();
 
+            styles = new ResourceDictionary();
+            styles.Source = new Uri( "/Excavator;component/ProgressBar/Style.xaml", UriKind.RelativeOrAbsolute );
+
             var excavatorTypes = new List<ExcavatorComponent>();
             foreach ( Type type in
                 Assembly.GetAssembly( typeof( ExcavatorComponent ) ).GetTypes()
@@ -74,6 +82,15 @@ namespace Excavator
             Process.Add( "Save" );
             Process.Add( "Complete" );
             this.DataContext = this;
+
+            var pb = new ProgressBar();
+            pb.ItemsSource = Process;
+            pb.Foreground = new SolidColorBrush( (Color)ColorConverter.ConvertFromString( "#FF086398" ) );
+            pb.Progress = Progress;
+            pb.SnapsToDevicePixels = true;
+            pb.Margin = new Thickness( 40 );
+            grdExcavator.Children.Add( pb );
+                       
         }
 
         #endregion
@@ -90,7 +107,7 @@ namespace Excavator
             var mdfPicker = new OpenFileDialog();
             mdfPicker.Filter = "SQL Database files|*.mdf";
             mdfPicker.AddExtension = false;
-            
+
             if ( mdfPicker.ShowDialog() == true )
             {
                 var db = new Database( mdfPicker.FileName );

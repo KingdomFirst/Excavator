@@ -53,12 +53,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Excavator\ProgressBar\IsLastItemConverter.cs" />
-    <Compile Include="Excavator\ProgressBar\IsProgressedConverter.cs" />
-    <Compile Include="Excavator\ProgressBar\ProgressBar.cs" />
-    <Compile Include="Test.xaml.cs">
-      <DependentUpon>Test.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="Excavator\ProgressBar\LastItemConverter.cs" />
+    <Compile Include="Excavator\ProgressBar\ProgressItemConverter.cs" />
+    <Compile Include="Excavator\ProgressBar.cs" />
     <Page Include="Excavator\FrontEndLoader.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -98,14 +95,10 @@
       <DependentUpon>FrontEndLoader.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Excavator\ProgressBar\Generic.xaml">
+    <Resource Include="Excavator\ProgressBar\Style.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Test.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    </Resource>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Excavator\Properties\AssemblyInfo.cs">

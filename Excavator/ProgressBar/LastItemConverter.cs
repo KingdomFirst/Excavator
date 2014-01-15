@@ -6,7 +6,7 @@ using System.Windows.Data;
 using System.Windows.Controls;
 using System.Windows.Markup;
 
-namespace ProgressBar
+namespace Excavator
 {
     /// <summary>
     /// The last item in the progress bar
@@ -15,7 +15,7 @@ namespace ProgressBar
     {
         /// <summary>
         /// Converts the current item value from the presenter.
-        /// </summary>        
+        /// </summary>
         public object Convert( object value, Type targetType, object parameter, System.Globalization.CultureInfo culture )
         {
             var contentPresenter = (ContentPresenter)value;
@@ -26,7 +26,7 @@ namespace ProgressBar
 
         /// <summary>
         /// Converts a value back to the presenter.
-        /// </summary>        
+        /// </summary>
         public object ConvertBack( object value, Type targetType, object parameter, System.Globalization.CultureInfo culture )
         {
             throw new NotSupportedException();

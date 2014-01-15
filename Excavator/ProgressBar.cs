@@ -10,9 +10,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using System.Windows.Resources;
 using System.Windows.Shapes;
 
-namespace ProgressBar
+namespace Excavator
 {
     /// <summary>
     /// Displays a stepped progress bar
@@ -39,7 +40,7 @@ namespace ProgressBar
         public static DependencyProperty ProgressProperty
             = DependencyProperty.Register( "Progress", typeof( int ), typeof( ProgressBar ), new FrameworkPropertyMetadata( 0, null, UpdateProgress ) );
 
-        #endregion 
+        #endregion
 
         #region Methods
 
@@ -48,7 +49,7 @@ namespace ProgressBar
         /// </summary>
         static ProgressBar()
         {
-            //DefaultStyleKeyProperty.OverrideMetadata(typeof(ProgressBar), new FrameworkPropertyMetadata(typeof(ProgressBar)));
+            DefaultStyleKeyProperty.OverrideMetadata( typeof( ProgressBar ), new FrameworkPropertyMetadata( typeof( ProgressBar ) ) );
         }
 
         /// <summary>
@@ -56,13 +57,11 @@ namespace ProgressBar
         /// </summary>
         public ProgressBar()
         {
-            var resourceLocater = new Uri( "/ProgressBar;component/Generic.xaml", System.UriKind.Relative );
-            var resourceDictionary = (ResourceDictionary)Application.LoadComponent( resourceLocater );
-            this.Style = (Style)resourceDictionary["progressBar"];
+            //this.Style = (Style)Application.Current.Resources.FindName( "ProgressBar" );
         }
 
         /// <summary>
-        /// Coerces the progress.
+        /// Updates the progress.
         /// </summary>
         /// <param name="target">The target.</param>
         /// <param name="value">The value.</param>
@@ -79,7 +78,6 @@ namespace ProgressBar
             {
                 progress = 100;
             }
-
             return progress;
         }
 
