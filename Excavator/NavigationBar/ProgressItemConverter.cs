@@ -33,7 +33,7 @@ namespace Excavator
                 index++;
             }
 
-            var progressBar = (ProgressBar)itemsControl.TemplatedParent;
+            var progressBar = (NavigationBar)itemsControl.TemplatedParent;
             int percent = (int)( ( (double)index / progressBar.Items.Count ) * 100 );
 
             if ( percent < progress )

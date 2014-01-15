@@ -18,7 +18,7 @@ namespace Excavator
     /// <summary>
     /// Displays a stepped progress bar
     /// </summary>
-    public class ProgressBar : ItemsControl
+    public class NavigationBar : ItemsControl
     {
         #region Fields
 
@@ -37,24 +37,24 @@ namespace Excavator
         /// <summary>
         /// The progress step dependency on the progress number
         /// </summary>
-        public static DependencyProperty ProgressProperty = DependencyProperty.Register( "Progress", typeof( int ), typeof( ProgressBar ), new FrameworkPropertyMetadata( 0, null, UpdateProgress ) );
+        public static DependencyProperty ProgressProperty = DependencyProperty.Register( "Progress", typeof( int ), typeof( NavigationBar ), new FrameworkPropertyMetadata( 0, null, UpdateProgress ) );
 
         #endregion
 
         #region Methods
 
         /// <summary>
-        /// Initializes the <see cref="ProgressBar"/> class.
+        /// Initializes the <see cref="NavigationBar"/> class.
         /// </summary>
-        static ProgressBar()
+        static NavigationBar()
         {
-            DefaultStyleKeyProperty.OverrideMetadata( typeof( ProgressBar ), new FrameworkPropertyMetadata( typeof( ProgressBar ) ) );
+            DefaultStyleKeyProperty.OverrideMetadata( typeof( NavigationBar ), new FrameworkPropertyMetadata( typeof( NavigationBar ) ) );
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProgressBar"/> class.
+        /// Initializes a new instance of the <see cref="NavigationBar"/> class.
         /// </summary>
-        public ProgressBar()
+        public NavigationBar()
         {                        
         }
 
@@ -66,7 +66,7 @@ namespace Excavator
         /// <returns></returns>
         private static object UpdateProgress( DependencyObject target, object value )
         {
-            var progressBar = (ProgressBar)target;
+            var progressBar = (NavigationBar)target;
             int progress = (int)value;
             if ( progress < 0 )
             {

@@ -9,16 +9,6 @@ using OrcaMDF.Core.Engine;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 
-
-using System.Text;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
 namespace Excavator
 {
     /// <summary>
@@ -96,7 +86,7 @@ namespace Excavator
 
             databaseTypes.ItemsSource = excavatorTypes;
             numProgress = Increment = ( 100 / Process.Count() );
-            DisplayProgressBar();
+            //DisplayProgressBar();
 
             // watch this window for changes
             this.DataContext = this;
@@ -107,13 +97,14 @@ namespace Excavator
         /// </summary>
         private void DisplayProgressBar()
         {
-            var pb = new ProgressBar();
+            var pb = new NavigationBar();
+            pb.Name = "navProgress";
             pb.ItemsSource = Process;
             pb.Progress = Progress;
             pb.SnapsToDevicePixels = true;
             pb.Margin = new Thickness( 30 );            
             pb.Foreground = Brushes.SlateBlue;
-            pb.Style = (Style)FindResource( "ProgressBar" );
+            pb.Style = (Style)FindResource( "NavigationBar" );
             grdExcavator.Children.Add( pb );
         }
 

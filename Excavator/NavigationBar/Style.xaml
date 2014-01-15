@@ -6,16 +6,16 @@
     <local:LastItemConverter x:Key="LastItemConverter" />
     <local:ProgressItemConverter x:Key="ProgressItemConverter" />
 
-    <LinearGradientBrush x:Key="progressBarBrush" StartPoint="0.5,0.0" EndPoint="0.5,1.0">
+    <LinearGradientBrush x:Key="navBarBrush" StartPoint="0.5,0.0" EndPoint="0.5,1.0">
         <GradientStop Color="#FFE4E4E4" Offset="0.25"/>
         <GradientStop Color="#FFededed" Offset="0.50"/>
         <GradientStop Color="#FFFCFCFC" Offset="0.75"/>
     </LinearGradientBrush>
 
-    <Style TargetType="{x:Type local:ProgressBar}" x:Key="ProgressBar">
+    <Style TargetType="{x:Type local:NavigationBar}" x:Key="NavigationBar">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type local:ProgressBar}">
+                <ControlTemplate TargetType="{x:Type local:NavigationBar}">
                     <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="true">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -43,14 +43,14 @@
                                                 <Setter Property="StrokeThickness" Value="0"/>
                                                 <Setter Property="Height" Value="21"/>
                                                 <Setter Property="Stretch" Value="Fill"/>
-                                                <Setter Property="Fill" Value="{StaticResource progressBarBrush}"/>
+                                                <Setter Property="Fill" Value="{StaticResource navBarBrush}"/>
                                                 <Setter Property="StrokeEndLineCap" Value="Square"/>
                                                 <Setter Property="StrokeStartLineCap" Value="Square"/>
                                                 <Setter Property="Stroke" Value="Transparent"/>
                                             </Style>
                                             <Style TargetType="Path" x:Key="innerPath" BasedOn="{StaticResource outerPath}">
                                                 <Setter Property="Data" Value="M0.0,0.0 L0.0,0.45 L1.0,0.45 L1.0,0.55 L0.0,0.55 L0.0,1.0"/>
-                                                <Setter Property="Fill" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ProgressBar}},
+                                                <Setter Property="Fill" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:NavigationBar}},
                                                                                         Path=Foreground}"/>
                                             </Style>
                                         </DataTemplate.Resources>
@@ -74,19 +74,19 @@
                                                          Stroke="Transparent"
                                                          Height="20"
                                                          Width="20"
-                                                         Fill="{StaticResource progressBarBrush}"/>
+                                                         Fill="{StaticResource navBarBrush}"/>
                                                 <Ellipse Grid.ColumnSpan="2"
                                                          HorizontalAlignment="Center"
                                                          Stroke="Transparent"
                                                          Height="14"
                                                          Width="14"
-                                                         Fill="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ProgressBar}},
+                                                         Fill="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:NavigationBar}},
                                                     Path=Foreground}">
                                                     <Ellipse.Visibility>
                                                         <MultiBinding Converter="{StaticResource ProgressItemConverter}"
                                                                       ConverterParameter="False">
                                                             <Binding RelativeSource="{RelativeSource TemplatedParent}"/>
-                                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type local:ProgressBar}}"
+                                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type local:NavigationBar}}"
                                                                      Path="Progress"/>
                                                         </MultiBinding>
                                                     </Ellipse.Visibility>
@@ -98,7 +98,7 @@
                                                         <MultiBinding Converter="{StaticResource ProgressItemConverter}"
                                                                       ConverterParameter="False">
                                                             <Binding RelativeSource="{RelativeSource TemplatedParent}"/>
-                                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type local:ProgressBar}}"
+                                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type local:NavigationBar}}"
                                                                      Path="Progress"/>
                                                         </MultiBinding>
                                                     </Path.Visibility>
@@ -109,7 +109,7 @@
                                                         <MultiBinding Converter="{StaticResource ProgressItemConverter}"
                                                                       ConverterParameter="True">
                                                             <Binding RelativeSource="{RelativeSource TemplatedParent}"/>
-                                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type local:ProgressBar}}"
+                                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type local:NavigationBar}}"
                                                                      Path="Progress"/>
                                                         </MultiBinding>
                                                     </Path.Visibility>
