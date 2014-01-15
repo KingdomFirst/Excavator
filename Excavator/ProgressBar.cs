@@ -37,8 +37,7 @@ namespace Excavator
         /// <summary>
         /// The progress step dependency on the progress number
         /// </summary>
-        public static DependencyProperty ProgressProperty
-            = DependencyProperty.Register( "Progress", typeof( int ), typeof( ProgressBar ), new FrameworkPropertyMetadata( 0, null, UpdateProgress ) );
+        public static DependencyProperty ProgressProperty = DependencyProperty.Register( "Progress", typeof( int ), typeof( ProgressBar ), new FrameworkPropertyMetadata( 0, null, UpdateProgress ) );
 
         #endregion
 
@@ -56,8 +55,7 @@ namespace Excavator
         /// Initializes a new instance of the <see cref="ProgressBar"/> class.
         /// </summary>
         public ProgressBar()
-        {
-            //this.Style = (Style)Application.Current.Resources.FindName( "ProgressBar" );
+        {                        
         }
 
         /// <summary>

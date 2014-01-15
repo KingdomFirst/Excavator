@@ -1,8 +1,15 @@
 ﻿<Window x:Name="MainWindow" x:Class="Excavator.FrontEndLoader"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:Excavator"
-        Title="Rock Excavator v.1" Height="480" Width="744" MinHeight="350" MinWidth="550" FontFamily="Open Sans" FontSize="14">
+        xmlns:local="clr-namespace:Excavator" Icon="Assets\rock.ico"
+        Title="Rock Excavator v.1" Height="500" Width="750" MinHeight="350" MinWidth="550" FontFamily="Open Sans" FontSize="14">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ProgressBar/Style.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid x:Name="grdExcavator">
         <Grid.Background>
             <LinearGradientBrush EndPoint="0.5,1" MappingMode="RelativeToBoundingBox" StartPoint="0.5,0">
@@ -10,12 +17,18 @@
                 <GradientStop Color="#FF5F5F5F" Offset="1"/>
             </LinearGradientBrush>
         </Grid.Background>
-        <Button x:Name="btnUpload" Content="Upload" HorizontalAlignment="Left" Margin="228,281,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" UseLayoutRounding="True" Click="btnUpload_Click" Height="26" FontSize="14"/>
-        <ListBox x:Name="lstDatabaseType" HorizontalAlignment="Left" Height="26" Margin="243,84,0,0" VerticalAlignment="Top" Width="155" FontFamily="Open Sans" FontSize="14" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
-        <Button x:Name="btnConnectSQL" Content="Connect" HorizontalAlignment="Left" Margin="238,196,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" FontSize="14" Height="26"/>
-        <Label x:Name="lblDatabaseType" Content="Select the database type:" HorizontalAlignment="Left" Margin="48,81,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
-        <Label x:Name="lblDatabaseConnect" Content="Connect to a SQL Server:" HorizontalAlignment="Left" Margin="50,193,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
-        <Label x:Name="lblDatabaseUpload" Content="Upload the database file:" HorizontalAlignment="Left" Margin="50,278,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
-        
+        <Button x:Name="btnNext" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="40" Height="40" Background="{x:Null}" BorderBrush="{x:Null}" Click="btnNext_Click" >
+            <TextBlock Text="&#xE111;" FontFamily="Segoe UI Symbol" FontSize="30" Foreground="White" />
+        </Button>
+        <Button x:Name="btnPrevious" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="40" Height="40" Background="{x:Null}" BorderBrush="{x:Null}" Click="btnPrevious_Click" Visibility="Visible">
+            <TextBlock Text="&#xE112;" FontFamily="Segoe UI Symbol" FontSize="30" Foreground="White"/>
+        </Button>
+        <Label x:Name="lblStep1" Content="1.  Select the database type:" HorizontalAlignment="Left" Margin="125,150,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
+        <ListBox x:Name="databaseTypes" HorizontalAlignment="Left" Height="26" Margin="400,150,0,0" VerticalAlignment="Top" Width="155" FontFamily="Open Sans" FontSize="14" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+        <Label x:Name="lblStep2" Content="2.  Choose your database:" HorizontalAlignment="Left" Margin="125,200,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
+        <Label x:Name="lblUpload" Content="Upload a SQL file:" HorizontalAlignment="Left" Margin="200,250,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
+        <Button x:Name="btnUpload" Content="Upload" HorizontalAlignment="Left" Margin="400,250,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" UseLayoutRounding="True" Click="btnUpload_Click" Height="26" FontSize="14"/>
+        <Label x:Name="lblConnect" Content="Connect to a SQL Server:" HorizontalAlignment="Left" Margin="200,300,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
+        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="400,300,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" FontSize="14" Height="26" RenderTransformOrigin="0.795,-0.115"/>        
     </Grid>
 </Window>

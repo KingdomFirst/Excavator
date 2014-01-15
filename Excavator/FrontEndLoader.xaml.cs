@@ -9,6 +9,16 @@ using OrcaMDF.Core.Engine;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 
+
+using System.Text;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
 namespace Excavator
 {
     /// <summary>
@@ -19,14 +29,22 @@ namespace Excavator
         #region Fields
 
         /// <summary>
-        /// Stores the progress bar style 
-        /// </summary>
-        private ResourceDictionary styles;
-
-        /// <summary>
         /// Numeric value of the current progress 
         /// </summary>
         private int numProgress;
+
+        /// <summary>
+        /// List of possible excavator types
+        /// </summary>
+        private List<ExcavatorComponent> excavatorTypes;
+
+        /// <summary>
+        /// Gets or sets the increment value.
+        /// </summary>
+        /// <value>
+        /// The increment.
+        /// </value>
+        public int Increment { get; set; }
 
         /// <summary>
         /// Gets or sets the progress indicator.
@@ -62,18 +80,12 @@ namespace Excavator
         {
             InitializeComponent();
 
-            styles = new ResourceDictionary();
-            styles.Source = new Uri( "/Excavator;component/ProgressBar/Style.xaml", UriKind.RelativeOrAbsolute );
-
-            var excavatorTypes = new List<ExcavatorComponent>();
-            foreach ( Type type in
-                Assembly.GetAssembly( typeof( ExcavatorComponent ) ).GetTypes()
+            excavatorTypes = new List<ExcavatorComponent>();
+            foreach ( Type type in Assembly.GetAssembly( typeof( ExcavatorComponent ) ).GetTypes()
                 .Where( type => type.IsClass && !type.IsAbstract && type.IsSubclassOf( typeof( ExcavatorComponent ) ) ) )
             {
                 excavatorTypes.Add( (ExcavatorComponent)Activator.CreateInstance( type, null ) );
             }
-
-            lstDatabaseType.ItemsSource = excavatorTypes;
 
             Process = new ObservableCollection<string>();
             Process.Add( "Connection" );
@@ -81,16 +93,28 @@ namespace Excavator
             Process.Add( "Preview" );
             Process.Add( "Save" );
             Process.Add( "Complete" );
-            this.DataContext = this;
 
+            databaseTypes.ItemsSource = excavatorTypes;
+            numProgress = Increment = ( 100 / Process.Count() );
+            DisplayProgressBar();
+
+            // watch this window for changes
+            this.DataContext = this;
+        }
+
+        /// <summary>
+        /// Adds the progress bar.
+        /// </summary>
+        private void DisplayProgressBar()
+        {
             var pb = new ProgressBar();
             pb.ItemsSource = Process;
-            pb.Foreground = new SolidColorBrush( (Color)ColorConverter.ConvertFromString( "#FF086398" ) );
             pb.Progress = Progress;
             pb.SnapsToDevicePixels = true;
-            pb.Margin = new Thickness( 40 );
+            pb.Margin = new Thickness( 30 );            
+            pb.Foreground = Brushes.SlateBlue;
+            pb.Style = (Style)FindResource( "ProgressBar" );
             grdExcavator.Children.Add( pb );
-                       
         }
 
         #endregion
@@ -110,10 +134,15 @@ namespace Excavator
 
             if ( mdfPicker.ShowDialog() == true )
             {
-                var db = new Database( mdfPicker.FileName );
-                if ( db != null )
+                var database = new Database( mdfPicker.FileName );
+                if ( database != null )
                 {
-                    var dbType = lstDatabaseType.SelectedValue.ToString();
+                    var dbType = databaseTypes.SelectedValue.ToString();
+                    ExcavatorComponent dbModel = excavatorTypes.Where( t => t.FullName.Equals( dbType ) ).FirstOrDefault();
+                    if ( dbModel != null )
+                    {
+                        dbModel.Load( database );
+                    }
                 }
                 else
                 {
@@ -123,7 +152,34 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Called when the indicated property is changed.
+        /// Handles the Click event of the btnNext control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnNext_Click( object sender, RoutedEventArgs e )
+        {
+            Progress += Increment;
+
+            btnPrevious.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnPrevious control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnPrevious_Click( object sender, RoutedEventArgs e )
+        {
+            Progress -= Increment;
+
+            if ( Progress / Increment == 1 )
+            {
+                btnPrevious.Visibility = Visibility.Hidden;
+            }
+        }
+
+        /// <summary>
+        /// Called when [property changed].
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         private void OnPropertyChanged( string propertyName )
@@ -135,5 +191,6 @@ namespace Excavator
         }
 
         #endregion
+
     }
 }

@@ -12,7 +12,7 @@
         <GradientStop Color="#FFFCFCFC" Offset="0.75"/>
     </LinearGradientBrush>
 
-    <Style TargetType="{x:Type local:ProgressBar}">
+    <Style TargetType="{x:Type local:ProgressBar}" x:Key="ProgressBar">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:ProgressBar}">
@@ -139,7 +139,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                                        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding}" HorizontalAlignment="Center" Margin="0,5,0,0" TextAlignment="Center" Foreground="#FFC1C1C1"/>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

@@ -4,6 +4,8 @@
 // http://creativecommons.org/licenses/by-nc-sa/3.0/
 //
 
+using System;
+
 namespace Excavator
 {
     /// <summary>
@@ -40,10 +42,10 @@ namespace Excavator
         #region Methods 
 
         /// <summary>
-        /// Loads the data for this instance.
+        /// Loads the database for this instance.
         /// </summary>
         /// <returns></returns>
-        public abstract bool Load();
+        public abstract bool Load( object database );
 
         /// <summary>
         /// Saves the data for this instance.
@@ -62,6 +64,6 @@ namespace Excavator
             return FullName;
         }   
         
-        #endregion
-    }
+        #endregion        
+    }    
 }
