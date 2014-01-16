@@ -12,7 +12,7 @@
         <GradientStop Color="#FFFCFCFC" Offset="0.75"/>
     </LinearGradientBrush>
 
-    <Style TargetType="{x:Type local:NavigationBar}" x:Key="NavigationBar">
+    <Style TargetType="{x:Type local:NavigationBar}" x:Key="NavStyle">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:NavigationBar}">
