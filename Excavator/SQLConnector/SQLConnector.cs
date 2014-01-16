@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Excavator.Excavator.SQLConnector
+namespace Excavator
 {
     public partial class SQLConnector : UserControl
     {

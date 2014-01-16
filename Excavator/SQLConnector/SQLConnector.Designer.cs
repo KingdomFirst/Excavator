@@ -1,7 +1,17 @@
-﻿
-namespace Excavator.SQLConnector
+﻿using System;
+using System.Data;
+using System.Drawing;
+using System.Threading;
+using System.Data.Odbc;
+using System.Data.OleDb;
+using System.Diagnostics;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+using System.Security.Permissions;
+
+namespace Excavator
 {
-    partial class SQLConnector : 
+    partial class SQLConnector : UserControl
     {
         /// <summary> 
         /// Required designer variable.
@@ -45,6 +55,9 @@ namespace Excavator.SQLConnector
             this.selectDatabaseRadioButton = new System.Windows.Forms.RadioButton();
             this.selectDatabaseComboBox = new System.Windows.Forms.ComboBox();
             this.databaseGroupBox = new System.Windows.Forms.GroupBox();
+            this.acceptButton = new System.Windows.Forms.Button();
+            this.cancelButton = new System.Windows.Forms.Button();
+            this.testConnectionButton = new System.Windows.Forms.Button();
             this.loginTableLayoutPanel.SuspendLayout();
             this.logonGroupBox.SuspendLayout();
             this.serverTableLayoutPanel.SuspendLayout();
@@ -272,16 +285,63 @@ namespace Excavator.SQLConnector
             this.databaseGroupBox.TabStop = false;
             this.databaseGroupBox.Text = "Connect to a database";
             // 
+            // acceptButton
+            // 
+            this.acceptButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.acceptButton.AutoSize = true;
+            this.acceptButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.acceptButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.acceptButton.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.acceptButton.Location = new System.Drawing.Point(204, 301);
+            this.acceptButton.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
+            this.acceptButton.MinimumSize = new System.Drawing.Size(75, 23);
+            this.acceptButton.Name = "acceptButton";
+            this.acceptButton.Size = new System.Drawing.Size(75, 23);
+            this.acceptButton.TabIndex = 8;
+            this.acceptButton.Text = "OK";
+            // 
+            // cancelButton
+            // 
+            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.cancelButton.AutoSize = true;
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.cancelButton.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.cancelButton.Location = new System.Drawing.Point(285, 301);
+            this.cancelButton.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
+            this.cancelButton.MinimumSize = new System.Drawing.Size(75, 23);
+            this.cancelButton.Name = "cancelButton";
+            this.cancelButton.Size = new System.Drawing.Size(75, 23);
+            this.cancelButton.TabIndex = 9;
+            this.cancelButton.Text = "Cancel";
+            // 
+            // testConnectionButton
+            // 
+            this.testConnectionButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.testConnectionButton.AutoSize = true;
+            this.testConnectionButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.testConnectionButton.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.testConnectionButton.Location = new System.Drawing.Point(13, 301);
+            this.testConnectionButton.Margin = new System.Windows.Forms.Padding(3, 3, 6, 3);
+            this.testConnectionButton.MinimumSize = new System.Drawing.Size(101, 23);
+            this.testConnectionButton.Name = "testConnectionButton";
+            this.testConnectionButton.Size = new System.Drawing.Size(101, 23);
+            this.testConnectionButton.TabIndex = 10;
+            this.testConnectionButton.Text = "&Test Connection";
+            // 
             // SQLConnector
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.testConnectionButton);
+            this.Controls.Add(this.acceptButton);
+            this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.databaseGroupBox);
             this.Controls.Add(this.logonGroupBox);
             this.Controls.Add(this.serverTableLayoutPanel);
             this.Controls.Add(this.serverLabel);
             this.Name = "SQLConnector";
-            this.Size = new System.Drawing.Size(371, 305);
+            this.Size = new System.Drawing.Size(371, 330);
             this.loginTableLayoutPanel.ResumeLayout(false);
             this.loginTableLayoutPanel.PerformLayout();
             this.logonGroupBox.ResumeLayout(false);
@@ -297,21 +357,25 @@ namespace Excavator.SQLConnector
 
         #endregion
 
-        private System.Windows.Forms.RadioButton sqlAuthenticationRadioButton;
-        private System.Windows.Forms.RadioButton windowsAuthenticationRadioButton;
-        private System.Windows.Forms.Label userNameLabel;
-        private System.Windows.Forms.TextBox userNameTextBox;
-        private System.Windows.Forms.Label passwordLabel;
-        private System.Windows.Forms.TextBox passwordTextBox;
-        private System.Windows.Forms.CheckBox savePasswordCheckBox;
-        private System.Windows.Forms.TableLayoutPanel loginTableLayoutPanel;
-        private System.Windows.Forms.GroupBox logonGroupBox;
-        private System.Windows.Forms.Button refreshButton;
-        private System.Windows.Forms.TableLayoutPanel serverTableLayoutPanel;
-        private System.Windows.Forms.ComboBox serverComboBox;
-        private System.Windows.Forms.Label serverLabel;
-        private System.Windows.Forms.RadioButton selectDatabaseRadioButton;
-        private System.Windows.Forms.ComboBox selectDatabaseComboBox;
-        private System.Windows.Forms.GroupBox databaseGroupBox;
+        private RadioButton sqlAuthenticationRadioButton;
+        private RadioButton windowsAuthenticationRadioButton;
+        private Label userNameLabel;
+        private TextBox userNameTextBox;
+        private Label passwordLabel;
+        private TextBox passwordTextBox;
+        private CheckBox savePasswordCheckBox;
+        private TableLayoutPanel loginTableLayoutPanel;
+        private GroupBox logonGroupBox;
+        private Button refreshButton;
+        private TableLayoutPanel serverTableLayoutPanel;
+        private ComboBox serverComboBox;
+        private Label serverLabel;
+        private RadioButton selectDatabaseRadioButton;
+        private ComboBox selectDatabaseComboBox;
+        private GroupBox databaseGroupBox;
+        private Button acceptButton;
+        private Button cancelButton;
+        private Button testConnectionButton;
+
     }
 }

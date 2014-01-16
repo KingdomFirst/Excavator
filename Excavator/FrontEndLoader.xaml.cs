@@ -87,6 +87,9 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnConnect_Click( object sender, RoutedEventArgs e )
         {
+            
+            var sqlConnection = new SQLConnector();
+
             //SqlConnection thisConnection = new SqlConnection( @"Server=(local);Database=Sample_db;Trusted_Connection=Yes;" );
             //thisConnection.Open();
 
