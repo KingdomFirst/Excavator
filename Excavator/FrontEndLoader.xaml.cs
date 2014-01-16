@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
@@ -78,6 +79,28 @@ namespace Excavator
                 }
             }
         }
+
+        /// <summary>
+        /// Handles the Click event of the btnConnect control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnConnect_Click( object sender, RoutedEventArgs e )
+        {
+            //SqlConnection thisConnection = new SqlConnection( @"Server=(local);Database=Sample_db;Trusted_Connection=Yes;" );
+            //thisConnection.Open();
+
+            //string Get_Data = "SELECT * FROM emp";
+
+            //SqlCommand cmd = thisConnection.CreateCommand();
+            //cmd.CommandText = Get_Data;
+
+            //SqlDataAdapter sda = new SqlDataAdapter( cmd );
+            //DataTable dt = new DataTable( "emp" );
+            //sda.Fill( dt );
+
+            //dataGrid1.ItemsSource = dt.DefaultView;
+        }    
 
         /// <summary>
         /// Handles the Click event of the btnNext control.
@@ -168,5 +191,7 @@ namespace Excavator
         }
 
         #endregion
+
+        
     }
 }

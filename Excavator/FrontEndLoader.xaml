@@ -37,6 +37,6 @@
         <Label x:Name="lblUpload" Content="Upload a SQL file:" Grid.Column="2" HorizontalAlignment="Right" Margin="0,247,283,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
         <Button x:Name="btnUpload" Content="Upload" Grid.Column="2" HorizontalAlignment="Left" Margin="365,250,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" UseLayoutRounding="True" Click="btnUpload_Click" Height="26" FontSize="14"/>
         <Label x:Name="lblConnect" Content="Connect to a SQL Server:" Grid.Column="2" HorizontalAlignment="Right" Margin="0,297,283,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
-        <Button x:Name="btnConnect" Content="Connect" Grid.Column="2" HorizontalAlignment="Left" Margin="365,300,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" FontSize="14" Height="26" />
+        <Button x:Name="btnConnect" Content="Connect" Grid.Column="2" HorizontalAlignment="Left" Margin="365,300,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" FontSize="14" Height="26" Click="btnConnect_Click" />
     </Grid>
 </Window>

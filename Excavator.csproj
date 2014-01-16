@@ -58,6 +58,12 @@
     <Compile Include="Excavator\NavigationBar\LastItemConverter.cs" />
     <Compile Include="Excavator\NavigationBar\ProgressItemConverter.cs" />
     <Compile Include="Excavator\NavigationBar.cs" />
+    <Compile Include="Excavator\SQLConnector\SQLConnector.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Excavator\SQLConnector\SQLConnector.Designer.cs">
+      <DependentUpon>SQLConnector.cs</DependentUpon>
+    </Compile>
     <Page Include="Excavator\FrontEndLoader.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -119,6 +125,9 @@
     <EmbeddedResource Include="Excavator\Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Excavator\SQLConnector\SQLConnector.resx">
+      <DependentUpon>SQLConnector.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Excavator\Assets\Fonts\fontawesome-webfont.eot" />
     <Resource Include="Excavator\Assets\Fonts\fontawesome-webfont.ttf" />
