@@ -17,7 +17,7 @@
                 <GradientStop Color="#FF5F5F5F" Offset="1"/>
             </LinearGradientBrush>
         </Grid.Background>
-        <local:NavigationBar x:Name="navProgress" Margin="40" Foreground="#FF086398" ItemsSource="{Binding Steps}" Progress="{Binding Progress}" SnapsToDevicePixels="True" />
+        <local:NavigationBar x:Name="navProgress" ItemsSource="{Binding Steps}" Progress="{Binding Progress}" Foreground="SlateBlue" SnapsToDevicePixels="True" Margin="30,20,30,380" />
         <Button x:Name="btnNext" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="40" Height="40" Background="{x:Null}" BorderBrush="{x:Null}" Click="btnNext_Click" >
             <TextBlock Text="&#xE111;" FontFamily="Segoe UI Symbol" FontSize="30" Foreground="White" />
         </Button>
@@ -30,6 +30,6 @@
         <Label x:Name="lblUpload" Content="Upload a SQL file:" HorizontalAlignment="Left" Margin="200,250,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
         <Button x:Name="btnUpload" Content="Upload" HorizontalAlignment="Left" Margin="400,250,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" UseLayoutRounding="True" Click="btnUpload_Click" Height="26" FontSize="14"/>
         <Label x:Name="lblConnect" Content="Connect to a SQL Server:" HorizontalAlignment="Left" Margin="200,300,0,0" VerticalAlignment="Top" FontFamily="Open Sans" FontSize="14" Foreground="White"/>
-        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="400,300,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" FontSize="14" Height="26" RenderTransformOrigin="0.795,-0.115"/>
+        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="400,300,0,0" VerticalAlignment="Top" Width="88" FontFamily="Open Sans" FontSize="14" Height="26" />
     </Grid>
 </Window>

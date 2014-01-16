@@ -48,14 +48,13 @@ namespace Excavator
         /// </summary>
         static NavigationBar()
         {
-            DefaultStyleKeyProperty.OverrideMetadata( typeof( NavigationBar ), new FrameworkPropertyMetadata( typeof( NavigationBar ) ) );
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NavigationBar"/> class.
         /// </summary>
         public NavigationBar()
-        {                        
+        {
         }
 
         /// <summary>

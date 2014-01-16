@@ -36,6 +36,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -118,6 +120,25 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Excavator\Assets\Fonts\fontawesome-webfont.eot" />
+    <Resource Include="Excavator\Assets\Fonts\fontawesome-webfont.ttf" />
+    <None Include="Excavator\Assets\Fonts\fontawesome-webfont.woff" />
+    <Resource Include="Excavator\Assets\Fonts\FontAwesome.otf" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Bold-webfont.eot" />
+    <Resource Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Bold-webfont.ttf" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Bold-webfont.woff" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Italic-webfont.eot" />
+    <Resource Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Italic-webfont.ttf" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Italic-webfont.woff" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Light-webfont.eot" />
+    <Resource Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Light-webfont.ttf" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Light-webfont.woff" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Regular-webfont.eot" />
+    <Resource Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Regular-webfont.ttf" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Regular-webfont.woff" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Semibold-webfont.eot" />
+    <Resource Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Semibold-webfont.ttf" />
+    <None Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Semibold-webfont.woff" />
     <None Include="Excavator\Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -139,6 +160,14 @@
   <ItemGroup>
     <Resource Include="Excavator\Assets\next.png" />
     <Resource Include="Excavator\Assets\previous.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Excavator\Assets\Fonts\fontawesome-webfont.svg" />
+    <Content Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Bold-webfont.svg" />
+    <Content Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Italic-webfont.svg" />
+    <Content Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Light-webfont.svg" />
+    <Content Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Regular-webfont.svg" />
+    <Content Include="Excavator\Assets\Fonts\OpenSans\OpenSans-Semibold-webfont.svg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
