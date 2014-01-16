@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Media;
 using System.Reflection;
 using System.Windows;
 using OrcaMDF.Core.Engine;
@@ -16,51 +15,6 @@ namespace Excavator
     /// </summary>
     public partial class FrontEndLoader : Window, INotifyPropertyChanged
     {
-        #region Fields
-
-        /// <summary>
-        /// Numeric value of the current progress 
-        /// </summary>
-        private int numProgress;
-
-        /// <summary>
-        /// List of possible excavator types
-        /// </summary>
-        private List<ExcavatorComponent> excavatorTypes;
-
-        /// <summary>
-        /// Gets or sets the increment value.
-        /// </summary>
-        /// <value>
-        /// The increment.
-        /// </value>
-        public int Increment { get; set; }
-
-        /// <summary>
-        /// Gets or sets the progress indicator.
-        /// </summary>
-        public int Progress
-        {
-            get { return numProgress; }
-            set
-            {
-                numProgress = value;
-                OnPropertyChanged( "Progress" );
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the process steps.
-        /// </summary>        
-        public ObservableCollection<string> Process { get; set; }
-
-        /// <summary>
-        /// Occurs when a property value changes.
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion
-
         #region Initializer Methods
 
         /// <summary>
@@ -69,6 +23,12 @@ namespace Excavator
         public FrontEndLoader()
         {
             InitializeComponent();
+            Steps = new ObservableCollection<string>();
+            Steps.Add( "Connection" );
+            Steps.Add( "Transformation" );
+            Steps.Add( "Preview" );
+            Steps.Add( "Save" );
+            Steps.Add( "Complete" );
 
             excavatorTypes = new List<ExcavatorComponent>();
             foreach ( Type type in Assembly.GetAssembly( typeof( ExcavatorComponent ) ).GetTypes()
@@ -77,35 +37,12 @@ namespace Excavator
                 excavatorTypes.Add( (ExcavatorComponent)Activator.CreateInstance( type, null ) );
             }
 
-            Process = new ObservableCollection<string>();
-            Process.Add( "Connection" );
-            Process.Add( "Transformation" );
-            Process.Add( "Preview" );
-            Process.Add( "Save" );
-            Process.Add( "Complete" );
-
             databaseTypes.ItemsSource = excavatorTypes;
-            numProgress = Increment = ( 100 / Process.Count() );
-            //DisplayProgressBar();
+            numProgress = Increment = ( 100 / Steps.Count() );
+            navProgress.Style = (Style)this.Resources["NavStyle"];
 
             // watch this window for changes
             this.DataContext = this;
-        }
-
-        /// <summary>
-        /// Adds the progress bar.
-        /// </summary>
-        private void DisplayProgressBar()
-        {
-            var pb = new NavigationBar();
-            pb.Name = "navProgress";
-            pb.ItemsSource = Process;
-            pb.Progress = Progress;
-            pb.SnapsToDevicePixels = true;
-            pb.Margin = new Thickness( 30 );            
-            pb.Foreground = Brushes.SlateBlue;
-            pb.Style = (Style)FindResource( "NavigationBar" );
-            grdExcavator.Children.Add( pb );
         }
 
         #endregion
@@ -169,6 +106,55 @@ namespace Excavator
             }
         }
 
+        #endregion
+
+        #region Progress Class
+
+        /// <summary>
+        /// Numeric value of the current progress 
+        /// </summary>
+        private int numProgress;
+
+        /// <summary>
+        /// List of possible excavator types
+        /// </summary>
+        private List<ExcavatorComponent> excavatorTypes;
+
+        /// <summary>
+        /// Gets or sets the increment value.
+        /// </summary>
+        /// <value>
+        /// The increment.
+        /// </value>
+        public int Increment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the progress indicator.
+        /// </summary>
+        public int Progress
+        {
+            get { return numProgress; }
+            set
+            {
+                numProgress = value;
+                OnPropertyChanged( "Progress" );
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the process steps.
+        /// </summary>        
+        public ObservableCollection<string> Steps
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
         /// <summary>
         /// Called when [property changed].
         /// </summary>
@@ -182,6 +168,5 @@ namespace Excavator
         }
 
         #endregion
-
     }
 }
