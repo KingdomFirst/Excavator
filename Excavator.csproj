@@ -34,6 +34,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.SqlServer.ConnectionInfo, Version=11.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Microsoft SQL Server\110\SDK\Assemblies\Microsoft.SqlServer.ConnectionInfo.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.Management.Sdk.Sfc, Version=11.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Microsoft SQL Server\110\SDK\Assemblies\Microsoft.SqlServer.Management.Sdk.Sfc.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.Smo, Version=11.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Microsoft SQL Server\110\SDK\Assemblies\Microsoft.SqlServer.Smo.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -57,13 +69,7 @@
     </ApplicationDefinition>
     <Compile Include="Excavator\NavigationBar\LastItemConverter.cs" />
     <Compile Include="Excavator\NavigationBar\ProgressItemConverter.cs" />
-    <Compile Include="Excavator\NavigationBar.cs" />
-    <Compile Include="Excavator\SQLConnector\SQLConnector.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Excavator\SQLConnector\SQLConnector.Designer.cs">
-      <DependentUpon>SQLConnector.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Excavator\NavigationBar\NavigationBar.cs" />
     <Page Include="Excavator\FrontEndLoader.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -103,7 +109,7 @@
       <DependentUpon>FrontEndLoader.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Excavator\NavigationBar\Style.xaml">
+    <Page Include="Excavator\NavigationBar\NavigationStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -125,9 +131,6 @@
     <EmbeddedResource Include="Excavator\Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Excavator\SQLConnector\SQLConnector.resx">
-      <DependentUpon>SQLConnector.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Excavator\Assets\Fonts\fontawesome-webfont.eot" />
     <Resource Include="Excavator\Assets\Fonts\fontawesome-webfont.ttf" />

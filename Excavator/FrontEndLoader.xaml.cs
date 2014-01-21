@@ -4,7 +4,11 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
+using System.Windows.Media.Effects;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using OrcaMDF.Core.Engine;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
@@ -16,6 +20,7 @@ namespace Excavator
     /// </summary>
     public partial class FrontEndLoader : Window, INotifyPropertyChanged
     {
+       
         #region Initializer Methods
 
         /// <summary>
@@ -24,12 +29,7 @@ namespace Excavator
         public FrontEndLoader()
         {
             InitializeComponent();
-            Steps = new ObservableCollection<string>();
-            Steps.Add( "Connection" );
-            Steps.Add( "Transformation" );
-            Steps.Add( "Preview" );
-            Steps.Add( "Save" );
-            Steps.Add( "Complete" );
+            SetNavigationSteps();
 
             excavatorTypes = new List<ExcavatorComponent>();
             foreach ( Type type in Assembly.GetAssembly( typeof( ExcavatorComponent ) ).GetTypes()
@@ -44,6 +44,16 @@ namespace Excavator
 
             // watch this window for changes
             this.DataContext = this;
+        }
+
+        public void SetNavigationSteps()
+        {
+            Steps = new ObservableCollection<string>();
+            Steps.Add( "Connection" );
+            Steps.Add( "Transformation" );
+            Steps.Add( "Preview" );
+            Steps.Add( "Save" );
+            Steps.Add( "Complete" );
         }
 
         #endregion
@@ -87,23 +97,45 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnConnect_Click( object sender, RoutedEventArgs e )
         {
+            //var sqlConnector = new SQLConnector();
+            //var connectWindow = new Window();
+            //var mask = new SolidColorBrush();
+            //mask.Color = Colors.White;
+            //mask.Opacity = .5;
+            //var blur = new BlurEffect();
+            //blur.Radius = 2;
+            //this.OpacityMask = mask;
+            //this.Effect = blur;
+
+            //var cancelBtn = new Button();
+            //var okBtn = new Button();
+
+            //cancelBtn.Content = "Cancel";
+            //cancelBtn.IsCancel = true;
+            //cancelBtn.SetValue( Grid.RowProperty, 3 );
+
+            //okBtn.Content = "Ok";
+            //okBtn.IsDefault = true;
+            //okBtn.SetValue( Grid.RowProperty, 3 );
+            //cancelBtn.SetValue( Grid.ColumnProperty, 0 );
+
+            //okBtn.Click += btnOk_Click;
+            //cancelBtn.Click += btnCancel_Click;
+            //sqlConnector.grdSQLConnect.Children.Add( okBtn );
+            //sqlConnector.grdSQLConnect.Children.Add( cancelBtn );
             
-            var sqlConnection = new SQLConnector();
+            //connectWindow.Owner = this;
+            //connectWindow.Content = sqlConnector;
+            //connectWindow.ShowInTaskbar = false;
+            //connectWindow.WindowStyle = WindowStyle.None;
+            //connectWindow.ResizeMode = ResizeMode.NoResize;
+            //connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
+            //connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            //var test = connectWindow.ShowDialog();
 
-            //SqlConnection thisConnection = new SqlConnection( @"Server=(local);Database=Sample_db;Trusted_Connection=Yes;" );
-            //thisConnection.Open();
-
-            //string Get_Data = "SELECT * FROM emp";
-
-            //SqlCommand cmd = thisConnection.CreateCommand();
-            //cmd.CommandText = Get_Data;
-
-            //SqlDataAdapter sda = new SqlDataAdapter( cmd );
-            //DataTable dt = new DataTable( "emp" );
-            //sda.Fill( dt );
-
-            //dataGrid1.ItemsSource = dt.DefaultView;
-        }    
+            //this.Effect = null;
+            //this.OpacityMask = null;
+        }
 
         /// <summary>
         /// Handles the Click event of the btnNext control.
@@ -130,6 +162,26 @@ namespace Excavator
             {
                 btnPrevious.Visibility = Visibility.Hidden;
             }
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnOk control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnOk_Click( object sender, RoutedEventArgs e )
+        {
+
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnCancel control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnCancel_Click( object sender, RoutedEventArgs e )
+        {
+
         }
 
         #endregion
@@ -195,6 +247,5 @@ namespace Excavator
 
         #endregion
 
-        
     }
 }

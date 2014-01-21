@@ -16,7 +16,9 @@ using System.Windows.Shapes;
 namespace Excavator
 {
     /// <summary>
-    /// Displays a stepped progress bar
+    /// Displays a stepped progress bar.  Inherits from a list control 
+    /// in order to display grouped items instead of creating a user 
+    /// control instance for each item.
     /// </summary>
     public class NavigationBar : ItemsControl
     {
