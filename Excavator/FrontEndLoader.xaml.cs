@@ -46,6 +46,9 @@ namespace Excavator
             this.DataContext = this;
         }
 
+        /// <summary>
+        /// Sets the navigation steps.
+        /// </summary>
         public void SetNavigationSteps()
         {
             Steps = new ObservableCollection<string>();
