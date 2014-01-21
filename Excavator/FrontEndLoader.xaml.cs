@@ -38,7 +38,12 @@ namespace Excavator
                 excavatorTypes.Add( (ExcavatorComponent)Activator.CreateInstance( type, null ) );
             }
 
-            databaseTypes.ItemsSource = excavatorTypes;
+            if ( excavatorTypes.Any() )
+            {
+                databaseTypes.ItemsSource = excavatorTypes;
+                databaseTypes.SelectedItem = excavatorTypes.FirstOrDefault();
+            }
+            
             numProgress = Increment = ( 100 / Steps.Count() );
             navProgress.Style = (Style)this.Resources["NavStyle"];
 
