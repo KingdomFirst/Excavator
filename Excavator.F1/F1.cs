@@ -4,29 +4,16 @@
 // http://creativecommons.org/licenses/by-nc-sa/3.0/
 //
 
-using System;
-using System.Data;
-using System.Linq;
-using System.Reflection;
-using OrcaMDF.Core.Engine;
+using System.ComponentModel.Composition;
 
-namespace Excavator
+namespace Excavator.F1
 {
     /// <summary>
     /// This extends the base Excavator class to account for FellowshipOne's database model
     /// </summary>    
+    [Export( typeof( ExcavatorComponent) )]
     class F1 : ExcavatorComponent
     {
-        /// <summary>
-        /// The local dataset
-        /// </summary>
-        private DataSet dataset;
-
-        /// <summary>
-        /// List of the valid types in this namespace
-        /// </summary>
-        private Type[] validTypes;
-
         /// <summary>
         /// Gets the full name of the excavator type.
         /// </summary>
@@ -41,57 +28,22 @@ namespace Excavator
         #region Methods
 
         /// <summary>
-        /// Loads the database for this instance.
+        /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public override bool Load( object database )
+        public override bool TransformData()
         {
-            var db = (Database)database;
-            var scanner = new DataScanner( db );
-            var tables = db.Dmvs.Tables;
-            dataset = new DataSet();
-
-            validTypes = Assembly.GetExecutingAssembly().GetTypes().ToArray();
-
-            foreach ( var table in tables.Where( t => !t.IsMSShipped ) )
-            {
-                
-                var rows = scanner.ScanTable( table.Name );
-                var scannedTable = new DataTable();
-                dataset.Tables.Add( scannedTable );
-
-                var rowSchema = rows.FirstOrDefault();
-                if ( rowSchema != null )
-                {
-                    foreach ( var column in rowSchema.Columns )
-                    {
-                        Type a = Extensions.GetSQLType( column.Type );
-                        scannedTable.Columns.Add( column.Name, a );
-                    }
-                }                
-
-                //foreach( var row in rows )
-                //{
-                //    var scannedRow = scannedTable.NewRow();                    
-
-                //    foreach ( var column in row.Columns )
-                //    {
-                //        scannedRow[column.Name] = row[column] ?? DBNull.Value;
-                //    }
-
-                //    scannedTable.Rows.Add( scannedRow );
-                //}                
-            }
-
-            return dataset.Tables.Count > 0 ? true : false;
+            // not implemented
+            return false;
         }
 
         /// <summary>
         /// Saves the data for this instance.
         /// </summary>
         /// <returns></returns>
-        public override bool Save()
+        public override bool SaveData()
         {
+            // not implemented
             return false;
         }
 

@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{AE3F37AD-CF41-4669-A7F5-62DB7D224C9E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Excavator.F1</RootNamespace>
+    <AssemblyName>Excavator.F1</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="F1.cs" />
+    <Compile Include="Model\ActivityAssignment.cs" />
+    <Compile Include="Model\ActivityMinistry.cs" />
+    <Compile Include="Model\Activity_Group.cs" />
+    <Compile Include="Model\Activity_Schedule.cs" />
+    <Compile Include="Model\Attendance.cs" />
+    <Compile Include="Model\Attribute.cs" />
+    <Compile Include="Model\Authorizations.cs" />
+    <Compile Include="Model\Batch.cs" />
+    <Compile Include="Model\Communication.cs" />
+    <Compile Include="Model\Company.cs" />
+    <Compile Include="Model\ContactFormData.cs" />
+    <Compile Include="Model\Contribution.cs" />
+    <Compile Include="Model\GroupManager.cs" />
+    <Compile Include="Model\Groups.cs" />
+    <Compile Include="Model\Household_Address.cs" />
+    <Compile Include="Model\IndividualContactNotes.cs" />
+    <Compile Include="Model\Individual_Household.cs" />
+    <Compile Include="Model\Job.cs" />
+    <Compile Include="Model\JobInformation.cs" />
+    <Compile Include="Model\Notes.cs" />
+    <Compile Include="Model\Pledge.cs" />
+    <Compile Include="Model\Requirement.cs" />
+    <Compile Include="Model\RLC.cs" />
+    <Compile Include="Model\Staffing_Assignment.cs" />
+    <Compile Include="Model\Users.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\excavator\Excavator.csproj">
+      <Project>{6c4100b7-6b6b-40d7-a150-deba50512c95}</Project>
+      <Name>Excavator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Packages\OrcaMDF.Core\OrcaMDF.Core.csproj">
+      <Project>{829a5c51-cb21-4de2-9021-44f6d804d231}</Project>
+      <Name>OrcaMDF.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

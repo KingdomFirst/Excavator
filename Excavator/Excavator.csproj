@@ -63,108 +63,81 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="Excavator\App.xaml">
+    <ApplicationDefinition Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Excavator\ConnectWindow.xaml.cs">
+    <Compile Include="ConnectWindow.xaml.cs">
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Excavator\Extensions.cs" />
-    <Compile Include="Excavator\NavigationBar\LastItemConverter.cs" />
-    <Compile Include="Excavator\NavigationBar\ProgressItemConverter.cs" />
-    <Compile Include="Excavator\NavigationBar\NavigationBar.cs" />
-    <Page Include="Excavator\ConnectWindow.xaml">
+    <Compile Include="Extensions.cs" />
+    <Compile Include="NavigationBar\LastItemConverter.cs" />
+    <Compile Include="NavigationBar\ProgressItemConverter.cs" />
+    <Compile Include="NavigationBar\NavigationBar.cs" />
+    <Page Include="ConnectWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Excavator\FrontEndLoader.xaml">
+    <Page Include="FrontEndLoader.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="Excavator\App.xaml.cs">
+    <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Excavator.F1\F1.cs" />
-    <Compile Include="Excavator.F1\Model\ActivityAssignment.cs" />
-    <Compile Include="Excavator.F1\Model\ActivityMinistry.cs" />
-    <Compile Include="Excavator.F1\Model\Activity_Group.cs" />
-    <Compile Include="Excavator.F1\Model\Activity_Schedule.cs" />
-    <Compile Include="Excavator.F1\Model\Attendance.cs" />
-    <Compile Include="Excavator.F1\Model\Attribute.cs" />
-    <Compile Include="Excavator.F1\Model\Authorizations.cs" />
-    <Compile Include="Excavator.F1\Model\Batch.cs" />
-    <Compile Include="Excavator.F1\Model\Communication.cs" />
-    <Compile Include="Excavator.F1\Model\Company.cs" />
-    <Compile Include="Excavator.F1\Model\ContactFormData.cs" />
-    <Compile Include="Excavator.F1\Model\Contribution.cs" />
-    <Compile Include="Excavator.F1\Model\GroupManager.cs" />
-    <Compile Include="Excavator.F1\Model\Groups.cs" />
-    <Compile Include="Excavator.F1\Model\Household_Address.cs" />
-    <Compile Include="Excavator.F1\Model\IndividualContactNotes.cs" />
-    <Compile Include="Excavator.F1\Model\Individual_Household.cs" />
-    <Compile Include="Excavator.F1\Model\Job.cs" />
-    <Compile Include="Excavator.F1\Model\JobInformation.cs" />
-    <Compile Include="Excavator.F1\Model\Notes.cs" />
-    <Compile Include="Excavator.F1\Model\Pledge.cs" />
-    <Compile Include="Excavator.F1\Model\Requirement.cs" />
-    <Compile Include="Excavator.F1\Model\RLC.cs" />
-    <Compile Include="Excavator.F1\Model\Staffing_Assignment.cs" />
-    <Compile Include="Excavator.F1\Model\Users.cs" />
-    <Compile Include="Excavator\ExcavatorComponent.cs" />
-    <Compile Include="Excavator\FrontEndLoader.xaml.cs">
+    <Compile Include="ExcavatorComponent.cs" />
+    <Compile Include="FrontEndLoader.xaml.cs">
       <DependentUpon>FrontEndLoader.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Excavator\Resources\Styles.xaml">
+    <Page Include="Resources\Styles.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Excavator\Properties\AssemblyInfo.cs">
+    <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Excavator\Properties\Resources.Designer.cs">
+    <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Excavator\Properties\Settings.Designer.cs">
+    <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="Excavator\Properties\Resources.resx">
+    <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="Excavator\Properties\Settings.settings">
+    <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <AppDesigner Include="Excavator\Properties\" />
-    <Resource Include="Excavator\Resources\fontawesome-webfont.ttf" />
-    <Resource Include="Excavator\Resources\OpenSans-Regular.ttf" />
+    <AppDesigner Include="Properties\" />
+    <Resource Include="Resources\fontawesome-webfont.ttf" />
+    <Resource Include="Resources\OpenSans-Regular.ttf" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Excavator\App.config" />
+    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Packages\OrcaMDF.Core\OrcaMDF.Core.csproj">
+    <ProjectReference Include="..\Packages\OrcaMDF.Core\OrcaMDF.Core.csproj">
       <Project>{829a5c51-cb21-4de2-9021-44f6d804d231}</Project>
       <Name>OrcaMDF.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Excavator\Resources\rock.ico" />
+    <Resource Include="Resources\rock.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Excavator\Resources\next.png" />
-    <Resource Include="Excavator\Resources\previous.png" />
+    <Resource Include="Resources\next.png" />
+    <Resource Include="Resources\previous.png" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
