@@ -55,18 +55,9 @@ namespace Excavator
         {
             InitializeComponent();
             SetNavigationSteps();
-           
-            // refactor
-            foreach ( Type type in Assembly.GetAssembly( typeof( ExcavatorComponent ) ).GetTypes()
-                .Where( type => type.IsClass && !type.IsAbstract && type.IsSubclassOf( typeof( ExcavatorComponent ) ) ) )
-            {
-                excavatorTypes.Add( (ExcavatorComponent)Activator.CreateInstance( type, null ) );
-            }                        
             
             var loader = new FrontEndLoader();
-            //loader.Loader();
-            excavatorTypes = loader.excavatorTypes;            
-
+            excavatorTypes = loader.excavatorTypes;
             if ( excavatorTypes.Any() )
             {
                 databaseTypes.ItemsSource = excavatorTypes;
