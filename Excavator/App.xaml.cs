@@ -13,5 +13,6 @@ namespace Excavator
     /// </summary>
     public partial class App : Application
     {
+
     }
 }
