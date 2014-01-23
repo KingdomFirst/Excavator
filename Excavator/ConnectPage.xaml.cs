@@ -20,30 +20,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Microsoft.Win32;
-using System.Reflection;
 using OrcaMDF.Core.Engine;
 using System.ComponentModel;
-using Excavator;
-using System.Collections.ObjectModel;
 using System.Windows.Controls;
-using System.IO;
 
 namespace Excavator
 {
     /// <summary>
     /// Interaction logic for ConnectWindow.xaml
     /// </summary>
-    public partial class ConnectWindow : Page, INotifyPropertyChanged
+    public partial class ConnectWindow : Page
     {
         #region Fields
 
         private List<ExcavatorComponent> excavatorTypes;
 
-        /// <summary>
-        /// Numeric value of the current progress 
-        /// </summary>
-        private int numProgress;
-                
         #endregion
 
         #region Initializer Methods
@@ -54,8 +45,7 @@ namespace Excavator
         public ConnectWindow()
         {
             InitializeComponent();
-            SetNavigationSteps();
-            
+
             var loader = new FrontEndLoader();
             excavatorTypes = loader.excavatorTypes;
             if ( excavatorTypes.Any() )
@@ -63,25 +53,6 @@ namespace Excavator
                 databaseTypes.ItemsSource = excavatorTypes;
                 databaseTypes.SelectedItem = excavatorTypes.FirstOrDefault();
             }
-
-            numProgress = Increment = ( 100 / Steps.Count() );
-            navProgress.Style = (Style)this.Resources["NavStyle"];
-
-            // watch this window for changes
-            this.DataContext = this;
-        }
-
-        /// <summary>
-        /// Sets the navigation steps.
-        /// </summary>
-        public void SetNavigationSteps()
-        {
-            Steps = new ObservableCollection<string>();
-            Steps.Add( "Connect" );
-            Steps.Add( "Transform" );
-            Steps.Add( "Preview" );
-            Steps.Add( "Save" );
-            Steps.Add( "Complete" );
         }
 
         #endregion
@@ -111,8 +82,6 @@ namespace Excavator
                         bool isLoaded = dbModel.LoadSchema( database );
                         if ( isLoaded )
                         {
-                            dbModel.OnProgressUpdate += dbModel_OnProgressUpdate;
-                            dbModel.LoadData( database );
                             return;
                         }
                     }
@@ -169,39 +138,6 @@ namespace Excavator
             //this.OpacityMask = null;
         }
 
-
-        /// <summary>
-        /// Handles the Click event of the btnNext control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnNext_Click( object sender, RoutedEventArgs e )
-        {
-            if ( Progress == Increment )
-            {
-                btnPrevious.Visibility = Visibility.Visible;
-                grdStepOne.Visibility = Visibility.Hidden;
-            }
-
-            Progress += Increment;
-        }
-
-        /// <summary>
-        /// Handles the Click event of the btnPrevious control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnPrevious_Click( object sender, RoutedEventArgs e )
-        {
-            Progress -= Increment;
-
-            if ( Progress / Increment == 1 )
-            {
-                grdStepOne.Visibility = Visibility.Visible;
-                btnPrevious.Visibility = Visibility.Hidden;
-            }
-        }
-
         /// <summary>
         /// Handles the Click event of the btnOk control.
         /// </summary>
@@ -232,60 +168,10 @@ namespace Excavator
         /// <param name="value">The value.</param>
         private void dbModel_OnProgressUpdate( int value )
         {
-
-            // update label or progress bar with Convert.ToString( value );
-
-        }
-
-        #endregion
-
-        #region Progress Methods
-
-        /// <summary>
-        /// Gets or sets the increment value.
-        /// </summary>
-        /// <value>
-        /// The increment.
-        /// </value>
-        public int Increment { get; set; }
-
-        /// <summary>
-        /// Gets or sets the progress indicator.
-        /// </summary>
-        public int Progress
-        {
-            get { return numProgress; }
-            set
+            this.Dispatcher.Invoke( (Action)( () =>
             {
-                numProgress = value;
-                OnPropertyChanged( "Progress" );
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the process steps.
-        /// </summary>        
-        public ObservableCollection<string> Steps
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Occurs when a property value changes.
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// Called when [property changed].
-        /// </summary>
-        /// <param name="propertyName">Name of the property.</param>
-        private void OnPropertyChanged( string propertyName )
-        {
-            if ( PropertyChanged != null )
-            {
-                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
-            }
+                lblProgress.Content = string.Format( "{0}%", value );
+            } ) );
         }
 
         #endregion

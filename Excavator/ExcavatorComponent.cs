@@ -21,12 +21,10 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
-using System.Reflection;
 using System.Data;
 using System.IO;
 using System.Linq;
 using OrcaMDF.Core.Engine;
-using OrcaMDF.Core.MetaData;
 
 namespace Excavator
 {
@@ -37,7 +35,7 @@ namespace Excavator
     /// </summary>
     public abstract class ExcavatorComponent
     {
-        #region Fields 
+        #region Fields
 
         /// <summary>
         /// The percentage complete
@@ -48,7 +46,7 @@ namespace Excavator
         /// The local dataset
         /// </summary>
         public Database database;
-        
+
         /// <summary>
         /// The local dataset
         /// </summary>
@@ -60,7 +58,7 @@ namespace Excavator
         /// <value>
         /// The full name.
         /// </value>
-        public abstract string FullName 
+        public abstract string FullName
         {
             get;
         }
@@ -84,7 +82,7 @@ namespace Excavator
 
         #endregion
 
-        #region Methods 
+        #region Methods
 
         /// <summary>
         /// Returns the full name of this excavator type.
@@ -95,7 +93,7 @@ namespace Excavator
         public override string ToString()
         {
             return FullName;
-        } 
+        }
 
         /// <summary>
         /// Loads the database for this instance.
@@ -109,13 +107,13 @@ namespace Excavator
             var tables = database.Dmvs.Tables;
             dataset = new DataSet();
 
-            foreach ( var table in tables.Where( t => !t.IsMSShipped ) )
+            foreach ( var table in tables.Where( t => !t.IsMSShipped && t.Name == "Individual_Household" ) )
             {
                 var rows = scanner.ScanTable( table.Name );
                 var scannedTable = new DataTable();
                 scannedTable.TableName = table.Name;
                 dataset.Tables.Add( scannedTable );
-                
+
                 var rowSchema = rows.FirstOrDefault();
                 if ( rowSchema != null )
                 {
@@ -157,10 +155,10 @@ namespace Excavator
         /// Saves the data for this instance.
         /// </summary>
         /// <returns></returns>
-        public abstract bool SaveData();          
-        
-        #endregion      
-  
+        public abstract bool SaveData();
+
+        #endregion
+
         #region Background Tasks
 
         /// <summary>
@@ -232,7 +230,7 @@ namespace Excavator
     }
 
     /// <summary>
-    /// Frontend loader loads all the excavator components
+    /// Loads all the excavator components
     /// </summary>
     class FrontEndLoader
     {
@@ -248,5 +246,5 @@ namespace Excavator
             var container = new CompositionContainer( catalog );
             container.ComposeParts( this );
         }
-    }    
+    }
 }
