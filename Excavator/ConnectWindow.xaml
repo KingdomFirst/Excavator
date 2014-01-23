@@ -30,12 +30,11 @@
                 Background="{x:Null}" BorderBrush="{x:Null}"
                 Width="40" Height="40"    
                 Visibility="Hidden"
-                Click="btnPrevious_Click">
-            <Border BorderThickness="1,1,1,1" CornerRadius="16,16,16,16">
-                <TextBlock Text="&#xE112;" 
-                        FontFamily="Segoe UI Symbol" 
-                        FontSize="25" Foreground="Gray"/>
-            </Border>
+                Click="btnPrevious_Click">            
+            <TextBlock Text="&#xE112;" 
+                    FontFamily="Segoe UI Symbol" 
+                    FontSize="25" 
+                    Foreground="DarkSlateGray"/>            
         </Button>
         <local:NavigationBar x:Name="navProgress"
                 Grid.Row="0" Grid.Column="2" VerticalAlignment="Bottom" 
@@ -47,11 +46,10 @@
                 Background="{x:Null}" BorderBrush="{x:Null}"
                 Width="40" Height="40"
                 Click="btnNext_Click" >
-            <Border BorderThickness="1,1,1,1" CornerRadius="16,16,16,16">
-                <TextBlock Text="&#xE111;" 
-                        FontFamily="Segoe UI Symbol" 
-                        FontSize="25" Foreground="Gray"/>
-            </Border>
+            <TextBlock Text="&#xE111;" 
+                    FontFamily="Segoe UI Symbol" 
+                    FontSize="25" 
+                    Foreground="DarkSlateGray"/>            
         </Button>
          
         <Grid Name="grdStepOne" Grid.Row="2" Grid.Column="2">

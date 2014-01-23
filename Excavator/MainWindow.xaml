@@ -1,4 +1,4 @@
-﻿<Window x:Class="Excavator.FrontEndLoader"
+﻿<Window x:Class="Excavator.MainWindow"
                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                   Name="frontEndLoader"
@@ -8,5 +8,5 @@
                   MinHeight="450" MinWidth="600" 
                   FontFamily="Resources/#Open Sans" FontSize="14"                
                   WindowStartupLocation="CenterScreen">
-    <Frame Source="ConnectWindow.xaml"/>
+    <Frame Name="pageDisplay" Source="ConnectWindow.xaml"/>
 </Window>

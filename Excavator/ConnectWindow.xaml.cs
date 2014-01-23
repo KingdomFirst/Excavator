@@ -23,75 +23,27 @@ using Microsoft.Win32;
 using System.Reflection;
 using OrcaMDF.Core.Engine;
 using System.ComponentModel;
+using Excavator;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
+using System.IO;
 
 namespace Excavator
 {
     /// <summary>
     /// Interaction logic for ConnectWindow.xaml
     /// </summary>
-    public partial class ConnectWindow : Page
+    public partial class ConnectWindow : Page, INotifyPropertyChanged
     {
         #region Fields
+
+        private List<ExcavatorComponent> excavatorTypes;
 
         /// <summary>
         /// Numeric value of the current progress 
         /// </summary>
         private int numProgress;
-
-        /// <summary>
-        /// List of possible excavator types
-        /// </summary>
-        private List<ExcavatorComponent> excavatorTypes;
-
-        /// <summary>
-        /// Gets or sets the increment value.
-        /// </summary>
-        /// <value>
-        /// The increment.
-        /// </value>
-        public int Increment { get; set; }
-
-        /// <summary>
-        /// Gets or sets the progress indicator.
-        /// </summary>
-        public int Progress
-        {
-            get { return numProgress; }
-            set
-            {
-                numProgress = value;
-                OnPropertyChanged( "Progress" );
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the process steps.
-        /// </summary>        
-        public ObservableCollection<string> Steps
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Occurs when a property value changes.
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// Called when [property changed].
-        /// </summary>
-        /// <param name="propertyName">Name of the property.</param>
-        private void OnPropertyChanged( string propertyName )
-        {
-            if ( PropertyChanged != null )
-            {
-                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
-            }
-        }
-
+                
         #endregion
 
         #region Initializer Methods
@@ -103,15 +55,17 @@ namespace Excavator
         {
             InitializeComponent();
             SetNavigationSteps();
-
-            excavatorTypes = new List<ExcavatorComponent>();
-
+           
             // refactor
             foreach ( Type type in Assembly.GetAssembly( typeof( ExcavatorComponent ) ).GetTypes()
                 .Where( type => type.IsClass && !type.IsAbstract && type.IsSubclassOf( typeof( ExcavatorComponent ) ) ) )
             {
                 excavatorTypes.Add( (ExcavatorComponent)Activator.CreateInstance( type, null ) );
-            }
+            }                        
+            
+            var loader = new FrontEndLoader();
+            //loader.Loader();
+            excavatorTypes = loader.excavatorTypes;            
 
             if ( excavatorTypes.Any() )
             {
@@ -290,6 +244,57 @@ namespace Excavator
 
             // update label or progress bar with Convert.ToString( value );
 
+        }
+
+        #endregion
+
+        #region Progress Methods
+
+        /// <summary>
+        /// Gets or sets the increment value.
+        /// </summary>
+        /// <value>
+        /// The increment.
+        /// </value>
+        public int Increment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the progress indicator.
+        /// </summary>
+        public int Progress
+        {
+            get { return numProgress; }
+            set
+            {
+                numProgress = value;
+                OnPropertyChanged( "Progress" );
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the process steps.
+        /// </summary>        
+        public ObservableCollection<string> Steps
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Called when [property changed].
+        /// </summary>
+        /// <param name="propertyName">Name of the property.</param>
+        private void OnPropertyChanged( string propertyName )
+        {
+            if ( PropertyChanged != null )
+            {
+                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
+            }
         }
 
         #endregion

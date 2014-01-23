@@ -22,12 +22,12 @@ namespace Excavator
     /// <summary>
     /// Interaction logic for FrontEndLoader.xaml
     /// </summary>
-    public partial class FrontEndLoader : Window
+    public partial class MainWindow : Window
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
         /// </summary>
-        public FrontEndLoader()
+        public MainWindow()
         {
             InitializeComponent();
         }        

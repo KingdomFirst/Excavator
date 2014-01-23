@@ -5,8 +5,14 @@
 //
 
 using System;
+using System.Configuration;
 using System.ComponentModel;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.ComponentModel.Composition.Hosting;
+using System.Reflection;
 using System.Data;
+using System.IO;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using OrcaMDF.Core.MetaData;
@@ -57,6 +63,7 @@ namespace Excavator
         public virtual string errorMessage
         {
             get { return string.Empty; }
+            set { errorMessage = value; }
         }
 
         /// <summary>
@@ -211,5 +218,24 @@ namespace Excavator
         //}
 
         #endregion
+    }
+
+    /// <summary>
+    /// Frontend loader loads all the excavator components
+    /// </summary>
+    class FrontEndLoader
+    {
+        [ImportMany( typeof( ExcavatorComponent ) )]
+        public List<ExcavatorComponent> excavatorTypes = new List<ExcavatorComponent>();
+
+        public FrontEndLoader()
+        {
+            var extensionFolder = ConfigurationManager.AppSettings["ExtensionPath"];
+            var solutionPath = Directory.GetParent( System.IO.Directory.GetCurrentDirectory() ).Parent.FullName;
+            var catalog = new AggregateCatalog();
+            catalog.Catalogs.Add( new DirectoryCatalog( solutionPath + extensionFolder ) );
+            var container = new CompositionContainer( catalog );
+            container.ComposeParts( this );
+        }
     }    
 }
