@@ -15,21 +15,45 @@
 // </copyright>
 //
 
+using System;
 using System.Windows;
+using System.Windows.Input;
+using System.Configuration;
+using System.Windows.Navigation;
 
 namespace Excavator
 {
     /// <summary>
     /// Interaction logic for FrontEndLoader.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : NavigationWindow
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
         /// </summary>
         public MainWindow()
         {
-            InitializeComponent();
-        }        
+            InitializeComponent();            
+        }
+
+        /// <summary>
+        /// Goes to the page the execute handler specifies.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="ExecutedRoutedEventArgs"/> instance containing the event data.</param>
+        private void GoToPageExecuteHandler( object sender, ExecutedRoutedEventArgs e )
+        {
+            NavigationService.Navigate( new Uri( (string)e.Parameter, UriKind.Relative ) );
+        }
+
+        /// <summary>
+        /// Sets whether the event handler can execute.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="CanExecuteRoutedEventArgs"/> instance containing the event data.</param>
+        private void GoToPageCanExecuteHandler( object sender, CanExecuteRoutedEventArgs e )
+        {
+            e.CanExecute = true;
+        }
     }
 }

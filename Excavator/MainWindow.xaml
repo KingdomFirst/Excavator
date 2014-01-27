@@ -1,35 +1,18 @@
-﻿<Window x:Class="Excavator.MainWindow"
-                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                  Name="frontEndLoader"
-                  Icon="Resources\rock.ico"
-                  Title="Rock Excavator v.1"                   
-                  Height="500" Width="750" 
-                  MinHeight="450" MinWidth="600" 
-                  FontFamily="Resources/#Open Sans" FontSize="14"                
-                  WindowStartupLocation="CenterScreen">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="30" />            
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Frame Name="pageDisplay" Source="ConnectWindow.xaml"/>
-        <Button Style="{StaticResource buttonStyleMini}"
-                x:Name="btnBack" Visibility="Hidden"
-                Grid.Row="1" VerticalAlignment="Bottom"
-                Grid.Column="0" HorizontalAlignment="Left">
-            Back
-        </Button>
-        <Button Style="{StaticResource buttonStylePrimaryMini}"
-                x:Name="btnNext"
-                Grid.Row="1" VerticalAlignment="Bottom"
-                Grid.Column="1" HorizontalAlignment="Right">
-            Next
-        </Button>
-    </Grid>
-    
-</Window>
+﻿<NavigationWindow x:Class="Excavator.MainWindow" x:Name="frontEndLoader"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                Icon="Resources\rock.ico"
+                Title="Rock Excavator v.1"                   
+                Height="500" Width="750" 
+                MinHeight="450" MinWidth="600" 
+                Background="#EFEFEF"
+                ShowsNavigationUI="False"
+                Source="ConnectPage.xaml"
+                FontFamily="Resources/#Open Sans" FontSize="14"
+                WindowStartupLocation="CenterScreen">
+    <NavigationWindow.CommandBindings>
+        <CommandBinding Command="NavigationCommands.GoToPage" 
+                        Executed="GoToPageExecuteHandler" 
+                        CanExecute="GoToPageCanExecuteHandler" />
+    </NavigationWindow.CommandBindings>
+</NavigationWindow>

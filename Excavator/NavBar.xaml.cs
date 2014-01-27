@@ -26,7 +26,7 @@ namespace Excavator
     /// <summary>
     /// Interaction logic for NavPage.xaml
     /// </summary>
-    public partial class NavPage : Page, INotifyPropertyChanged
+    public partial class NavBar : Page, INotifyPropertyChanged
     {
         /// <summary>
         /// Numeric value of the current progress 
@@ -38,7 +38,7 @@ namespace Excavator
         /// <summary>
         /// Initializes a new instance of the <see cref="NavPage"/> class.
         /// </summary>
-        public NavPage()
+        public NavBar()
         {
             InitializeComponent();
             SetNavigationSteps();

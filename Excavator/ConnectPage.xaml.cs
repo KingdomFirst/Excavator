@@ -137,27 +137,7 @@ namespace Excavator
             //this.Effect = null;
             //this.OpacityMask = null;
         }
-
-        /// <summary>
-        /// Handles the Click event of the btnOk control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnOk_Click( object sender, RoutedEventArgs e )
-        {
-            // sql connect not implemented
-        }
-
-        /// <summary>
-        /// Handles the Click event of the btnCancel control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnCancel_Click( object sender, RoutedEventArgs e )
-        {
-            // sql connect not implemented
-        }
-
+        
         #endregion
 
         #region Async Tasks
@@ -175,5 +155,6 @@ namespace Excavator
         }
 
         #endregion
+        
     }
 }
