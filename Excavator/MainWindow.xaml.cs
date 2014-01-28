@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using System.Configuration;
@@ -27,7 +28,7 @@ namespace Excavator
     /// Interaction logic for FrontEndLoader.xaml
     /// </summary>
     public partial class MainWindow : NavigationWindow
-    {
+    {        
         /// <summary>
         /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
         /// </summary>

@@ -138,7 +138,7 @@ namespace Excavator
             BackgroundWorker bwLoadDatabase = new BackgroundWorker();
             bwLoadDatabase.DoWork += bwLoadDatabase_DoWork;
             //bwLoadDatabase.ProgressChanged += bwLoadDatabase_ProgressChanged;
-            //bwLoadDatabase.RunWorkerCompleted += bwLoadDatabase_RunWorkerCompleted;
+            bwLoadDatabase.RunWorkerCompleted += bwLoadDatabase_RunWorkerCompleted;
             bwLoadDatabase.WorkerReportsProgress = true;
             bwLoadDatabase.RunWorkerAsync();
 
@@ -203,28 +203,17 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
-        //private void bwLoadDatabase_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
-        //{
-        //    if ( e.Error == null )
-        //    {
-        //        // complete
-        //    }
-        //    else
-        //    {
-        //        MessageBox.Show( string.Format( "Load Error: {0}", e.Error.Message ) );
-        //    }
-        //}
-
-        /// <summary>
-        /// Handles the ProgressChanged event of the bwLoadDatabase control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
-        //private void bwLoadDatabase_ProgressChanged( object sender, ProgressChangedEventArgs e )
-        //{
-        //    throw new NotImplementedException();
-        //}
+        private void bwLoadDatabase_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        {
+            if ( e.Error == null )
+            {
+                // complete
+            }
+            else
+            {
+                // pass error
+            }
+        }
 
         #endregion
     }

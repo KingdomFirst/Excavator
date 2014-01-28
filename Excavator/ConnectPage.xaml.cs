@@ -82,12 +82,11 @@ namespace Excavator
                         bool isLoaded = dbModel.LoadSchema( database );
                         if ( isLoaded )
                         {
+                            App.Current.Properties["excavator"] = dbModel;
                             return;
                         }
                     }
-                }
-
-                MessageBox.Show( "Could not read mdf file. Please make sure the file is not in use." );
+                }                
             }
         }
 

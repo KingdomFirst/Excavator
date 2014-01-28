@@ -3,23 +3,28 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      d:DesignHeight="300" d:DesignWidth="500"
+      d:DesignHeight="350" d:DesignWidth="500"
       mc:Ignorable="d"
+      Loaded="Page_Loaded"
 	  Title="Select">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />            
+            <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <TextBlock>Select</TextBlock>
-        <Grid Grid.Row="4" Grid.ColumnSpan="2">
+        
+        <TreeView Name="treeFields"
+                 Grid.Row="0" HorizontalAlignment="Left"
+                 Grid.Column="0" VerticalAlignment="Top">
+            <!-- Conversion content goes here -->
+        </TreeView>
+
+        <!-- Navigation -->
+        <Grid Grid.Row="1" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStyle}"
                 x:Name="btnBack"
                 VerticalAlignment="Bottom" Margin="5"
@@ -38,5 +43,6 @@
                 Next
             </Button>
         </Grid>
+        
     </Grid>
 </Page>

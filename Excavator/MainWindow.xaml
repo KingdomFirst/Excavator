@@ -12,7 +12,7 @@
                 WindowStartupLocation="CenterScreen">
     <NavigationWindow.CommandBindings>
         <CommandBinding Command="NavigationCommands.GoToPage" 
-                        Executed="GoToPageExecuteHandler" 
-                        CanExecute="GoToPageCanExecuteHandler" />
+                Executed="GoToPageExecuteHandler" 
+                CanExecute="GoToPageCanExecuteHandler" />
     </NavigationWindow.CommandBindings>
 </NavigationWindow>

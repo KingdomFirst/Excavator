@@ -3,7 +3,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        d:DesignHeight="300" d:DesignWidth="500"
+        d:DesignHeight="350" d:DesignWidth="500"
         mc:Ignorable="d"
         Title="Connect">
     <Grid>
@@ -12,12 +12,14 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="*" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
+
+        <!-- Select Database Type -->
         <Label Style="{StaticResource labelStyle}"
         Grid.Row="0" VerticalAlignment="Top" 
         Grid.Column="0" HorizontalAlignment="Left">
@@ -28,38 +30,54 @@
             Grid.Row="0" VerticalAlignment="Top"
             Grid.Column="2" HorizontalAlignment="Left">
         </ListBox>
+
+        <!-- Connect the Database -->
         <Label Style="{StaticResource labelStyle}"
-        Grid.Row="1" VerticalAlignment="Top"
-        Grid.Column="0" HorizontalAlignment="Left">
+            Grid.Row="1" VerticalAlignment="Top"
+            Grid.Column="0" HorizontalAlignment="Left">
             2. Select the database to convert:
         </Label>
         <Label Style="{StaticResource labelStyle}"
-        Grid.Row="2" VerticalAlignment="Top" Margin="40,0"
-        Grid.Column="0" HorizontalAlignment="Right">
+            Grid.Row="2" VerticalAlignment="Top" Margin="40,0"
+            Grid.Column="0" HorizontalAlignment="Right">
             Connect to a SQL Server:
         </Label>
         <Button Style="{StaticResource buttonStyle}"
-        x:Name="btnConnect" 
-        Grid.Row="2" VerticalAlignment="Top" 
-        Grid.Column="1" HorizontalAlignment="Left" 
-        Content="Connect" 
-        Click="btnConnect_Click"/>
+            x:Name="btnConnect" 
+            Grid.Row="2" VerticalAlignment="Top" 
+            Grid.Column="1" HorizontalAlignment="Left" 
+            Content="Connect" 
+            Click="btnConnect_Click"/>
         <Label Style="{StaticResource labelStyle}"
-        Grid.Row="3" VerticalAlignment="Top" Margin="40,0"
-        Grid.Column="0" HorizontalAlignment="Right">
+            Grid.Row="3" VerticalAlignment="Top" Margin="40,0"
+            Grid.Column="0" HorizontalAlignment="Right">
             Upload a SQL file:
         </Label>
-        <Button Style="{StaticResource buttonStyle}"
-        x:Name="btnUpload" 
-        Grid.Row="3" VerticalAlignment="Top" 
-        Grid.Column="1" HorizontalAlignment="Left" 
-        Content="Upload" 
-        Click="btnUpload_Click"/>
-        <Label Style="{StaticResource labelStyle}"
-                Name="lblProgress"
-                Grid.Row="3" Grid.Column="1"
-                HorizontalAlignment="Right">
+        <Label Name="lblDbConnect" Visibility="Hidden"
+            Grid.Row="2" Grid.ColumnSpan="2"
+            VerticalAlignment="Bottom"
+            Style="{StaticResource labelStyleAlert}">
+            Could not connect to database. Please verify the server is online.
         </Label>
+        <Button Style="{StaticResource buttonStyle}"
+            x:Name="btnUpload" 
+            Grid.Row="3" VerticalAlignment="Top" 
+            Grid.Column="1" HorizontalAlignment="Left" 
+            Content="Upload" 
+            Click="btnUpload_Click"/>
+        <Label Style="{StaticResource labelStyle}"
+            Name="lblProgress"
+            Grid.Row="3" Grid.Column="1"
+            HorizontalAlignment="Right">
+        </Label>
+        <Label Name="lblDbUpload" Visibility="Hidden"
+            Grid.Row="3" Grid.ColumnSpan="2"
+            VerticalAlignment="Bottom"
+            Style="{StaticResource labelStyleAlert}">            
+            Could not read mdf file. Please make sure the file is not in use.
+        </Label>
+
+        <!-- Navigation -->
         <Grid Grid.Row="4" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStylePrimary}"
                 x:Name="btnNext"
