@@ -3,28 +3,55 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:Excavator"
       d:DesignHeight="350" d:DesignWidth="500"
       mc:Ignorable="d"
-      Loaded="Page_Loaded"
-	  Title="Select">
+	  Title="Select" UseLayoutRounding="True">
+    <Page.Resources>
+        <!-- DatabaseNode TreeView -->
+        <HierarchicalDataTemplate DataType="{x:Type local:DatabaseNode}" ItemsSource="{Binding ChildNodes}">
+            <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding IsChecked}" Uid="{Binding Id}" 
+                    PreviewMouseLeftButtonDown="OnClick"/>
+                <TextBlock Text="{Binding Text}"/>
+            </StackPanel>
+        </HierarchicalDataTemplate>
+    </Page.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />            
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="9*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        
-        <TreeView Name="treeFields"
-                 Grid.Row="0" HorizontalAlignment="Left"
-                 Grid.Column="0" VerticalAlignment="Top">
-            <!-- Conversion content goes here -->
+
+        <!-- Select data schema -->
+        <Label Style="{StaticResource labelStyle}"
+            Grid.Row="0" VerticalAlignment="Top" 
+            Grid.Column="0" HorizontalAlignment="Left"> 
+            Select the fields to import:
+        </Label>
+
+        <TreeView Name="treeView" Grid.Row="1"
+                Background="{x:Null}" 
+                BorderBrush="{x:Null}" 
+                >
+            <!-- Content will be filled here -->
         </TreeView>
 
+
+        <ScrollViewer Grid.Row="1" Visibility="Hidden"
+            HorizontalScrollBarVisibility="Hidden"
+            VerticalScrollBarVisibility="Auto">            
+            <!-- Content Selector -->
+            
+        </ScrollViewer>
+        
         <!-- Navigation -->
-        <Grid Grid.Row="1" Grid.ColumnSpan="2">
+        <Grid Grid.Row="2" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStyle}"
                 x:Name="btnBack"
                 VerticalAlignment="Bottom" Margin="5"

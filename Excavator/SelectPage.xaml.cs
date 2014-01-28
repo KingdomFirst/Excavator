@@ -18,8 +18,10 @@
 using System;
 using System.Data;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Win32;
 using OrcaMDF.Core.Engine;
 using System.Windows.Navigation;
@@ -33,43 +35,62 @@ namespace Excavator
     /// </summary>
     public partial class SelectPage : Page
     {
+        public ObservableCollection<DatabaseNode> nodes { get; private set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SelectPage"/> class.
         /// </summary>
         public SelectPage()
         {
+            nodes = new ObservableCollection<DatabaseNode>();
             InitializeComponent();
+
+            var excavator = (ExcavatorComponent)App.Current.Properties["excavator"];
+            if ( excavator != null )
+            {
+                CreateControlUI( excavator.dataset.Tables );
+            }  
         }
-
-        /// <summary>
-        /// Handles the Loaded event of the Page control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void Page_Loaded(object sender, RoutedEventArgs e)
-        {
-            var excavator = (ExcavatorComponent)App.Current.Properties["schema"];
-            // create the controls for every property inside the schema
-            CreateControlUI( excavator.dataset.Tables );
-        }
-
-
-
 
         /// <summary>
         /// Creates the control UI.
         /// </summary>
-        /// <param name="elements">The elements.</param>
-        private void CreateControlUI( DataTableCollection elements )
+        /// <param name="tables">The elements.</param>
+        private void CreateControlUI( DataTableCollection tables )
         {
-            // set tree view to display the element and any properties beneath it
-            foreach( var element in elements )
+            nodes.Clear();
+
+            // set tree view to display the table and any properties beneath it
+            foreach( DataTable table in tables )
             {
-                // get table name
-                // get table row and all containing columns
+                var tableItem = new DatabaseNode();
+                tableItem.Text = table.TableName;
+                foreach( DataColumn column in table.Columns )
+                {
+                    var childItem = new DatabaseNode();
+                    childItem.Text = column.ColumnName;
+                    childItem.ParentNode.Add( tableItem );
+                    tableItem.ChildNodes.Add( childItem );
+                }
+                
+                nodes.Add( tableItem );
             }
 
-            // set treeView.Items = list
+            treeView.ItemsSource = nodes;
         }
+
+        /// <summary>
+        /// Called when the checkbox is clicked.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing the event data.</param>
+        private void OnClick( object sender, MouseButtonEventArgs e )
+        {
+            var selected = (CheckBox)sender;
+            if ( selected != null )
+            {
+                SelectedNode.Id = selected.Uid;
+            }            
+        }       
     }
 }

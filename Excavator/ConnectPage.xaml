@@ -1,4 +1,4 @@
-﻿<Page x:Class="Excavator.ConnectWindow"
+﻿<Page x:Class="Excavator.ConnectPage"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -8,10 +8,11 @@
         Title="Connect">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="2*" />
+            
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -54,8 +55,8 @@
             Upload a SQL file:
         </Label>
         <Label Name="lblDbConnect" Visibility="Hidden"
-            Grid.Row="2" Grid.ColumnSpan="2"
-            VerticalAlignment="Bottom"
+            Grid.Row="2" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom" 
             Style="{StaticResource labelStyleAlert}">
             Could not connect to database. Please verify the server is online.
         </Label>
@@ -71,8 +72,8 @@
             HorizontalAlignment="Right">
         </Label>
         <Label Name="lblDbUpload" Visibility="Hidden"
-            Grid.Row="3" Grid.ColumnSpan="2"
-            VerticalAlignment="Bottom"
+            Grid.Row="3" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom"             
             Style="{StaticResource labelStyleAlert}">            
             Could not read mdf file. Please make sure the file is not in use.
         </Label>
@@ -80,7 +81,7 @@
         <!-- Navigation -->
         <Grid Grid.Row="4" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStylePrimary}"
-                x:Name="btnNext"
+                x:Name="btnNext" IsEnabled="{Binding isConnected}"
                 VerticalAlignment="Bottom" Margin="5"
                 Grid.Column="1" HorizontalAlignment="Right" 
                 Command="GoToPage"

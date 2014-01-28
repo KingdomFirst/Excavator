@@ -29,7 +29,7 @@ namespace Excavator
     /// <summary>
     /// Interaction logic for ConnectWindow.xaml
     /// </summary>
-    public partial class ConnectWindow : Page
+    public partial class ConnectPage : Page
     {
         #region Fields
 
@@ -42,7 +42,7 @@ namespace Excavator
         /// <summary>
         /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
         /// </summary>
-        public ConnectWindow()
+        public ConnectPage()
         {
             InitializeComponent();
 
@@ -52,7 +52,7 @@ namespace Excavator
             {
                 databaseTypes.ItemsSource = excavatorTypes;
                 databaseTypes.SelectedItem = excavatorTypes.FirstOrDefault();
-            }
+            }            
         }
 
         #endregion
@@ -71,7 +71,7 @@ namespace Excavator
             mdfPicker.AddExtension = false;
 
             if ( mdfPicker.ShowDialog() == true )
-            {
+            {                
                 var database = new Database( mdfPicker.FileName );
                 if ( database != null )
                 {
@@ -83,10 +83,13 @@ namespace Excavator
                         if ( isLoaded )
                         {
                             App.Current.Properties["excavator"] = dbModel;
-                            return;
+                            lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
+                            lblDbUpload.Content = "Successfully connected to the database";                            
                         }
                     }
-                }                
+                }
+
+                lblDbUpload.Visibility = Visibility.Visible;
             }
         }
 
@@ -154,6 +157,6 @@ namespace Excavator
         }
 
         #endregion
-        
+
     }
 }

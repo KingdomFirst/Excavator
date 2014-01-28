@@ -76,10 +76,8 @@
     <Compile Include="ConnectPage.xaml.cs">
       <DependentUpon>ConnectPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DatabaseNode.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="NavigationBar\LastItemConverter.cs" />
-    <Compile Include="NavigationBar\ProgressItemConverter.cs" />
-    <Compile Include="NavigationBar\NavigationBar.cs" />
     <Compile Include="PreviewPage.xaml.cs">
       <DependentUpon>PreviewPage.xaml</DependentUpon>
     </Compile>
