@@ -7,17 +7,25 @@ using System;
 namespace Excavator
 {
     /// <summary>
+    /// Holds a reference to the currently selected table or column
+    /// </summary>
+    public struct SelectedId
+    {
+        public static string Id;
+    }
+
+    /// <summary>
     /// Database node holds a reference to any other nodes around it in the tree
     /// </summary>
-    public class DatabaseNode : INotifyPropertyChanged
+    public class TableNode : INotifyPropertyChanged
     {
         #region Fields
 
-        private ObservableCollection<DatabaseNode> children;
-        private ObservableCollection<DatabaseNode> parent;
-        private bool? isChecked;
-        private string text;
-        private string id;        
+        private ObservableCollection<TableNode> _columns;
+        private ObservableCollection<TableNode> _table;
+        private bool? _isChecked;
+        private string _text;
+        private string _id;        
 
         /// <summary>
         /// Gets or sets if the node is checked.
@@ -25,13 +33,13 @@ namespace Excavator
         /// <value>
         /// The is checked.
         /// </value>
-        public bool? IsChecked
+        public bool? Checked
         {
-            get { return this.isChecked; }
+            get { return this._isChecked; }
             set
             {
-                this.isChecked = value;
-                RaisePropertyChanged( "IsChecked" );
+                this._isChecked = value;
+                RaisePropertyChanged( "Checked" );
             }
         }
 
@@ -43,10 +51,10 @@ namespace Excavator
         /// </value>
         public string Text
         {
-            get { return this.text; }
+            get { return this._text; }
             set
             {
-                this.text = value;
+                this._text = value;
                 RaisePropertyChanged( "Text" );
             }
         }
@@ -59,10 +67,10 @@ namespace Excavator
         /// </value>
         public string Id
         {
-            get { return this.id; }
+            get { return this._id; }
             set
             {
-                this.id = value;
+                this._id = value;
             }
         }
 
@@ -72,9 +80,9 @@ namespace Excavator
         /// <value>
         /// The child nodes.
         /// </value>
-        public ObservableCollection<DatabaseNode> ChildNodes
+        public ObservableCollection<TableNode> Columns
         {
-            get { return this.children; }
+            get { return this._columns; }
         }
 
         /// <summary>
@@ -83,9 +91,9 @@ namespace Excavator
         /// <value>
         /// The parent node.
         /// </value>
-        public ObservableCollection<DatabaseNode> ParentNode
+        public ObservableCollection<TableNode> Table
         {
-            get { return this.parent; }
+            get { return this._table; }
         }
 
         #endregion
@@ -93,14 +101,14 @@ namespace Excavator
         #region Constructor
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DatabaseNode"/> class.
+        /// Initializes a new instance of the <see cref="TableNode"/> class.
         /// </summary>
-        public DatabaseNode()
+        public TableNode()
         {
-            this.id = Guid.NewGuid().ToString();
-            children = new ObservableCollection<DatabaseNode>();
-            parent = new ObservableCollection<DatabaseNode>();
-            isChecked = true;
+            _isChecked = true;
+            this._id = Guid.NewGuid().ToString();
+            _columns = new ObservableCollection<TableNode>();
+            _table = new ObservableCollection<TableNode>();            
         }
 
         #endregion
@@ -121,15 +129,15 @@ namespace Excavator
             if ( this.PropertyChanged != null )
                 this.PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
             int countCheck = 0;
-            if ( propertyName == "IsChecked" )
+            if ( propertyName == "Checked" )
             {
-                if ( this.Id == SelectedNode.Id && this.ParentNode.Count == 0 && this.ChildNodes.Count != 0 )
+                if ( this.Id == SelectedId.Id && this.Table.Count == 0 && this.Columns.Count != 0 )
                 {
-                    SetParent( this.ChildNodes, this.IsChecked );
+                    SetParent( this.Columns, this.Checked );
                 }                
-                if ( this.Id == SelectedNode.Id && this.ParentNode.Count > 0 && this.ChildNodes.Count == 0 )
+                if ( this.Id == SelectedId.Id && this.Table.Count > 0 && this.Columns.Count == 0 )
                 {
-                    SetChild( this.ParentNode, countCheck );
+                    SetChild( this.Table, countCheck );
                 }
             }
         }
@@ -139,12 +147,12 @@ namespace Excavator
         /// </summary>
         /// <param name="items">The items.</param>
         /// <param name="isChecked">The is checked.</param>
-        private void SetParent( ObservableCollection<DatabaseNode> items, bool? isChecked )
+        private void SetParent( ObservableCollection<TableNode> items, bool? isChecked )
         {
-            foreach ( DatabaseNode item in items )
+            foreach ( TableNode item in items )
             {
-                item.IsChecked = isChecked;
-                if ( item.ChildNodes.Count != 0 ) SetParent( item.ChildNodes, isChecked );
+                item.Checked = isChecked;
+                if ( item.Columns.Count != 0 ) SetParent( item.Columns, isChecked );
             }
         }
 
@@ -153,37 +161,29 @@ namespace Excavator
         /// </summary>
         /// <param name="items">The items.</param>
         /// <param name="countCheck">The count check.</param>
-        private void SetChild( ObservableCollection<DatabaseNode> items, int countCheck )
+        private void SetChild( ObservableCollection<TableNode> items, int countCheck )
         {
             bool isNull = false;
-            foreach ( DatabaseNode paren in items )
+            foreach ( TableNode paren in items )
             {
-                foreach ( DatabaseNode child in paren.ChildNodes )
+                foreach ( TableNode child in paren.Columns )
                 {
-                    if ( child.IsChecked == true || child.IsChecked == null )
+                    if ( child.Checked == true || child.Checked == null )
                     {
                         countCheck++;
-                        if ( child.IsChecked == null )
+                        if ( child.Checked == null )
                             isNull = true;
                     }
                 }
-                if ( countCheck != paren.ChildNodes.Count && countCheck != 0 ) paren.IsChecked = null;
-                else if ( countCheck == 0 ) paren.IsChecked = false;
-                else if ( countCheck == paren.ChildNodes.Count && isNull ) paren.IsChecked = null;
-                else if ( countCheck == paren.ChildNodes.Count && !isNull ) paren.IsChecked = true;
-                if ( paren.ParentNode.Count != 0 ) SetChild( paren.ParentNode, 0 );
+                if ( countCheck != paren.Columns.Count && countCheck != 0 ) paren.Checked = null;
+                else if ( countCheck == 0 ) paren.Checked = false;
+                else if ( countCheck == paren.Columns.Count && isNull ) paren.Checked = null;
+                else if ( countCheck == paren.Columns.Count && !isNull ) paren.Checked = true;
+                if ( paren.Table.Count != 0 ) SetChild( paren.Table, 0 );
             }
         }
 
         #endregion
 
-    }
-
-    /// <summary>
-    /// Holds a reference to the selected node
-    /// </summary>
-    public struct SelectedNode
-    {
-        public static string Id;
-    }
+    }    
 }

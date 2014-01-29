@@ -9,10 +9,10 @@
 	  Title="Select" UseLayoutRounding="True">
     <Page.Resources>
         <!-- DatabaseNode TreeView -->
-        <HierarchicalDataTemplate DataType="{x:Type local:DatabaseNode}" ItemsSource="{Binding ChildNodes}">
+        <HierarchicalDataTemplate DataType="{x:Type local:TableNode}" ItemsSource="{Binding Columns}">
             <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding IsChecked}" Uid="{Binding Id}" 
-                    PreviewMouseLeftButtonDown="OnClick"/>
+                <CheckBox IsChecked="{Binding Checked}" Uid="{Binding Id}"
+                    PreviewMouseLeftButtonDown="OnCheck"/>
                 <TextBlock Text="{Binding Text}"/>
             </StackPanel>
         </HierarchicalDataTemplate>
@@ -28,8 +28,15 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
+        <Label Name="lblNoData" Visibility="Hidden"
+            Style="{StaticResource labelStyleAlert}"
+            Grid.RowSpan="2" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Top">
+            No database loaded. Please load a database from the previous page.
+        </Label>
+        
         <!-- Select data schema -->
-        <Label Style="{StaticResource labelStyle}"
+        <Label Name="lblSelectFields" Style="{StaticResource labelStyle}"            
             Grid.Row="0" VerticalAlignment="Top" 
             Grid.Column="0" HorizontalAlignment="Left"> 
             Select the fields to import:
@@ -41,14 +48,6 @@
                 >
             <!-- Content will be filled here -->
         </TreeView>
-
-
-        <ScrollViewer Grid.Row="1" Visibility="Hidden"
-            HorizontalScrollBarVisibility="Hidden"
-            VerticalScrollBarVisibility="Auto">            
-            <!-- Content Selector -->
-            
-        </ScrollViewer>
         
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">
@@ -66,7 +65,8 @@
                 VerticalAlignment="Bottom" Margin="5"
                 Grid.Column="1" HorizontalAlignment="Right"
                 Command="NavigationCommands.GoToPage"
-                CommandParameter="PreviewPage.xaml">
+                CommandParameter="PreviewPage.xaml"
+                Click="btnNext_Click">
                 Next
             </Button>
         </Grid>

@@ -38,6 +38,8 @@
             Grid.Column="0" HorizontalAlignment="Left">
             2. Select the database to convert:
         </Label>
+        
+        <!-- Connect to SQL (not implemented) -->
         <Label Style="{StaticResource labelStyle}"
             Grid.Row="2" VerticalAlignment="Top" Margin="40,0"
             Grid.Column="0" HorizontalAlignment="Right">
@@ -60,6 +62,8 @@
             Style="{StaticResource labelStyleAlert}">
             Could not connect to database. Please verify the server is online.
         </Label>
+        
+        <!-- Connect to MDF -->
         <Button Style="{StaticResource buttonStyle}"
             x:Name="btnUpload" 
             Grid.Row="3" VerticalAlignment="Top" 

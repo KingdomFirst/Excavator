@@ -76,7 +76,7 @@
     <Compile Include="ConnectPage.xaml.cs">
       <DependentUpon>ConnectPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DatabaseNode.cs" />
+    <Compile Include="TableNode.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="PreviewPage.xaml.cs">
       <DependentUpon>PreviewPage.xaml</DependentUpon>

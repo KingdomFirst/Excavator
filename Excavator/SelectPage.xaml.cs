@@ -35,21 +35,27 @@ namespace Excavator
     /// </summary>
     public partial class SelectPage : Page
     {
-        public ObservableCollection<DatabaseNode> nodes { get; private set; }
+        public ObservableCollection<TableNode> nodes { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SelectPage"/> class.
         /// </summary>
         public SelectPage()
         {
-            nodes = new ObservableCollection<DatabaseNode>();
+            nodes = new ObservableCollection<TableNode>();
             InitializeComponent();
 
             var excavator = (ExcavatorComponent)App.Current.Properties["excavator"];
             if ( excavator != null )
             {
                 CreateControlUI( excavator.dataset.Tables );
-            }  
+            }
+            else
+            {
+                lblNoData.Visibility = Visibility.Visible;
+                btnNext.Visibility = Visibility.Hidden;
+                lblSelectFields.Visibility = Visibility.Hidden;
+            }
         }
 
         /// <summary>
@@ -58,19 +64,17 @@ namespace Excavator
         /// <param name="tables">The elements.</param>
         private void CreateControlUI( DataTableCollection tables )
         {
-            nodes.Clear();
-
             // set tree view to display the table and any properties beneath it
             foreach( DataTable table in tables )
             {
-                var tableItem = new DatabaseNode();
+                var tableItem = new TableNode();
                 tableItem.Text = table.TableName;
                 foreach( DataColumn column in table.Columns )
                 {
-                    var childItem = new DatabaseNode();
+                    var childItem = new TableNode();
                     childItem.Text = column.ColumnName;
-                    childItem.ParentNode.Add( tableItem );
-                    tableItem.ChildNodes.Add( childItem );
+                    childItem.Table.Add( tableItem );
+                    tableItem.Columns.Add( childItem );
                 }
                 
                 nodes.Add( tableItem );
@@ -84,13 +88,24 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing the event data.</param>
-        private void OnClick( object sender, MouseButtonEventArgs e )
+        private void OnCheck( object sender, MouseButtonEventArgs e )
         {
             var selected = (CheckBox)sender;
             if ( selected != null )
             {
-                SelectedNode.Id = selected.Uid;
+                SelectedId.Id = selected.Uid;
             }            
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnNext control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnNext_Click( object sender, RoutedEventArgs e )
+        {
+            var test = treeView.Items;
+
         }       
     }
 }
