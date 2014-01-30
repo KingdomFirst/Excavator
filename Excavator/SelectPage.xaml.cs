@@ -35,53 +35,32 @@ namespace Excavator
     /// </summary>
     public partial class SelectPage : Page
     {
-        public ObservableCollection<TableNode> nodes { get; private set; }
+        public ExcavatorComponent excavator;
+
+        #region Constructor
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SelectPage"/> class.
         /// </summary>
-        public SelectPage()
+        public SelectPage( ExcavatorComponent parameter = null )
         {
-            nodes = new ObservableCollection<TableNode>();
-            InitializeComponent();
-
-            var excavator = (ExcavatorComponent)App.Current.Properties["excavator"];
-            if ( excavator != null )
+            InitializeComponent();            
+            if ( parameter != null )
             {
-                CreateControlUI( excavator.dataset.Tables );
+                excavator = parameter;
+                treeView.ItemsSource = new ObservableCollection<DatabaseNode>( excavator.selectedNodes );
             }
             else
             {
                 lblNoData.Visibility = Visibility.Visible;
                 btnNext.Visibility = Visibility.Hidden;
                 lblSelectFields.Visibility = Visibility.Hidden;
-            }
+            } 
         }
 
-        /// <summary>
-        /// Creates the control UI.
-        /// </summary>
-        /// <param name="tables">The elements.</param>
-        private void CreateControlUI( DataTableCollection tables )
-        {
-            // set tree view to display the table and any properties beneath it
-            foreach( DataTable table in tables )
-            {
-                var tableItem = new TableNode();
-                tableItem.Text = table.TableName;
-                foreach( DataColumn column in table.Columns )
-                {
-                    var childItem = new TableNode();
-                    childItem.Text = column.ColumnName;
-                    childItem.Table.Add( tableItem );
-                    tableItem.Columns.Add( childItem );
-                }
-                
-                nodes.Add( tableItem );
-            }
+        #endregion
 
-            treeView.ItemsSource = nodes;
-        }
+        #region Events
 
         /// <summary>
         /// Called when the checkbox is clicked.
@@ -98,14 +77,25 @@ namespace Excavator
         }
 
         /// <summary>
+        /// Handles the Click event of the btnBack control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnBack_Click( object sender, RoutedEventArgs e )
+        {
+            this.NavigationService.GoBack();
+        }
+
+        /// <summary>
         /// Handles the Click event of the btnNext control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnNext_Click( object sender, RoutedEventArgs e )
         {
-            var test = treeView.Items;
 
-        }       
+        }
+
+        #endregion
     }
 }

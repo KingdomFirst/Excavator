@@ -20,13 +20,21 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
+        <Label Name="lblNoData" Visibility="Hidden"
+            Style="{StaticResource labelStyleAlert}"
+            Grid.RowSpan="1" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Top">
+            No database types found. Please check the Extensions folder for compatible formats.
+        </Label>
+
         <!-- Select Database Type -->
-        <Label Style="{StaticResource labelStyle}"
-        Grid.Row="0" VerticalAlignment="Top" 
-        Grid.Column="0" HorizontalAlignment="Left">
+        <Label x:Name="lblDatabaseTypes"
+            Style="{StaticResource labelStyle}"
+            Grid.Row="0" VerticalAlignment="Top" 
+            Grid.Column="0" HorizontalAlignment="Left">
             1. Select the database type:
         </Label>
-        <ListBox x:Name="databaseTypes" 
+        <ListBox x:Name="lstDatabaseTypes" 
             Style="{StaticResource textboxStyle}"
             Grid.Row="0" VerticalAlignment="Top"
             Grid.Column="2" HorizontalAlignment="Left">
@@ -85,11 +93,10 @@
         <!-- Navigation -->
         <Grid Grid.Row="4" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStylePrimary}"
-                x:Name="btnNext" IsEnabled="{Binding isConnected}"
+                x:Name="btnNext"
                 VerticalAlignment="Bottom" Margin="5"
-                Grid.Column="1" HorizontalAlignment="Right" 
-                Command="GoToPage"
-                CommandParameter="SelectPage.xaml">
+                Grid.Column="1" HorizontalAlignment="Right"                 
+                Click="btnNext_Click">
                 Next
             </Button>
         </Grid>

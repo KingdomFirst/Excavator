@@ -9,11 +9,11 @@
 	  Title="Select" UseLayoutRounding="True">
     <Page.Resources>
         <!-- DatabaseNode TreeView -->
-        <HierarchicalDataTemplate DataType="{x:Type local:TableNode}" ItemsSource="{Binding Columns}">
+        <HierarchicalDataTemplate DataType="{x:Type local:DatabaseNode}" ItemsSource="{Binding Columns}">
             <StackPanel Orientation="Horizontal">
                 <CheckBox IsChecked="{Binding Checked}" Uid="{Binding Id}"
                     PreviewMouseLeftButtonDown="OnCheck"/>
-                <TextBlock Text="{Binding Text}"/>
+                <TextBlock Text="{Binding Name}"/>
             </StackPanel>
         </HierarchicalDataTemplate>
     </Page.Resources>
@@ -35,7 +35,7 @@
             No database loaded. Please load a database from the previous page.
         </Label>
         
-        <!-- Select data schema -->
+        <!-- Data Selector -->
         <Label Name="lblSelectFields" Style="{StaticResource labelStyle}"            
             Grid.Row="0" VerticalAlignment="Top" 
             Grid.Column="0" HorizontalAlignment="Left"> 
@@ -44,8 +44,7 @@
 
         <TreeView Name="treeView" Grid.Row="1"
                 Background="{x:Null}" 
-                BorderBrush="{x:Null}" 
-                >
+                BorderBrush="{x:Null}">
             <!-- Content will be filled here -->
         </TreeView>
         
@@ -56,20 +55,16 @@
                 VerticalAlignment="Bottom" Margin="5"
                 IsEnabled="{Binding CanGoBack}"
                 Grid.Column="0" HorizontalAlignment="Left"
-                Command="NavigationCommands.GoToPage"
-                CommandParameter="ConnectPage.xaml">
+                Click="btnBack_Click">
                 Back
             </Button>
             <Button Style="{StaticResource buttonStylePrimary}"
                 x:Name="btnNext"
                 VerticalAlignment="Bottom" Margin="5"
-                Grid.Column="1" HorizontalAlignment="Right"
-                Command="NavigationCommands.GoToPage"
-                CommandParameter="PreviewPage.xaml"
+                Grid.Column="1" HorizontalAlignment="Right"                
                 Click="btnNext_Click">
                 Next
             </Button>
         </Grid>
-        
     </Grid>
 </Page>

@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Win32;
 using OrcaMDF.Core.Engine;
 using System.ComponentModel;
@@ -33,7 +34,9 @@ namespace Excavator
     {
         #region Fields
 
-        private List<ExcavatorComponent> excavatorTypes;
+        public FrontEndLoader frontEndLoader;
+
+        public ExcavatorComponent excavator;
 
         #endregion
 
@@ -46,13 +49,18 @@ namespace Excavator
         {
             InitializeComponent();
 
-            var loader = new FrontEndLoader();
-            excavatorTypes = loader.excavatorTypes;
-            if ( excavatorTypes.Any() )
+            frontEndLoader = new FrontEndLoader();
+            if ( frontEndLoader.excavatorTypes.Any() )
             {
-                databaseTypes.ItemsSource = excavatorTypes;
-                databaseTypes.SelectedItem = excavatorTypes.FirstOrDefault();
-            }            
+                lstDatabaseTypes.ItemsSource = frontEndLoader.excavatorTypes;
+                lstDatabaseTypes.SelectedItem = frontEndLoader.excavatorTypes.FirstOrDefault();
+            }
+            else
+            {
+                lblNoData.Visibility = Visibility.Visible;
+                lblDatabaseTypes.Visibility = Visibility.Hidden;
+                lstDatabaseTypes.Visibility = Visibility.Hidden;
+            }
         }
 
         #endregion
@@ -66,31 +74,8 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnUpload_Click( object sender, RoutedEventArgs e )
         {
-            var mdfPicker = new OpenFileDialog();
-            mdfPicker.Filter = "SQL Database files|*.mdf";
-            mdfPicker.AddExtension = false;
-
-            if ( mdfPicker.ShowDialog() == true )
-            {                
-                var database = new Database( mdfPicker.FileName );
-                if ( database != null )
-                {
-                    var dbType = databaseTypes.SelectedValue.ToString();
-                    ExcavatorComponent dbModel = excavatorTypes.Where( t => t.FullName.Equals( dbType ) ).FirstOrDefault();
-                    if ( dbModel != null )
-                    {
-                        bool isLoaded = dbModel.LoadSchema( database );
-                        if ( isLoaded )
-                        {
-                            App.Current.Properties["excavator"] = dbModel;
-                            lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
-                            lblDbUpload.Content = "Successfully connected to the database";                            
-                        }
-                    }
-                }
-
-                lblDbUpload.Visibility = Visibility.Visible;
-            }
+            this.Cursor = Cursors.Wait;
+            VerifyConnection();   
         }
 
         /// <summary>
@@ -139,10 +124,53 @@ namespace Excavator
             //this.Effect = null;
             //this.OpacityMask = null;
         }
-        
+
+        /// <summary>
+        /// Handles the Click event of the btnNext control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnNext_Click( object sender, RoutedEventArgs e )
+        {
+            var selectPage = new SelectPage( excavator );
+            this.NavigationService.Navigate( selectPage );
+        }
+
         #endregion
 
         #region Async Tasks
+
+        /// <summary>
+        /// Verifies the connection to the database.
+        /// </summary>
+        private void VerifyConnection()
+        {
+            var mdfPicker = new OpenFileDialog();
+            mdfPicker.Filter = "SQL Database files|*.mdf";
+            mdfPicker.AddExtension = false;
+
+            if ( mdfPicker.ShowDialog() == true )
+            {
+                var database = new Database( mdfPicker.FileName );
+                if ( database != null )
+                {
+                    var dbType = lstDatabaseTypes.SelectedValue.ToString();
+                    excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( dbType ) ).FirstOrDefault();
+                    if ( excavator != null )
+                    {
+                        bool isLoaded = excavator.LoadSchema( database );
+                        if ( isLoaded )
+                        {
+                            lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
+                            lblDbUpload.Content = "Successfully connected to the database";
+                        }
+                    }
+                }
+
+                lblDbUpload.Visibility = Visibility.Visible;
+                this.Cursor = null;
+            }
+        }
 
         /// <summary>
         /// Updates the UI when the dbModel updates the progress.
@@ -157,6 +185,5 @@ namespace Excavator
         }
 
         #endregion
-
     }
 }
