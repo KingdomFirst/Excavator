@@ -43,14 +43,9 @@ namespace Excavator
         private int percentComplete;
 
         /// <summary>
-        /// The local dataset
+        /// The local database
         /// </summary>
         public Database database;
-
-        /// <summary>
-        /// The local dataset
-        /// </summary>
-        public DataSet dataset;
 
         /// <summary>
         /// Gets the full name of the excavator type.
@@ -80,6 +75,11 @@ namespace Excavator
         /// </summary>
         public event ProgressUpdate OnProgressUpdate;
 
+        /// <summary>
+        /// Holds a reference to the selected nodes
+        /// </summary>
+        public List<DatabaseNode> selectedNodes;
+
         #endregion
 
         #region Methods
@@ -103,29 +103,36 @@ namespace Excavator
         {
             // currently only handles orca framework
             database = (Database)db;
+            // TODO: implement option to read from SQL //
+            selectedNodes = new List<DatabaseNode>();
             var scanner = new DataScanner( database );
             var tables = database.Dmvs.Tables;
-            dataset = new DataSet();
-
+            
             foreach ( var table in tables.Where( t => !t.IsMSShipped && t.Name == "Individual_Household" ) )
             {
                 var rows = scanner.ScanTable( table.Name );
-                var scannedTable = new DataTable();
-                scannedTable.TableName = table.Name;
-                dataset.Tables.Add( scannedTable );
+                
+                var tableItem = new DatabaseNode();
+                tableItem.Name = table.Name;
+                tableItem.NodeType = typeof( object );
 
                 var rowSchema = rows.FirstOrDefault();
                 if ( rowSchema != null )
                 {
                     foreach ( var column in rowSchema.Columns )
                     {
-                        Type systemType = Extensions.GetSQLType( column.Type );
-                        scannedTable.Columns.Add( column.Name, systemType );
+                        var childItem = new DatabaseNode();                        
+                        childItem.Name = column.Name;
+                        childItem.NodeType = Extensions.GetSQLType( column.Type );
+                        childItem.Table.Add( tableItem );
+                        tableItem.Columns.Add( childItem );
                     }
                 }
-            }
 
-            return dataset.Tables.Count > 0 ? true : false;
+                selectedNodes.Add( tableItem );
+            }
+            
+            return selectedNodes.Count() > 0 ? true : false;
         }
 
         /// <summary>
@@ -133,7 +140,7 @@ namespace Excavator
         /// </summary>
         /// <param name="database">The database.</param>
         /// <returns></returns>
-        public DataSet LoadData( object database )
+        public bool LoadData( object database )
         {
             BackgroundWorker bwLoadDatabase = new BackgroundWorker();
             bwLoadDatabase.DoWork += bwLoadDatabase_DoWork;
@@ -142,7 +149,8 @@ namespace Excavator
             bwLoadDatabase.WorkerReportsProgress = true;
             bwLoadDatabase.RunWorkerAsync();
 
-            return dataset;
+            // do stuff here
+            return false;
         }
 
         /// <summary>
@@ -171,21 +179,23 @@ namespace Excavator
         {
             BackgroundWorker bw = sender as BackgroundWorker;
             var scanner = new DataScanner( database );
-            int totalCount = dataset.Tables.Count;
+            int totalCount = selectedNodes.Count();
             int processed = 0;
 
-            foreach ( DataTable table in dataset.Tables )
+            foreach ( var tableNode in selectedNodes )
             {
-                var rows = scanner.ScanTable( table.ToString() );
-                foreach ( var row in rows )
+                var rows = scanner.ScanTable( tableNode.Name );
+                foreach ( var columnNode in tableNode.Columns.Where( n => n.Checked != false ) )
                 {
-                    var rowData = table.NewRow();
-                    foreach ( var column in row.Columns )
-                    {
-                        rowData[column.Name] = row[column] ?? DBNull.Value;
-                    }
 
-                    table.Rows.Add( rowData );
+
+                    //var rowData = table.NewRow();
+                    //foreach ( var column in row.Columns )
+                    //{
+                    //    rowData[column.Name] = row[column] ?? DBNull.Value;
+                    //}
+
+                    //table.Rows.Add( rowData );
                 }
 
                 percentComplete = processed++ * 100 / totalCount;
@@ -221,11 +231,17 @@ namespace Excavator
     /// <summary>
     /// Loads all the excavator components
     /// </summary>
-    class FrontEndLoader
+    public class FrontEndLoader
     {
+        /// <summary>
+        /// Holds a list of all the excavator types
+        /// </summary>
         [ImportMany( typeof( ExcavatorComponent ) )]
         public List<ExcavatorComponent> excavatorTypes = new List<ExcavatorComponent>();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
+        /// </summary>
         public FrontEndLoader()
         {
             var extensionFolder = ConfigurationManager.AppSettings["ExtensionPath"];
