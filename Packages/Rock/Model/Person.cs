@@ -686,10 +686,10 @@ namespace Rock.Model
         /// <value>
         /// A <see cref="System.DateTime"/> representing the Person's birthdate.  If no birthdate is available, null is returned. If the year is not available then the birthdate is returned with the DateTime.MinValue.Year.
         /// </value>
-        [NotMapped]
         [DataMember]
+        [DatabaseGenerated( DatabaseGeneratedOption.Computed )]
         [MergeField]
-        public virtual DateTime? BirthDate
+        public DateTime? BirthDate
         {
             get
             {
@@ -741,7 +741,7 @@ namespace Rock.Model
                 DateTime bday;
                 if ( DateTime.TryParse( BirthMonth.ToString() + "/" + BirthDay.ToString() + "/" + BirthYear, out bday ) )
                 {
-                    DateTime today = DateTime.Today;
+                    DateTime today = RockDateTime.Today;
                     int age = today.Year - bday.Year;
                     if ( bday > today.AddYears( -age ) ) age--;
                     return age;
@@ -767,7 +767,7 @@ namespace Rock.Model
                 }
                 else
                 {
-                    var today = DateTime.Today;
+                    var today = RockDateTime.Today;
                     var birthdate = Convert.ToDateTime( BirthMonth.ToString() + "/" + BirthDay.ToString() + "/" + today.Year.ToString() );
                     if ( birthdate.CompareTo( today ) < 0 )
                     {
@@ -793,7 +793,7 @@ namespace Rock.Model
                 if ( DateTime.TryParse( BirthMonth.ToString() + "/" + BirthDay.ToString() + "/" + BirthYear, out bday ) )
                 {
                     // Calculate years
-                    DateTime today = DateTime.Today;
+                    DateTime today = RockDateTime.Today;
                     int years = today.Year - bday.Year;
                     if ( bday > today.AddYears( -years ) ) years--;
 
@@ -838,8 +838,8 @@ namespace Rock.Model
                         return null;
                     }
 
-                    int gradeMaxFactorReactor = ( DateTime.Now < transitionDate ) ? 12 : 13;
-                    return gradeMaxFactorReactor - ( GraduationDate.Value.Year - DateTime.Now.Year );
+                    int gradeMaxFactorReactor = ( RockDateTime.Now < transitionDate ) ? 12 : 13;
+                    return gradeMaxFactorReactor - ( GraduationDate.Value.Year - RockDateTime.Now.Year );
                 }
             }
 
@@ -851,7 +851,7 @@ namespace Rock.Model
                     var globalAttributes = GlobalAttributesCache.Read();
                     if ( DateTime.TryParse( globalAttributes.GetValue( "GradeTransitionDate" ), out transitionDate ) )
                     {
-                        int gradeFactorReactor = ( DateTime.Now < transitionDate ) ? 12 : 13;
+                        int gradeFactorReactor = ( RockDateTime.Now < transitionDate ) ? 12 : 13;
                         GraduationDate = transitionDate.AddYears( gradeFactorReactor - value.Value );
                     }
                 }
@@ -1040,8 +1040,8 @@ namespace Rock.Model
         /// </summary>
         /// <param name="personId">A <see cref="System.Int32"/> representing the Id of the Person.</param>
         /// <param name="relatedPersonId">A <see cref="System.Int32"/> representing the Id of the related Person.</param>
-        /// <param name="currentPersonId">A <see cref="System.Int32"/> representing the Id of the Person who is logged in.</param>
-        public static void CreateCheckinRelationship( int personId, int relatedPersonId, int? currentPersonId )
+        /// <param name="currentPersonAlias">A <see cref="Rock.Model.PersonAlias"/> representing the Person who is logged in.</param>
+        public static void CreateCheckinRelationship( int personId, int relatedPersonId, PersonAlias currentPersonAlias )
         {
             using ( new UnitOfWorkScope() )
             {
@@ -1074,14 +1074,14 @@ namespace Rock.Model
                             canCheckInMember.GroupId = knownRelationshipGroup.Id;
                             canCheckInMember.PersonId = relatedPersonId;
                             canCheckInMember.GroupRoleId = canCheckInRoleId.Value;
-                            groupMemberService.Add( canCheckInMember, currentPersonId );
-                            groupMemberService.Save( canCheckInMember, currentPersonId );
+                            groupMemberService.Add( canCheckInMember, currentPersonAlias );
+                            groupMemberService.Save( canCheckInMember, currentPersonAlias );
                         }
 
-                        var inverseGroupMember = groupMemberService.GetInverseRelationship( canCheckInMember, true, currentPersonId );
+                        var inverseGroupMember = groupMemberService.GetInverseRelationship( canCheckInMember, true, currentPersonAlias );
                         if ( inverseGroupMember != null )
                         {
-                            groupMemberService.Save( inverseGroupMember, currentPersonId );
+                            groupMemberService.Save( inverseGroupMember, currentPersonAlias );
                         }
                     }
                 }

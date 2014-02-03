@@ -76,9 +76,9 @@ namespace Rock.Model
         /// Saves the specified item.
         /// </summary>
         /// <param name="item">The item.</param>
-        /// <param name="personId">The person identifier.</param>
+        /// <param name="personAlias">The person alias.</param>
         /// <returns></returns>
-        public override bool Save( Person item, int? personId )
+        public override bool Save( Person item, PersonAlias personAlias )
         {
             // Set the nickname if a value was not entered
             if ( string.IsNullOrWhiteSpace( item.NickName ) )
@@ -97,7 +97,7 @@ namespace Rock.Model
                 }
             }
 
-            return base.Save( item, personId );
+            return base.Save( item, personAlias );
         }
 
         #region Get People
@@ -116,6 +116,25 @@ namespace Rock.Model
             return Repository.Find( t => 
                 ( includeDeceased || !t.IsDeceased.HasValue || !t.IsDeceased.Value) &&
                 ( t.Email == email || ( email == null && t.Email == null ) )
+            );
+        }
+
+        /// <summary>
+        /// Gets an enumerable collection of <see cref="Rock.Model.Person"/> entities that have a matching email address, firstname and lastname.
+        /// </summary>
+        /// <param name="firstName">A <see cref="System.String"/> representing the first name to search by.</param>
+        /// <param name="lastName">A <see cref="System.String"/> representing the last name to search by.</param>
+        /// <param name="email">A <see cref="System.String"/> representing the email address to search by.</param>
+        /// <param name="includeDeceased">A <see cref="System.Boolean"/> flag indicating if deceased individuals should be included in the search results, if
+        /// <c>true</c> then they will be included, otherwise <c>false</c>. Default value is false.</param>
+        /// <returns>
+        /// An enumerable collection of <see cref="Rock.Model.Person"/> entities that match the search criteria.
+        /// </returns>
+        public IEnumerable<Person> GetByMatch( string firstName, string lastName, string email, bool includeDeceased = false )
+        {
+            return Repository.Find( t =>
+                ( includeDeceased || !t.IsDeceased.HasValue || !t.IsDeceased.Value ) &&
+                ( t.Email == email && t.FirstName == firstName && t.LastName == lastName )
             );
         }
 
@@ -484,8 +503,8 @@ namespace Rock.Model
         /// <param name="person">The <see cref="Rock.Model.Person"/> who the preference value belongs to.</param>
         /// <param name="key">A <see cref="System.String"/> representing the key (name) of the preference setting. </param>
         /// <param name="values">A list of <see cref="System.String"/> values representing the value of the preference setting.</param>
-        /// <param name="personId">A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.Person"/> saving the setting.</param>
-        public void SaveUserPreference(Person person, string key, List<string> values, int? personId)
+        /// <param name="personAlias">The person alias.</param>
+        public void SaveUserPreference( Person person, string key, List<string> values, PersonAlias personAlias )
         {
             int? PersonEntityTypeId = Rock.Web.Cache.EntityTypeCache.Read( Person.USER_VALUE_ENTITY ).Id;
 
@@ -511,8 +530,8 @@ namespace Rock.Model
                 attribute.FieldTypeId = fieldType.Id;
                 attribute.Order = 0;
 
-                attributeService.Add( attribute, personId );
-                attributeService.Save( attribute, personId );
+                attributeService.Add( attribute, personAlias );
+                attributeService.Save( attribute, personAlias );
             }
 
             var attributeValueService = new Model.AttributeValueService();
@@ -521,8 +540,8 @@ namespace Rock.Model
             var attributeValues = attributeValueService.GetByAttributeIdAndEntityId( attribute.Id, person.Id ).ToList();
             foreach ( var attributeValue in attributeValues )
             {
-                attributeValueService.Delete( attributeValue, personId );
-                attributeValueService.Save( attributeValue, personId );
+                attributeValueService.Delete( attributeValue, personAlias );
+                attributeValueService.Save( attributeValue, personAlias );
             }
 
             // Save new values
@@ -532,8 +551,8 @@ namespace Rock.Model
                 attributeValue.AttributeId = attribute.Id;
                 attributeValue.EntityId = person.Id;
                 attributeValue.Value = value;
-                attributeValueService.Add( attributeValue, personId );
-                attributeValueService.Save( attributeValue, personId );
+                attributeValueService.Add( attributeValue, personAlias );
+                attributeValueService.Save( attributeValue, personAlias );
             }
         }
 

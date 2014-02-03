@@ -245,18 +245,17 @@ namespace Rock.Data
         /// Saves the entity and returns a list of any entity changes that
         /// need to be logged
         /// </summary>
-        /// <param name="PersonId">The id of the person making the change</param>
+        /// <param name="personAlias">The person alias.</param>
         /// <param name="audits">The audits.</param>
         /// <param name="errorMessages">The error messages.</param>
         /// <returns></returns>
+        /// <exception cref="System.Exception"></exception>
         public bool Save( PersonAlias personAlias, out List<Audit> audits, out List<string> errorMessages )
         {
             int? personAliasId = null;
-            int? personId = null;
             if ( personAlias != null )
             {
                 personAliasId = personAlias.Id;
-                personId = personAlias.PersonId;
             } 
             
             audits = new List<Audit>();
@@ -295,7 +294,7 @@ namespace Rock.Data
                         case EntityState.Modified:
                             {
                                 bool cancel = false;
-                                rockEntity.RaiseUpdatingEvent( out cancel, personId );
+                                rockEntity.RaiseUpdatingEvent( out cancel, personAlias );
                                 if ( cancel )
                                 {
                                     errorMessages.Add( string.Format( "Update cancelled by {0} event handler", rockEntity.TypeName ) );
@@ -359,8 +358,8 @@ namespace Rock.Data
                                 {
                                     title = entityType.FriendlyName ?? string.Empty;
                                 }
-                                audit.DateTime = DateTime.Now;
-                                audit.PersonId = personId;
+                                audit.DateTime = RockDateTime.Now;
+                                audit.PersonAliasId = personAliasId;
                                 audit.EntityTypeId = entityType.Id;
                                 audit.EntityId = rockEntity.Id;
                                 audit.Title = title.Truncate( 195 );
@@ -400,7 +399,7 @@ namespace Rock.Data
                 {
                     outputLines.Add( string.Format(
                         "{0}: Entity of type \"{1}\" in state \"{2}\" has the following validation errors:",
-                        DateTime.Now, eve.Entry.Entity.GetType().Name, eve.Entry.State ) );
+                        RockDateTime.Now, eve.Entry.Entity.GetType().Name, eve.Entry.State ) );
                     foreach ( var ve in eve.ValidationErrors )
                     {
                         outputLines.Add( string.Format(
@@ -417,7 +416,7 @@ namespace Rock.Data
                 var model = modifiedEntity as Entity<T>;
                 if ( model != null )
                 {
-                    model.RaiseAddedEvent( personId );
+                    model.RaiseAddedEvent( personAlias );
                 }
             }
 
@@ -426,7 +425,7 @@ namespace Rock.Data
                 var model = deletedEntity as Entity<T>;
                 if ( model != null )
                 {
-                    model.RaiseDeletedEvent( personId );
+                    model.RaiseDeletedEvent( personAlias );
                 }
             }
 
@@ -435,7 +434,7 @@ namespace Rock.Data
                 var model = modifiedEntity as Entity<T>;
                 if ( model != null )
                 {
-                    model.RaiseUpdatedEvent( personId );
+                    model.RaiseUpdatedEvent( personAlias );
                 }
             }
 

@@ -931,7 +931,7 @@ namespace Rock.Web.UI
                     if ( _pageCache.OutputCacheDuration > 0 )
                     {
                         Response.Cache.SetCacheability( System.Web.HttpCacheability.Public );
-                        Response.Cache.SetExpires( DateTime.Now.AddSeconds( _pageCache.OutputCacheDuration ) );
+                        Response.Cache.SetExpires( RockDateTime.Now.AddSeconds( _pageCache.OutputCacheDuration ) );
                         Response.Cache.SetValidUntilExpires( true );
                     }
                 }
@@ -979,11 +979,13 @@ namespace Rock.Web.UI
             if (!Page.IsPostBack && _pageCache != null && Convert.ToBoolean( ConfigurationManager.AppSettings["EnablePageViewTracking"] ) )
             {
                 PageViewTransaction transaction = new PageViewTransaction();
-                transaction.DateViewed = DateTime.Now;
+                transaction.DateViewed = RockDateTime.Now;
                 transaction.PageId = _pageCache.Id;
                 transaction.SiteId = _pageCache.Layout.Site.Id;
-                if ( CurrentPersonId != null )
-                    transaction.PersonId = (int)CurrentPersonId;
+                if ( CurrentPerson != null )
+                {
+                    transaction.PersonId = CurrentPerson.Id;
+                }
                 transaction.IPAddress = Request.UserHostAddress;
                 transaction.UserAgent = Request.UserAgent;
 
@@ -1001,7 +1003,7 @@ namespace Rock.Web.UI
 
             if ( phLoadTime != null )
             {
-                TimeSpan tsDuration = DateTime.Now.Subtract( (DateTime)Context.Items["Request_Start_Time"] );
+                TimeSpan tsDuration = RockDateTime.Now.Subtract( (DateTime)Context.Items["Request_Start_Time"] );
                 phLoadTime.Controls.Add( new LiteralControl( string.Format( "{0}: {1:N2}s", "Page Load Time", tsDuration.TotalSeconds ) ) );
             }
         }
@@ -1922,7 +1924,7 @@ namespace Rock.Web.UI
                 sessionValues.Add( key, newValues );
 
             if ( CurrentPerson != null )
-                new PersonService().SaveUserPreference( CurrentPerson, key, newValues, CurrentPersonId );
+                new PersonService().SaveUserPreference( CurrentPerson, key, newValues, CurrentPersonAlias );
         }
 
         /// <summary>
@@ -1935,7 +1937,7 @@ namespace Rock.Web.UI
         private Dictionary<string, List<string>> SessionUserPreferences()
         {
             string sessionKey = string.Format( "{0}_{1}",
-                Person.USER_VALUE_ENTITY, CurrentPersonId.HasValue ? CurrentPersonId.Value : 0 );
+                Person.USER_VALUE_ENTITY, CurrentPerson != null ? CurrentPerson.Id : 0 );
 
             var userPreferences = Session[sessionKey] as Dictionary<string, List<string>>;
             if ( userPreferences == null )

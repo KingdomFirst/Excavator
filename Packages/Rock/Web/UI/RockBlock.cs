@@ -452,13 +452,12 @@ namespace Rock.Web.UI
         /// <summary>
         /// Saves the block attribute values.
         /// </summary>
-        /// <param name="personId">A <see cref="System.Int32"/> representing the PersonId of the logged in person who is saving the block attributes; 
-        /// if a  user is not logged in this value will be null.</param>
-        public void SaveAttributeValues( int? personId )
+        /// <param name="currentPersonAlias">The current person alias.</param>
+        public void SaveAttributeValues( PersonAlias currentPersonAlias )
         {
             if ( _blockCache != null )
             {
-                _blockCache.SaveAttributeValues( personId );
+                _blockCache.SaveAttributeValues( currentPersonAlias );
             }
         }
 
@@ -494,7 +493,7 @@ namespace Rock.Web.UI
         }
 
         /// <summary>
-        /// Sets the value of an block attribute key in memory. Once values have been set, use the <see cref="SaveAttributeValues(int?)" /> method to save all values to database 
+        /// Sets the value of an block attribute key in memory. Once values have been set, use the <see cref="SaveAttributeValues(PersonAlias)" /> method to save all values to database 
         /// </summary>
         /// <param name="key">A <see cref="System.String"/> representing the block attribute's key name.</param>
         /// <param name="value">A <see cref="System.String"/> representing the value of the attribute.</param>
@@ -902,7 +901,7 @@ namespace Rock.Web.UI
             using ( new Rock.Data.UnitOfWorkScope() )
             {
                 if ( Rock.Attribute.Helper.UpdateAttributes( this.GetType(), blockEntityTypeId, "BlockTypeId",
-                    this._blockCache.BlockTypeId.ToString(), CurrentPersonId ) )
+                    this._blockCache.BlockTypeId.ToString(), CurrentPersonAlias ) )
                 {
                     this._blockCache.ReloadAttributeValues();
                 }
