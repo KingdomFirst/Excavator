@@ -78,9 +78,6 @@
     </Compile>
     <Compile Include="DatabaseNode.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="PreviewPage.xaml.cs">
-      <DependentUpon>PreviewPage.xaml</DependentUpon>
-    </Compile>
     <Compile Include="SelectPage.xaml.cs">
       <DependentUpon>SelectPage.xaml</DependentUpon>
     </Compile>
@@ -101,10 +98,6 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="PreviewPage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Resources\Styles.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

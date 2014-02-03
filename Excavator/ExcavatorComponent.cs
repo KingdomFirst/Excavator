@@ -108,7 +108,7 @@ namespace Excavator
             var scanner = new DataScanner( database );
             var tables = database.Dmvs.Tables;
             
-            foreach ( var table in tables.Where( t => !t.IsMSShipped && t.Name == "Individual_Household" ) )
+            foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
             {
                 var rows = scanner.ScanTable( table.Name );
                 

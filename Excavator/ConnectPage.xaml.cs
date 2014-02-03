@@ -74,8 +74,13 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnUpload_Click( object sender, RoutedEventArgs e )
         {
-            this.Cursor = Cursors.Wait;
-            VerifyConnection();   
+            Mouse.OverrideCursor = Cursors.Wait;
+            //this.Cursor = Cursors.Wait;
+
+            BackgroundWorker bwLoadSchema = new BackgroundWorker();
+            bwLoadSchema.DoWork += bwLoadSchema_DoWork;
+            bwLoadSchema.RunWorkerCompleted += bwLoadSchema_RunWorkerCompleted;            
+            bwLoadSchema.RunWorkerAsync( lstDatabaseTypes.SelectedValue.ToString() );
         }
 
         /// <summary>
@@ -141,9 +146,11 @@ namespace Excavator
         #region Async Tasks
 
         /// <summary>
-        /// Verifies the connection to the database.
+        /// Handles the DoWork event of the bwLoadSchema control.
         /// </summary>
-        private void VerifyConnection()
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
+        private void bwLoadSchema_DoWork( object sender, DoWorkEventArgs e )
         {
             var mdfPicker = new OpenFileDialog();
             mdfPicker.Filter = "SQL Database files|*.mdf";
@@ -154,29 +161,45 @@ namespace Excavator
                 var database = new Database( mdfPicker.FileName );
                 if ( database != null )
                 {
-                    var dbType = lstDatabaseTypes.SelectedValue.ToString();
+                    var dbType = (string)e.Argument;
                     excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( dbType ) ).FirstOrDefault();
                     if ( excavator != null )
                     {
-                        bool isLoaded = excavator.LoadSchema( database );
-                        if ( isLoaded )
-                        {
-                            lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
-                            lblDbUpload.Content = "Successfully connected to the database";
-                        }
+                        bool loadedSuccessfully = excavator.LoadSchema( database );
+                        e.Cancel = !loadedSuccessfully;
+                        //if ( isLoaded )
+                        //{
+                        //    lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
+                        //    lblDbUpload.Content = "Successfully connected to the database";
+                        //}
                     }
                 }
 
-                lblDbUpload.Visibility = Visibility.Visible;
-                this.Cursor = null;
+                //lblDbUpload.Visibility = Visibility.Visible;
+                //this.Cursor = null;
             }
         }
 
         /// <summary>
-        /// Updates the UI when the dbModel updates the progress.
+        /// Handles the RunWorkerCompleted event of the bwLoadSchema control.
         /// </summary>
-        /// <param name="value">The value.</param>
-        private void dbModel_OnProgressUpdate( int value )
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        private void bwLoadSchema_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        {
+            if ( e.Cancelled != true )
+            {
+                lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
+                lblDbUpload.Content = "Successfully connected to the database";
+            }
+            
+            lblDbUpload.Visibility = Visibility.Visible;
+            Mouse.OverrideCursor = null;
+        }
+
+        
+        private void OnProgressUpdate( int value )
         {
             this.Dispatcher.Invoke( (Action)( () =>
             {

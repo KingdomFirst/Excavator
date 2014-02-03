@@ -12,12 +12,14 @@
         <HierarchicalDataTemplate DataType="{x:Type local:DatabaseNode}" ItemsSource="{Binding Columns}">
             <StackPanel Orientation="Horizontal">
                 <CheckBox IsChecked="{Binding Checked}" Uid="{Binding Id}"
-                    PreviewMouseLeftButtonDown="OnCheck"/>
-                <TextBlock Text="{Binding Name}"/>
+                    PreviewMouseLeftButtonDown="Checkbox_OnClick" />
+                <TextBlock Text="{Binding Name}"  Tag="{Binding Id}"
+                    MouseDown="TextBlock_MouseDown" 
+                    KeyDown="TextBlock_KeyDown" />
             </StackPanel>
         </HierarchicalDataTemplate>
     </Page.Resources>
-    <Grid>
+    <Grid Height="350" VerticalAlignment="Bottom">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="9*" />
@@ -42,12 +44,26 @@
             Select the fields to import:
         </Label>
 
-        <TreeView Name="treeView" Grid.Row="1"
+        <TreeView Name="treeView" 
+                Grid.Row="1" Grid.Column="0"
                 Background="{x:Null}" 
                 BorderBrush="{x:Null}">
             <!-- Content will be filled here -->
         </TreeView>
         
+        <!-- Preview Data -->
+        <Label Name="lblPreviewField" Style="{StaticResource labelStyle}"            
+            Grid.Row="0" VerticalAlignment="Top" 
+            Grid.Column="1" HorizontalAlignment="Left">
+            Sample data for the selected field:
+        </Label>
+        
+        <DataGrid Name="grdPreviewData"
+            AutoGenerateColumns="True"
+            Grid.Row="1" VerticalAlignment="Top"
+            Grid.Column="1" HorizontalAlignment="Left">            
+        </DataGrid>        
+
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStyle}"

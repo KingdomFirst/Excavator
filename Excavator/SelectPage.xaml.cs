@@ -44,7 +44,7 @@ namespace Excavator
         /// </summary>
         public SelectPage( ExcavatorComponent parameter = null )
         {
-            InitializeComponent();            
+            InitializeComponent();
             if ( parameter != null )
             {
                 excavator = parameter;
@@ -55,7 +55,7 @@ namespace Excavator
                 lblNoData.Visibility = Visibility.Visible;
                 btnNext.Visibility = Visibility.Hidden;
                 lblSelectFields.Visibility = Visibility.Hidden;
-            } 
+            }
         }
 
         #endregion
@@ -67,12 +67,42 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing the event data.</param>
-        private void OnCheck( object sender, MouseButtonEventArgs e )
+        private void Checkbox_OnClick( object sender, MouseButtonEventArgs e )
         {
             var selected = (CheckBox)sender;
             if ( selected != null )
             {
                 SelectedId.Id = selected.Uid;
+            }
+        }
+
+        /// <summary>
+        /// Handles the MouseDown event of the TextBlock control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing the event data.</param>
+        private void TextBlock_MouseDown( object sender, MouseButtonEventArgs e )
+        {
+            var textBlock = (TextBlock)sender;
+            if ( textBlock != null )
+            {
+                var selectedNode = excavator.selectedNodes.Where( n => n.Id == textBlock.Tag ).FirstOrDefault();
+                PreviewData( selectedNode );
+            }
+        }
+
+        /// <summary>
+        /// Handles the KeyDown event of the TextBlock control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="KeyEventArgs"/> instance containing the event data.</param>
+        private void TextBlock_KeyDown( object sender, KeyEventArgs e )
+        {
+            var textBlock = (TextBlock)sender;
+            if ( textBlock != null )
+            {
+                var selectedNode = excavator.selectedNodes.Where( n => n.Id == textBlock.Tag ).FirstOrDefault();
+                PreviewData( selectedNode );
             }            
         }
 
@@ -97,5 +127,29 @@ namespace Excavator
         }
 
         #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Previews the data for the selected node.
+        /// </summary>
+        /// <param name="tableNode">The table node.</param>
+        private void PreviewData( DatabaseNode selectedNode )
+        {
+            DataSet dataset = new DataSet();
+            if ( selectedNode.Table != null )
+            {
+
+            }
+            else
+            {
+
+            }
+
+            grdPreviewData.ItemsSource = dataset.Tables["node.name"].DefaultView;
+        }
+
+        #endregion
+
     }
 }
