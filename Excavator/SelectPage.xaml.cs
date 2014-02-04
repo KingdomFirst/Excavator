@@ -86,8 +86,7 @@ namespace Excavator
             var textBlock = (TextBlock)sender;
             if ( textBlock != null )
             {
-                var selectedNode = excavator.selectedNodes.Where( n => n.Id == textBlock.Tag ).FirstOrDefault();
-                PreviewData( selectedNode );
+                PreviewData( (string)textBlock.Tag );
             }
         }
 
@@ -100,10 +99,9 @@ namespace Excavator
         {
             var textBlock = (TextBlock)sender;
             if ( textBlock != null )
-            {
-                var selectedNode = excavator.selectedNodes.Where( n => n.Id == textBlock.Tag ).FirstOrDefault();
-                PreviewData( selectedNode );
-            }            
+            {                
+                PreviewData( (string)textBlock.Tag );
+            }
         }
 
         /// <summary>
@@ -128,25 +126,55 @@ namespace Excavator
 
         #endregion
 
-        #region Methods
+        #region Async Tasks
 
         /// <summary>
         /// Previews the data for the selected node.
         /// </summary>
         /// <param name="tableNode">The table node.</param>
-        private void PreviewData( DatabaseNode selectedNode )
+        private void PreviewData( string selectedNodeId )
         {
-            DataSet dataset = new DataSet();
-            if ( selectedNode.Table != null )
-            {
+            BackgroundWorker bwLoadPreview = new BackgroundWorker();
+            bwLoadPreview.DoWork += bwLoadPreview_DoWork;
+            bwLoadPreview.RunWorkerCompleted += bwLoadPreview_RunWorkerCompleted;
+            bwLoadPreview.RunWorkerAsync( selectedNodeId );
+        }
+        
+        /// <summary>
+        /// Handles the DoWork event of the bwLoadPreview control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        private void bwLoadPreview_DoWork( object sender, DoWorkEventArgs e )
+        {
+            e.Result = excavator.PreviewData( (string)e.Argument );
+        }
 
+        /// <summary>
+        /// Handles the RunWorkerCompleted event of the bwLoadPreview control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        private void bwLoadPreview_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        {
+            
+            if ( e.Error == null && e.Result != null )
+            {
+                DataTable tablePreview = e.Result as DataTable;
+                this.Dispatcher.Invoke( (Action)( () =>
+                {
+                    grdPreviewData.ItemsSource = tablePreview.DefaultView;
+                } ) );
             }
             else
             {
-
+                this.Dispatcher.Invoke( (Action)( () =>
+                {
+                    //grdPreviewData.ItemsSource = new DataTemplate();
+                } ) );
             }
-
-            grdPreviewData.ItemsSource = dataset.Tables["node.name"].DefaultView;
         }
 
         #endregion

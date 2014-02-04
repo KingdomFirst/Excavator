@@ -11,8 +11,7 @@
             <RowDefinition Height="1*" />
             <RowDefinition Height="1*" />
             <RowDefinition Height="2*" />
-            <RowDefinition Height="2*" />
-            
+            <RowDefinition Height="2*" />            
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -23,20 +22,20 @@
         <Label Name="lblNoData" Visibility="Hidden"
             Style="{StaticResource labelStyleAlert}"
             Grid.RowSpan="1" HorizontalAlignment="Center"
-            Grid.ColumnSpan="2" VerticalAlignment="Top">
+            Grid.ColumnSpan="2" VerticalAlignment="Center">
             No database types found. Please check the Extensions folder for compatible formats.
         </Label>
 
         <!-- Select Database Type -->
         <Label x:Name="lblDatabaseTypes"
             Style="{StaticResource labelStyle}"
-            Grid.Row="0" VerticalAlignment="Top" 
+            Grid.Row="0" VerticalAlignment="Center" 
             Grid.Column="0" HorizontalAlignment="Left">
             1. Select the database type:
         </Label>
         <ListBox x:Name="lstDatabaseTypes" 
             Style="{StaticResource textboxStyle}"
-            Grid.Row="0" VerticalAlignment="Top"
+            Grid.Row="0" VerticalAlignment="Center"
             Grid.Column="2" HorizontalAlignment="Left">
         </ListBox>
 

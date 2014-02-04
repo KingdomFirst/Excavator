@@ -19,10 +19,10 @@
             </StackPanel>
         </HierarchicalDataTemplate>
     </Page.Resources>
-    <Grid Height="350" VerticalAlignment="Bottom">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
-            <RowDefinition Height="9*" />
+            <RowDefinition Height="14*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -55,14 +55,52 @@
         <Label Name="lblPreviewField" Style="{StaticResource labelStyle}"            
             Grid.Row="0" VerticalAlignment="Top" 
             Grid.Column="1" HorizontalAlignment="Left">
-            Sample data for the selected field:
+            Data preview:
         </Label>
         
         <DataGrid Name="grdPreviewData"
-            AutoGenerateColumns="True"
+            AutoGenerateColumns="True" 
+            AlternatingRowBackground="Gray"
+            CanUserAddRows="False" IsReadOnly="True"
             Grid.Row="1" VerticalAlignment="Top"
-            Grid.Column="1" HorizontalAlignment="Left">            
-        </DataGrid>        
+            Grid.Column="1" HorizontalAlignment="Left">
+            <DataGrid.LayoutTransform>
+                <TransformGroup>
+                    <RotateTransform Angle="90"/>
+                    <MatrixTransform Matrix="-1,0,0,1,0,0"/>
+                </TransformGroup>
+            </DataGrid.LayoutTransform>
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="{x:Type DataGridColumnHeader}"
+                    BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+            <DataGrid.CellStyle>
+                <Style  TargetType="DataGridCell">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                    <TextBlock Name="txtNoData" Text="Unable to load preview or no data exists. " />
+                </DataTemplate>
+            </DataGrid.RowDetailsTemplate>
+        </DataGrid>
 
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">

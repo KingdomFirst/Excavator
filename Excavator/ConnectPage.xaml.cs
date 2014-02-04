@@ -75,7 +75,6 @@ namespace Excavator
         private void btnUpload_Click( object sender, RoutedEventArgs e )
         {
             Mouse.OverrideCursor = Cursors.Wait;
-            //this.Cursor = Cursors.Wait;
 
             BackgroundWorker bwLoadSchema = new BackgroundWorker();
             bwLoadSchema.DoWork += bwLoadSchema_DoWork;
@@ -166,17 +165,9 @@ namespace Excavator
                     if ( excavator != null )
                     {
                         bool loadedSuccessfully = excavator.LoadSchema( database );
-                        e.Cancel = !loadedSuccessfully;
-                        //if ( isLoaded )
-                        //{
-                        //    lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
-                        //    lblDbUpload.Content = "Successfully connected to the database";
-                        //}
+                        e.Cancel = !loadedSuccessfully;                       
                     }
-                }
-
-                //lblDbUpload.Visibility = Visibility.Visible;
-                //this.Cursor = null;
+                }                
             }
         }
 

@@ -111,7 +111,6 @@ namespace Excavator
             foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
             {
                 var rows = scanner.ScanTable( table.Name );
-                
                 var tableItem = new DatabaseNode();
                 tableItem.Name = table.Name;
                 tableItem.NodeType = typeof( object );
@@ -135,6 +134,46 @@ namespace Excavator
             return selectedNodes.Count() > 0 ? true : false;
         }
 
+
+        /// <summary>
+        /// Previews the data.
+        /// </summary>
+        /// <param name="tableName">Name of the table to preview.</param>
+        /// <returns></returns>
+        public DataTable PreviewData( string nodeId )
+        {            
+            var node = selectedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
+            if ( node.Table.Any() )
+            {
+                node = selectedNodes.Where( n => n.Id.Equals( node.Table.Select( t => t.Id ) ) ).FirstOrDefault();
+            }
+
+            var scanner = new DataScanner( database );
+            var rows = scanner.ScanTable( node.Name );
+            var dataTable = new DataTable();
+            foreach ( var column in node.Columns )
+            {
+                dataTable.Columns.Add( column.Name, column.NodeType );
+            }
+            
+            var rowData = rows.FirstOrDefault();
+            if ( rowData != null )
+            {       
+                DataRow rowPreview = dataTable.NewRow();
+                foreach( var column in rowData.Columns )
+                {
+                    rowPreview[column.Name] = rowData[column] ?? DBNull.Value;
+                }
+
+                dataTable.Rows.Add( rowPreview );
+                return dataTable;
+            }  
+            else
+            {
+                return null;
+            }            
+        }
+
         /// <summary>
         /// Fills the data set.
         /// </summary>
@@ -144,7 +183,7 @@ namespace Excavator
         {
             BackgroundWorker bwLoadDatabase = new BackgroundWorker();
             bwLoadDatabase.DoWork += bwLoadDatabase_DoWork;
-            //bwLoadDatabase.ProgressChanged += bwLoadDatabase_ProgressChanged;
+            bwLoadDatabase.ProgressChanged += bwLoadDatabase_ProgressChanged;
             bwLoadDatabase.RunWorkerCompleted += bwLoadDatabase_RunWorkerCompleted;
             bwLoadDatabase.WorkerReportsProgress = true;
             bwLoadDatabase.RunWorkerAsync();
@@ -207,6 +246,15 @@ namespace Excavator
             }
         }
 
+        /// <summary>
+        /// Handles the ProgressChanged event of the bwLoadDatabase control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.ComponentModel.ProgressChangedEventArgs"/> instance containing the event data.</param>
+        private void bwLoadDatabase_ProgressChanged( object sender, ProgressChangedEventArgs e )
+        {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Handles the RunWorkerCompleted event of the bwLoadDatabase control.
