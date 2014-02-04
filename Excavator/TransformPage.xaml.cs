@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.ComponentModel;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -36,7 +37,7 @@ namespace Excavator
             }
             else
             {
-                lblNothingSelected.Visibility = Visibility.Visible;
+                lblDataUpload.Visibility = Visibility.Visible;
                 btnNext.Visibility = Visibility.Hidden;
             }
 
@@ -46,6 +47,25 @@ namespace Excavator
         #endregion
 
         #region Events
+
+        /// <summary>
+        /// Handles the Click event of the btnStart control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnStart_Click( object sender, RoutedEventArgs e )
+        {
+            
+            BackgroundWorker bwTransformData = new BackgroundWorker();
+            bwTransformData.DoWork += bwTransformData_DoWork;
+            bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
+            bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
+            bwTransformData.RunWorkerAsync();
+
+            // if progressing, check for cancel
+            // btnStart.Style = (Style)FindResource( "labelStyle" );
+            // btnStart.Content = "Cancel";
+        }
 
         /// <summary>
         /// Handles the Click event of the btnBack control.
@@ -67,6 +87,47 @@ namespace Excavator
             // clicked Run in Background
             // wait until all models have been saved
             // Application.Current.Shutdown();
+        }        
+
+        #endregion
+
+        #region Async Tasks
+
+        /// <summary>
+        /// Handles the DoWork event of the bwTransformData control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        private void bwTransformData_DoWork( object sender, DoWorkEventArgs e )
+        {
+            bool isComplete = excavator.TransformData();
+            
+        }
+
+        /// <summary>
+        /// Handles the ProgressChanged event of the bwTransformData control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
+        private void bwTransformData_ProgressChanged( object sender, ProgressChangedEventArgs e )
+        {
+            //lblUploadProgress.Content = string.Format( "Uploading Scanned Checks {0}%", e.ProgressPercentage );            
+        }
+
+        /// <summary>
+        /// Handles the RunWorkerCompleted event of the bwTransformData control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
+        private void bwTransformData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        {
+            this.Dispatcher.Invoke( (Action)( () =>
+            {
+                lblDataUpload.Style = (Style)FindResource( "labelStyleSuccess" );
+                lblDataUpload.Content = "Successfully uploaded all the content";
+                btnNext.Visibility = Visibility.Visible;
+            } ) );
         }
 
         #endregion

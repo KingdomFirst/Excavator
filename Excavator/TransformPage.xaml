@@ -9,8 +9,8 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="14*" />
-            <RowDefinition Height="1*" />
+            <RowDefinition Height="4*" />
+            <RowDefinition Height="10*" />            
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -18,9 +18,21 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Label Name="lblNothingSelected" Visibility="Hidden"
-            Grid.Row="1" HorizontalAlignment="Center"
-            Grid.ColumnSpan="2" VerticalAlignment="Top"
+        <Button x:Name="btnStart" Margin="5"
+                Grid.Row="0" VerticalAlignment="Center"
+                Grid.ColumnSpan="2" HorizontalAlignment="Center"
+                Style="{StaticResource buttonStylePrimary}"
+                Width="150" Height="50"
+                Click="btnStart_Click">
+            Start
+        </Button>
+        
+        <!-- progress bar here -->
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Progress bar will go here." />
+
+        <Label Name="lblDataUpload" Visibility="Hidden"
+            Grid.Row="0" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom"             
             Style="{StaticResource labelStyleAlert}">
             No data was selected on the previous page.
         </Label>
@@ -40,7 +52,7 @@
                 VerticalAlignment="Bottom" Margin="5"
                 Grid.Column="1" HorizontalAlignment="Right"                
                 Click="btnNext_Click">
-                Run in Background
+                Close
             </Button>
         </Grid>
     </Grid>

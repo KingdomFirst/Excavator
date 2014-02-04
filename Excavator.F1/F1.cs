@@ -53,7 +53,20 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool TransformData()
         {
-            // not implemented
+            var pServer = new PersonService();
+
+            // for each selected node
+            // fire a method to import and map a Rock.[Model] object
+
+            // test creating a person
+            var person = new Person();
+            person.BirthDate = new DateTime( 1980, 1, 1 );
+            person.FirstName = "David";
+            person.LastName = "Stevens";
+            person.Gender = Gender.Male;
+
+            pServer.Save( person );
+            
             return false;
         }
 

@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DotLiquid, Version=1.7.0.0, Culture=neutral, PublicKeyToken=82e46016ecf9f07c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Packages\Rock\bin\DotLiquid.dll</HintPath>
+    </Reference>
     <Reference Include="Rock">
       <HintPath>..\Packages\Rock\bin\Rock.dll</HintPath>
     </Reference>
