@@ -155,11 +155,11 @@ namespace Excavator
             {
                 dataTable.Columns.Add( column.Name, column.NodeType );
             }
-            
-            var rowData = rows.FirstOrDefault();
+
+            var rowData = rows.FirstOrDefault();            
             if ( rowData != null )
-            {       
-                DataRow rowPreview = dataTable.NewRow();
+            {
+                var rowPreview = dataTable.NewRow();            
                 foreach( var column in rowData.Columns )
                 {
                     rowPreview[column.Name] = rowData[column] ?? DBNull.Value;
@@ -167,11 +167,9 @@ namespace Excavator
 
                 dataTable.Rows.Add( rowPreview );
                 return dataTable;
-            }  
-            else
-            {
-                return null;
-            }            
+            }
+            
+            return null;
         }
 
         /// <summary>

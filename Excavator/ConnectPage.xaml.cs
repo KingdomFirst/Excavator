@@ -188,16 +188,7 @@ namespace Excavator
             lblDbUpload.Visibility = Visibility.Visible;
             Mouse.OverrideCursor = null;
         }
-
         
-        private void OnProgressUpdate( int value )
-        {
-            this.Dispatcher.Invoke( (Action)( () =>
-            {
-                lblProgress.Content = string.Format( "{0}%", value );
-            } ) );
-        }
-
         #endregion
     }
 }

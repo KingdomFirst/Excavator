@@ -99,7 +99,7 @@ namespace Excavator
         {
             var textBlock = (TextBlock)sender;
             if ( textBlock != null )
-            {                
+            {
                 PreviewData( (string)textBlock.Tag );
             }
         }
@@ -121,7 +121,8 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnNext_Click( object sender, RoutedEventArgs e )
         {
-
+            var transformPage = new TransformPage( excavator );
+            this.NavigationService.Navigate( transformPage );
         }
 
         #endregion
@@ -139,7 +140,7 @@ namespace Excavator
             bwLoadPreview.RunWorkerCompleted += bwLoadPreview_RunWorkerCompleted;
             bwLoadPreview.RunWorkerAsync( selectedNodeId );
         }
-        
+
         /// <summary>
         /// Handles the DoWork event of the bwLoadPreview control.
         /// </summary>
@@ -159,21 +160,20 @@ namespace Excavator
         /// <exception cref="System.NotImplementedException"></exception>
         private void bwLoadPreview_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
-            
-            if ( e.Error == null && e.Result != null )
+            if ( e.Error == null && (DataTable)e.Result != null )
             {
                 DataTable tablePreview = e.Result as DataTable;
                 this.Dispatcher.Invoke( (Action)( () =>
                 {
                     grdPreviewData.ItemsSource = tablePreview.DefaultView;
+                    grdPreviewData.Visibility = Visibility.Visible;
+                    lblEmptyDataset.Visibility = Visibility.Hidden;
                 } ) );
             }
             else
             {
-                this.Dispatcher.Invoke( (Action)( () =>
-                {
-                    //grdPreviewData.ItemsSource = new DataTemplate();
-                } ) );
+                lblEmptyDataset.Visibility = Visibility.Visible;
+                grdPreviewData.Visibility = Visibility.Hidden;
             }
         }
 

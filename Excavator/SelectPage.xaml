@@ -17,7 +17,7 @@
                     MouseDown="TextBlock_MouseDown" 
                     KeyDown="TextBlock_KeyDown" />
             </StackPanel>
-        </HierarchicalDataTemplate>
+        </HierarchicalDataTemplate>       
     </Page.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -60,6 +60,7 @@
         
         <DataGrid Name="grdPreviewData"
             AutoGenerateColumns="True" 
+            AlternationCount="2"
             AlternatingRowBackground="Gray"
             CanUserAddRows="False" IsReadOnly="True"
             Grid.Row="1" VerticalAlignment="Top"
@@ -82,7 +83,7 @@
                         </Setter.Value>
                     </Setter>
                 </Style>
-            </DataGrid.ColumnHeaderStyle>
+            </DataGrid.ColumnHeaderStyle>            
             <DataGrid.CellStyle>
                 <Style  TargetType="DataGridCell">
                     <Setter Property="LayoutTransform">
@@ -95,12 +96,14 @@
                     </Setter>
                 </Style>
             </DataGrid.CellStyle>
-            <DataGrid.RowDetailsTemplate>
-                <DataTemplate>
-                    <TextBlock Name="txtNoData" Text="Unable to load preview or no data exists. " />
-                </DataTemplate>
-            </DataGrid.RowDetailsTemplate>
         </DataGrid>
+
+        <Label Name="lblEmptyDataset" Visibility="Hidden"
+            Grid.Row="1" HorizontalAlignment="Center"
+            Grid.Column="1" VerticalAlignment="Center"
+            Style="{StaticResource labelStyleAlert}">
+            Unable to load preview or no data exists.
+        </Label>
 
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">
