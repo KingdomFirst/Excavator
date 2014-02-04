@@ -18,7 +18,7 @@ namespace Excavator
     /// <summary>
     /// Interaction logic for TransformPage.xaml
     /// </summary>
-    public partial class TransformPage : Page
+    public partial class TransformPage : System.Windows.Controls.Page
     {
         public ExcavatorComponent excavator;
 
@@ -39,6 +39,8 @@ namespace Excavator
                 lblNothingSelected.Visibility = Visibility.Visible;
                 btnNext.Visibility = Visibility.Hidden;
             }
+
+            
         }
 
         #endregion

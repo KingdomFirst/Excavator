@@ -173,24 +173,6 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Fills the data set.
-        /// </summary>
-        /// <param name="database">The database.</param>
-        /// <returns></returns>
-        public bool LoadData( object database )
-        {
-            BackgroundWorker bwLoadDatabase = new BackgroundWorker();
-            bwLoadDatabase.DoWork += bwLoadDatabase_DoWork;
-            bwLoadDatabase.ProgressChanged += bwLoadDatabase_ProgressChanged;
-            bwLoadDatabase.RunWorkerCompleted += bwLoadDatabase_RunWorkerCompleted;
-            bwLoadDatabase.WorkerReportsProgress = true;
-            bwLoadDatabase.RunWorkerAsync();
-
-            // do stuff here
-            return false;
-        }
-
-        /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
@@ -243,34 +225,7 @@ namespace Excavator
                 }
             }
         }
-
-        /// <summary>
-        /// Handles the ProgressChanged event of the bwLoadDatabase control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="System.ComponentModel.ProgressChangedEventArgs"/> instance containing the event data.</param>
-        private void bwLoadDatabase_ProgressChanged( object sender, ProgressChangedEventArgs e )
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Handles the RunWorkerCompleted event of the bwLoadDatabase control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
-        private void bwLoadDatabase_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
-        {
-            if ( e.Error == null )
-            {
-                // complete
-            }
-            else
-            {
-                // pass error
-            }
-        }
-
+                
         #endregion
     }
 

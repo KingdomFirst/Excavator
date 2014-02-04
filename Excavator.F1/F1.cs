@@ -17,6 +17,14 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.ComponentModel;
+using System.Collections.Generic;
+using System.Linq;
+
+using Rock;
+using Rock.Attribute;
+using Rock.Data;
+using Rock.Model;
 
 namespace Excavator.F1
 {
