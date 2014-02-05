@@ -15,25 +15,17 @@
 // </copyright>
 //
 
-using System;
 using System.ComponentModel.Composition;
-using System.ComponentModel;
-using System.Collections.Generic;
-using System.Linq;
 using System.Data;
-using System.Web;
-
-using Rock;
-using Rock.Attribute;
-using Rock.Data;
+using System.Linq;
 using Rock.Model;
 
 namespace Excavator.F1
 {
     /// <summary>
     /// This extends the base Excavator class to account for FellowshipOne's database model
-    /// </summary>    
-    [Export( typeof( ExcavatorComponent) )]
+    /// </summary>
+    [Export( typeof( ExcavatorComponent ) )]
     class F1 : ExcavatorComponent
     {
         /// <summary>
@@ -58,20 +50,21 @@ namespace Excavator.F1
             var personService = new PersonService();
             var admin = personService.Get( 1 );
 
-            foreach( var node in selectedNodes.Where( n => n.Checked != false ) )
+            foreach ( var node in selectedNodes.Where( n => n.Checked != false ) )
             {
                 DataTable nodeData = GetData( node.Id );
 
-                switch( node.Name )
+                switch ( node.Name )
                 {
                     case "Individual_Household":
                         MapPerson( nodeData );
                         break;
+
                     default:
                         break;
                 }
             }
-            
+
             return false;
         }
 
@@ -84,7 +77,6 @@ namespace Excavator.F1
             // not implemented
             return false;
         }
-
 
         #endregion
 
@@ -100,19 +92,19 @@ namespace Excavator.F1
             var CurrentPersonAlias = aliasService.Get( 1 );
             var personService = new PersonService();
 
-            foreach( DataRow row in nodeData.Rows )
+            foreach ( DataRow row in nodeData.Rows )
             {
                 // only import where node.Checked
 
                 var person = new Person();
                 //person.FirstName = row["First_Name"] as string;
                 //person.LastName = row["Last_Name"] as string;
-                //person.BirthDate = row["Date_Of_Birth"] as DateTime?;                
+                //person.BirthDate = row["Date_Of_Birth"] as DateTime?;
                 //person.Gender = (Gender) (Enum.Parse( typeof(Gender), row["Gender"] as string) ?? Gender.Unknown );
 
                 //personService.Add( person, CurrentPersonAlias );
                 //personService.Save( person, CurrentPersonAlias );
-            }            
+            }
         }
 
         #endregion

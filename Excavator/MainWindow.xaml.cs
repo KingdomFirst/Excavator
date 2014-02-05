@@ -15,11 +15,6 @@
 // </copyright>
 //
 
-using System;
-using System.Collections.Generic;
-using System.Windows;
-using System.Windows.Input;
-using System.Configuration;
 using System.Windows.Navigation;
 
 namespace Excavator
@@ -34,7 +29,7 @@ namespace Excavator
         /// </summary>
         public MainWindow()
         {
-            InitializeComponent();            
+            InitializeComponent();
         }
     }
 }

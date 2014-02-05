@@ -15,15 +15,13 @@
 // </copyright>
 //
 
-using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using OrcaMDF.Core.Engine;
-using System.ComponentModel;
-using System.Windows.Controls;
 
 namespace Excavator
 {
@@ -78,7 +76,7 @@ namespace Excavator
 
             BackgroundWorker bwLoadSchema = new BackgroundWorker();
             bwLoadSchema.DoWork += bwLoadSchema_DoWork;
-            bwLoadSchema.RunWorkerCompleted += bwLoadSchema_RunWorkerCompleted;            
+            bwLoadSchema.RunWorkerCompleted += bwLoadSchema_RunWorkerCompleted;
             bwLoadSchema.RunWorkerAsync( lstDatabaseTypes.SelectedValue.ToString() );
         }
 
@@ -165,9 +163,9 @@ namespace Excavator
                     if ( excavator != null )
                     {
                         bool loadedSuccessfully = excavator.LoadSchema( database );
-                        e.Cancel = !loadedSuccessfully;                       
+                        e.Cancel = !loadedSuccessfully;
                     }
-                }                
+                }
             }
             else
             {
@@ -188,11 +186,11 @@ namespace Excavator
                 lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
                 lblDbUpload.Content = "Successfully connected to the database";
             }
-            
+
             lblDbUpload.Visibility = Visibility.Visible;
             Mouse.OverrideCursor = null;
         }
-        
+
         #endregion
     }
 }

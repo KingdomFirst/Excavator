@@ -16,11 +16,10 @@
 //
 
 using System;
-using System.Configuration;
-using System.ComponentModel;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
+using System.Configuration;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -107,7 +106,7 @@ namespace Excavator
             selectedNodes = new List<DatabaseNode>();
             var scanner = new DataScanner( database );
             var tables = database.Dmvs.Tables;
-            
+
             foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
             {
                 var rows = scanner.ScanTable( table.Name );
@@ -120,7 +119,7 @@ namespace Excavator
                 {
                     foreach ( var column in rowSchema.Columns )
                     {
-                        var childItem = new DatabaseNode();                        
+                        var childItem = new DatabaseNode();
                         childItem.Name = column.Name;
                         childItem.NodeType = Extensions.GetSQLType( column.Type );
                         childItem.Table.Add( tableItem );
@@ -130,10 +129,9 @@ namespace Excavator
 
                 selectedNodes.Add( tableItem );
             }
-            
+
             return selectedNodes.Count() > 0 ? true : false;
         }
-
 
         /// <summary>
         /// Previews the data.
@@ -141,7 +139,7 @@ namespace Excavator
         /// <param name="tableName">Name of the table to preview.</param>
         /// <returns></returns>
         public DataTable PreviewData( string nodeId )
-        {            
+        {
             var node = selectedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
 
             // if the current node has a parent, preview the parent's data
@@ -158,11 +156,11 @@ namespace Excavator
                 dataTable.Columns.Add( column.Name, column.NodeType );
             }
 
-            var rowData = rows.FirstOrDefault();            
+            var rowData = rows.FirstOrDefault();
             if ( rowData != null )
             {
-                var rowPreview = dataTable.NewRow();            
-                foreach( var column in rowData.Columns )
+                var rowPreview = dataTable.NewRow();
+                foreach ( var column in rowData.Columns )
                 {
                     rowPreview[column.Name] = rowData[column] ?? DBNull.Value;
                 }
@@ -170,7 +168,7 @@ namespace Excavator
                 dataTable.Rows.Add( rowPreview );
                 return dataTable;
             }
-            
+
             return null;
         }
 
@@ -191,7 +189,7 @@ namespace Excavator
                 dataTable.Columns.Add( column.Name, column.NodeType );
             }
 
-            foreach( var row in rows.Take( 100 ) )
+            foreach ( var row in rows.Take( 100 ) )
             {
                 var dataRow = dataTable.NewRow();
                 foreach ( var column in row.Columns )
@@ -203,7 +201,7 @@ namespace Excavator
             }
 
             if ( dataTable.Rows.Count > 0 )
-            {   
+            {
                 return dataTable;
             }
             else
@@ -224,7 +222,7 @@ namespace Excavator
         /// <returns></returns>
         public abstract bool SaveData();
 
-        #endregion        
+        #endregion
     }
 
     /// <summary>

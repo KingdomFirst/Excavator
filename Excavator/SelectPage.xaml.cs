@@ -16,17 +16,12 @@
 //
 
 using System;
-using System.Data;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows;
-using System.Windows.Input;
-using Microsoft.Win32;
-using OrcaMDF.Core.Engine;
-using System.Windows.Navigation;
 using System.ComponentModel;
+using System.Data;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace Excavator
 {
@@ -180,6 +175,5 @@ namespace Excavator
         }
 
         #endregion
-
     }
 }

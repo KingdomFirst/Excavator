@@ -1,8 +1,23 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Windows.Controls;
-using System.Collections;
+﻿// <copyright>
+// Copyright 2013 by the Spark Development Network
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
+//
+
 using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace Excavator
 {
@@ -36,7 +51,7 @@ namespace Excavator
         /// </value>
         public bool? Checked
         {
-            get 
+            get
             {
                 return _isChecked;
             }
@@ -55,9 +70,9 @@ namespace Excavator
         /// </value>
         public string Name
         {
-            get 
-            { 
-                return _name; 
+            get
+            {
+                return _name;
             }
             set
             {
@@ -74,9 +89,9 @@ namespace Excavator
         /// </value>
         public string Id
         {
-            get 
-            { 
-                return _id; 
+            get
+            {
+                return _id;
             }
             set
             {
@@ -110,9 +125,9 @@ namespace Excavator
         /// </value>
         public ObservableCollection<DatabaseNode> Columns
         {
-            get 
-            { 
-                return _columns; 
+            get
+            {
+                return _columns;
             }
         }
 
@@ -124,9 +139,9 @@ namespace Excavator
         /// </value>
         public ObservableCollection<DatabaseNode> Table
         {
-            get 
-            { 
-                return _table; 
+            get
+            {
+                return _table;
             }
         }
 
@@ -142,7 +157,7 @@ namespace Excavator
             _isChecked = false;
             _id = Guid.NewGuid().ToString();
             _columns = new ObservableCollection<DatabaseNode>();
-            _table = new ObservableCollection<DatabaseNode>();            
+            _table = new ObservableCollection<DatabaseNode>();
         }
 
         #endregion
@@ -153,7 +168,7 @@ namespace Excavator
         /// Occurs when a property value changes.
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
-        
+
         /// <summary>
         /// Fires on the property changed event.
         /// </summary>
@@ -164,14 +179,14 @@ namespace Excavator
             {
                 PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
             }
-                
+
             int countCheck = 0;
             if ( propertyName == "Checked" )
             {
                 if ( Id == SelectedId.Id && Table.Count == 0 && Columns.Count != 0 )
                 {
                     SetParent( Columns, Checked );
-                }                
+                }
                 if ( Id == SelectedId.Id && Table.Count > 0 && Columns.Count == 0 )
                 {
                     SetChild( Table, countCheck );
