@@ -40,8 +40,6 @@ namespace Excavator
                 lblDataUpload.Visibility = Visibility.Visible;
                 btnNext.Visibility = Visibility.Hidden;
             }
-
-            
         }
 
         #endregion

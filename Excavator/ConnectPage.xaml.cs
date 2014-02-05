@@ -169,6 +169,10 @@ namespace Excavator
                     }
                 }                
             }
+            else
+            {
+                e.Cancel = true;
+            }
         }
 
         /// <summary>

@@ -60,7 +60,7 @@
         
         <DataGrid Name="grdPreviewData"
             AutoGenerateColumns="True" 
-            AlternationCount="2"
+            AlternationCount="2" Visibility="Hidden"
             AlternatingRowBackground="Gray"
             CanUserAddRows="False" IsReadOnly="True"
             Grid.Row="1" VerticalAlignment="Top"

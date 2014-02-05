@@ -25,8 +25,8 @@ namespace Excavator
         private ObservableCollection<DatabaseNode> _table;
         private bool? _isChecked;
         private Type _nodeType;
-        private string _name;        
-        private string _id;        
+        private string _name;
+        private string _id;
 
         /// <summary>
         /// Gets or sets if the node is checked.
@@ -37,8 +37,8 @@ namespace Excavator
         public bool? Checked
         {
             get 
-            { 
-                return _isChecked; 
+            {
+                return _isChecked;
             }
             set
             {
@@ -139,7 +139,7 @@ namespace Excavator
         /// </summary>
         public DatabaseNode()
         {
-            _isChecked = true;
+            _isChecked = false;
             _id = Guid.NewGuid().ToString();
             _columns = new ObservableCollection<DatabaseNode>();
             _table = new ObservableCollection<DatabaseNode>();            

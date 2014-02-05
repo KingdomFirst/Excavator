@@ -20,6 +20,8 @@ using System.ComponentModel.Composition;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System.Linq;
+using System.Data;
+using System.Web;
 
 using Rock;
 using Rock.Attribute;
@@ -53,19 +55,22 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool TransformData()
         {
-            var pServer = new PersonService();
+            var personService = new PersonService();
+            var admin = personService.Get( 1 );
 
-            // for each selected node
-            // fire a method to import and map a Rock.[Model] object
+            foreach( var node in selectedNodes.Where( n => n.Checked != false ) )
+            {
+                DataTable nodeData = GetData( node.Id );
 
-            // test creating a person
-            var person = new Person();
-            person.BirthDate = new DateTime( 1980, 1, 1 );
-            person.FirstName = "David";
-            person.LastName = "Stevens";
-            person.Gender = Gender.Male;
-
-            pServer.Save( person );
+                switch( node.Name )
+                {
+                    case "Individual_Household":
+                        MapPerson( nodeData );
+                        break;
+                    default:
+                        break;
+                }
+            }
             
             return false;
         }
@@ -80,6 +85,35 @@ namespace Excavator.F1
             return false;
         }
 
+
+        #endregion
+
+        #region Mapped Data
+
+        /// <summary>
+        /// Maps the person.
+        /// </summary>
+        /// <param name="nodeData">The node data.</param>
+        private void MapPerson( DataTable nodeData )
+        {
+            var aliasService = new PersonAliasService();
+            var CurrentPersonAlias = aliasService.Get( 1 );
+            var personService = new PersonService();
+
+            foreach( DataRow row in nodeData.Rows )
+            {
+                // only import where node.Checked
+
+                var person = new Person();
+                //person.FirstName = row["First_Name"] as string;
+                //person.LastName = row["Last_Name"] as string;
+                //person.BirthDate = row["Date_Of_Birth"] as DateTime?;                
+                //person.Gender = (Gender) (Enum.Parse( typeof(Gender), row["Gender"] as string) ?? Gender.Unknown );
+
+                //personService.Add( person, CurrentPersonAlias );
+                //personService.Save( person, CurrentPersonAlias );
+            }            
+        }
 
         #endregion
     }

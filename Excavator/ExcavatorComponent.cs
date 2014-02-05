@@ -143,6 +143,8 @@ namespace Excavator
         public DataTable PreviewData( string nodeId )
         {            
             var node = selectedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
+
+            // if the current node has a parent, preview the parent's data
             if ( node.Table.Any() )
             {
                 node = selectedNodes.Where( n => n.Id.Equals( node.Table.Select( t => t.Id ) ) ).FirstOrDefault();
@@ -173,6 +175,44 @@ namespace Excavator
         }
 
         /// <summary>
+        /// Gets the data table.
+        /// </summary>
+        /// <param name="nodeId">The node identifier.</param>
+        /// <returns></returns>
+        public DataTable GetData( string nodeId )
+        {
+            var node = selectedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
+
+            var scanner = new DataScanner( database );
+            var rows = scanner.ScanTable( node.Name );
+            var dataTable = new DataTable();
+            foreach ( var column in node.Columns )
+            {
+                dataTable.Columns.Add( column.Name, column.NodeType );
+            }
+
+            foreach( var row in rows.Take( 100 ) )
+            {
+                var dataRow = dataTable.NewRow();
+                foreach ( var column in row.Columns )
+                {
+                    dataRow[column.Name] = row[column] ?? DBNull.Value;
+                }
+
+                dataTable.Rows.Add( dataRow );
+            }
+
+            if ( dataTable.Rows.Count > 0 )
+            {   
+                return dataTable;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
@@ -184,49 +224,7 @@ namespace Excavator
         /// <returns></returns>
         public abstract bool SaveData();
 
-        #endregion
-
-        #region Background Tasks
-
-        /// <summary>
-        /// Handles the DoWork event of the bwLoadDatabase control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
-        private void bwLoadDatabase_DoWork( object sender, DoWorkEventArgs e )
-        {
-            BackgroundWorker bw = sender as BackgroundWorker;
-            var scanner = new DataScanner( database );
-            int totalCount = selectedNodes.Count();
-            int processed = 0;
-
-            foreach ( var tableNode in selectedNodes )
-            {
-                var rows = scanner.ScanTable( tableNode.Name );
-                foreach ( var columnNode in tableNode.Columns.Where( n => n.Checked != false ) )
-                {
-
-
-                    //var rowData = table.NewRow();
-                    //foreach ( var column in row.Columns )
-                    //{
-                    //    rowData[column.Name] = row[column] ?? DBNull.Value;
-                    //}
-
-                    //table.Rows.Add( rowData );
-                }
-
-                percentComplete = processed++ * 100 / totalCount;
-                //bw.ReportProgress( percentComplete );
-                if ( OnProgressUpdate != null )
-                {
-                    OnProgressUpdate( percentComplete );
-                }
-            }
-        }
-                
-        #endregion
+        #endregion        
     }
 
     /// <summary>

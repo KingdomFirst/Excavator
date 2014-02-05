@@ -64,7 +64,7 @@
             Grid.Row="2" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom"             
             Style="{StaticResource labelStyleAlert}">            
-            Could not read mdf file. Please make sure the file is not in use.
+            Could not open mdf file. Please make sure the file is not in use.
         </Label>
 
         <!-- Connect the Database -->

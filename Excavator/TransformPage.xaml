@@ -28,7 +28,7 @@
         </Button>
         
         <!-- progress bar here -->
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Progress bar will go here." />
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Text="Progress bar will go here." />
 
         <Label Name="lblDataUpload" Visibility="Hidden"
             Grid.Row="0" HorizontalAlignment="Center"
