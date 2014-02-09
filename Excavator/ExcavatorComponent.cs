@@ -24,6 +24,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using OrcaMDF.Core.Engine;
+using OrcaMDF.Core.MetaData;
 
 namespace Excavator
 {
@@ -35,11 +36,6 @@ namespace Excavator
     public abstract class ExcavatorComponent
     {
         #region Fields
-
-        /// <summary>
-        /// The percentage complete
-        /// </summary>
-        private int percentComplete;
 
         /// <summary>
         /// The local database
@@ -68,11 +64,6 @@ namespace Excavator
             get { return string.Empty; }
             set { errorMessage = value; }
         }
-
-        /// <summary>
-        /// Occurs on progress update.
-        /// </summary>
-        public event ProgressUpdate OnProgressUpdate;
 
         /// <summary>
         /// Holds a reference to the selected nodes
@@ -170,44 +161,6 @@ namespace Excavator
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Gets the data table.
-        /// </summary>
-        /// <param name="nodeId">The node identifier.</param>
-        /// <returns></returns>
-        public DataTable GetData( string nodeId )
-        {
-            var node = selectedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
-
-            var scanner = new DataScanner( database );
-            var rows = scanner.ScanTable( node.Name );
-            var dataTable = new DataTable();
-            foreach ( var column in node.Columns )
-            {
-                dataTable.Columns.Add( column.Name, column.NodeType );
-            }
-
-            foreach ( var row in rows.Take( 100 ) )
-            {
-                var dataRow = dataTable.NewRow();
-                foreach ( var column in row.Columns )
-                {
-                    dataRow[column.Name] = row[column] ?? DBNull.Value;
-                }
-
-                dataTable.Rows.Add( dataRow );
-            }
-
-            if ( dataTable.Rows.Count > 0 )
-            {
-                return dataTable;
-            }
-            else
-            {
-                return null;
-            }
         }
 
         /// <summary>
