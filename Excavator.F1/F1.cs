@@ -15,9 +15,13 @@
 // </copyright>
 //
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Data;
 using System.Linq;
+using OrcaMDF.Core.Engine;
+using OrcaMDF.Core.MetaData;
 using Rock.Model;
 
 namespace Excavator.F1
@@ -47,17 +51,20 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool TransformData()
         {
+            var scanner = new DataScanner( database );
             var personService = new PersonService();
             var admin = personService.Get( 1 );
 
             foreach ( var node in selectedNodes.Where( n => n.Checked != false ) )
             {
-                DataTable nodeData = GetData( node.Id );
+                IQueryable<Row> rowData = scanner.ScanTable( node.Name ).AsQueryable();
+                List<string> selectedColumns = node.Columns.Where( c => c.Checked == true )
+                    .Select( c => c.Name ).ToList();
 
                 switch ( node.Name )
                 {
                     case "Individual_Household":
-                        MapPerson( nodeData );
+                        MapPerson( rowData, selectedColumns );
                         break;
 
                     default:
@@ -86,24 +93,71 @@ namespace Excavator.F1
         /// Maps the person.
         /// </summary>
         /// <param name="nodeData">The node data.</param>
-        private void MapPerson( DataTable nodeData )
+        private void MapPerson( IQueryable<Row> nodeData, List<string> selectedColumns )
         {
             var aliasService = new PersonAliasService();
+            var definedValueService = new DefinedValueService();
             var CurrentPersonAlias = aliasService.Get( 1 );
             var personService = new PersonService();
 
-            foreach ( DataRow row in nodeData.Rows )
+            foreach ( var row in nodeData )
             {
-                // only import where node.Checked
+                // only import where selectedColumns.Contains( row.Column )
 
                 var person = new Person();
-                //person.FirstName = row["First_Name"] as string;
-                //person.LastName = row["Last_Name"] as string;
-                //person.BirthDate = row["Date_Of_Birth"] as DateTime?;
-                //person.Gender = (Gender) (Enum.Parse( typeof(Gender), row["Gender"] as string) ?? Gender.Unknown );
+                person.FirstName = row["First_Name"] as string;
+                person.MiddleName = row["Middle_Name"] as string;
+                person.NickName = row["Goes_By"] as string ?? person.FirstName;
+                person.LastName = row["Last_Name"] as string;
+                person.BirthDate = row["Date_Of_Birth"] as DateTime?;
 
-                //personService.Add( person, CurrentPersonAlias );
-                //personService.Save( person, CurrentPersonAlias );
+                var gender = row["Gender"] as string;
+                if ( gender != null )
+                {
+                    person.Gender = (Gender)Enum.Parse( typeof( Gender ), gender );
+                }
+
+                string marital_status = row["Marital_Status"] as string;
+                if ( marital_status == "Married" )
+                {
+                    person.MaritalStatusValue = definedValueService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED ) );
+                }
+
+                //Single
+                //Separated
+                //Divorced
+                //Widow/ed/er
+
+                // former name?
+                // prefix
+                // suffix
+                // marital_status
+                // first_record
+                // occupation_name
+                // occupation_description
+                // employer
+                // school_name
+                // former_church
+                // status_name (member, etc)
+                // status_date (joined)
+                // substatus (campus)
+                // bar_code
+                // member_env_code
+                // status_comment (notes)
+                // denomination_name
+
+                personService.Add( person, CurrentPersonAlias );
+                personService.Save( person, CurrentPersonAlias );
+
+                //var groupMember = new GroupMember();
+                //groupMember.Person = new Person();
+                //groupMember.Person.Guid = row.PersonGuid.Value;
+                //groupMember.Person.RecordStatusValueId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() ).Id;
+
+                //if ( row.RoleId.HasValue )
+                //{
+                //    groupMember.GroupRoleId = row.RoleId.Value;
+                //}
             }
         }
 
