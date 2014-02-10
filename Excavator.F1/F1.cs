@@ -22,6 +22,7 @@ using System.Data;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using OrcaMDF.Core.MetaData;
+using Rock.Data;
 using Rock.Model;
 
 namespace Excavator.F1
@@ -52,8 +53,7 @@ namespace Excavator.F1
         public override bool TransformData()
         {
             var scanner = new DataScanner( database );
-            var personService = new PersonService();
-            var admin = personService.Get( 1 );
+            int tableCount = 0;
 
             foreach ( var node in selectedNodes.Where( n => n.Checked != false ) )
             {
@@ -70,9 +70,11 @@ namespace Excavator.F1
                     default:
                         break;
                 }
+
+                tableCount++;
             }
 
-            return false;
+            return tableCount > 0 ? true : false;
         }
 
         /// <summary>
@@ -81,7 +83,7 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool SaveData()
         {
-            // not implemented
+            // not implemented yet
             return false;
         }
 
@@ -95,10 +97,44 @@ namespace Excavator.F1
         /// <param name="nodeData">The node data.</param>
         private void MapPerson( IQueryable<Row> nodeData, List<string> selectedColumns )
         {
-            var aliasService = new PersonAliasService();
-            var definedValueService = new DefinedValueService();
-            var CurrentPersonAlias = aliasService.Get( 1 );
+            var attributeService = new AttributeService();
+            var dvService = new DefinedValueService();
             var personService = new PersonService();
+            var noteService = new NoteService();
+
+            // DefinedValues section
+            // Marital statuses: Married, Single, Separated, etc
+            List<DefinedValue> maritalStatusTypes = dvService.Queryable()
+                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS ) ).ToList();
+
+            // Connection statuses: Member, Visitor, Attendee, etc
+            List<DefinedValue> connectionStatusTypes = dvService.Queryable()
+                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS ) ).ToList();
+
+            // Record status reasons: No Activity, Moved, Deceased, etc
+            List<DefinedValue> recordStatusReasons = dvService.Queryable()
+                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS_REASON ) ).ToList();
+
+            // Record statuses: Active, Inactive, Pending
+            int? statusActiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
+            int? statusInactiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
+            int? statusPendingId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
+
+            // Record type: Person
+            int? personRecordTypeId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON ) ).Id;
+
+            // Suffix type: Dr., Jr., II, etc
+            List<DefinedValue> suffixTypes = dvService.Queryable()
+                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_SUFFIX ) ).ToList();
+
+            // Note type: Comment
+            int noteCommentTypeId = new NoteTypeService().Get( new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) ).Id;
+
+            // if any are null then should create new?
+
+            // change this to user-defined person
+            var aliasService = new PersonAliasService();
+            var CurrentPersonAlias = aliasService.Get( 1 );
 
             foreach ( var row in nodeData )
             {
@@ -110,6 +146,7 @@ namespace Excavator.F1
                 person.NickName = row["Goes_By"] as string ?? person.FirstName;
                 person.LastName = row["Last_Name"] as string;
                 person.BirthDate = row["Date_Of_Birth"] as DateTime?;
+                person.RecordTypeValueId = personRecordTypeId;
 
                 var gender = row["Gender"] as string;
                 if ( gender != null )
@@ -117,47 +154,92 @@ namespace Excavator.F1
                     person.Gender = (Gender)Enum.Parse( typeof( Gender ), gender );
                 }
 
-                string marital_status = row["Marital_Status"] as string;
-                if ( marital_status == "Married" )
+                string suffix = row["Suffix"] as string;
+                if ( suffix != null )
                 {
-                    person.MaritalStatusValue = definedValueService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED ) );
+                    person.SuffixValueId = suffixTypes.Where( s => s.Name == suffix )
+                        .Select( s => (int?)s.Id ).FirstOrDefault();
                 }
 
-                //Single
-                //Separated
-                //Divorced
-                //Widow/ed/er
+                string member_status = row["Status_Name"] as string;
+                if ( member_status == "Member" )
+                {
+                    person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
+                    person.RecordStatusValueId = statusActiveId;
+                }
+                else if ( member_status == "Visitor" )
+                {
+                    person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
+                    person.RecordStatusValueId = statusActiveId;
+                }
+                else if ( member_status == "Deceased" )
+                {
+                    person.IsDeceased = true;
+                    person.RecordStatusValueId = statusInactiveId;
+                    person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Name == "Deceased" )
+                        .Select( dv => dv.Id ).FirstOrDefault();
+                }
+                else
+                {
+                    // F1 defaults are Member & Visitor; all others are user-defined
+                    person.ConnectionStatusValueId = connectionStatusTypes.Where( dv => dv.Name == member_status )
+                        .Select( dv => dv.Id ).FirstOrDefault();
+                    person.RecordStatusValueId = statusActiveId;
+                }
 
-                // former name?
+                string join_date = row["Status_Date"] as string;
+                if ( join_date != null )
+                {
+                    DateTime firstCreated;
+                    if ( DateTime.TryParse( join_date, out firstCreated ) )
+                    {
+                        person.CreatedDateTime = firstCreated;
+                    }
+                }
+
+                string marital_status = row["Marital_Status"] as string;
+                if ( marital_status != null )
+                {
+                    person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == marital_status )
+                        .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                }
+                else
+                {
+                    person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == "Unknown" )
+                        .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                }
+
+                string status_comment = row["Status_Comment"] as string;
+                if ( status_comment != null )
+                {
+                    Note comment = new Note();
+                    comment.Text = status_comment;
+                    comment.NoteTypeId = noteCommentTypeId;
+                    RockTransactionScope.WrapTransaction( () =>
+                    {
+                        noteService.Save( comment );
+                    } );
+                }
+
+                // Other Properties (Attributes to create):
                 // prefix
-                // suffix
-                // marital_status
-                // first_record
+                // former name
+                // first_record date
                 // occupation_name
                 // occupation_description
                 // employer
                 // school_name
                 // former_church
-                // status_name (member, etc)
-                // status_date (joined)
-                // substatus (campus)
                 // bar_code
                 // member_env_code
-                // status_comment (notes)
                 // denomination_name
+                // substatus_name (campus)
 
-                personService.Add( person, CurrentPersonAlias );
-                personService.Save( person, CurrentPersonAlias );
-
-                //var groupMember = new GroupMember();
-                //groupMember.Person = new Person();
-                //groupMember.Person.Guid = row.PersonGuid.Value;
-                //groupMember.Person.RecordStatusValueId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() ).Id;
-
-                //if ( row.RoleId.HasValue )
-                //{
-                //    groupMember.GroupRoleId = row.RoleId.Value;
-                //}
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    personService.Add( person, CurrentPersonAlias );
+                    personService.Save( person, CurrentPersonAlias );
+                } );
             }
         }
 
