@@ -7,19 +7,25 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class Communication
     {
         public Nullable<int> Individual_ID { get; set; }
+
         public Nullable<int> Household_ID { get; set; }
+
         public string Communication_Type { get; set; }
+
         public string Communication_Value { get; set; }
+
         public Nullable<bool> Listed { get; set; }
+
         public string Communication_Comment { get; set; }
+
         public Nullable<System.DateTime> LastUpdatedDate { get; set; }
     }
 }

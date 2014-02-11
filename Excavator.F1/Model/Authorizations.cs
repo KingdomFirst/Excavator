@@ -7,19 +7,25 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class Authorizations
     {
         public Nullable<int> AuthorizationID { get; set; }
+
         public Nullable<int> HouseholdID { get; set; }
+
         public Nullable<int> ChurchID { get; set; }
+
         public string PersonName { get; set; }
+
         public Nullable<System.DateTime> AuthorizationDate { get; set; }
+
         public Nullable<System.DateTime> CreatedDate { get; set; }
+
         public Nullable<System.DateTime> LastUpdatedDate { get; set; }
     }
 }

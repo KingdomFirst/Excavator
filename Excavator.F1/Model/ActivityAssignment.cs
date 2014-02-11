@@ -7,25 +7,37 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class ActivityAssignment
     {
         public string Activity_Name { get; set; }
+
         public string Ministry_Name { get; set; }
+
         public string RLC_Name { get; set; }
+
         public string Activity_Time_Name { get; set; }
+
         public Nullable<System.DateTime> Activity_Start_Time { get; set; }
+
         public Nullable<System.DateTime> Activity_End_Time { get; set; }
+
         public Nullable<int> Individual_ID { get; set; }
+
         public Nullable<int> Activity_ID { get; set; }
+
         public Nullable<int> RLC_ID { get; set; }
+
         public Nullable<int> Ministry_ID { get; set; }
+
         public Nullable<System.DateTime> AssignmentDateTime { get; set; }
+
         public string BreakoutGroupName { get; set; }
+
         public Nullable<int> Activity_Time_ID { get; set; }
     }
 }

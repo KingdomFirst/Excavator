@@ -7,17 +7,21 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class Activity_Schedule
     {
         public string Activity_Time_Name { get; set; }
+
         public Nullable<System.DateTime> Activity_Start_Time { get; set; }
+
         public Nullable<System.DateTime> Activity_End_Time { get; set; }
+
         public Nullable<int> Activity_ID { get; set; }
+
         public Nullable<int> Activity_Schedule_ID { get; set; }
     }
 }

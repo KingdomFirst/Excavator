@@ -7,17 +7,21 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class Groups
     {
         public string Group_Name { get; set; }
+
         public Nullable<int> Group_ID { get; set; }
+
         public Nullable<int> Individual_ID { get; set; }
+
         public Nullable<System.DateTime> Created_Date { get; set; }
+
         public string Group_Type_Name { get; set; }
     }
 }

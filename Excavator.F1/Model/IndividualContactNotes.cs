@@ -7,20 +7,27 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class IndividualContactNotes
     {
         public Nullable<int> IndividualContactID { get; set; }
+
         public Nullable<int> ContactInstItemID { get; set; }
+
         public Nullable<int> IndividualID { get; set; }
+
         public Nullable<System.DateTime> IndividualContactDatetime { get; set; }
+
         public Nullable<int> UserID { get; set; }
+
         public string IndividualContactNote { get; set; }
+
         public string ConfidentialNote { get; set; }
+
         public string ContactMethodName { get; set; }
     }
 }

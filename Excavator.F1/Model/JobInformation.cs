@@ -7,18 +7,23 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class JobInformation
     {
         public Nullable<int> JobID { get; set; }
+
         public Nullable<System.DateTime> CreatedDate { get; set; }
+
         public Nullable<System.DateTime> LastUpdatedDate { get; set; }
+
         public string JobInformationName { get; set; }
+
         public Nullable<int> Sort { get; set; }
+
         public string JobInformationText { get; set; }
     }
 }

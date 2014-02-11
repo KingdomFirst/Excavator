@@ -7,28 +7,43 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class Users
     {
         public Nullable<int> UserID { get; set; }
+
         public string UserLogin { get; set; }
+
         public string FirstName { get; set; }
+
         public string MiddleName { get; set; }
+
         public string LastName { get; set; }
+
         public string GoesBy { get; set; }
+
         public Nullable<bool> IsUserEnabled { get; set; }
+
         public string UserBio { get; set; }
+
         public Nullable<bool> IsPastor { get; set; }
+
         public Nullable<bool> IsStaff { get; set; }
+
         public string UserTitle { get; set; }
+
         public string UserPhone { get; set; }
+
         public string UserEmail { get; set; }
+
         public Nullable<int> LinkedIndividualID { get; set; }
+
         public Nullable<System.DateTime> UserCreatedDate { get; set; }
-        public string DepartmentName { get; set; }
+
+        public string DepartmentName { get; set; }
     }
 }

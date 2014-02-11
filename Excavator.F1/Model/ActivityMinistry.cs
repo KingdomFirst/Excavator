@@ -7,18 +7,23 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class ActivityMinistry
     {
         public Nullable<int> Ministry_ID { get; set; }
+
         public Nullable<int> Activity_ID { get; set; }
+
         public string Ministry_Name { get; set; }
+
         public string Activity_Name { get; set; }
+
         public Nullable<bool> Ministry_Active { get; set; }
+
         public Nullable<bool> Activity_Active { get; set; }
     }
 }

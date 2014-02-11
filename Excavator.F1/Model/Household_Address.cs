@@ -7,24 +7,35 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class Household_Address
     {
         public Nullable<int> Individual_ID { get; set; }
+
         public Nullable<int> Household_ID { get; set; }
+
         public string Address_Type { get; set; }
+
         public string Address_1 { get; set; }
+
         public string Address_2 { get; set; }
+
         public string City { get; set; }
+
         public string State { get; set; }
+
         public string Postal_Code { get; set; }
+
         public string country { get; set; }
+
         public string County { get; set; }
+
         public string Address_Comment { get; set; }
+
         public Nullable<System.DateTime> Last_Updated_Date { get; set; }
     }
 }

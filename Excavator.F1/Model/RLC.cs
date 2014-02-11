@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
@@ -15,17 +15,27 @@ namespace Excavator
     public partial class RLC
     {
         public Nullable<int> RLC_ID { get; set; }
-        public Nullable<int> Activity_ID { get; set; }
-        public string RLC_Name { get; set; }
-        public Nullable<int> Activity_Group_ID { get; set; }
-        public Nullable<System.DateTime> Start_Age_Date { get; set; }
-        public Nullable<System.DateTime> End_Age_Date { get; set; }
-        public Nullable<bool> Is_Active { get; set; }
-        public string Room_Code { get; set; }
-        public string Room_Desc { get; set; }
-        public string Room_Name { get; set; }
-        public Nullable<int> Max_Capacity { get; set; }
-        public string Building_Name { get; set; }
 
+        public Nullable<int> Activity_ID { get; set; }
+
+        public string RLC_Name { get; set; }
+
+        public Nullable<int> Activity_Group_ID { get; set; }
+
+        public Nullable<System.DateTime> Start_Age_Date { get; set; }
+
+        public Nullable<System.DateTime> End_Age_Date { get; set; }
+
+        public Nullable<bool> Is_Active { get; set; }
+
+        public string Room_Code { get; set; }
+
+        public string Room_Desc { get; set; }
+
+        public string Room_Name { get; set; }
+
+        public Nullable<int> Max_Capacity { get; set; }
+
+        public string Building_Name { get; set; }
     }
 }

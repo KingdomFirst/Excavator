@@ -7,25 +7,37 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator
+namespace Excavator.F1
 {
     using System;
     using System.Collections.Generic;
-    
+
     public partial class Notes
     {
         public Nullable<int> Household_ID { get; set; }
+
         public Nullable<int> Individual_ID { get; set; }
+
         public string Note_Type_Name { get; set; }
+
         public string Note_Text { get; set; }
+
         public Nullable<bool> NoteTypeActive { get; set; }
+
         public Nullable<bool> NoteArchived { get; set; }
+
         public Nullable<System.DateTime> NoteCreated { get; set; }
+
         public Nullable<System.DateTime> NoteLastUpdated { get; set; }
+
         public Nullable<bool> NoteTextArchived { get; set; }
+
         public Nullable<System.DateTime> NoteTextCreated { get; set; }
+
         public Nullable<System.DateTime> NoteTextLastUpdated { get; set; }
+
         public Nullable<int> NoteCreatedByUserID { get; set; }
+
         public Nullable<int> NoteLastUpdatedByUserID { get; set; }
     }
 }
