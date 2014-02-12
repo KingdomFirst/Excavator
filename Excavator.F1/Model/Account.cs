@@ -20,7 +20,9 @@ namespace Excavator.F1
 
         public string Account_Type_Name { get; set; }
 
-        public string Account { get; set; }
+        // Summary:
+        // Actual column name is Account, not Account_Name.  Renamed to avoid EF conflicts.
+        public string Account_Name { get; set; }
 
         public Nullable<int> Routing_Number { get; set; }
     }
