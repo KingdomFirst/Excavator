@@ -49,6 +49,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="F1.cs" />
+    <Compile Include="Model\Group_Attendance.cs" />
+    <Compile Include="Model\GiftednessProgram.cs" />
+    <Compile Include="Model\IndividualGiftedness.cs" />
     <Compile Include="Model\ActivityAssignment.cs" />
     <Compile Include="Model\ActivityMinistry.cs" />
     <Compile Include="Model\Activity_Group.cs" />
@@ -69,6 +72,7 @@
     <Compile Include="Model\Job.cs" />
     <Compile Include="Model\JobInformation.cs" />
     <Compile Include="Model\Notes.cs" />
+    <Compile Include="Model\Account.cs" />
     <Compile Include="Model\Pledge.cs" />
     <Compile Include="Model\Requirement.cs" />
     <Compile Include="Model\RLC.cs" />
