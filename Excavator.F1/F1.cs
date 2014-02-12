@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Data;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using OrcaMDF.Core.MetaData;
@@ -99,12 +98,18 @@ namespace Excavator.F1
         private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
+            var fieldTypeService = new FieldTypeService();
             var attributeService = new AttributeService();
             var noteTypeService = new NoteTypeService();
             var dvService = new DefinedValueService();
             var personService = new PersonService();
             var campusService = new CampusService();
             var noteService = new NoteService();
+
+            // change this to user-defined person
+            var aliasService = new PersonAliasService();
+            var CurrentPersonAlias = aliasService.Get( 1 );
+            var campusDesignation = new List<string>();
 
             // Marital statuses: Married, Single, Separated, etc
             List<DefinedValue> maritalStatusTypes = dvService.Queryable()
@@ -144,22 +149,53 @@ namespace Excavator.F1
             // Campuses: user-defined, should match F1 Campus designation
             List<Campus> campusList = campusService.Queryable().ToList();
 
+            // Add person Attributes to store F1 unique ID's
+            string householdIDKey = "Household_ID";
+            string individualIDKey = "Individual_ID";
             int personEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-
+            int numberFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
+            int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
+            //int numberFieldTypeId = fieldTypeService.Get( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             var personAttributeList = attributeService.Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).ToList();
-            if ( !personAttributeList.Any( a => a.Name == "F1_Household_ID") )
+            var householdAttributeId = personAttributeList.FirstOrDefault( a => a.Key == householdIDKey );
+            if ( householdAttributeId == null )
             {
-                Attribute
+                householdAttributeId = new Rock.Model.Attribute();
+                householdAttributeId.Key = householdIDKey;
+                householdAttributeId.Name = "F1 Household ID";
+                householdAttributeId.FieldTypeId = numberFieldTypeId;
+                householdAttributeId.EntityTypeId = personEntityTypeId;
+                householdAttributeId.Description = "The FellowshipOne household identifier for the person that was imported";
+                householdAttributeId.DefaultValue = string.Empty;
+                householdAttributeId.IsMultiValue = false;
+                householdAttributeId.IsRequired = false;
+                householdAttributeId.Order = 0;
+
+                attributeService.Add( householdAttributeId, CurrentPersonAlias );
+                attributeService.Save( householdAttributeId, CurrentPersonAlias );
             }
 
-            // if any are null then should create new?
+            var individualAttributeId = personAttributeList.FirstOrDefault( a => a.Key == individualIDKey );
+            if ( individualAttributeId == null )
+            {
+                individualAttributeId = new Rock.Model.Attribute();
+                individualAttributeId.Key = individualIDKey;
+                individualAttributeId.Name = "F1 Individual ID";
+                individualAttributeId.FieldTypeId = numberFieldTypeId;
+                individualAttributeId.EntityTypeId = personEntityTypeId;
+                individualAttributeId.Description = "The FellowshipOne individual identifier for the person that was imported";
+                individualAttributeId.DefaultValue = string.Empty;
+                individualAttributeId.IsMultiValue = false;
+                individualAttributeId.IsRequired = false;
+                individualAttributeId.Order = 0;
 
-            // change this to user-defined person
-            var aliasService = new PersonAliasService();
-            var CurrentPersonAlias = aliasService.Get( 1 );
-            var campusDesignation = new List<string>();
+                attributeService.Add( individualAttributeId, CurrentPersonAlias );
+                attributeService.Save( individualAttributeId, CurrentPersonAlias );
+            }
 
-            foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
+            // if any other attributes are null then should create new?
+
+            foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r[householdIDKey] as int? ) )
             {
                 // only import where selectedColumns.Contains( row.Column )
 
@@ -244,20 +280,20 @@ namespace Excavator.F1
                             .Select( dv => (int?)dv.Id ).FirstOrDefault();
                     }
 
-                    string position = row["Household_Position"] as string;
-                    if ( position != null )
+                    string familyRole = row["Household_Position"] as string;
+                    if ( familyRole != null )
                     {
-                        if ( position == "Child" || person.Age < 18 )
+                        if ( familyRole == "Child" || person.Age < 18 )
                         {
                             groupRoleId = childRoleId;
                         }
-                        else if ( position == "Visitor" )
+                        else if ( familyRole == "Visitor" )
                         {
                             // assign person as a known relationship of this family/group
                         }
                     }
 
-                    string campus = row["Substatus_Name"] as string;
+                    string campus = row["SubStatus_Name"] as string;
                     if ( campus != null )
                     {
                         campusDesignation.Add( campus );
@@ -276,28 +312,70 @@ namespace Excavator.F1
                     }
 
                     // start adding person attributes
-
                     person.Attributes = new Dictionary<string, AttributeCache>();
                     person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
 
                     string household_id = row["Household_ID"] as string;
                     if ( household_id != null )
                     {
+                        person.Attributes.Add( householdIDKey, AttributeCache.Read( householdAttributeId ) );
+                        var attributeValue = new AttributeValue() { Value = household_id };
+                        var valueList = new List<AttributeValue>() { attributeValue };
+                        person.AttributeValues.Add( householdIDKey, valueList );
                     }
 
                     string individual_id = row["Individual_ID"] as string;
                     if ( individual_id != null )
                     {
+                        person.Attributes.Add( individualIDKey, AttributeCache.Read( individualAttributeId ) );
+                        var attributeValue = new AttributeValue() { Value = individual_id };
+                        var valueList = new List<AttributeValue>() { attributeValue };
+                        person.AttributeValues.Add( individualIDKey, valueList );
                     }
 
-                    // Other Properties (Attributes to create):
+                    string former_church = row["Former_Church"] as string;
+                    if ( former_church != null )
+                    {
+                        var previousChurchAttribute = personAttributeList.FirstOrDefault( a => a.Key == "PreviousChurch" );
+                        person.Attributes.Add( "PreviousChurch", AttributeCache.Read( previousChurchAttribute ) );
+                        var attributeValue = new AttributeValue() { Value = former_church };
+                        var valueList = new List<AttributeValue>() { attributeValue };
+                        person.AttributeValues.Add( "PreviousChurch", valueList );
+                    }
+
+                    string employer = row["Employer"] as string;
+                    if ( employer != null )
+                    {
+                        var employerAttribute = personAttributeList.FirstOrDefault( a => a.Key == "Employer" );
+                        person.Attributes.Add( "Employer", AttributeCache.Read( employerAttribute ) );
+                        var attributeValue = new AttributeValue() { Value = employer };
+                        var valueList = new List<AttributeValue>() { attributeValue };
+                        person.AttributeValues.Add( "Employer", valueList );
+                    }
+
+                    string position = row["Occupation_Name"] as string ?? row["Occupation_Description"] as string;
+                    if ( position != null )
+                    {
+                        var positionAttribute = personAttributeList.FirstOrDefault( a => a.Key == "Position" );
+                        person.Attributes.Add( "Position", AttributeCache.Read( positionAttribute ) );
+                        var attributeValue = new AttributeValue() { Value = former_church };
+                        var valueList = new List<AttributeValue>() { attributeValue };
+                        person.AttributeValues.Add( "Position", valueList );
+                    }
+
+                    string school = row["School_Name"] as string;
+                    if ( position != null )
+                    {
+                        var schoolAttribute = personAttributeList.FirstOrDefault( a => a.Key == "School" );
+                        person.Attributes.Add( "School", AttributeCache.Read( schoolAttribute ) );
+                        var attributeValue = new AttributeValue() { Value = former_church };
+                        var valueList = new List<AttributeValue>() { attributeValue };
+                        person.AttributeValues.Add( "School", valueList );
+                    }
+
+                    // Other properties (Attributes to create):
                     // former name
                     // first_record date
-                    // occupation_name
-                    // occupation_description
-                    // employer
-                    // school_name
-                    // former_church
                     // bar_code
                     // member_env_code
                     // denomination_name
