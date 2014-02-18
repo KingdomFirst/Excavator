@@ -66,9 +66,9 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Holds a reference to the selected nodes
+        /// Holds a reference to the loaded nodes
         /// </summary>
-        public List<DatabaseNode> selectedNodes;
+        public List<DatabaseNode> loadedNodes;
 
         #endregion
 
@@ -94,7 +94,7 @@ namespace Excavator
             // currently only handles orca framework
             database = (Database)db;
             // TODO: implement option to read from SQL //
-            selectedNodes = new List<DatabaseNode>();
+            loadedNodes = new List<DatabaseNode>();
             var scanner = new DataScanner( database );
             var tables = database.Dmvs.Tables;
 
@@ -118,10 +118,10 @@ namespace Excavator
                     }
                 }
 
-                selectedNodes.Add( tableItem );
+                loadedNodes.Add( tableItem );
             }
 
-            return selectedNodes.Count() > 0 ? true : false;
+            return loadedNodes.Count() > 0 ? true : false;
         }
 
         /// <summary>
@@ -131,12 +131,12 @@ namespace Excavator
         /// <returns></returns>
         public DataTable PreviewData( string nodeId )
         {
-            var node = selectedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
+            var node = loadedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
 
             // if the current node has a parent, preview the parent's data
             if ( node.Table.Any() )
             {
-                node = selectedNodes.Where( n => n.Id.Equals( node.Table.Select( t => t.Id ) ) ).FirstOrDefault();
+                node = loadedNodes.Where( n => n.Id.Equals( node.Table.Select( t => t.Id ) ) ).FirstOrDefault();
             }
 
             var scanner = new DataScanner( database );
@@ -164,10 +164,10 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Maps and saves the data from the dataset.
+        /// Transforms and saves the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public abstract bool MapData();
+        public abstract bool TransformData();
 
         #endregion
     }

@@ -43,7 +43,7 @@ namespace Excavator
             if ( parameter != null )
             {
                 excavator = parameter;
-                treeView.ItemsSource = new ObservableCollection<DatabaseNode>( excavator.selectedNodes );
+                treeView.ItemsSource = new ObservableCollection<DatabaseNode>( excavator.loadedNodes );
             }
             else
             {

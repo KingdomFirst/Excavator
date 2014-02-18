@@ -154,8 +154,8 @@ namespace Excavator
         /// </summary>
         public DatabaseNode()
         {
-            _isChecked = false;
-            _id = Guid.NewGuid().ToString();
+            _isChecked = true;
+            _id = Guid.NewGuid().ToString().ToUpper();
             _columns = new ObservableCollection<DatabaseNode>();
             _table = new ObservableCollection<DatabaseNode>();
         }
