@@ -50,7 +50,7 @@ namespace Excavator.F1
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public override bool TransformData()
+        public override bool MapData()
         {
             var scanner = new DataScanner( database );
             int tableCount = 0;
@@ -63,11 +63,16 @@ namespace Excavator.F1
 
                 switch ( node.Name )
                 {
+                    case "Contribution":
+                        MapContribution( tableData, selectedColumns );
+                        break;
+
                     case "Individual_Household":
                         MapPerson( tableData, selectedColumns );
                         break;
 
                     default:
+                        tableCount--;
                         break;
                 }
 
@@ -77,19 +82,18 @@ namespace Excavator.F1
             return tableCount > 0 ? true : false;
         }
 
-        /// <summary>
-        /// Saves the data for this instance.
-        /// </summary>
-        /// <returns></returns>
-        public override bool SaveData()
-        {
-            // not implemented yet
-            return false;
-        }
-
         #endregion
 
         #region Mapped Data
+
+        /// <summary>
+        /// Maps the contribution.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <param name="selectedColumns">The selected columns.</param>
+        private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns )
+        {
+        }
 
         /// <summary>
         /// Maps the person.

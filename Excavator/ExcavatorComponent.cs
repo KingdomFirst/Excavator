@@ -164,16 +164,10 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Transforms the data from the dataset.
+        /// Maps and saves the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public abstract bool TransformData();
-
-        /// <summary>
-        /// Saves the data for this instance.
-        /// </summary>
-        /// <returns></returns>
-        public abstract bool SaveData();
+        public abstract bool MapData();
 
         #endregion
     }

@@ -103,7 +103,7 @@ namespace Excavator
         /// <exception cref="System.NotImplementedException"></exception>
         private void bwTransformData_DoWork( object sender, DoWorkEventArgs e )
         {
-            bool isComplete = excavator.TransformData();
+            bool isComplete = excavator.MapData();
         }
 
         /// <summary>
