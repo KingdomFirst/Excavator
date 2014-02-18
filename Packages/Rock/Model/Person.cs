@@ -901,7 +901,6 @@ namespace Rock.Model
         public override Dictionary<string, object> ToDictionary()
         {
             var dictionary = base.ToDictionary();
-            dictionary.Add( "BirthDate", BirthDate );
             dictionary.Add( "Age", AgePrecise );
             dictionary.Add( "DaysToBirthday", DaysToBirthday );
             return dictionary;
@@ -1244,7 +1243,7 @@ namespace Rock.Model
         /// <returns></returns>
         public static IQueryable<Group> GetFamilies( this Person person )
         {
-            return new PersonService().GetFamilies( person );
+            return new PersonService().GetFamilies( person != null ? person.Id : 0);
         }
 
         /// <summary>
@@ -1255,7 +1254,7 @@ namespace Rock.Model
         /// <returns>Returns a queryable collection of <see cref="Rock.Model.Person"/> entities representing the provided Person's family.</returns>
         public static IQueryable<GroupMember> GetFamilyMembers( this Person person, bool includeSelf = false )
         {
-            return new PersonService().GetFamilyMembers( person, includeSelf );
+            return new PersonService().GetFamilyMembers( person != null ? person.Id : 0, includeSelf );
         }
 
         /// <summary>

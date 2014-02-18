@@ -165,9 +165,7 @@ function() {
         /// <param name="controls">The controls.</param>
         public override void RenderControls( Type entityType, FilterField filterControl, HtmlTextWriter writer, Control[] controls )
         {
-            controls[0].RenderControl( writer );
-            controls[1].RenderControl( writer );
-            controls[2].RenderControl( writer );
+            base.RenderControls( entityType, filterControl, writer, controls );
         }
 
         /// <summary>
@@ -242,7 +240,7 @@ function() {
                     new
                     {
                         PersonId = xx.Key,
-                        TotalAmount = xx.Sum( ss => ss.Amount )
+                        TotalAmount = xx.Sum( ss => ss.TotalAmount )
                     } );
 
             if ( comparisonType == ComparisonType.LessThan )

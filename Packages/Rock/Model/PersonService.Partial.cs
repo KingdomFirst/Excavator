@@ -16,8 +16,9 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Data.Entity.SqlServer;
 using System.Linq;
-
+using Rock;
 using Rock.Data;
 
 namespace Rock.Model
@@ -264,7 +265,7 @@ namespace Rock.Model
         /// <param name="includeDeceased">A <see cref="System.Boolean"/> flag indicating if deceased individuals should be included in search results, if <c>true</c> then they will be 
         /// included, otherwise <c>false</c>.</param>
         /// <returns>A queryable collection of <see cref="Rock.Model.Person"/> entities that match the search criteria.</returns>
-        public IQueryable<Person> GetByFullName( string fullName, bool includeDeceased = false )
+        public IQueryable<Person> GetByFullName( string fullName, bool includeDeceased = false, bool includeSoundsLike = false )
         {
             var names = fullName.SplitDelimitedValues();
 
@@ -289,11 +290,14 @@ namespace Rock.Model
             var qry = Queryable( includeDeceased );
             if ( !string.IsNullOrWhiteSpace( lastName ) )
             {
-                qry = qry.Where( p => p.LastName.StartsWith( lastName ) );
+                qry = qry.Where( p => p.LastName.StartsWith( lastName )
+                    || ( includeSoundsLike && SqlFunctions.SoundCode( p.LastName ) == SqlFunctions.SoundCode( lastName ) ) );
             }
             if ( !string.IsNullOrWhiteSpace( firstName ) )
             {
-                qry = qry.Where( p => p.FirstName.StartsWith( firstName ) || p.NickName.StartsWith( firstName ) );
+                qry = qry.Where( p => p.FirstName.StartsWith( firstName ) || p.NickName.StartsWith( firstName ) 
+                    || p.NickName.StartsWith( firstName ) 
+                    || ( includeSoundsLike && SqlFunctions.SoundCode( p.FirstName ) == SqlFunctions.SoundCode( firstName ) ) );
             }
 
             return qry;
@@ -319,14 +323,14 @@ namespace Rock.Model
         /// <summary>
         /// Gets the families.
         /// </summary>
-        /// <param name="person">The person.</param>
+        /// <param name="personId">The person identifier.</param>
         /// <returns></returns>
-        public IQueryable<Group> GetFamilies( Person person )
+        public IQueryable<Group> GetFamilies(int personId)
         {
             Guid familyGuid = new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY );
 
             return new GroupMemberService().Queryable()
-                .Where( m => m.PersonId == person.Id && m.Group.GroupType.Guid == familyGuid )
+                .Where( m => m.PersonId == personId && m.Group.GroupType.Guid == familyGuid )
                 .Select( m => m.Group )
                 .Distinct();
         }
@@ -334,31 +338,82 @@ namespace Rock.Model
         /// <summary>
         /// Returns a collection of <see cref="Rock.Model.Person" /> entities containing the family members of the provided person.
         /// </summary>
-        /// <param name="person">A <see cref="Rock.Model.Person" /> representing the person to get the family members for.</param>
+        /// <param name="personId">The person identifier.</param>
         /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
         /// <returns>
         /// An enumerable collection of <see cref="Rock.Model.Person" /> entities containing the family members of the provided person.
         /// </returns>
-        public IQueryable<GroupMember> GetFamilyMembers( Person person, bool includeSelf = false )
+        public IQueryable<GroupMember> GetFamilyMembers( int personId, bool includeSelf = false )
         {
             Guid familyGuid = new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY );
 
-            return new GroupMemberService().Queryable()
-                .Where( m => m.PersonId == person.Id && m.Group.GroupType.Guid == familyGuid)
+            return new GroupMemberService().Queryable( "Person" )
+                .Where( m => m.PersonId == personId && m.Group.GroupType.Guid == familyGuid )
                 .SelectMany( m => m.Group.Members)
-                .Where( fm => includeSelf || fm.PersonId != person.Id)
+                .Where( fm => includeSelf || fm.PersonId != personId )
                 .Distinct();
+        }
+
+        /// <summary>
+        /// Returns a collection of <see cref="Rock.Model.Person" /> entities containing the family members of the provided person.
+        /// </summary>
+        /// <param name="family">The family.</param>
+        /// <param name="personId">The person identifier.</param>
+        /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
+        /// <returns>
+        /// An enumerable collection of <see cref="Rock.Model.Person" /> entities containing the family members of the provided person.
+        /// </returns>
+        public IQueryable<GroupMember> GetFamilyMembers( Group family, int personId, bool includeSelf = false )
+        {
+            return new GroupMemberService().Queryable( "Person" )
+                .Where( m => m.GroupId == family.Id )
+                .Where( m => includeSelf || m.PersonId != personId )
+                .OrderBy( m => m.GroupRole.Order)
+                .ThenBy( m => m.Person.BirthDate ?? DateTime.MinValue)
+                .ThenByDescending( m => m.Person.Gender )
+                .Distinct();
+        }
+
+        /// <summary>
+        /// Gets the family names.
+        /// </summary>
+        /// <param name="personId">The person identifier.</param>
+        /// <param name="includeMemberNames">if set to <c>true</c> [include member names].</param>
+        /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
+        /// <returns></returns>
+        public List<string> GetFamilyNames( int personId, bool includeMemberNames = true, bool includeSelf = true)
+        {
+            var familyNames = new List<string>();
+
+            foreach(var family in GetFamilies(personId))
+            {
+                string familyName = family.Name;
+
+                if ( includeMemberNames )
+                {
+                    var nickNames = GetFamilyMembers( family, personId, includeSelf )
+                        .Select( m => m.Person.NickName ).ToList();
+                    if ( nickNames.Any() )
+                    {
+                        familyName = string.Format( "{0} ({1})", familyName, nickNames.AsDelimited( ", " ) );
+                    }
+                }
+
+                familyNames.Add( familyName );
+            }
+
+            return familyNames;
         }
 
         /// <summary>
         /// Gets the first location.
         /// </summary>
-        /// <param name="person">The person.</param>
+        /// <param name="personId">The person identifier.</param>
         /// <param name="locationTypeValueId">The location type value id.</param>
         /// <returns></returns>
-        public Location GetFirstLocation( Person person, int locationTypeValueId )
+        public Location GetFirstLocation( int personId, int locationTypeValueId )
         {
-            return GetFamilies( person )
+            return GetFamilies( personId )
                 .SelectMany( g => g.GroupLocations )
                 .Where( gl => gl.GroupLocationTypeValueId == locationTypeValueId )
                 .Select( gl => gl.Location )
@@ -485,7 +540,7 @@ namespace Rock.Model
                 return null;
             }
 
-            return GetFamilyMembers(person)
+            return GetFamilyMembers(person.Id)
                 .Where( m => m.GroupRole.Guid == adultGuid)
                 .Where( m => m.Person.Gender != person.Gender )
                 .Where( m => m.Person.MaritalStatusValueId == marriedDefinedValueId)
