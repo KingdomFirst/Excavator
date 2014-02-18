@@ -94,7 +94,8 @@ namespace Excavator.F1
         /// <summary>
         /// Maps the person.
         /// </summary>
-        /// <param name="tableData">The node data.</param>
+        /// <param name="tableData">The table data.</param>
+        /// <param name="selectedColumns">The selected columns.</param>
         private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
@@ -153,8 +154,8 @@ namespace Excavator.F1
             string householdIDKey = "Household_ID";
             string individualIDKey = "Individual_ID";
             int personEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-            int numberFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
+            int numberFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             //int numberFieldTypeId = fieldTypeService.Get( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             var personAttributeList = attributeService.Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).ToList();
             var householdAttributeId = personAttributeList.FirstOrDefault( a => a.Key == householdIDKey );
@@ -192,8 +193,6 @@ namespace Excavator.F1
                 attributeService.Add( individualAttributeId, CurrentPersonAlias );
                 attributeService.Save( individualAttributeId, CurrentPersonAlias );
             }
-
-            // if any other attributes are null then should create new?
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r[householdIDKey] as int? ) )
             {
