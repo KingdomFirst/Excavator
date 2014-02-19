@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.ComponentModel;
 using OrcaMDF.Core.MetaData;
 
 namespace Excavator
@@ -23,7 +24,7 @@ namespace Excavator
     /// <summary>
     /// Extensions to the base components
     /// </summary>
-    class Extensions
+    public static class Extensions
     {
         /// <summary>
         /// Gets the C# type from a SQL or OrcaMDF type.
@@ -83,6 +84,20 @@ namespace Excavator
                 default:
                     throw new ArgumentOutOfRangeException( "Conversion failed: type not recognized " + type );
             }
+        }
+
+        /// <summary>
+        /// Converts the value to Type, or if unsuccessful, returns the default value of Type.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public static T AsType<T>( this string value )
+        {
+            var converter = TypeDescriptor.GetConverter( typeof( T ) );
+            return converter.IsValid( value )
+                ? (T)converter.ConvertFrom( value )
+                : default( T );
         }
     }
 }
