@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
 using OrcaMDF.Core.Engine;
@@ -50,19 +51,9 @@ namespace Excavator.F1
         private string householdIDKey = "Household_ID";
 
         /// <summary>
-        /// The Household ID Attribute Type
-        /// </summary>
-        private Rock.Model.Attribute HouseholdAttribute;
-
-        /// <summary>
         /// The key name to use for the FellowshipOne individual identifier
         /// </summary>
         private string individualIDKey = "Individual_ID";
-
-        /// <summary>
-        /// The Individual ID Attribute Type
-        /// </summary>
-        private Rock.Model.Attribute IndividualAttribute;
 
         /// <summary>
         /// The person assigned to do the import
@@ -77,7 +68,7 @@ namespace Excavator.F1
         /// <summary>
         /// Holds a list of all the people who've been imported
         /// </summary>
-        private List<ImportedPerson> ImportedPeople;
+        private List<ImportedPerson> ImportedPersonList;
 
         #region Methods
 
@@ -90,34 +81,18 @@ namespace Excavator.F1
             // Verify we have everything we need
             VerifyRockAttributes();
 
-            var scanner = new DataScanner( database );
-            int tableCount = 0;
-
+            int workerCount = 0;
             foreach ( var node in loadedNodes.Where( n => n.Checked != false ) )
             {
-                IQueryable<Row> tableData = scanner.ScanTable( node.Name ).AsQueryable();
-                List<string> selectedColumns = node.Columns.Where( c => c.Checked == true )
-                    .Select( c => c.Name ).ToList();
-
-                switch ( node.Name )
-                {
-                    case "Contribution":
-                        MapContribution( tableData, selectedColumns );
-                        break;
-
-                    case "Individual_Household":
-                        MapPerson( tableData, selectedColumns );
-                        break;
-
-                    default:
-                        tableCount--;
-                        break;
-                }
-
-                tableCount++;
+                BackgroundWorker bwSpawnWorker = new BackgroundWorker();
+                bwSpawnWorker.DoWork += bwSpawnWorker_DoWork;
+                bwSpawnWorker.ProgressChanged += bwSpawnWorker_ProgressChanged;
+                bwSpawnWorker.RunWorkerCompleted += bwSpawnWorker_RunWorkerCompleted;
+                bwSpawnWorker.RunWorkerAsync( node.Name );
+                workerCount++;
             }
 
-            return tableCount > 0 ? true : false;
+            return workerCount > 0 ? true : false;
         }
 
         /// <summary>
@@ -126,6 +101,7 @@ namespace Excavator.F1
         public void VerifyRockAttributes()
         {
             var attributeService = new AttributeService();
+            var attributeValueService = new AttributeValueService();
 
             // change this to user-defined person
             var aliasService = new PersonAliasService();
@@ -137,43 +113,60 @@ namespace Excavator.F1
 
             PersonAttributeList = attributeService.Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).ToList();
 
-            HouseholdAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == householdIDKey );
-            if ( HouseholdAttribute == null )
+            var householdAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == householdIDKey );
+            if ( householdAttribute == null )
             {
-                HouseholdAttribute = new Rock.Model.Attribute();
-                HouseholdAttribute.Key = householdIDKey;
-                HouseholdAttribute.Name = "F1 Household ID";
-                HouseholdAttribute.FieldTypeId = numberFieldTypeId;
-                HouseholdAttribute.EntityTypeId = personEntityTypeId;
-                HouseholdAttribute.Description = "The FellowshipOne household identifier for the person that was imported";
-                HouseholdAttribute.DefaultValue = string.Empty;
-                HouseholdAttribute.IsMultiValue = false;
-                HouseholdAttribute.IsRequired = false;
-                HouseholdAttribute.Order = 0;
+                householdAttribute = new Rock.Model.Attribute();
+                householdAttribute.Key = householdIDKey;
+                householdAttribute.Name = "F1 Household ID";
+                householdAttribute.FieldTypeId = numberFieldTypeId;
+                householdAttribute.EntityTypeId = personEntityTypeId;
+                householdAttribute.EntityTypeQualifierValue = string.Empty;
+                householdAttribute.EntityTypeQualifierColumn = string.Empty;
+                householdAttribute.Description = "The FellowshipOne household identifier for the person that was imported";
+                householdAttribute.DefaultValue = string.Empty;
+                householdAttribute.IsMultiValue = false;
+                householdAttribute.IsRequired = false;
+                householdAttribute.Order = 0;
 
-                attributeService.Add( HouseholdAttribute, ImportPersonAlias );
-                attributeService.Save( HouseholdAttribute, ImportPersonAlias );
-                PersonAttributeList.Add( HouseholdAttribute );
+                attributeService.Add( householdAttribute, ImportPersonAlias );
+                attributeService.Save( householdAttribute, ImportPersonAlias );
+                PersonAttributeList.Add( householdAttribute );
             }
 
-            IndividualAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == individualIDKey );
-            if ( IndividualAttribute == null )
+            var individualAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == individualIDKey );
+            if ( individualAttribute == null )
             {
-                IndividualAttribute = new Rock.Model.Attribute();
-                IndividualAttribute.Key = individualIDKey;
-                IndividualAttribute.Name = "F1 Individual ID";
-                IndividualAttribute.FieldTypeId = numberFieldTypeId;
-                IndividualAttribute.EntityTypeId = personEntityTypeId;
-                IndividualAttribute.Description = "The FellowshipOne individual identifier for the person that was imported";
-                IndividualAttribute.DefaultValue = string.Empty;
-                IndividualAttribute.IsMultiValue = false;
-                IndividualAttribute.IsRequired = false;
-                IndividualAttribute.Order = 0;
+                individualAttribute = new Rock.Model.Attribute();
+                individualAttribute.Key = individualIDKey;
+                individualAttribute.Name = "F1 Individual ID";
+                individualAttribute.FieldTypeId = numberFieldTypeId;
+                individualAttribute.EntityTypeId = personEntityTypeId;
+                individualAttribute.EntityTypeQualifierValue = string.Empty;
+                individualAttribute.EntityTypeQualifierColumn = string.Empty;
+                individualAttribute.Description = "The FellowshipOne individual identifier for the person that was imported";
+                individualAttribute.DefaultValue = string.Empty;
+                individualAttribute.IsMultiValue = false;
+                individualAttribute.IsRequired = false;
+                individualAttribute.Order = 0;
 
-                attributeService.Add( IndividualAttribute, ImportPersonAlias );
-                attributeService.Save( IndividualAttribute, ImportPersonAlias );
-                PersonAttributeList.Add( IndividualAttribute );
+                attributeService.Add( individualAttribute, ImportPersonAlias );
+                attributeService.Save( individualAttribute, ImportPersonAlias );
+                PersonAttributeList.Add( individualAttribute );
             }
+
+            // Get all current people with household & individual ID's
+            var listHouseholdID = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { av.EntityId, av.Value } ).ToList();
+            var listIndividualID = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { av.EntityId, av.Value } ).ToList();
+
+            ImportedPersonList = listHouseholdID.Join( listIndividualID, household => household.EntityId
+                , individual => individual.EntityId
+                , ( household, individual ) => new ImportedPerson
+                {
+                    PersonID = household.EntityId,
+                    HouseholdID = household.Value.AsType<int?>(),
+                    IndividualID = individual.Value.AsType<int?>()
+                } ).ToList();
         }
 
         /// <summary>
@@ -184,15 +177,68 @@ namespace Excavator.F1
         /// <returns></returns>
         private int? GetPersonId( int? individualID = null, int? householdID = null )
         {
-            var importedPerson = ImportedPeople.Where( p => p.HouseholdID == householdID && p.IndividualID == individualID ).FirstOrDefault();
-            if ( importedPerson != null )
+            var existingPerson = ImportedPersonList.FirstOrDefault( p => p.IndividualID == individualID && p.HouseholdID == householdID );
+            if ( existingPerson != null )
             {
-                return importedPerson.PersonID;
+                return existingPerson.PersonID;
             }
-            else
+
+            return null;
+        }
+
+        #endregion
+
+        #region Async Tasks
+
+        /// <summary>
+        /// Runs the background worker method that matches the selected table name
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
+        private void bwSpawnWorker_DoWork( object sender, DoWorkEventArgs e )
+        {
+            var nodeName = (string)e.Argument;
+            if ( nodeName != null )
             {
-                return null;
+                var scanner = new DataScanner( database );
+                IQueryable<Row> tableData = scanner.ScanTable( nodeName ).AsQueryable();
+
+                switch ( nodeName )
+                {
+                    case "Individual_Household":
+                        MapPerson( tableData );
+                        break;
+
+                    case "Contribution":
+                        MapContribution( tableData );
+                        break;
+
+                    default:
+                        break;
+                }
             }
+        }
+
+        /// <summary>
+        /// Runs when the background process for each method completes
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        private void bwSpawnWorker_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        {
+            //return completed to original thread;
+        }
+
+        /// <summary>
+        /// Reports the progress for each background worker that was started
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        private void bwSpawnWorker_ProgressChanged( object sender, ProgressChangedEventArgs e )
+        {
+            //throw new NotImplementedException();
         }
 
         #endregion
@@ -204,11 +250,8 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <param name="selectedColumns">The selected columns.</param>
-        private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns )
+        private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
-            //get list of all person id with their individual & household ID's?
-            //var attributeValueService = new AttributeValueService();
-
             // Individual_ID
             // Household_ID
             // Fund_Name
@@ -231,7 +274,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <param name="selectedColumns">The selected columns.</param>
-        private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns )
+        private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
             var dvService = new DefinedValueService();
@@ -285,198 +328,226 @@ namespace Excavator.F1
 
                 foreach ( var row in groupedRows )
                 {
-                    var person = new Person();
-                    person.FirstName = row["First_Name"] as string;
-                    person.MiddleName = row["Middle_Name"] as string;
-                    person.NickName = row["Goes_By"] as string ?? person.FirstName;
-                    person.LastName = row["Last_Name"] as string;
-                    person.BirthDate = row["Date_Of_Birth"] as DateTime?;
-                    person.RecordTypeValueId = personRecordTypeId;
-                    int groupRoleId = adultRoleId;
-
-                    var gender = row["Gender"] as string;
-                    if ( gender != null )
-                    {
-                        person.Gender = (Gender)Enum.Parse( typeof( Gender ), gender );
-                    }
-
-                    string prefix = row["Prefix"] as string;
-                    if ( prefix != null )
-                    {
-                        person.TitleValueId = titleTypes.Where( s => s.Name == prefix )
-                            .Select( s => (int?)s.Id ).FirstOrDefault();
-                    }
-
-                    string suffix = row["Suffix"] as string;
-                    if ( suffix != null )
-                    {
-                        person.SuffixValueId = suffixTypes.Where( s => s.Name == suffix )
-                            .Select( s => (int?)s.Id ).FirstOrDefault();
-                    }
-
-                    string member_status = row["Status_Name"] as string;
-                    if ( member_status == "Member" )
-                    {
-                        person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
-                        person.RecordStatusValueId = statusActiveId;
-                    }
-                    else if ( member_status == "Visitor" )
-                    {
-                        person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
-                        person.RecordStatusValueId = statusActiveId;
-                    }
-                    else if ( member_status == "Deceased" )
-                    {
-                        person.IsDeceased = true;
-                        person.RecordStatusValueId = statusInactiveId;
-                        person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Name == "Deceased" )
-                            .Select( dv => dv.Id ).FirstOrDefault();
-                    }
-                    else
-                    {
-                        // F1 defaults are Member & Visitor; all others are user-defined
-                        var customConnectionType = connectionStatusTypes.Where( dv => dv.Name == member_status )
-                            .Select( dv => (int?)dv.Id ).FirstOrDefault();
-
-                        int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
-                        person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
-                        person.RecordStatusValueId = statusActiveId;
-                    }
-
-                    DateTime? join_date = row["Status_Date"] as DateTime?;
-                    if ( join_date != null )
-                    {
-                        person.CreatedDateTime = (DateTime)join_date;
-                    }
-
-                    string marital_status = row["Marital_Status"] as string;
-                    if ( marital_status != null )
-                    {
-                        person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == marital_status )
-                            .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                    }
-                    else
-                    {
-                        person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == "Unknown" )
-                            .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                    }
-
-                    string familyRole = row["Household_Position"] as string;
-                    if ( familyRole != null )
-                    {
-                        if ( familyRole == "Child" || person.Age < 18 )
-                        {
-                            groupRoleId = childRoleId;
-                        }
-                        else if ( familyRole == "Visitor" )
-                        {
-                            // assign person as a known relationship of this family/group
-                        }
-                    }
-
-                    string campus = row["SubStatus_Name"] as string;
-                    if ( campus != null )
-                    {
-                        householdCampusList.Add( campus );
-                    }
-
-                    string status_comment = row["Status_Comment"] as string;
-                    if ( status_comment != null )
-                    {
-                        var comment = new Note();
-                        comment.Text = status_comment;
-                        comment.NoteTypeId = noteCommentTypeId;
-                        RockTransactionScope.WrapTransaction( () =>
-                        {
-                            var noteService = new NoteService();
-                            noteService.Save( comment );
-                        } );
-                    }
-
-                    // start adding person attributes
-                    person.Attributes = new Dictionary<string, AttributeCache>();
-                    person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
-
-                    int? household_id = row["Household_ID"] as int?;
-                    if ( household_id != null )
-                    {
-                        person.Attributes.Add( householdIDKey, AttributeCache.Read( HouseholdAttribute ) );
-                        var attributeValue = new AttributeValue() { Value = household_id.ToString() };
-                        var valueList = new List<AttributeValue>() { attributeValue };
-                        person.AttributeValues.Add( householdIDKey, valueList );
-                    }
-
                     int? individual_id = row["Individual_ID"] as int?;
-                    if ( individual_id != null )
+                    int? household_id = row["Household_ID"] as int?;
+
+                    // Check if person already imported
+                    if ( GetPersonId( individual_id, household_id ) == null )
                     {
-                        person.Attributes.Add( individualIDKey, AttributeCache.Read( IndividualAttribute ) );
-                        var attributeValue = new AttributeValue() { Value = individual_id.ToString() };
-                        var valueList = new List<AttributeValue>() { attributeValue };
-                        person.AttributeValues.Add( individualIDKey, valueList );
+                        var person = new Person();
+                        person.FirstName = row["First_Name"] as string;
+                        person.MiddleName = row["Middle_Name"] as string;
+                        person.NickName = row["Goes_By"] as string ?? person.FirstName;
+                        person.LastName = row["Last_Name"] as string;
+                        person.BirthDate = row["Date_Of_Birth"] as DateTime?;
+                        person.RecordTypeValueId = personRecordTypeId;
+                        int groupRoleId = adultRoleId;
+
+                        var gender = row["Gender"] as string;
+                        if ( gender != null )
+                        {
+                            person.Gender = (Gender)Enum.Parse( typeof( Gender ), gender );
+                        }
+
+                        string prefix = row["Prefix"] as string;
+                        if ( prefix != null )
+                        {
+                            person.TitleValueId = titleTypes.Where( s => s.Name == prefix )
+                                .Select( s => (int?)s.Id ).FirstOrDefault();
+                        }
+
+                        string suffix = row["Suffix"] as string;
+                        if ( suffix != null )
+                        {
+                            person.SuffixValueId = suffixTypes.Where( s => s.Name == suffix )
+                                .Select( s => (int?)s.Id ).FirstOrDefault();
+                        }
+
+                        string member_status = row["Status_Name"] as string;
+                        if ( member_status == "Member" )
+                        {
+                            person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
+                            person.RecordStatusValueId = statusActiveId;
+                        }
+                        else if ( member_status == "Visitor" )
+                        {
+                            person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
+                            person.RecordStatusValueId = statusActiveId;
+                        }
+                        else if ( member_status == "Deceased" )
+                        {
+                            person.IsDeceased = true;
+                            person.RecordStatusValueId = statusInactiveId;
+                            person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Name == "Deceased" )
+                                .Select( dv => dv.Id ).FirstOrDefault();
+                        }
+                        else
+                        {
+                            // F1 defaults are Member & Visitor; all others are user-defined
+                            var customConnectionType = connectionStatusTypes.Where( dv => dv.Name == member_status )
+                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+
+                            int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
+                            person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
+                            person.RecordStatusValueId = statusActiveId;
+                        }
+
+                        DateTime? join_date = row["Status_Date"] as DateTime?;
+                        if ( join_date != null )
+                        {
+                            person.CreatedDateTime = (DateTime)join_date;
+                        }
+
+                        string marital_status = row["Marital_Status"] as string;
+                        if ( marital_status != null )
+                        {
+                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == marital_status )
+                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                        }
+                        else
+                        {
+                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == "Unknown" )
+                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                        }
+
+                        string familyRole = row["Household_Position"] as string;
+                        if ( familyRole != null )
+                        {
+                            if ( familyRole == "Child" || person.Age < 18 )
+                            {
+                                groupRoleId = childRoleId;
+                            }
+                            else if ( familyRole == "Visitor" )
+                            {
+                                // assign person as a known relationship of this family/group
+                            }
+                        }
+
+                        string campus = row["SubStatus_Name"] as string;
+                        if ( campus != null )
+                        {
+                            householdCampusList.Add( campus );
+                        }
+
+                        string status_comment = row["Status_Comment"] as string;
+                        if ( status_comment != null )
+                        {
+                            var comment = new Note();
+                            comment.Text = status_comment;
+                            comment.NoteTypeId = noteCommentTypeId;
+                            RockTransactionScope.WrapTransaction( () =>
+                            {
+                                var noteService = new NoteService();
+                                noteService.Save( comment );
+                            } );
+                        }
+
+                        person.Attributes = new Dictionary<string, AttributeCache>();
+                        person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+
+                        // individual_id already defined in scope
+                        if ( individual_id != null )
+                        {
+                            var individualAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == individualIDKey );
+                            person.Attributes.Add( individualIDKey, AttributeCache.Read( individualAttribute ) );
+                            person.AttributeValues.Add( individualIDKey, new List<AttributeValue>() );
+                            person.AttributeValues[individualIDKey].Add( new AttributeValue()
+                            {
+                                AttributeId = individualAttribute.Id,
+                                Value = individual_id.ToString()
+                            } );
+                        }
+
+                        // household_id already defined in scope
+                        if ( household_id != null )
+                        {
+                            var householdAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == householdIDKey );
+                            person.Attributes.Add( householdIDKey, AttributeCache.Read( householdAttribute ) );
+                            person.AttributeValues.Add( householdIDKey, new List<AttributeValue>() );
+                            person.AttributeValues[householdIDKey].Add( new AttributeValue()
+                            {
+                                AttributeId = householdAttribute.Id,
+                                Value = household_id.ToString()
+                            } );
+                        }
+
+                        string former_church = row["Former_Church"] as string;
+                        if ( former_church != null )
+                        {
+                            var previousChurchAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "PreviousChurch" );
+                            person.Attributes.Add( "PreviousChurch", AttributeCache.Read( previousChurchAttribute ) );
+                            person.AttributeValues.Add( "PreviousChurch", new List<AttributeValue>() );
+                            person.AttributeValues["PreviousChurch"].Add( new AttributeValue()
+                            {
+                                AttributeId = previousChurchAttribute.Id,
+                                Value = former_church
+                            } );
+                        }
+
+                        string employer = row["Employer"] as string;
+                        if ( employer != null )
+                        {
+                            var employerAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "Employer" );
+                            person.Attributes.Add( "Employer", AttributeCache.Read( employerAttribute ) );
+                            person.AttributeValues.Add( "Employer", new List<AttributeValue>() );
+                            person.AttributeValues["Employer"].Add( new AttributeValue()
+                            {
+                                AttributeId = employerAttribute.Id,
+                                Value = employer
+                            } );
+                        }
+
+                        string position = row["Occupation_Name"] as string ?? row["Occupation_Description"] as string;
+                        if ( position != null )
+                        {
+                            var positionAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "Position" );
+                            person.Attributes.Add( "Position", AttributeCache.Read( positionAttribute ) );
+                            person.AttributeValues.Add( "Position", new List<AttributeValue>() );
+                            person.AttributeValues["Position"].Add( new AttributeValue()
+                            {
+                                AttributeId = positionAttribute.Id,
+                                Value = former_church
+                            } );
+                        }
+
+                        string school = row["School_Name"] as string;
+                        if ( position != null )
+                        {
+                            var schoolAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "School" );
+                            person.Attributes.Add( "School", AttributeCache.Read( schoolAttribute ) );
+                            person.AttributeValues.Add( "School", new List<AttributeValue>() );
+                            person.AttributeValues["School"].Add( new AttributeValue()
+                            {
+                                AttributeId = schoolAttribute.Id,
+                                Value = former_church
+                            } );
+                        }
+
+                        DateTime? first_visit = row["First_Record"] as DateTime?;
+                        if ( first_visit != null )
+                        {
+                            var firstVisitAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "FirstVisit" );
+                            person.Attributes.Add( "FirstVisit", AttributeCache.Read( firstVisitAttribute ) );
+                            person.AttributeValues.Add( "FirstVisit", new List<AttributeValue>() );
+                            person.AttributeValues["FirstVisit"].Add( new AttributeValue()
+                            {
+                                AttributeId = firstVisitAttribute.Id,
+                                Value = first_visit.Value.ToString( "MM/dd/yyyy" )
+                            } );
+                        }
+
+                        // Other properties (Attributes to create):
+                        // former name
+                        // bar_code
+                        // member_env_code
+                        // denomination_name
+
+                        var groupMember = new GroupMember();
+                        groupMember.Person = person;
+                        groupMember.GroupRoleId = groupRoleId;
+                        groupMember.GroupMemberStatus = GroupMemberStatus.Active;
+                        familyMembers.Add( groupMember );
                     }
-
-                    string former_church = row["Former_Church"] as string;
-                    if ( former_church != null )
-                    {
-                        var previousChurchAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "PreviousChurch" );
-                        person.Attributes.Add( "PreviousChurch", AttributeCache.Read( previousChurchAttribute ) );
-                        var attributeValue = new AttributeValue() { Value = former_church };
-                        var valueList = new List<AttributeValue>() { attributeValue };
-                        person.AttributeValues.Add( "PreviousChurch", valueList );
-                    }
-
-                    string employer = row["Employer"] as string;
-                    if ( employer != null )
-                    {
-                        var employerAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "Employer" );
-                        person.Attributes.Add( "Employer", AttributeCache.Read( employerAttribute ) );
-                        var attributeValue = new AttributeValue() { Value = employer };
-                        var valueList = new List<AttributeValue>() { attributeValue };
-                        person.AttributeValues.Add( "Employer", valueList );
-                    }
-
-                    string position = row["Occupation_Name"] as string ?? row["Occupation_Description"] as string;
-                    if ( position != null )
-                    {
-                        var positionAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "Position" );
-                        person.Attributes.Add( "Position", AttributeCache.Read( positionAttribute ) );
-                        var attributeValue = new AttributeValue() { Value = former_church };
-                        var valueList = new List<AttributeValue>() { attributeValue };
-                        person.AttributeValues.Add( "Position", valueList );
-                    }
-
-                    string school = row["School_Name"] as string;
-                    if ( position != null )
-                    {
-                        var schoolAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "School" );
-                        person.Attributes.Add( "School", AttributeCache.Read( schoolAttribute ) );
-                        var attributeValue = new AttributeValue() { Value = former_church };
-                        var valueList = new List<AttributeValue>() { attributeValue };
-                        person.AttributeValues.Add( "School", valueList );
-                    }
-
-                    DateTime? first_visit = row["First_Record"] as DateTime?;
-                    if ( first_visit != null )
-                    {
-                        var firstVisitAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "FirstVisit" );
-                        person.Attributes.Add( "FirstVisit", AttributeCache.Read( firstVisitAttribute ) );
-                        var attributeValue = new AttributeValue() { Value = first_visit.Value.ToString( "MM/dd/yyyy" ) };
-                        var valueList = new List<AttributeValue>() { attributeValue };
-                        person.AttributeValues.Add( "FirstVisit", valueList );
-                    }
-
-                    // Other properties (Attributes to create):
-                    // former name
-                    // first_record date
-                    // bar_code
-                    // member_env_code
-                    // denomination_name
-
-                    var groupMember = new GroupMember();
-                    groupMember.Person = person;
-                    groupMember.GroupRoleId = groupRoleId;
-                    groupMember.GroupMemberStatus = GroupMemberStatus.Active;
-                    familyMembers.Add( groupMember );
                 }
 
                 string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() ).Select( c => c.Key ).First();
@@ -486,7 +557,7 @@ namespace Excavator.F1
                 RockTransactionScope.WrapTransaction( () =>
                 {
                     var groupService = new GroupService();
-                    var familyGroup = groupService.SaveNewFamily( familyMembers, rockCampusId, ImportPersonAlias );
+                    groupService.SaveNewFamily( familyMembers, rockCampusId, ImportPersonAlias );
                 } );
             }
         }
