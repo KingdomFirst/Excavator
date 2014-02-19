@@ -295,6 +295,7 @@ namespace Rock.SystemGuid
 
         /// <summary>
         /// Visitor Person Connection Status
+        /// TODO: some places have B91BA046-BC1E-400C-B85D-638C1F4E0CE2
         /// </summary>
         public const string PERSON_CONNECTION_STATUS_VISITOR = "B91BA046-BC1E-400C-B85D-638C1F4E0CE2";
 
