@@ -335,8 +335,11 @@ namespace Excavator.F1
                     else
                     {
                         // F1 defaults are Member & Visitor; all others are user-defined
-                        person.ConnectionStatusValueId = connectionStatusTypes.Where( dv => dv.Name == member_status )
-                            .Select( dv => dv.Id ).FirstOrDefault();
+                        var customConnectionType = connectionStatusTypes.Where( dv => dv.Name == member_status )
+                            .Select( dv => (int?)dv.Id ).FirstOrDefault();
+
+                        int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
+                        person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
                         person.RecordStatusValueId = statusActiveId;
                     }
 
