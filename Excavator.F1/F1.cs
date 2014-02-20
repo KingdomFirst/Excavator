@@ -84,18 +84,56 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool TransformData()
         {
-            // Verify we have everything we need
             VerifyRockAttributes();
 
+            var scanner = new DataScanner( database );
             int workerCount = 0;
-            foreach ( var node in loadedNodes.Where( n => n.Checked != false ) )
+
+            var nodeList = loadedNodes.Where( n => n.Checked != false ).ToList();
+
+            // Order the list so primary tables: Individual_Household, Batch, RLC
+            if ( nodeList.Any() )
             {
-                BackgroundWorker bwSpawnWorker = new BackgroundWorker();
-                bwSpawnWorker.DoWork += bwSpawnWorker_DoWork;
-                bwSpawnWorker.ProgressChanged += bwSpawnWorker_ProgressChanged;
-                bwSpawnWorker.RunWorkerCompleted += bwSpawnWorker_RunWorkerCompleted;
-                bwSpawnWorker.RunWorkerAsync( node.Name );
-                workerCount++;
+                var household = nodeList.Where( node => node.Name.Equals( "Individual_Household" ) ).FirstOrDefault();
+                var batch = nodeList.Where( node => node.Name.Equals( "Batch" ) ).FirstOrDefault();
+                var rlc = nodeList.Where( node => node.Name.Equals( "RLC" ) ).FirstOrDefault();
+
+                nodeList.Remove( household );
+                nodeList.Remove( batch );
+                nodeList.Remove( rlc );
+                var primaryTables = new List<DatabaseNode>() { household, batch, rlc };
+                primaryTables.RemoveAll( n => n == null );
+                nodeList.InsertRange( 0, primaryTables );
+            }
+
+            foreach ( var node in nodeList )
+            {
+                IQueryable<Row> tableData = scanner.ScanTable( node.Name ).AsQueryable();
+
+                switch ( node.Name )
+                {
+                    case "Batch":
+                        MapBatch( tableData );
+                        break;
+
+                    case "Contribution":
+                        MapContribution( tableData );
+                        break;
+
+                    case "Individual_Household":
+                        //MapPerson( tableData );
+                        break;
+
+                    default:
+                        break;
+                }
+
+                //BackgroundWorker bwSpawnWorker = new BackgroundWorker();
+                //bwSpawnWorker.DoWork += bwSpawnWorker_DoWork;
+                //bwSpawnWorker.ProgressChanged += bwSpawnWorker_ProgressChanged;
+                //bwSpawnWorker.RunWorkerCompleted += bwSpawnWorker_RunWorkerCompleted;
+                //bwSpawnWorker.RunWorkerAsync( node.Name );
+                //workerCount++;
             }
 
             return workerCount > 0 ? true : false;
@@ -240,15 +278,15 @@ namespace Excavator.F1
                 switch ( nodeName )
                 {
                     case "Batch":
-                        //MapBatch( tableData );
-                        break;
-
-                    case "Individual_Household":
-                        //MapPerson( tableData );
+                        MapBatch( tableData );
                         break;
 
                     case "Contribution":
                         MapContribution( tableData );
+                        break;
+
+                    case "Individual_Household":
+                        //MapPerson( tableData );
                         break;
 
                     default:
