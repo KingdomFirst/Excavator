@@ -22,6 +22,7 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using OrcaMDF.Core.MetaData;
+using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -70,6 +71,11 @@ namespace Excavator.F1
         /// </summary>
         private List<ImportedPerson> ImportedPersonList;
 
+        /// <summary>
+        /// The imported batches
+        /// </summary>
+        private Dictionary<int?, int?> ImportedBatches;
+
         #region Methods
 
         /// <summary>
@@ -106,10 +112,13 @@ namespace Excavator.F1
             // change this to user-defined person
             var aliasService = new PersonAliasService();
             ImportPersonAlias = aliasService.Get( 1 );
+            // end change
 
             int personEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
+            int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
-            int numberFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
+            int integerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
+            int decimalFieldTypeId = FieldTypeCache.Read( new Guid( "C757A554-3009-4214-B05D-CEA2B2EA6B8F" ) ).Id;
 
             PersonAttributeList = attributeService.Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).ToList();
 
@@ -119,7 +128,7 @@ namespace Excavator.F1
                 householdAttribute = new Rock.Model.Attribute();
                 householdAttribute.Key = householdIDKey;
                 householdAttribute.Name = "F1 Household ID";
-                householdAttribute.FieldTypeId = numberFieldTypeId;
+                householdAttribute.FieldTypeId = integerFieldTypeId;
                 householdAttribute.EntityTypeId = personEntityTypeId;
                 householdAttribute.EntityTypeQualifierValue = string.Empty;
                 householdAttribute.EntityTypeQualifierColumn = string.Empty;
@@ -140,7 +149,7 @@ namespace Excavator.F1
                 individualAttribute = new Rock.Model.Attribute();
                 individualAttribute.Key = individualIDKey;
                 individualAttribute.Name = "F1 Individual ID";
-                individualAttribute.FieldTypeId = numberFieldTypeId;
+                individualAttribute.FieldTypeId = integerFieldTypeId;
                 individualAttribute.EntityTypeId = personEntityTypeId;
                 individualAttribute.EntityTypeQualifierValue = string.Empty;
                 individualAttribute.EntityTypeQualifierColumn = string.Empty;
@@ -167,6 +176,31 @@ namespace Excavator.F1
                     HouseholdID = household.Value.AsType<int?>(),
                     IndividualID = individual.Value.AsType<int?>()
                 } ).ToList();
+
+            // Get all imported batches
+            var batchAttribute = attributeService.Queryable().Where( a => a.EntityTypeId == batchEntityTypeId ).FirstOrDefault( a => a.Key == "Batch_ID" );
+            if ( batchAttribute == null )
+            {
+                batchAttribute = new Rock.Model.Attribute();
+                batchAttribute.Key = "Batch_ID";
+                batchAttribute.Name = "F1 Batch ID";
+                batchAttribute.FieldTypeId = decimalFieldTypeId;
+                batchAttribute.EntityTypeId = batchEntityTypeId;
+                batchAttribute.EntityTypeQualifierValue = string.Empty;
+                batchAttribute.EntityTypeQualifierColumn = string.Empty;
+                batchAttribute.Description = "The FellowshipOne identifier for the batch that was imported";
+                batchAttribute.DefaultValue = string.Empty;
+                batchAttribute.IsMultiValue = false;
+                batchAttribute.IsRequired = false;
+                batchAttribute.Order = 0;
+
+                attributeService.Add( batchAttribute, ImportPersonAlias );
+                attributeService.Save( batchAttribute, ImportPersonAlias );
+            }
+
+            ImportedBatches = attributeValueService.GetByAttributeId( batchAttribute.Id )
+                .Select( av => new { RockBatchID = av.EntityId, F1BatchID = av.Value.AsType<int?>() } )
+                .ToDictionary( t => t.F1BatchID, t => t.RockBatchID );
         }
 
         /// <summary>
@@ -205,8 +239,12 @@ namespace Excavator.F1
 
                 switch ( nodeName )
                 {
+                    case "Batch":
+                        //MapBatch( tableData );
+                        break;
+
                     case "Individual_Household":
-                        MapPerson( tableData );
+                        //MapPerson( tableData );
                         break;
 
                     case "Contribution":
@@ -246,27 +284,162 @@ namespace Excavator.F1
         #region Mapped Data
 
         /// <summary>
+        /// Maps the batch data.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        private void MapBatch( IQueryable<Row> tableData )
+        {
+            var attributeService = new AttributeService();
+
+            foreach ( var row in tableData )
+            {
+                int? batchID = row["BatchID"] as int?;
+                if ( batchID != null && !ImportedBatches.ContainsKey( batchID ) )
+                {
+                    var batch = new FinancialBatch();
+                    Rock.Attribute.Helper.LoadAttributes( batch );
+                    batch.SetAttributeValue( "Batch_ID", batchID.ToString() );
+                    Rock.Attribute.Helper.SaveAttributeValues( batch, ImportPersonAlias );
+
+                    string name = row["BatchName"] as string;
+                    if ( name != null )
+                    {
+                        batch.Name = name;
+                    }
+
+                    DateTime? batchDate = row["BatchDate"] as DateTime?;
+                    if ( batchDate != null )
+                    {
+                        batch.BatchStartDateTime = batchDate;
+                        batch.BatchEndDateTime = batchDate;
+                    }
+
+                    decimal? amount = row["BatchAmount"] as decimal?;
+                    if ( amount != null )
+                    {
+                        batch.ControlAmount = amount.HasValue ? amount.Value : new decimal();
+                    }
+
+                    RockTransactionScope.WrapTransaction( () =>
+                    {
+                        var batchService = new FinancialBatchService();
+                        batchService.Add( batch, ImportPersonAlias );
+                        batchService.Save( batch, ImportPersonAlias );
+                    } );
+                }
+            }
+        }
+
+        /// <summary>
         /// Maps the contribution.
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <param name="selectedColumns">The selected columns.</param>
         private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
-            // Individual_ID
-            // Household_ID
-            // Fund_Name
-            // Sub_Fund_Name
-            // Received_Date
-            // Amount
-            // Check_Number
-            // Pledge_Drive_Name
-            // Memo
-            // Contribution_Type_Name
-            // Stated_Value
-            // True_Value
-            // Liquidation_cost
-            // ContributionID
-            // BatchID
+            var transactionService = new FinancialTransactionService();
+            var detailService = new FinancialTransactionDetailService();
+            var dvService = new DefinedValueService();
+
+            int transactionTypeContribution = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
+
+            int currencyTypeACH = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) ).Id;
+            int currencyTypeCash = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ).Id;
+            int currencyTypeCheck = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
+            int currencyTypeCreditCard = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
+
+            foreach ( var row in tableData )
+            {
+                int? individual_id = row["Individual_ID"] as int?;
+                int? household_id = row["Household_ID"] as int?;
+
+                int? personId = GetPersonId( individual_id, household_id );
+                if ( personId != null )
+                {
+                    var transaction = new FinancialTransaction();
+                    transaction.TransactionTypeValueId = transactionTypeContribution;
+                    transaction.AuthorizedPersonId = personId;
+
+                    string fundName = row["Fund_Name"] as string;
+                    if ( fundName != null )
+                    {
+                        //transaction
+                    }
+
+                    string subFundName = row["Sub_Fund_Name"] as string;
+                    if ( subFundName != null )
+                    {
+                        // campus
+                    }
+
+                    string summary = row["Memo"] as string;
+                    if ( summary != null )
+                    {
+                        transaction.Summary = summary;
+                    }
+
+                    string contributionType = row["Contribution_Type_Name"] as string;
+                    if ( contributionType != null )
+                    {
+                        if ( contributionType == "ACH" )
+                        {
+                            transaction.CurrencyTypeValueId = currencyTypeACH;
+                        }
+                        else if ( contributionType == "Cash" )
+                        {
+                            transaction.CurrencyTypeValueId = currencyTypeCash;
+                        }
+                        else if ( contributionType == "Check" )
+                        {
+                            transaction.CurrencyTypeValueId = currencyTypeCheck;
+                        }
+                        else if ( contributionType == "Credit Card" )
+                        {
+                            transaction.CurrencyTypeValueId = currencyTypeCreditCard;
+                        }
+                        else
+                        {
+                            //transaction.CurrencyTypeValueId = currencyTypeOther;
+                        }
+                    }
+
+                    DateTime? receivedDate = row["Received_Date"] as DateTime?;
+                    if ( fundName != null )
+                    {
+                        //transaction
+                    }
+
+                    int? batchID = row["BatchID"] as int?;
+                    if ( batchID != null )
+                    {
+                        // create batch for this
+                        // transaction.BatchId = batchId
+                    }
+
+                    decimal? amount = row["Amount"] as decimal?;
+                    if ( amount != null )
+                    {
+                        if ( amount > 0 )
+                        {
+                            // create batch detail
+                        }
+                        else
+                        {
+                            // create refund
+                        }
+                    }
+
+                    // Check_Number
+                    // Pledge_Drive_Name
+
+                    // Stated_Value
+                    // True_Value
+                    // Liquidation_cost
+                    // ContributionID
+                    // BatchID
+                }
+            }
         }
 
         /// <summary>
@@ -316,6 +489,9 @@ namespace Excavator.F1
             int adultRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
             int childRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD ) ).Id;
 
+            // Group type: Family
+            int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+
             // Campuses: user-defined, should match F1 Campus designation
             List<Campus> campusList = campusService.Queryable().ToList();
 
@@ -323,7 +499,8 @@ namespace Excavator.F1
             {
                 // only import where selectedColumns.Contains( row.Column )
 
-                var familyMembers = new List<GroupMember>();
+                //var familyMembers = new List<GroupMember>();
+                var familyGroup = new Group();
                 householdCampusList.Clear();
 
                 foreach ( var row in groupedRows )
@@ -536,6 +713,8 @@ namespace Excavator.F1
                             } );
                         }
 
+                        //Rock.Attribute.Helper.SaveAttributeValues( person, ImportPersonAlias );
+
                         // Other properties (Attributes to create):
                         // former name
                         // bar_code
@@ -546,19 +725,55 @@ namespace Excavator.F1
                         groupMember.Person = person;
                         groupMember.GroupRoleId = groupRoleId;
                         groupMember.GroupMemberStatus = GroupMemberStatus.Active;
-                        familyMembers.Add( groupMember );
+                        familyGroup.Members.Add( groupMember );
                     }
                 }
 
-                string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() ).Select( c => c.Key ).First();
-                int? rockCampusId = campusList.Where( c => c.Name == primaryHouseholdCampus || c.ShortCode == primaryHouseholdCampus )
-                    .Select( c => (int?)c.Id ).FirstOrDefault();
-
-                RockTransactionScope.WrapTransaction( () =>
+                // If this family hasn't already been imported
+                if ( familyGroup.Members.Any() )
                 {
-                    var groupService = new GroupService();
-                    groupService.SaveNewFamily( familyMembers, rockCampusId, ImportPersonAlias );
-                } );
+                    familyGroup.Name = familyGroup.Members.FirstOrDefault().Person.LastName + " Family";
+                    familyGroup.GroupTypeId = familyGroupTypeId;
+                    string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() ).Select( c => c.Key ).FirstOrDefault();
+                    familyGroup.CampusId = campusList.Where( c => c.Name == primaryHouseholdCampus || c.ShortCode == primaryHouseholdCampus )
+                        .Select( c => (int?)c.Id ).FirstOrDefault();
+
+                    RockTransactionScope.WrapTransaction( () =>
+                    {
+                        var groupService = new GroupService();
+                        groupService.Add( familyGroup, ImportPersonAlias );
+                        groupService.Save( familyGroup, ImportPersonAlias );
+
+                        var personService = new PersonService();
+                        foreach ( var groupMember in familyGroup.Members )
+                        {
+                            var person = groupMember.Person;
+                            Rock.Attribute.Helper.LoadAttributes( person );
+
+                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                            {
+                                string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
+                                Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
+                            }
+
+                            person = personService.Get( groupMember.PersonId );
+                            if ( person != null )
+                            {
+                                if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                                {
+                                    person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                                }
+
+                                if ( groupMember.GroupRoleId != childRoleId )
+                                {
+                                    person.GivingGroupId = familyGroup.Id;
+                                }
+
+                                personService.Save( person, ImportPersonAlias );
+                            }
+                        }
+                    } );
+                }
             }
         }
 
