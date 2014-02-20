@@ -25,6 +25,7 @@ using OrcaMDF.Core.MetaData;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Security;
 using Rock.Web.Cache;
 
 namespace Excavator.F1
@@ -76,6 +77,11 @@ namespace Excavator.F1
         /// </summary>
         private Dictionary<int?, int?> ImportedBatches;
 
+        /// <summary>
+        /// The list of current campuses
+        /// </summary>
+        private List<Campus> CampusList;
+
         #region Methods
 
         /// <summary>
@@ -85,28 +91,12 @@ namespace Excavator.F1
         public override bool TransformData()
         {
             VerifyRockAttributes();
+            var orderedNodes = SetImportOrder( loadedNodes );
 
             var scanner = new DataScanner( database );
             int workerCount = 0;
 
-            var nodeList = loadedNodes.Where( n => n.Checked != false ).ToList();
-
-            // Order the list so primary tables: Individual_Household, Batch, RLC
-            if ( nodeList.Any() )
-            {
-                var household = nodeList.Where( node => node.Name.Equals( "Individual_Household" ) ).FirstOrDefault();
-                var batch = nodeList.Where( node => node.Name.Equals( "Batch" ) ).FirstOrDefault();
-                var rlc = nodeList.Where( node => node.Name.Equals( "RLC" ) ).FirstOrDefault();
-
-                nodeList.Remove( household );
-                nodeList.Remove( batch );
-                nodeList.Remove( rlc );
-                var primaryTables = new List<DatabaseNode>() { household, batch, rlc };
-                primaryTables.RemoveAll( n => n == null );
-                nodeList.InsertRange( 0, primaryTables );
-            }
-
-            foreach ( var node in nodeList )
+            foreach ( var node in orderedNodes )
             {
                 IQueryable<Row> tableData = scanner.ScanTable( node.Name ).AsQueryable();
 
@@ -144,8 +134,8 @@ namespace Excavator.F1
         /// </summary>
         public void VerifyRockAttributes()
         {
-            var attributeService = new AttributeService();
             var attributeValueService = new AttributeValueService();
+            var attributeService = new AttributeService();
 
             // change this to user-defined person
             var aliasService = new PersonAliasService();
@@ -157,6 +147,8 @@ namespace Excavator.F1
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             int integerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             int decimalFieldTypeId = FieldTypeCache.Read( new Guid( "C757A554-3009-4214-B05D-CEA2B2EA6B8F" ) ).Id;
+
+            CampusList = new CampusService().Queryable().ToList();
 
             PersonAttributeList = attributeService.Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).ToList();
 
@@ -242,6 +234,31 @@ namespace Excavator.F1
         }
 
         /// <summary>
+        /// Orders the nodes so the primary tables get imported first
+        /// </summary>
+        /// <param name="nodeList">The node list.</param>
+        private List<DatabaseNode> SetImportOrder( List<DatabaseNode> nodeList )
+        {
+            nodeList = nodeList.Where( n => n.Checked != false ).ToList();
+            if ( nodeList.Any() )
+            {
+                var household = nodeList.Where( node => node.Name.Equals( "Individual_Household" ) ).FirstOrDefault();
+                var batch = nodeList.Where( node => node.Name.Equals( "Batch" ) ).FirstOrDefault();
+                var pledge = nodeList.Where( node => node.Name.Equals( "Pledge" ) ).FirstOrDefault();
+                var rlc = nodeList.Where( node => node.Name.Equals( "RLC" ) ).FirstOrDefault();
+
+                nodeList.Remove( household );
+                nodeList.Remove( batch );
+                nodeList.Remove( rlc );
+                var primaryTables = new List<DatabaseNode>() { household, batch, pledge, rlc };
+                primaryTables.RemoveAll( n => n == null );
+                nodeList.InsertRange( 0, primaryTables );
+            }
+
+            return nodeList;
+        }
+
+        /// <summary>
         /// Checks if this person has been imported and returns the Rock.Person ID
         /// </summary>
         /// <param name="individualID">The individual identifier.</param>
@@ -277,6 +294,10 @@ namespace Excavator.F1
 
                 switch ( nodeName )
                 {
+                    case "Account":
+                        //MapAccount( tableData );
+                        break;
+
                     case "Batch":
                         MapBatch( tableData );
                         break;
@@ -287,6 +308,10 @@ namespace Excavator.F1
 
                     case "Individual_Household":
                         //MapPerson( tableData );
+                        break;
+
+                    case "Pledge":
+                        //MapPledge( tableData );
                         break;
 
                     default:
@@ -326,7 +351,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void MapBatch( IQueryable<Row> tableData )
+        private int MapBatch( IQueryable<Row> tableData )
         {
             var attributeService = new AttributeService();
 
@@ -367,6 +392,8 @@ namespace Excavator.F1
                     } );
                 }
             }
+
+            return tableData.Count();
         }
 
         /// <summary>
@@ -374,10 +401,11 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <param name="selectedColumns">The selected columns.</param>
-        private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
+        private int MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             var transactionService = new FinancialTransactionService();
             var detailService = new FinancialTransactionDetailService();
+            var accountService = new FinancialAccountService();
             var dvService = new DefinedValueService();
 
             int transactionTypeContribution = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
@@ -387,10 +415,13 @@ namespace Excavator.F1
             int currencyTypeCheck = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
             int currencyTypeCreditCard = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
 
+            List<FinancialAccount> accountList = accountService.Queryable().ToList();
+
             foreach ( var row in tableData )
             {
                 int? individual_id = row["Individual_ID"] as int?;
                 int? household_id = row["Household_ID"] as int?;
+                int? transactionAccountId;
 
                 int? personId = GetPersonId( individual_id, household_id );
                 if ( personId != null )
@@ -398,18 +429,6 @@ namespace Excavator.F1
                     var transaction = new FinancialTransaction();
                     transaction.TransactionTypeValueId = transactionTypeContribution;
                     transaction.AuthorizedPersonId = personId;
-
-                    string fundName = row["Fund_Name"] as string;
-                    if ( fundName != null )
-                    {
-                        //transaction
-                    }
-
-                    string subFundName = row["Sub_Fund_Name"] as string;
-                    if ( subFundName != null )
-                    {
-                        // campus
-                    }
 
                     string summary = row["Memo"] as string;
                     if ( summary != null )
@@ -442,8 +461,14 @@ namespace Excavator.F1
                         }
                     }
 
+                    string checkNumber = row["Check_Number"] as string;
+                    if ( checkNumber != null && checkNumber.AsType<int?>() != null )
+                    {
+                        transaction.CheckMicrEncrypted = Encryption.EncryptString( string.Format( "{0}_{1}_{2}", null, null, checkNumber ) );
+                    }
+
                     DateTime? receivedDate = row["Received_Date"] as DateTime?;
-                    if ( fundName != null )
+                    if ( receivedDate != null )
                     {
                         //transaction
                     }
@@ -451,8 +476,35 @@ namespace Excavator.F1
                     int? batchID = row["BatchID"] as int?;
                     if ( batchID != null )
                     {
-                        // create batch for this
+                        // create batch for this?
                         // transaction.BatchId = batchId
+                    }
+
+                    string fundName = row["Fund_Name"] as string;
+                    string subFund = row["Sub_Fund_Name"] as string;
+                    if ( fundName != null )
+                    {
+                        // check if the subFund is a campus
+                        var fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
+                                .Select( c => (int?)c.Id ).FirstOrDefault();
+
+                        // check if an account already exists
+                        var matchingAccount = accountList.FirstOrDefault( a => ( a.Name.StartsWith( fundName ) && a.CampusId == fundCampusId ) ||
+                            ( a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) );
+                        if ( matchingAccount == null )
+                        {
+                            matchingAccount = new FinancialAccount();
+                            matchingAccount.Name = fundName;
+                            matchingAccount.PublicName = fundName;
+                            matchingAccount.IsTaxDeductible = true;
+                            matchingAccount.CampusId = fundCampusId;
+
+                            accountService.Add( matchingAccount );
+                            accountService.Save( matchingAccount );
+                            accountList.Add( matchingAccount );
+                        }
+
+                        transactionAccountId = matchingAccount.Id;
                     }
 
                     decimal? amount = row["Amount"] as decimal?;
@@ -468,8 +520,10 @@ namespace Excavator.F1
                         }
                     }
 
-                    // Check_Number
-                    // Pledge_Drive_Name
+                    string pledgeName = row["Pledge_Drive_Name"] as string;
+                    if ( pledgeName != null )
+                    {
+                    }
 
                     // Stated_Value
                     // True_Value
@@ -478,6 +532,8 @@ namespace Excavator.F1
                     // BatchID
                 }
             }
+
+            return tableData.Count();
         }
 
         /// <summary>
@@ -485,11 +541,10 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <param name="selectedColumns">The selected columns.</param>
-        private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
+        private int MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
             var dvService = new DefinedValueService();
-            var campusService = new CampusService();
             var householdCampusList = new List<string>();
 
             // Marital statuses: Married, Single, Separated, etc
@@ -529,9 +584,6 @@ namespace Excavator.F1
 
             // Group type: Family
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
-
-            // Campuses: user-defined, should match F1 Campus designation
-            List<Campus> campusList = campusService.Queryable().ToList();
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r[householdIDKey] as int? ) )
             {
@@ -773,7 +825,7 @@ namespace Excavator.F1
                     familyGroup.Name = familyGroup.Members.FirstOrDefault().Person.LastName + " Family";
                     familyGroup.GroupTypeId = familyGroupTypeId;
                     string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() ).Select( c => c.Key ).FirstOrDefault();
-                    familyGroup.CampusId = campusList.Where( c => c.Name == primaryHouseholdCampus || c.ShortCode == primaryHouseholdCampus )
+                    familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( primaryHouseholdCampus ) || c.ShortCode == primaryHouseholdCampus )
                         .Select( c => (int?)c.Id ).FirstOrDefault();
 
                     RockTransactionScope.WrapTransaction( () =>
@@ -813,6 +865,8 @@ namespace Excavator.F1
                     } );
                 }
             }
+
+            return tableData.Count();
         }
 
         #endregion
