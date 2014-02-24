@@ -48,16 +48,6 @@ namespace Excavator.F1
         }
 
         /// <summary>
-        /// The key name to use for the FellowshipOne household identifier
-        /// </summary>
-        private string householdIDKey = "Household_ID";
-
-        /// <summary>
-        /// The key name to use for the FellowshipOne individual identifier
-        /// </summary>
-        private string individualIDKey = "Individual_ID";
-
-        /// <summary>
         /// The person assigned to do the import
         /// </summary>
         private PersonAlias ImportPersonAlias;
@@ -81,6 +71,11 @@ namespace Excavator.F1
         /// The imported contributions
         /// </summary>
         private Dictionary<int?, int?> ImportedContributions;
+
+        private int IndividualAttributeId;
+        private int HouseholdAttributeId;
+        private int ContributionAttributeId;
+        private int BatchAttributeId;
 
         /// <summary>
         /// The list of current campuses
@@ -106,7 +101,7 @@ namespace Excavator.F1
                 switch ( node.Name )
                 {
                     case "Batch":
-                        //MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
                         break;
 
                     case "Contribution":
@@ -114,7 +109,7 @@ namespace Excavator.F1
                         break;
 
                     case "Individual_Household":
-                        //MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
                         break;
 
                     default:
@@ -150,18 +145,17 @@ namespace Excavator.F1
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             int integerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
-            //int decimalFieldTypeId = FieldTypeCache.Read( new Guid( "C757A554-3009-4214-B05D-CEA2B2EA6B8F" ) ).Id;
 
             CampusList = new CampusService().Queryable().ToList();
 
             PersonAttributeList = attributeService.Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).ToList();
 
-            var householdAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == householdIDKey );
+            var householdAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "F1HouseholdId" );
             if ( householdAttribute == null )
             {
                 householdAttribute = new Rock.Model.Attribute();
-                householdAttribute.Key = householdIDKey;
-                householdAttribute.Name = "F1 Household ID";
+                householdAttribute.Key = "F1HouseholdId";
+                householdAttribute.Name = "F1 Household Id";
                 householdAttribute.FieldTypeId = integerFieldTypeId;
                 householdAttribute.EntityTypeId = personEntityTypeId;
                 householdAttribute.EntityTypeQualifierValue = string.Empty;
@@ -177,12 +171,12 @@ namespace Excavator.F1
                 PersonAttributeList.Add( householdAttribute );
             }
 
-            var individualAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == individualIDKey );
+            var individualAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "F1IndividualId" );
             if ( individualAttribute == null )
             {
                 individualAttribute = new Rock.Model.Attribute();
-                individualAttribute.Key = individualIDKey;
-                individualAttribute.Name = "F1 Individual ID";
+                individualAttribute.Key = "F1IndividualId";
+                individualAttribute.Name = "F1 Individual Id";
                 individualAttribute.FieldTypeId = integerFieldTypeId;
                 individualAttribute.EntityTypeId = personEntityTypeId;
                 individualAttribute.EntityTypeQualifierValue = string.Empty;
@@ -198,26 +192,29 @@ namespace Excavator.F1
                 PersonAttributeList.Add( individualAttribute );
             }
 
-            // Get all current people with household & individual ID's
-            var listHouseholdID = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { av.EntityId, av.Value } ).ToList();
-            var listIndividualID = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { av.EntityId, av.Value } ).ToList();
+            HouseholdAttributeId = householdAttribute.Id;
+            IndividualAttributeId = individualAttribute.Id;
 
-            ImportedPersonList = listHouseholdID.Join( listIndividualID, household => household.EntityId
-                , individual => individual.EntityId
+            // Get all current people with household & individual Id's
+            var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
+            var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
+
+            ImportedPersonList = listHouseholdId.Join( listIndividualId, household => household.PersonId
+                , individual => individual.PersonId
                 , ( household, individual ) => new ImportedPerson
                 {
-                    PersonID = household.EntityId,
-                    HouseholdID = household.Value,
-                    IndividualID = individual.Value
+                    PersonId = household.PersonId,
+                    HouseholdId = household.HouseholdId.AsType<int?>(),
+                    IndividualId = individual.IndividualId.AsType<int?>()
                 } ).ToList();
 
             // Get all imported batches
-            var batchAttribute = attributeService.Queryable().Where( a => a.EntityTypeId == batchEntityTypeId ).FirstOrDefault( a => a.Key == "Batch_ID" );
+            var batchAttribute = attributeService.Queryable().Where( a => a.EntityTypeId == batchEntityTypeId ).FirstOrDefault( a => a.Key == "F1BatchId" );
             if ( batchAttribute == null )
             {
                 batchAttribute = new Rock.Model.Attribute();
-                batchAttribute.Key = "Batch_ID";
-                batchAttribute.Name = "F1 Batch ID";
+                batchAttribute.Key = "F1BatchId";
+                batchAttribute.Name = "F1 Batch Id";
                 batchAttribute.FieldTypeId = integerFieldTypeId;
                 batchAttribute.EntityTypeId = batchEntityTypeId;
                 batchAttribute.EntityTypeQualifierValue = string.Empty;
@@ -232,16 +229,17 @@ namespace Excavator.F1
                 attributeService.Save( batchAttribute, ImportPersonAlias );
             }
 
+            BatchAttributeId = batchAttribute.Id;
             ImportedBatches = attributeValueService.GetByAttributeId( batchAttribute.Id )
-                .Select( av => new { RockBatchID = av.EntityId, F1BatchID = av.Value.AsType<int?>() } )
-                .ToDictionary( t => t.F1BatchID, t => t.RockBatchID );
+                .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
+                .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );
 
-            var contributionAttribute = attributeService.Queryable().Where( a => a.EntityTypeId == transactionEntityTypeId ).FirstOrDefault( a => a.Key == "Contribution_ID" );
+            var contributionAttribute = attributeService.Queryable().Where( a => a.EntityTypeId == transactionEntityTypeId ).FirstOrDefault( a => a.Key == "F1ContributionId" );
             if ( contributionAttribute == null )
             {
                 contributionAttribute = new Rock.Model.Attribute();
-                contributionAttribute.Key = "Contribution_ID";
-                contributionAttribute.Name = "F1 Contribution ID";
+                contributionAttribute.Key = "F1ContributionId";
+                contributionAttribute.Name = "F1 Contribution Id";
                 contributionAttribute.FieldTypeId = integerFieldTypeId;
                 contributionAttribute.EntityTypeId = transactionEntityTypeId;
                 contributionAttribute.EntityTypeQualifierValue = string.Empty;
@@ -256,9 +254,10 @@ namespace Excavator.F1
                 attributeService.Save( contributionAttribute, ImportPersonAlias );
             }
 
+            ContributionAttributeId = contributionAttribute.Id;
             ImportedContributions = attributeValueService.GetByAttributeId( contributionAttribute.Id )
-               .Select( av => new { TransactionID = av.EntityId, ContributionID = av.Value.AsType<int?>() } )
-               .ToDictionary( t => t.ContributionID, t => t.TransactionID );
+               .Select( av => new { ContributionId = av.Value.AsType<int?>(), TransactionId = av.EntityId } )
+               .ToDictionary( t => t.ContributionId, t => t.TransactionId );
         }
 
         /// <summary>
@@ -286,17 +285,26 @@ namespace Excavator.F1
         }
 
         /// <summary>
-        /// Checks if this person has been imported and returns the Rock.Person ID
+        /// Checks if this person has been imported and returns the Rock.Person Id
         /// </summary>
-        /// <param name="individualID">The individual identifier.</param>
-        /// <param name="householdID">The household identifier.</param>
+        /// <param name="individualId">The individual identifier.</param>
+        /// <param name="householdId">The household identifier.</param>
         /// <returns></returns>
-        private int? GetPersonId( string individualID = null, string householdID = null )
+        private int? GetPersonId( int? individualId = null, int? householdId = null )
         {
-            var existingPerson = ImportedPersonList.FirstOrDefault( p => p.IndividualID == individualID && p.HouseholdID == householdID );
+            var existingPerson = ImportedPersonList.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
             if ( existingPerson != null )
             {
-                return existingPerson.PersonID;
+                return existingPerson.PersonId;
+            }
+            else
+            {
+                var lookupPerson = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == IndividualAttributeId && av.Value == individualId.ToString() );
+                if ( lookupPerson != null )
+                {
+                    ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupPerson.Id, HouseholdId = householdId, IndividualId = individualId } );
+                    return lookupPerson.Id;
+                }
             }
 
             return null;
@@ -354,15 +362,14 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private int MapBatch( IQueryable<Row> tableData )
         {
+            var batchAttribute = AttributeCache.Read( BatchAttributeId );
+
             foreach ( var row in tableData )
             {
-                int? batchID = row["BatchID"] as int?;
-                if ( batchID != null && !ImportedBatches.ContainsKey( batchID ) )
+                int? batchId = row["BatchID"] as int?;
+                if ( batchId != null && !ImportedBatches.ContainsKey( batchId ) )
                 {
                     var batch = new FinancialBatch();
-                    Rock.Attribute.Helper.LoadAttributes( batch );
-                    batch.SetAttributeValue( "Batch_ID", batchID.ToString() );
-                    Rock.Attribute.Helper.SaveAttributeValues( batch, ImportPersonAlias );
 
                     string name = row["BatchName"] as string;
                     if ( name != null )
@@ -388,6 +395,11 @@ namespace Excavator.F1
                         var batchService = new FinancialBatchService();
                         batchService.Add( batch, ImportPersonAlias );
                         batchService.Save( batch, ImportPersonAlias );
+
+                        batch.Attributes = new Dictionary<string, AttributeCache>();
+                        batch.Attributes.Add( "F1BatchId", batchAttribute );
+                        batch.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                        Rock.Attribute.Helper.SaveAttributeValue( batch, batchAttribute, batchId.ToString(), ImportPersonAlias );
                     } );
                 }
             }
@@ -406,6 +418,8 @@ namespace Excavator.F1
             var accountService = new FinancialAccountService();
             var dvService = new DefinedValueService();
 
+            var contributionAttribute = AttributeCache.Read( ContributionAttributeId );
+
             int transactionTypeContribution = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
 
             int currencyTypeACH = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) ).Id;
@@ -413,25 +427,24 @@ namespace Excavator.F1
             int currencyTypeCheck = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
             int currencyTypeCreditCard = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
 
+            List<DefinedValue> refundReasons = dvService.Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
+
             List<FinancialPledge> pledgeList = new FinancialPledgeService().Queryable().ToList();
 
             List<FinancialAccount> accountList = accountService.Queryable().ToList();
 
             foreach ( var row in tableData )
             {
-                int? individual_id = row["Individual_ID"] as int?;
-                int? household_id = row["Household_ID"] as int?;
-                int? contributionID = row["ContributionID"] as int?;
+                int? individualId = row["Individual_ID"] as int?;
+                int? householdId = row["Household_ID"] as int?;
+                int? contributionId = row["ContributionID"] as int?;
 
-                if ( contributionID != null && !ImportedContributions.ContainsKey( contributionID ) )
+                if ( contributionId != null && !ImportedContributions.ContainsKey( contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
-                    Rock.Attribute.Helper.LoadAttributes( transaction );
-                    transaction.SetAttributeValue( "Contribution_ID", contributionID.ToString() );
-                    Rock.Attribute.Helper.SaveAttributeValues( transaction, ImportPersonAlias );
                     transaction.TransactionTypeValueId = transactionTypeContribution;
 
-                    int? personId = GetPersonId( individual_id, household_id );
+                    int? personId = GetPersonId( individualId, householdId );
                     transaction.AuthorizedPersonId = personId;
 
                     string summary = row["Memo"] as string;
@@ -440,11 +453,10 @@ namespace Excavator.F1
                         transaction.Summary = summary;
                     }
 
-                    int? batchID = row["BatchID"] as int?;
-                    if ( batchID != null )
+                    int? batchId = row["BatchID"] as int?;
+                    if ( batchId != null && ImportedBatches.Any( b => b.Key == batchId ) )
                     {
-                        // create batch for this?
-                        // transaction.BatchId = batchId
+                        transaction.BatchId = batchId;
                     }
 
                     DateTime? receivedDate = row["Received_Date"] as DateTime?;
@@ -521,7 +533,8 @@ namespace Excavator.F1
                             var transactionRefund = new FinancialTransactionRefund();
                             transactionRefund.CreatedDateTime = receivedDate;
                             transactionRefund.RefundReasonSummary = summary;
-                            // set refund reason
+                            transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary.Contains( dv.Name ) )
+                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
                             transaction.Refund = transactionRefund;
                         }
                     }
@@ -536,6 +549,11 @@ namespace Excavator.F1
                         var transactionService = new FinancialTransactionService();
                         transactionService.Add( transaction, ImportPersonAlias );
                         transactionService.Save( transaction, ImportPersonAlias );
+
+                        transaction.Attributes = new Dictionary<string, AttributeCache>();
+                        transaction.Attributes.Add( "F1ContributionId", contributionAttribute );
+                        transaction.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                        Rock.Attribute.Helper.SaveAttributeValue( transaction, contributionAttribute, contributionId.ToString(), ImportPersonAlias );
                     } );
                 }
             }
@@ -552,7 +570,6 @@ namespace Excavator.F1
         {
             var groupTypeRoleService = new GroupTypeRoleService();
             var dvService = new DefinedValueService();
-            var householdCampusList = new List<string>();
 
             // Marital statuses: Married, Single, Separated, etc
             List<DefinedValue> maritalStatusTypes = dvService.Queryable()
@@ -592,21 +609,29 @@ namespace Excavator.F1
             // Group type: Family
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r[householdIDKey] as int? ) )
+            // Cached F1 attributes: IndividualId, HouseholdId, PreviousChurch, Position, Employer, School
+            var individualIdAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
+            var householdIdAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
+            var previousChurchAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
+            var employerAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "Employer" ) );
+            var positionAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "Position" ) );
+            var firstVisitAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "FirstVisit" ) );
+            var schoolAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "School" ) );
+
+            foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
                 // only import where selectedColumns.Contains( row.Column )
 
-                //var familyMembers = new List<GroupMember>();
                 var familyGroup = new Group();
-                householdCampusList.Clear();
+                var householdCampusList = new List<string>();
 
                 foreach ( var row in groupedRows )
                 {
-                    int? individual_id = row["Individual_ID"] as int?;
-                    int? household_id = row["Household_ID"] as int?;
+                    int? individualId = row["Individual_ID"] as int?;
+                    int? householdId = row["Household_ID"] as int?;
 
                     // Check if person already imported
-                    if ( GetPersonId( individual_id, household_id ) == null )
+                    if ( GetPersonId( individualId, householdId ) == null )
                     {
                         var person = new Person();
                         person.FirstName = row["First_Name"] as string;
@@ -637,18 +662,18 @@ namespace Excavator.F1
                                 .Select( s => (int?)s.Id ).FirstOrDefault();
                         }
 
-                        string member_status = row["Status_Name"] as string;
-                        if ( member_status == "Member" )
+                        string memberStatus = row["Status_Name"] as string;
+                        if ( memberStatus == "Member" )
                         {
                             person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
                             person.RecordStatusValueId = statusActiveId;
                         }
-                        else if ( member_status == "Visitor" )
+                        else if ( memberStatus == "Visitor" )
                         {
                             person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
                             person.RecordStatusValueId = statusActiveId;
                         }
-                        else if ( member_status == "Deceased" )
+                        else if ( memberStatus == "Deceased" )
                         {
                             person.IsDeceased = true;
                             person.RecordStatusValueId = statusInactiveId;
@@ -658,7 +683,7 @@ namespace Excavator.F1
                         else
                         {
                             // F1 defaults are Member & Visitor; all others are user-defined
-                            var customConnectionType = connectionStatusTypes.Where( dv => dv.Name == member_status )
+                            var customConnectionType = connectionStatusTypes.Where( dv => dv.Name == memberStatus )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
 
                             int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
@@ -672,10 +697,10 @@ namespace Excavator.F1
                             person.CreatedDateTime = (DateTime)join_date;
                         }
 
-                        string marital_status = row["Marital_Status"] as string;
-                        if ( marital_status != null )
+                        string maritalStatus = row["Marital_Status"] as string;
+                        if ( maritalStatus != null )
                         {
-                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == marital_status )
+                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == maritalStatus )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
                         else
@@ -716,53 +741,50 @@ namespace Excavator.F1
                             } );
                         }
 
+                        // Map F1 attributes
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
 
                         // individual_id already defined in scope
-                        if ( individual_id != null )
+                        if ( individualId != null )
                         {
-                            var individualAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == individualIDKey );
-                            person.Attributes.Add( individualIDKey, AttributeCache.Read( individualAttribute ) );
-                            person.AttributeValues.Add( individualIDKey, new List<AttributeValue>() );
-                            person.AttributeValues[individualIDKey].Add( new AttributeValue()
+                            person.Attributes.Add( "F1IndividualId", individualIdAttribute );
+                            person.AttributeValues.Add( "F1IndividualId", new List<AttributeValue>() );
+                            person.AttributeValues["F1IndividualId"].Add( new AttributeValue()
                             {
-                                AttributeId = individualAttribute.Id,
-                                Value = individual_id.ToString()
+                                AttributeId = individualIdAttribute.Id,
+                                Value = individualId.ToString()
                             } );
                         }
 
                         // household_id already defined in scope
-                        if ( household_id != null )
+                        if ( householdId != null )
                         {
-                            var householdAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == householdIDKey );
-                            person.Attributes.Add( householdIDKey, AttributeCache.Read( householdAttribute ) );
-                            person.AttributeValues.Add( householdIDKey, new List<AttributeValue>() );
-                            person.AttributeValues[householdIDKey].Add( new AttributeValue()
+                            person.Attributes.Add( "F1HouseholdId", householdIdAttribute );
+                            person.AttributeValues.Add( "F1HouseholdId", new List<AttributeValue>() );
+                            person.AttributeValues["F1HouseholdId"].Add( new AttributeValue()
                             {
-                                AttributeId = householdAttribute.Id,
-                                Value = household_id.ToString()
+                                AttributeId = householdIdAttribute.Id,
+                                Value = householdId.ToString()
                             } );
                         }
 
-                        string former_church = row["Former_Church"] as string;
-                        if ( former_church != null )
+                        string previousChurch = row["Former_Church"] as string;
+                        if ( previousChurch != null )
                         {
-                            var previousChurchAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "PreviousChurch" );
-                            person.Attributes.Add( "PreviousChurch", AttributeCache.Read( previousChurchAttribute ) );
+                            person.Attributes.Add( "PreviousChurch", previousChurchAttribute );
                             person.AttributeValues.Add( "PreviousChurch", new List<AttributeValue>() );
                             person.AttributeValues["PreviousChurch"].Add( new AttributeValue()
                             {
                                 AttributeId = previousChurchAttribute.Id,
-                                Value = former_church
+                                Value = previousChurch
                             } );
                         }
 
                         string employer = row["Employer"] as string;
                         if ( employer != null )
                         {
-                            var employerAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "Employer" );
-                            person.Attributes.Add( "Employer", AttributeCache.Read( employerAttribute ) );
+                            person.Attributes.Add( "Employer", employerAttribute );
                             person.AttributeValues.Add( "Employer", new List<AttributeValue>() );
                             person.AttributeValues["Employer"].Add( new AttributeValue()
                             {
@@ -774,43 +796,38 @@ namespace Excavator.F1
                         string position = row["Occupation_Name"] as string ?? row["Occupation_Description"] as string;
                         if ( position != null )
                         {
-                            var positionAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "Position" );
-                            person.Attributes.Add( "Position", AttributeCache.Read( positionAttribute ) );
+                            person.Attributes.Add( "Position", positionAttribute );
                             person.AttributeValues.Add( "Position", new List<AttributeValue>() );
                             person.AttributeValues["Position"].Add( new AttributeValue()
                             {
                                 AttributeId = positionAttribute.Id,
-                                Value = former_church
+                                Value = position
                             } );
                         }
 
                         string school = row["School_Name"] as string;
-                        if ( position != null )
+                        if ( school != null )
                         {
-                            var schoolAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "School" );
-                            person.Attributes.Add( "School", AttributeCache.Read( schoolAttribute ) );
+                            person.Attributes.Add( "School", schoolAttribute );
                             person.AttributeValues.Add( "School", new List<AttributeValue>() );
                             person.AttributeValues["School"].Add( new AttributeValue()
                             {
                                 AttributeId = schoolAttribute.Id,
-                                Value = former_church
+                                Value = school
                             } );
                         }
 
-                        DateTime? first_visit = row["First_Record"] as DateTime?;
-                        if ( first_visit != null )
+                        DateTime? firstVisit = row["First_Record"] as DateTime?;
+                        if ( firstVisit != null )
                         {
-                            var firstVisitAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "FirstVisit" );
-                            person.Attributes.Add( "FirstVisit", AttributeCache.Read( firstVisitAttribute ) );
+                            person.Attributes.Add( "FirstVisit", firstVisitAttribute );
                             person.AttributeValues.Add( "FirstVisit", new List<AttributeValue>() );
                             person.AttributeValues["FirstVisit"].Add( new AttributeValue()
                             {
                                 AttributeId = firstVisitAttribute.Id,
-                                Value = first_visit.Value.ToString( "MM/dd/yyyy" )
+                                Value = firstVisit.Value.ToString( "MM/dd/yyyy" )
                             } );
                         }
-
-                        //Rock.Attribute.Helper.SaveAttributeValues( person, ImportPersonAlias );
 
                         // Other properties (Attributes to create):
                         // former name
@@ -845,8 +862,6 @@ namespace Excavator.F1
                         foreach ( var groupMember in familyGroup.Members )
                         {
                             var person = groupMember.Person;
-                            Rock.Attribute.Helper.LoadAttributes( person );
-
                             foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                             {
                                 string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
@@ -880,23 +895,23 @@ namespace Excavator.F1
     }
 
     /// <summary>
-    /// Helper class to store ID references to people that've been imported
+    /// Helper class to store Id references to people that've been imported
     /// </summary>
     public class ImportedPerson
     {
         /// <summary>
-        /// Stores the Rock.Person ID
+        /// Stores the Rock.Person Id
         /// </summary>
-        public int? PersonID;
+        public int? PersonId;
 
         /// <summary>
-        /// Stores the F1 Individual ID
+        /// Stores the F1 Individual Id
         /// </summary>
-        public string IndividualID;
+        public int? IndividualId;
 
         /// <summary>
-        /// Stores the F1 Household ID
+        /// Stores the F1 Household Id
         /// </summary>
-        public string HouseholdID;
+        public int? HouseholdId;
     }
 }
