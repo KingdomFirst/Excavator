@@ -43,7 +43,7 @@ namespace Excavator
             else
             {
                 lblDataUpload.Visibility = Visibility.Visible;
-                btnNext.Visibility = Visibility.Hidden;
+                btnClose.Visibility = Visibility.Hidden;
             }
         }
 
