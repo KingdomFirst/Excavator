@@ -84,11 +84,11 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnNext_Click( object sender, RoutedEventArgs e )
+        private void btnClose_Click( object sender, RoutedEventArgs e )
         {
-            // clicked Run in Background
-            // wait until all models have been saved
-            // Application.Current.Shutdown();
+            // Run in Background finished?
+            // if not wait until all models have been saved
+            Application.Current.Shutdown();
         }
 
         #endregion
@@ -127,7 +127,7 @@ namespace Excavator
             {
                 lblDataUpload.Style = (Style)FindResource( "labelStyleSuccess" );
                 lblDataUpload.Content = "Successfully uploaded all the content";
-                btnNext.Visibility = Visibility.Visible;
+                btnClose.Visibility = Visibility.Visible;
             } ) );
         }
 

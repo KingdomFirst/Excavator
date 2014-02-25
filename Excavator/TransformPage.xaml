@@ -48,10 +48,10 @@
                 Back
             </Button>
             <Button Style="{StaticResource buttonStylePrimary}"
-                x:Name="btnNext"
+                x:Name="btnClose" Visibility="Hidden"
                 VerticalAlignment="Bottom"
                 Grid.Column="1" HorizontalAlignment="Right"
-                Click="btnNext_Click">
+                Click="btnClose_Click">
                 Close
             </Button>
         </Grid>
