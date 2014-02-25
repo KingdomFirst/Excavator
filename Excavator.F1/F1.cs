@@ -299,7 +299,8 @@ namespace Excavator.F1
             }
             else
             {
-                var lookupPerson = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == IndividualAttributeId && av.Value == individualId.ToString() );
+                string f1IndividualId = individualId.ToString();
+                var lookupPerson = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == IndividualAttributeId && av.Value == f1IndividualId );
                 if ( lookupPerson != null )
                 {
                     ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupPerson.Id, HouseholdId = householdId, IndividualId = individualId } );
@@ -623,6 +624,7 @@ namespace Excavator.F1
             var positionAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "Position" ) );
             var firstVisitAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "FirstVisit" ) );
             var schoolAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "School" ) );
+            var membershipDateAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "MembershipDate" ) );
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
@@ -668,6 +670,31 @@ namespace Excavator.F1
                                 .Select( s => (int?)s.Id ).FirstOrDefault();
                         }
 
+                        string maritalStatus = row["Marital_Status"] as string;
+                        if ( maritalStatus != null )
+                        {
+                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == maritalStatus )
+                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                        }
+                        else
+                        {
+                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == "Unknown" )
+                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                        }
+
+                        string familyRole = row["Household_Position"] as string;
+                        if ( familyRole != null )
+                        {
+                            if ( familyRole == "Child" || person.Age < 18 )
+                            {
+                                groupRoleId = childRoleId;
+                            }
+                            else if ( familyRole == "Visitor" )
+                            {
+                                // assign person as a known relationship of this family/group
+                            }
+                        }
+
                         string memberStatus = row["Status_Name"] as string;
                         if ( memberStatus == "Member" )
                         {
@@ -695,37 +722,6 @@ namespace Excavator.F1
                             int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
                             person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
                             person.RecordStatusValueId = statusActiveId;
-                        }
-
-                        DateTime? join_date = row["Status_Date"] as DateTime?;
-                        if ( join_date != null )
-                        {
-                            person.CreatedDateTime = (DateTime)join_date;
-                        }
-
-                        string maritalStatus = row["Marital_Status"] as string;
-                        if ( maritalStatus != null )
-                        {
-                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == maritalStatus )
-                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                        }
-                        else
-                        {
-                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == "Unknown" )
-                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                        }
-
-                        string familyRole = row["Household_Position"] as string;
-                        if ( familyRole != null )
-                        {
-                            if ( familyRole == "Child" || person.Age < 18 )
-                            {
-                                groupRoleId = childRoleId;
-                            }
-                            else if ( familyRole == "Visitor" )
-                            {
-                                // assign person as a known relationship of this family/group
-                            }
                         }
 
                         string campus = row["SubStatus_Name"] as string;
@@ -826,12 +822,26 @@ namespace Excavator.F1
                         DateTime? firstVisit = row["First_Record"] as DateTime?;
                         if ( firstVisit != null )
                         {
+                            person.CreatedDateTime = firstVisit;
                             person.Attributes.Add( "FirstVisit", firstVisitAttribute );
                             person.AttributeValues.Add( "FirstVisit", new List<AttributeValue>() );
                             person.AttributeValues["FirstVisit"].Add( new AttributeValue()
                             {
                                 AttributeId = firstVisitAttribute.Id,
                                 Value = firstVisit.Value.ToString( "MM/dd/yyyy" )
+                            } );
+                        }
+
+                        DateTime? membershipDate = row["Status_Date"] as DateTime?;
+                        if ( membershipDate != null )
+                        {
+                            person.CreatedDateTime = membershipDate;
+                            person.Attributes.Add( "MembershipDate", membershipDateAttribute );
+                            person.AttributeValues.Add( "MembershipDate", new List<AttributeValue>() );
+                            person.AttributeValues["MembershipDate"].Add( new AttributeValue()
+                            {
+                                AttributeId = membershipDateAttribute.Id,
+                                Value = membershipDate.Value.ToString( "MM/dd/yyyy" )
                             } );
                         }
 
