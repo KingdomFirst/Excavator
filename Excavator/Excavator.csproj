@@ -49,6 +49,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files (x86)\Microsoft SQL Server\110\SDK\Assemblies\Microsoft.SqlServer.Smo.dll</HintPath>
     </Reference>
+    <Reference Include="OrcaMDF.Core">
+      <HintPath>..\Packages\OrcaMDF.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="OrcaMDF.Framework">
+      <HintPath>..\Packages\OrcaMDF.Framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.ComponentModel.Composition.Registration" />
@@ -144,12 +150,6 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Packages\OrcaMDF.Core\OrcaMDF.Core.csproj">
-      <Project>{829a5c51-cb21-4de2-9021-44f6d804d231}</Project>
-      <Name>OrcaMDF.Core</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\rock.ico" />

@@ -32,10 +32,19 @@
   <ItemGroup>
     <Reference Include="DotLiquid, Version=1.7.0.0, Culture=neutral, PublicKeyToken=82e46016ecf9f07c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Packages\Rock\bin\DotLiquid.dll</HintPath>
+      <HintPath>..\Packages\DotLiquid.dll</HintPath>
     </Reference>
-    <Reference Include="Rock">
-      <HintPath>..\Packages\Rock\bin\Rock.dll</HintPath>
+    <Reference Include="OrcaMDF.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Packages\OrcaMDF.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="OrcaMDF.Framework, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Packages\OrcaMDF.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Rock, Version=0.1.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Packages\Rock.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -84,10 +93,6 @@
     <ProjectReference Include="..\excavator\Excavator.csproj">
       <Project>{6c4100b7-6b6b-40d7-a150-deba50512c95}</Project>
       <Name>Excavator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Packages\OrcaMDF.Core\OrcaMDF.Core.csproj">
-      <Project>{829a5c51-cb21-4de2-9021-44f6d804d231}</Project>
-      <Name>OrcaMDF.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
