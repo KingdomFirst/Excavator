@@ -539,6 +539,7 @@ namespace Excavator.F1
                         }
                     }
 
+                    // Other properties (Attributes to create):
                     // Pledge_Drive_Name
                     // Stated_Value
                     // True_Value
@@ -602,9 +603,14 @@ namespace Excavator.F1
             // Note type: Comment
             int noteCommentTypeId = new NoteTypeService().Get( new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) ).Id;
 
-            // Group roles: Adult, Child
+            // Group roles: Adult, Child, others
             int adultRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
             int childRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD ) ).Id;
+            //int visitorRoleId
+            //int canCheckInRoleId
+            //int allowCheckInRoleId
+            //int invitedRoleId
+            //int invitedByRoleId
 
             // Group type: Family
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
