@@ -109,7 +109,7 @@ namespace Excavator.F1
                         break;
 
                     case "Individual_Household":
-                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //sMapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
                         break;
 
                     default:
@@ -300,11 +300,11 @@ namespace Excavator.F1
             else
             {
                 string f1IndividualId = individualId.ToString();
-                var lookupPerson = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == IndividualAttributeId && av.Value == f1IndividualId );
-                if ( lookupPerson != null )
+                var lookupAttribute = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == IndividualAttributeId && av.Value == f1IndividualId );
+                if ( lookupAttribute != null )
                 {
-                    ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupPerson.Id, HouseholdId = householdId, IndividualId = individualId } );
-                    return lookupPerson.Id;
+                    ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId, IndividualId = individualId } );
+                    return lookupAttribute.Id;
                 }
             }
 
@@ -371,6 +371,7 @@ namespace Excavator.F1
                 if ( batchId != null && !ImportedBatches.ContainsKey( batchId ) )
                 {
                     var batch = new FinancialBatch();
+                    batch.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
                     string name = row["BatchName"] as string;
                     if ( name != null )
@@ -415,20 +416,18 @@ namespace Excavator.F1
         /// <param name="selectedColumns">The selected columns.</param>
         private int MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
-            var detailService = new FinancialTransactionDetailService();
             var accountService = new FinancialAccountService();
-            var dvService = new DefinedValueService();
+
+            var transactionTypeContributionId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
+
+            int currencyTypeACH = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) ).Id;
+            int currencyTypeCash = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ).Id;
+            int currencyTypeCheck = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
+            int currencyTypeCreditCard = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
 
             var contributionAttribute = AttributeCache.Read( ContributionAttributeId );
 
-            int transactionTypeContribution = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
-
-            int currencyTypeACH = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) ).Id;
-            int currencyTypeCash = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ).Id;
-            int currencyTypeCheck = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
-            int currencyTypeCreditCard = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
-
-            List<DefinedValue> refundReasons = dvService.Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
+            List<DefinedValue> refundReasons = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
 
             List<FinancialPledge> pledgeList = new FinancialPledgeService().Queryable().ToList();
 
@@ -443,7 +442,9 @@ namespace Excavator.F1
                 if ( contributionId != null && !ImportedContributions.ContainsKey( contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
-                    transaction.TransactionTypeValueId = transactionTypeContribution;
+                    transaction.TransactionTypeValueId = transactionTypeContributionId;
+                    transaction.AuthorizedPersonId = GetPersonId( individualId, householdId );
+                    transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
                     int? personId = GetPersonId( individualId, householdId );
                     transaction.AuthorizedPersonId = personId;
@@ -457,12 +458,13 @@ namespace Excavator.F1
                     int? batchId = row["BatchID"] as int?;
                     if ( batchId != null && ImportedBatches.Any( b => b.Key == batchId ) )
                     {
-                        transaction.BatchId = batchId;
+                        transaction.BatchId = ImportedBatches.FirstOrDefault( b => b.Key == batchId ).Value;
                     }
 
                     DateTime? receivedDate = row["Received_Date"] as DateTime?;
                     if ( receivedDate != null )
                     {
+                        transaction.TransactionDateTime = receivedDate;
                         transaction.CreatedDateTime = receivedDate;
                     }
 
@@ -494,7 +496,9 @@ namespace Excavator.F1
                     string checkNumber = row["Check_Number"] as string;
                     if ( checkNumber != null && checkNumber.AsType<int?>() != null )
                     {
-                        transaction.CheckMicrEncrypted = Encryption.EncryptString( string.Format( "{0}_{1}_{2}", null, null, checkNumber ) );
+                        // encryption here would require a public key already set
+                        // and routing and account numbers aren't available
+                        transaction.CheckMicrEncrypted = string.Format( "ImportedCheck_{0}", checkNumber );
                     }
 
                     string fundName = row["Fund_Name"] as string;
@@ -502,13 +506,21 @@ namespace Excavator.F1
                     decimal? amount = row["Amount"] as decimal?;
                     if ( fundName != null & amount != null )
                     {
-                        // check if the subFund is a campus
-                        var fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
+                        // match the fund account if we can
+                        FinancialAccount matchingAccount = null;
+                        int? fundCampusId = null;
+                        if ( subFund != null )
+                        {
+                            fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
+                            matchingAccount = accountList.FirstOrDefault( a => ( a.Name.StartsWith( fundName ) && a.CampusId == fundCampusId ) ||
+                                ( a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) );
+                        }
+                        else
+                        {
+                            matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
+                        }
 
-                        // check if an account already exists
-                        var matchingAccount = accountList.FirstOrDefault( a => ( a.Name.StartsWith( fundName ) && a.CampusId == fundCampusId ) ||
-                            ( a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) );
                         if ( matchingAccount == null )
                         {
                             matchingAccount = new FinancialAccount();
@@ -647,6 +659,7 @@ namespace Excavator.F1
                         person.NickName = row["Goes_By"] as string ?? person.FirstName;
                         person.LastName = row["Last_Name"] as string;
                         person.BirthDate = row["Date_Of_Birth"] as DateTime?;
+                        person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         person.RecordTypeValueId = personRecordTypeId;
                         int groupRoleId = adultRoleId;
 
