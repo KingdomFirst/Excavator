@@ -25,18 +25,11 @@ using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
+    /// <summary>
+    /// Partial of F1Component that holds the People import methods
+    /// </summary>
     partial class F1Component
     {
-        /// <summary>
-        /// Any attributes associated with Rock Person(s)
-        /// </summary>
-        private List<Rock.Model.Attribute> PersonAttributeList;
-
-        /// <summary>
-        /// Holds a list of all the people who've been imported
-        /// </summary>
-        private List<ImportedPerson> ImportedPersonList;
-
         /// <summary>
         /// Maps the person.
         /// </summary>
@@ -45,6 +38,8 @@ namespace Excavator.F1
         private int MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
+            var attributeValueService = new AttributeValueService();
+            var attributeService = new AttributeService();
             var dvService = new DefinedValueService();
 
             // Marital statuses: Married, Single, Separated, etc
@@ -90,15 +85,18 @@ namespace Excavator.F1
             // Group type: Family
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
+            // Look up additional Person attributes (existing)
+            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
+
             // Cached F1 attributes: IndividualId, HouseholdId, PreviousChurch, Position, Employer, School
-            var individualIdAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
-            var householdIdAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
-            var previousChurchAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
-            var employerAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "Employer" ) );
-            var positionAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "Position" ) );
-            var firstVisitAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "FirstVisit" ) );
-            var schoolAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "School" ) );
-            var membershipDateAttribute = AttributeCache.Read( PersonAttributeList.FirstOrDefault( a => a.Key == "MembershipDate" ) );
+            var individualIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
+            var householdIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
+            var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
+            var employerAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Employer" ) );
+            var positionAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Position" ) );
+            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
+            var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "School" ) );
+            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
@@ -320,7 +318,7 @@ namespace Excavator.F1
                             } );
                         }
 
-                        // Other properties (Attributes to create):
+                        // Other Attributes to create:
                         // former name
                         // bar_code
                         // member_env_code
@@ -381,26 +379,5 @@ namespace Excavator.F1
 
             return tableData.Count();
         }
-    }
-
-    /// <summary>
-    /// Helper class to store references to people that've been imported
-    /// </summary>
-    public class ImportedPerson
-    {
-        /// <summary>
-        /// Stores the Rock.Person Id
-        /// </summary>
-        public int? PersonId;
-
-        /// <summary>
-        /// Stores the F1 Individual Id
-        /// </summary>
-        public int? IndividualId;
-
-        /// <summary>
-        /// Stores the F1 Household Id
-        /// </summary>
-        public int? HouseholdId;
     }
 }

@@ -53,17 +53,18 @@ namespace Excavator.F1
         private PersonAlias ImportPersonAlias;
 
         /// <summary>
+        /// Holds a list of all the people who've been imported
+        /// </summary>
+        private List<ImportedPerson> ImportedPersonList;
+
+        /// <summary>
         /// The list of current campuses
         /// </summary>
         private List<Campus> CampusList;
 
-        // Custom Attributes added for unique F1 Id's
-        private int BatchAttributeId;
-
-        private int ContributionAttributeId;
-
+        private int IntegerFieldTypeId;
+        private int PersonEntityTypeId;
         private int IndividualAttributeId;
-
         private int HouseholdAttributeId;
 
         #endregion
@@ -76,7 +77,7 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool TransformData()
         {
-            VerifyRockAttributes();
+            LoadExistingRockData();
             var orderedNodes = SetImportOrder( loadedNodes );
 
             var scanner = new DataScanner( database );
@@ -118,36 +119,33 @@ namespace Excavator.F1
         }
 
         /// <summary>
-        /// Verifies all Rock attributes exist that are used globally by the transform.
+        /// Loads Rock data that's used globally by the transform
         /// </summary>
-        public void VerifyRockAttributes()
+        public void LoadExistingRockData()
         {
-            var attributeValueService = new AttributeValueService();
-            var attributeService = new AttributeService();
-
             // change this to user-defined person
             var aliasService = new PersonAliasService();
             ImportPersonAlias = aliasService.Get( 1 );
             // end change
 
-            int personEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-            int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
-            int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
-            int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
-            int integerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
+            var attributeValueService = new AttributeValueService();
+            var attributeService = new AttributeService();
+
+            IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
 
             CampusList = new CampusService().Queryable().ToList();
 
-            PersonAttributeList = attributeService.Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).ToList();
+            PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
+            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            var householdAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "F1HouseholdId" );
+            var householdAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" );
             if ( householdAttribute == null )
             {
                 householdAttribute = new Rock.Model.Attribute();
                 householdAttribute.Key = "F1HouseholdId";
                 householdAttribute.Name = "F1 Household Id";
-                householdAttribute.FieldTypeId = integerFieldTypeId;
-                householdAttribute.EntityTypeId = personEntityTypeId;
+                householdAttribute.FieldTypeId = IntegerFieldTypeId;
+                householdAttribute.EntityTypeId = PersonEntityTypeId;
                 householdAttribute.EntityTypeQualifierValue = string.Empty;
                 householdAttribute.EntityTypeQualifierColumn = string.Empty;
                 householdAttribute.Description = "The FellowshipOne household identifier for the person that was imported";
@@ -158,17 +156,17 @@ namespace Excavator.F1
 
                 attributeService.Add( householdAttribute, ImportPersonAlias );
                 attributeService.Save( householdAttribute, ImportPersonAlias );
-                PersonAttributeList.Add( householdAttribute );
+                personAttributes.Add( householdAttribute );
             }
 
-            var individualAttribute = PersonAttributeList.FirstOrDefault( a => a.Key == "F1IndividualId" );
+            var individualAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" );
             if ( individualAttribute == null )
             {
                 individualAttribute = new Rock.Model.Attribute();
                 individualAttribute.Key = "F1IndividualId";
                 individualAttribute.Name = "F1 Individual Id";
-                individualAttribute.FieldTypeId = integerFieldTypeId;
-                individualAttribute.EntityTypeId = personEntityTypeId;
+                individualAttribute.FieldTypeId = IntegerFieldTypeId;
+                individualAttribute.EntityTypeId = PersonEntityTypeId;
                 individualAttribute.EntityTypeQualifierValue = string.Empty;
                 individualAttribute.EntityTypeQualifierColumn = string.Empty;
                 individualAttribute.Description = "The FellowshipOne individual identifier for the person that was imported";
@@ -179,11 +177,11 @@ namespace Excavator.F1
 
                 attributeService.Add( individualAttribute, ImportPersonAlias );
                 attributeService.Save( individualAttribute, ImportPersonAlias );
-                PersonAttributeList.Add( individualAttribute );
+                personAttributes.Add( individualAttribute );
             }
 
-            HouseholdAttributeId = householdAttribute.Id;
             IndividualAttributeId = individualAttribute.Id;
+            HouseholdAttributeId = householdAttribute.Id;
 
             // Get all imported people with their F1 Id's
             var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
@@ -197,58 +195,6 @@ namespace Excavator.F1
                     HouseholdId = household.HouseholdId.AsType<int?>(),
                     IndividualId = individual.IndividualId.AsType<int?>()
                 } ).ToList();
-
-            // Get all imported batches
-            var batchAttribute = attributeService.Queryable().Where( a => a.EntityTypeId == batchEntityTypeId ).FirstOrDefault( a => a.Key == "F1BatchId" );
-            if ( batchAttribute == null )
-            {
-                batchAttribute = new Rock.Model.Attribute();
-                batchAttribute.Key = "F1BatchId";
-                batchAttribute.Name = "F1 Batch Id";
-                batchAttribute.FieldTypeId = integerFieldTypeId;
-                batchAttribute.EntityTypeId = batchEntityTypeId;
-                batchAttribute.EntityTypeQualifierValue = string.Empty;
-                batchAttribute.EntityTypeQualifierColumn = string.Empty;
-                batchAttribute.Description = "The FellowshipOne identifier for the batch that was imported";
-                batchAttribute.DefaultValue = string.Empty;
-                batchAttribute.IsMultiValue = false;
-                batchAttribute.IsRequired = false;
-                batchAttribute.Order = 0;
-
-                attributeService.Add( batchAttribute, ImportPersonAlias );
-                attributeService.Save( batchAttribute, ImportPersonAlias );
-            }
-
-            BatchAttributeId = batchAttribute.Id;
-            ImportedBatches = attributeValueService.GetByAttributeId( batchAttribute.Id )
-                .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
-                .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );
-
-            // Get all imported contributions
-            var contributionAttribute = attributeService.Queryable().Where( a => a.EntityTypeId == transactionEntityTypeId ).FirstOrDefault( a => a.Key == "F1ContributionId" );
-            if ( contributionAttribute == null )
-            {
-                contributionAttribute = new Rock.Model.Attribute();
-                contributionAttribute.Key = "F1ContributionId";
-                contributionAttribute.Name = "F1 Contribution Id";
-                contributionAttribute.FieldTypeId = integerFieldTypeId;
-                contributionAttribute.EntityTypeId = transactionEntityTypeId;
-                contributionAttribute.EntityTypeQualifierValue = string.Empty;
-                contributionAttribute.EntityTypeQualifierColumn = string.Empty;
-                contributionAttribute.Description = "The FellowshipOne identifier for the contribution that was imported";
-                contributionAttribute.DefaultValue = string.Empty;
-                contributionAttribute.IsMultiValue = false;
-                contributionAttribute.IsRequired = false;
-                contributionAttribute.Order = 0;
-
-                attributeService.Add( contributionAttribute, ImportPersonAlias );
-                attributeService.Save( contributionAttribute, ImportPersonAlias );
-            }
-
-            ContributionAttributeId = contributionAttribute.Id;
-            ImportedContributions = attributeValueService.GetByAttributeId( contributionAttribute.Id )
-               .Select( av => new { ContributionId = av.Value.AsType<int?>(), TransactionId = av.EntityId } )
-               .ToDictionary( t => t.ContributionId, t => t.TransactionId );
         }
 
         /// <summary>
@@ -261,9 +207,9 @@ namespace Excavator.F1
             if ( nodeList.Any() )
             {
                 var household = nodeList.Where( node => node.Name.Equals( "Individual_Household" ) ).FirstOrDefault();
+                var contributions = nodeList.Where( node => node.Name.Equals( "Contribution " ) ).FirstOrDefault();
                 var batch = nodeList.Where( node => node.Name.Equals( "Batch" ) ).FirstOrDefault();
                 var rlc = nodeList.Where( node => node.Name.Equals( "RLC" ) ).FirstOrDefault();
-                var contributions = nodeList.Where( node => node.Name.Equals( "Contribution " ) ).FirstOrDefault();
 
                 nodeList.Remove( household );
                 nodeList.Remove( batch );
@@ -346,5 +292,26 @@ namespace Excavator.F1
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Helper class to store references to people that've been imported
+    /// </summary>
+    public class ImportedPerson
+    {
+        /// <summary>
+        /// Stores the Rock.Person Id
+        /// </summary>
+        public int? PersonId;
+
+        /// <summary>
+        /// Stores the F1 Individual Id
+        /// </summary>
+        public int? IndividualId;
+
+        /// <summary>
+        /// Stores the F1 Household Id
+        /// </summary>
+        public int? HouseholdId;
     }
 }

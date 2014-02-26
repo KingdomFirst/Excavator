@@ -25,17 +25,15 @@ using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
+    /// <summary>
+    /// Partial of F1Component that holds the Financial import methods
+    /// </summary>
     partial class F1Component
     {
         /// <summary>
-        /// The imported batches
+        /// The imported batches. Used in Batches & Contributions
         /// </summary>
         private Dictionary<int?, int?> ImportedBatches;
-
-        /// <summary>
-        /// The imported contributions
-        /// </summary>
-        private Dictionary<int?, int?> ImportedContributions;
 
         /// <summary>
         /// Maps the batch data.
@@ -44,7 +42,38 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private int MapBatch( IQueryable<Row> tableData )
         {
-            var batchAttribute = AttributeCache.Read( BatchAttributeId );
+            int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
+            var attributeService = new AttributeService();
+
+            // Add an Attribute for the unique F1 Batch Id
+            var batchAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == batchEntityTypeId
+                && a.Key == "F1BatchId" ).Select( a => a.Id ).FirstOrDefault();
+            if ( batchAttributeId == 0 )
+            {
+                var newBatchAttribute = new Rock.Model.Attribute();
+                newBatchAttribute.Key = "F1BatchId";
+                newBatchAttribute.Name = "F1 Batch Id";
+                newBatchAttribute.FieldTypeId = IntegerFieldTypeId;
+                newBatchAttribute.EntityTypeId = batchEntityTypeId;
+                newBatchAttribute.EntityTypeQualifierValue = string.Empty;
+                newBatchAttribute.EntityTypeQualifierColumn = string.Empty;
+                newBatchAttribute.Description = "The FellowshipOne identifier for the batch that was imported";
+                newBatchAttribute.DefaultValue = string.Empty;
+                newBatchAttribute.IsMultiValue = false;
+                newBatchAttribute.IsRequired = false;
+                newBatchAttribute.Order = 0;
+
+                attributeService.Add( newBatchAttribute, ImportPersonAlias );
+                attributeService.Save( newBatchAttribute, ImportPersonAlias );
+                batchAttributeId = newBatchAttribute.Id;
+            }
+
+            var batchAttribute = AttributeCache.Read( batchAttributeId );
+
+            // Get all imported batches
+            ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttributeId )
+                .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
+                .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );
 
             foreach ( var row in tableData )
             {
@@ -97,7 +126,9 @@ namespace Excavator.F1
         /// <param name="selectedColumns">The selected columns.</param>
         private int MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
+            int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
             var accountService = new FinancialAccountService();
+            var attributeService = new AttributeService();
 
             var transactionTypeContributionId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
 
@@ -106,13 +137,41 @@ namespace Excavator.F1
             int currencyTypeCheck = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
             int currencyTypeCreditCard = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
 
-            var contributionAttribute = AttributeCache.Read( ContributionAttributeId );
-
             List<DefinedValue> refundReasons = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
 
             List<FinancialPledge> pledgeList = new FinancialPledgeService().Queryable().ToList();
 
             List<FinancialAccount> accountList = accountService.Queryable().ToList();
+
+            // Add an Attribute for the unique F1 Contribution Id
+            var contributionAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == transactionEntityTypeId
+                && a.Key == "F1ContributionId" ).Select( a => a.Id ).FirstOrDefault();
+            if ( contributionAttributeId == 0 )
+            {
+                var newContributionAttribute = new Rock.Model.Attribute();
+                newContributionAttribute.Key = "F1ContributionId";
+                newContributionAttribute.Name = "F1 Contribution Id";
+                newContributionAttribute.FieldTypeId = IntegerFieldTypeId;
+                newContributionAttribute.EntityTypeId = transactionEntityTypeId;
+                newContributionAttribute.EntityTypeQualifierValue = string.Empty;
+                newContributionAttribute.EntityTypeQualifierColumn = string.Empty;
+                newContributionAttribute.Description = "The FellowshipOne identifier for the contribution that was imported";
+                newContributionAttribute.DefaultValue = string.Empty;
+                newContributionAttribute.IsMultiValue = false;
+                newContributionAttribute.IsRequired = false;
+                newContributionAttribute.Order = 0;
+
+                attributeService.Add( newContributionAttribute, ImportPersonAlias );
+                attributeService.Save( newContributionAttribute, ImportPersonAlias );
+                contributionAttributeId = newContributionAttribute.Id;
+            }
+
+            var contributionAttribute = AttributeCache.Read( contributionAttributeId );
+
+            // Get all imported contributions
+            var importedContributions = new AttributeValueService().GetByAttributeId( contributionAttributeId )
+               .Select( av => new { ContributionId = av.Value.AsType<int?>(), TransactionId = av.EntityId } )
+               .ToDictionary( t => t.ContributionId, t => t.TransactionId );
 
             foreach ( var row in tableData )
             {
@@ -120,7 +179,7 @@ namespace Excavator.F1
                 int? householdId = row["Household_ID"] as int?;
                 int? contributionId = row["ContributionID"] as int?;
 
-                if ( contributionId != null && !ImportedContributions.ContainsKey( contributionId ) )
+                if ( contributionId != null && !importedContributions.ContainsKey( contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
@@ -176,7 +235,7 @@ namespace Excavator.F1
                     if ( checkNumber != null && checkNumber.AsType<int?>() != null )
                     {
                         // encryption here would require a public key already set
-                        // and routing and account numbers aren't available
+                        // + routing and account numbers aren't available
                         transaction.CheckMicrEncrypted = string.Format( "ImportedCheck_{0}", checkNumber );
                     }
 
@@ -231,7 +290,7 @@ namespace Excavator.F1
                         }
                     }
 
-                    // Other properties (Attributes to create):
+                    // Other Attributes to create:
                     // Pledge_Drive_Name
                     // Stated_Value
                     // True_Value

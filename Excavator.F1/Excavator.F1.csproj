@@ -58,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="F1Component.cs" />
+    <Compile Include="Maps\Attendance.cs" />
     <Compile Include="Maps\Financial.cs" />
     <Compile Include="Model\Group_Attendance.cs" />
     <Compile Include="Model\GiftednessProgram.cs" />
