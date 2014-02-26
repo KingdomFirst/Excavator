@@ -39,18 +39,51 @@ namespace Excavator.F1
         {
             foreach ( var row in tableData )
             {
-                int? individualId = row["Individual_ID"] as int?;
                 DateTime? startTime = row["Start_Date_time"] as DateTime?;
-                if ( startTime != null ) //&& !ImportedBatches.ContainsKey( batchId )
+                if ( startTime != null )
                 {
                     var attendance = new Rock.Model.Attendance();
                     attendance.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    attendance.StartDateTime = (DateTime)startTime;
+                    attendance.DidAttend = true;
 
-                    string name = row["BatchName"] as string;
-                    if ( name != null )
+                    string position = row["CheckedInAs"] as string;
+                    string jobTitle = row["Job_Title"] as string;
+                    string machineName = row["Checkin_Machine_Name"] as string;
+                    int? rlcId = row["RLC_ID"] as int?;
+
+                    // look up location, schedule, group, and device
+
+                    int? individualId = row["Individual_ID"] as int?;
+                    if ( individualId != null )
                     {
-                        //attendance.Name = name;
+                        attendance.PersonId = GetPersonId( individualId );
                     }
+
+                    DateTime? checkInTime = row["Check_In_Time"] as DateTime?;
+                    if ( checkInTime != null )
+                    {
+                        // set the start time to the time they actually checked in
+                        attendance.StartDateTime = (DateTime)checkInTime;
+                    }
+
+                    DateTime? checkOutTime = row["Check_Out_Time"] as DateTime?;
+                    if ( checkOutTime != null )
+                    {
+                        attendance.EndDateTime = (DateTime)checkOutTime;
+                    }
+
+                    string f1AttendanceCode = row["Tag_Code"] as string;
+                    if ( f1AttendanceCode != null )
+                    {
+                        attendance.AttendanceCode = new AttendanceCode();
+                        attendance.AttendanceCode.Code = f1AttendanceCode;
+                    }
+
+                    // Other Attributes to create:
+                    // Tag_Comment
+                    // BreakoutGroup_Name
+                    // Pager_Code
 
                     RockTransactionScope.WrapTransaction( () =>
                     {
@@ -59,19 +92,6 @@ namespace Excavator.F1
                         attendanceService.Save( attendance, ImportPersonAlias );
                     } );
                 }
-
-                // Individual_ID
-                // RLC_ID
-                // Start_Date_Time
-                // Tag_Comment
-                // Tag_Code
-                // CheckedInAs
-                // BreakoutGroup_Name
-                // Check_In_Time
-                // Check_Out_Time
-                // Pager_Code
-                // Job_Title
-                // Checkin_Machine_Name
             }
 
             return tableData.Count();
