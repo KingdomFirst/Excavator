@@ -263,11 +263,13 @@ namespace Excavator.F1
                 var household = nodeList.Where( node => node.Name.Equals( "Individual_Household" ) ).FirstOrDefault();
                 var batch = nodeList.Where( node => node.Name.Equals( "Batch" ) ).FirstOrDefault();
                 var rlc = nodeList.Where( node => node.Name.Equals( "RLC" ) ).FirstOrDefault();
+                var contributions = nodeList.Where( node => node.Name.Equals( "Contribution " ) ).FirstOrDefault();
 
                 nodeList.Remove( household );
                 nodeList.Remove( batch );
                 nodeList.Remove( rlc );
-                var primaryTables = new List<DatabaseNode>() { household, batch, rlc };
+                nodeList.Remove( contributions );
+                var primaryTables = new List<DatabaseNode>() { household, batch, rlc, contributions };
                 primaryTables.RemoveAll( n => n == null );
                 nodeList.InsertRange( 0, primaryTables );
             }

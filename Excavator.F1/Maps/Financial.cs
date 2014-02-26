@@ -261,8 +261,74 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private int MapPledge( IQueryable<Row> tableData )
         {
+            List<FinancialAccount> accountList = new FinancialAccountService().Queryable().ToList();
+
+            List<DefinedValue> pledgeFrequencies = new DefinedValueService().Queryable()
+                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
+
             foreach ( var row in tableData )
             {
+                decimal? amount = row["Total_Pledge"] as decimal?;
+                DateTime? startDate = row["Start_Date"] as DateTime?;
+                DateTime? endDate = row["End_Date"] as DateTime?;
+                if ( amount != null && startDate != null && endDate != null )
+                {
+                    var pledge = new FinancialPledge();
+                    pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    pledge.StartDate = (DateTime)startDate;
+                    pledge.EndDate = (DateTime)endDate;
+
+                    string fundName = row["Fund_Name"] as string;
+                    string subFund = row["Sub_Fund_Name"] as string;
+                    if ( fundName != null )
+                    {
+                        // does subFund match a campus?
+                        int? fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
+                            .Select( c => (int?)c.Id ).FirstOrDefault();
+
+                        // if not, try to match subFund by name
+                        pledge.AccountId = accountList.Where( a => ( a.Name.StartsWith( fundName ) && a.CampusId == fundCampusId )
+                            || ( a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) )
+                            .Select( a => (int?)a.Id ).FirstOrDefault();
+                    }
+                    else
+                    {
+                        pledge.AccountId = accountList.Where( a => a.Name.StartsWith( fundName ) )
+                            .Select( a => (int?)a.Id ).FirstOrDefault();
+                    }
+
+                    string frequency = row["Pledge_Frequency_Name"] as string;
+                    if ( frequency != null )
+                    {
+                        if ( frequency == "One Time" || frequency == "As Can" )
+                        {
+                            pledge.PledgeFrequencyValueId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
+                        }
+                        else
+                        {
+                            pledge.PledgeFrequencyValueId = pledgeFrequencies
+                                .Where( f => f.Name.StartsWith( frequency ) || f.Description.StartsWith( frequency ) )
+                                .Select( f => f.Id ).FirstOrDefault();
+                        }
+                    }
+
+                    int? individualId = row["Individual_ID"] as int?;
+                    int? householdId = row["Household_ID"] as int?;
+                    if ( householdId != null )
+                    {
+                        pledge.PersonId = GetPersonId( individualId, householdId );
+                    }
+
+                    // Attributes to add
+                    // Pledge_Drive_Name
+
+                    RockTransactionScope.WrapTransaction( () =>
+                    {
+                        var pledgeService = new FinancialPledgeService();
+                        pledgeService.Add( pledge, ImportPersonAlias );
+                        pledgeService.Save( pledge, ImportPersonAlias );
+                    } );
+                }
             }
 
             return tableData.Count();
