@@ -57,7 +57,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="F1.cs" />
+    <Compile Include="F1Component.cs" />
+    <Compile Include="Maps\Financial.cs" />
     <Compile Include="Model\Group_Attendance.cs" />
     <Compile Include="Model\GiftednessProgram.cs" />
     <Compile Include="Model\IndividualGiftedness.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Model\RLC.cs" />
     <Compile Include="Model\Staffing_Assignment.cs" />
     <Compile Include="Model\Users.cs" />
+    <Compile Include="Maps\People.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -95,6 +97,7 @@
       <Name>Excavator</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
