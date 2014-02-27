@@ -5,6 +5,8 @@ A conversion tool to pull data into Rock from our current database.  An auto-gen
 
 Other database models can be added by extending the base ExcavatorComponent class and implementing the required functions.
 
+Note: master branch contains fully-tested code; develop branch is beta/in-progress.
+
 =========
 
 Completed:
