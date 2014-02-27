@@ -78,41 +78,43 @@ namespace Excavator.F1
         public override bool TransformData()
         {
             LoadExistingRockData();
-            var orderedNodes = SetImportOrder( loadedNodes );
 
             var scanner = new DataScanner( database );
+            var primaryTables = new List<string>();
+            primaryTables.Add( "Individual_Household" );
+            primaryTables.Add( "Batch" );
+
+            // Orders the nodes so the primary tables get imported first
+            var orderedNodes = loadedNodes.Where( n => n.Checked != false ).ToList();
+            if ( orderedNodes.Any() && orderedNodes.All( n => primaryTables.Contains( n.Name ) ) )
+            {
+                orderedNodes = orderedNodes.OrderBy( n => primaryTables.IndexOf( n.Name ) ).ToList();
+            }
+
             int workerCount = 0;
 
             foreach ( var node in orderedNodes )
             {
-                switch ( node.Name )
+                if ( !primaryTables.Contains( node.Name ) )
                 {
-                    case "Batch":
-                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
-                        break;
-
-                    case "Contribution":
-                        MapContribution( scanner.ScanTable( node.Name ).AsQueryable() );
-                        break;
-
-                    case "Individual_Household":
-                        //MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
-                        break;
-
-                    case "Pledge":
-                        MapPledge( scanner.ScanTable( node.Name ).AsQueryable() );
-                        break;
-
-                    default:
-                        break;
+                    BackgroundWorker bwSpawnWorker = new BackgroundWorker();
+                    bwSpawnWorker.DoWork += bwSpawnWorker_DoWork;
+                    bwSpawnWorker.ProgressChanged += bwSpawnWorker_ProgressChanged;
+                    bwSpawnWorker.RunWorkerCompleted += bwSpawnWorker_RunWorkerCompleted;
+                    bwSpawnWorker.RunWorkerAsync( node.Name );
+                    workerCount++;
                 }
-
-                //BackgroundWorker bwSpawnWorker = new BackgroundWorker();
-                //bwSpawnWorker.DoWork += bwSpawnWorker_DoWork;
-                //bwSpawnWorker.ProgressChanged += bwSpawnWorker_ProgressChanged;
-                //bwSpawnWorker.RunWorkerCompleted += bwSpawnWorker_RunWorkerCompleted;
-                //bwSpawnWorker.RunWorkerAsync( node.Name );
-                //workerCount++;
+                else
+                {
+                    if ( node.Name == "Individual_Household" )
+                    {
+                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                    }
+                    else if ( node.Name == "Batch" )
+                    {
+                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                    }
+                }
             }
 
             return workerCount > 0 ? true : false;
@@ -132,9 +134,6 @@ namespace Excavator.F1
             var attributeService = new AttributeService();
 
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
-
-            CampusList = new CampusService().Queryable().ToList();
-
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
@@ -195,32 +194,8 @@ namespace Excavator.F1
                     HouseholdId = household.HouseholdId.AsType<int?>(),
                     IndividualId = individual.IndividualId.AsType<int?>()
                 } ).ToList();
-        }
 
-        /// <summary>
-        /// Orders the nodes so the primary tables get imported first
-        /// </summary>
-        /// <param name="nodeList">The node list.</param>
-        private List<DatabaseNode> SetImportOrder( List<DatabaseNode> nodeList )
-        {
-            nodeList = nodeList.Where( n => n.Checked != false ).ToList();
-            if ( nodeList.Any() )
-            {
-                var household = nodeList.Where( node => node.Name.Equals( "Individual_Household" ) ).FirstOrDefault();
-                var contributions = nodeList.Where( node => node.Name.Equals( "Contribution " ) ).FirstOrDefault();
-                var batch = nodeList.Where( node => node.Name.Equals( "Batch" ) ).FirstOrDefault();
-                var rlc = nodeList.Where( node => node.Name.Equals( "RLC" ) ).FirstOrDefault();
-
-                nodeList.Remove( household );
-                nodeList.Remove( batch );
-                nodeList.Remove( rlc );
-                nodeList.Remove( contributions );
-                var primaryTables = new List<DatabaseNode>() { household, batch, rlc, contributions };
-                primaryTables.RemoveAll( n => n == null );
-                nodeList.InsertRange( 0, primaryTables );
-            }
-
-            return nodeList;
+            CampusList = new CampusService().Queryable().ToList();
         }
 
         /// <summary>
@@ -261,11 +236,38 @@ namespace Excavator.F1
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
         private void bwSpawnWorker_DoWork( object sender, DoWorkEventArgs e )
         {
+            var scanner = new DataScanner( database );
             var nodeName = (string)e.Argument;
             if ( nodeName != null )
             {
-                var scanner = new DataScanner( database );
-                IQueryable<Row> tableData = scanner.ScanTable( nodeName ).AsQueryable();
+                switch ( nodeName )
+                {
+                    case "Attendance":
+                        //Not run because attendance/locations/groups data is so custom
+                        //MapAttendance( scanner.ScanTable( node.Name ).AsQueryable() );
+                        break;
+
+                    case "ActivityMinistry":
+                        //Not run because attendance/locations/groups data is so custom
+                        //MapActivityMinistry( scanner.ScanTable( node.Name ).AsQueryable() );
+                        break;
+
+                    case "Contribution":
+                        MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
+                        break;
+
+                    case "Pledge":
+                        MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
+                        break;
+
+                    case "RLC":
+                        //Not run because attendance/locations/groups data is so custom
+                        //MapRLC( scanner.ScanTable( node.Name ).AsQueryable() );
+                        break;
+
+                    default:
+                        break;
+                }
             }
         }
 

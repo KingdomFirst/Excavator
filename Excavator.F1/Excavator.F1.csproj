@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DDay.iCal, Version=1.0.2.575, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Packages\DDay.iCal.dll</HintPath>
+    </Reference>
     <Reference Include="DotLiquid, Version=1.7.0.0, Culture=neutral, PublicKeyToken=82e46016ecf9f07c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Packages\DotLiquid.dll</HintPath>
@@ -60,6 +64,7 @@
     <Compile Include="F1Component.cs" />
     <Compile Include="Maps\Attendance.cs" />
     <Compile Include="Maps\Financial.cs" />
+    <Compile Include="Maps\Locations.cs" />
     <Compile Include="Model\Group_Attendance.cs" />
     <Compile Include="Model\GiftednessProgram.cs" />
     <Compile Include="Model\IndividualGiftedness.cs" />
