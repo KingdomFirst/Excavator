@@ -206,6 +206,7 @@ namespace Excavator.F1
                         transaction.CreatedDateTime = receivedDate;
                     }
 
+                    bool isTypeNonCash = false;
                     string contributionType = row["Contribution_Type_Name"] as string;
                     if ( contributionType != null )
                     {
@@ -227,7 +228,7 @@ namespace Excavator.F1
                         }
                         else
                         {
-                            //transaction.CurrencyTypeValueId = currencyTypeOther;
+                            isTypeNonCash = true;
                         }
                     }
 
@@ -277,6 +278,7 @@ namespace Excavator.F1
                         transactionDetail.Amount = (decimal)amount;
                         transactionDetail.CreatedDateTime = receivedDate;
                         transactionDetail.AccountId = matchingAccount.Id;
+                        transactionDetail.IsNonCash = isTypeNonCash;
                         transaction.TransactionDetails.Add( transactionDetail );
 
                         if ( amount < 0 )
