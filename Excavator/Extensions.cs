@@ -99,5 +99,23 @@ namespace Excavator
                 ? (T)converter.ConvertFrom( value )
                 : default( T );
         }
+
+        /// <summary>
+        /// Returns the specified number of characters, starting at the left side of the string.
+        /// </summary>
+        /// <param name="str">The string.</param>
+        /// <param name="length">The desired length.</param>
+        /// <returns></returns>
+        public static string Left( this string str, int length )
+        {
+            if ( str.Length <= length )
+            {
+                return str;
+            }
+            else
+            {
+                return str.Substring( 0, length );
+            }
+        }
     }
 }

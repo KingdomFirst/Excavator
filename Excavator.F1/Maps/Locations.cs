@@ -175,5 +175,130 @@ namespace Excavator.F1
 
             return tableData.Count();
         }
+
+        /// <summary>
+        /// Maps the family address.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <returns></returns>
+        private int MapFamilyAddress( IQueryable<Row> tableData )
+        {
+            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
+
+            List<DefinedValue> groupLocationTypeList = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
+
+            int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
+            int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
+            int previousGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS ) ).Id;
+
+            foreach ( var row in tableData )
+            {
+                int? individualId = row["Individual_ID"] as int?;
+                int? householdId = row["Household_ID"] as int?;
+                if ( householdId != null )
+                {
+                    var familyAddress = new Location();
+                    familyAddress.CreatedByPersonAlias = ImportPersonAlias;
+                    familyAddress.IsActive = false;
+
+                    string addressType = row["Address_Type"] as string;
+                    int? associatedPersonId = GetPersonId( individualId, householdId );
+                    if ( associatedPersonId != null )
+                    {
+                        var familyGroup = new GroupMemberService().Queryable()
+                            .Where( gm => gm.Group.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY )
+                                && gm.PersonId == (int)associatedPersonId ).Select( gm => gm.Group ).FirstOrDefault();
+
+                        if ( familyGroup != null )
+                        {
+                            var familyGroupLocation = new GroupLocation();
+                            familyGroupLocation.IsMailingLocation = true;
+                            familyGroupLocation.IsMappedLocation = false;
+
+                            if ( addressType.Equals( "Primary" ) )
+                            {
+                                familyGroupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
+                            }
+                            else if ( addressType.Equals( "Business" ) || addressType.Equals( "Org" ) )
+                            {
+                                familyGroupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
+                            }
+                            else if ( addressType.Equals( "Previous" ) )
+                            {
+                                familyGroupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
+                            }
+                            else if ( !string.IsNullOrEmpty( addressType ) )
+                            {
+                                familyGroupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Name.Equals( addressType ) )
+                                    .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                            }
+
+                            familyGroupLocation.GroupId = familyGroup.Id;
+                            familyAddress.GroupLocations = new List<GroupLocation>();
+                            familyAddress.GroupLocations.Add( familyGroupLocation );
+                            familyAddress.Name = familyGroup.Name;
+                        }
+                    }
+
+                    string address = row["Address_1"] as string;
+                    if ( address != null )
+                    {
+                        familyAddress.Street1 = address;
+                    }
+
+                    string supplemental = row["Address_2"] as string;
+                    if ( address != null )
+                    {
+                        familyAddress.Street2 = supplemental;
+                    }
+
+                    string city = row["City"] as string;
+                    if ( city != null )
+                    {
+                        familyAddress.City = city;
+                    }
+
+                    string state = row["State"] as string;
+                    if ( state != null )
+                    {
+                        familyAddress.State = state;
+                    }
+
+                    string country = row["Country"] as string;
+                    if ( country != null )
+                    {
+                        if ( country == "USA" )
+                        {
+                            country = "US";
+                        }
+
+                        familyAddress.Country = country;
+                    }
+
+                    string zip = row["Postal_Code"] as string;
+                    if ( zip != null && zip.Any( Char.IsDigit ) )
+                    {
+                        familyAddress.Zip = zip.Left( 10 );
+                    }
+
+                    DateTime? lastUpdated = row["Last_Updated_Date"] as DateTime?;
+                    if ( lastUpdated != null )
+                    {
+                        familyAddress.ModifiedDateTime = lastUpdated;
+                    }
+
+                    RockTransactionScope.WrapTransaction( () =>
+                    {
+                        var locationService = new LocationService();
+                        locationService.Add( familyAddress, ImportPersonAlias );
+                        locationService.Save( familyAddress, ImportPersonAlias );
+
+                        // save group location too?  or auto saved
+                    } );
+                }
+            }
+
+            return tableData.Count();
+        }
     }
 }

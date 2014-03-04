@@ -82,6 +82,7 @@ namespace Excavator.F1
             var scanner = new DataScanner( database );
             var primaryTables = new List<string>();
             primaryTables.Add( "Individual_Household" );
+            primaryTables.Add( "Company" );
             primaryTables.Add( "Batch" );
 
             // Orders the nodes so the primary tables get imported first
@@ -113,6 +114,10 @@ namespace Excavator.F1
                     else if ( node.Name == "Batch" )
                     {
                         MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                    }
+                    else if ( node.Name == "Company" )
+                    {
+                        MapCompany( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                 }
             }
@@ -225,6 +230,32 @@ namespace Excavator.F1
             return null;
         }
 
+        /// <summary>
+        /// Checks if this group has been imported and returns the Rock.Group Id
+        /// </summary>
+        /// <param name="householdId">The household identifier.</param>
+        /// <returns></returns>
+        //private int? GetGroupId( int? householdId = null )
+        //{
+        //    var existingPerson = ImportedPersonList.FirstOrDefault( p => p.HouseholdId == householdId );
+        //    if ( existingPerson != null )
+        //    {
+        //        return existingPerson.PersonId;
+        //    }
+        //    else
+        //    {
+        //        string f1HouseholdId = householdId.ToString();
+        //        var lookupAttribute = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == HouseholdAttributeId && av.Value == f1HouseholdId );
+        //        if ( lookupAttribute != null )
+        //        {
+        //            ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId } );
+        //            return lookupAttribute.Id;
+        //        }
+        //    }
+
+        //    return null;
+        //}
+
         #endregion
 
         #region Async Tasks
@@ -254,6 +285,10 @@ namespace Excavator.F1
 
                     case "Contribution":
                         MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
+                        break;
+
+                    case "Household_Address":
+                        MapFamilyAddress( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Pledge":
