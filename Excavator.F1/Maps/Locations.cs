@@ -195,106 +195,61 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                if ( householdId != null )
+                int? associatedPersonId = GetPersonId( individualId, householdId );
+                if ( associatedPersonId != null )
                 {
-                    var familyAddress = new Location();
-                    familyAddress.CreatedByPersonAlias = ImportPersonAlias;
-                    familyAddress.IsActive = false;
+                    var familyGroup = new GroupMemberService().Queryable().Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY )
+                        && gm.PersonId == (int)associatedPersonId ).Select( gm => gm.Group ).FirstOrDefault();
 
-                    string addressType = row["Address_Type"] as string;
-                    int? associatedPersonId = GetPersonId( individualId, householdId );
-                    if ( associatedPersonId != null )
+                    if ( familyGroup != null )
                     {
-                        var familyGroup = new GroupMemberService().Queryable()
-                            .Where( gm => gm.Group.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY )
-                                && gm.PersonId == (int)associatedPersonId ).Select( gm => gm.Group ).FirstOrDefault();
+                        var groupLocation = new GroupLocation();
 
-                        if ( familyGroup != null )
+                        string address = row["Address_1"] as string;
+                        string supplemental = row["Address_2"] as string;
+                        string city = row["City"] as string;
+                        string state = row["State"] as string;
+                        string country = row["country"] as string; // not a typo, F1 has property in lower-case
+                        string zip = row["Postal_Code"] as string;
+
+                        // Get new or existing location and associate it with group
+                        var familyAddress = new LocationService().Get( address, supplemental, city, state, zip );
+                        familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        familyAddress.Name = familyGroup.Name;
+                        familyAddress.IsActive = true;
+
+                        groupLocation.Location = familyAddress;
+                        groupLocation.IsMailingLocation = true;
+                        groupLocation.IsMappedLocation = true;
+
+                        string addressType = row["Address_Type"] as string;
+
+                        if ( addressType.Equals( "Primary" ) )
                         {
-                            var familyGroupLocation = new GroupLocation();
-                            familyGroupLocation.IsMailingLocation = true;
-                            familyGroupLocation.IsMappedLocation = false;
-
-                            if ( addressType.Equals( "Primary" ) )
-                            {
-                                familyGroupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
-                            }
-                            else if ( addressType.Equals( "Business" ) || addressType.Equals( "Org" ) )
-                            {
-                                familyGroupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
-                            }
-                            else if ( addressType.Equals( "Previous" ) )
-                            {
-                                familyGroupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
-                            }
-                            else if ( !string.IsNullOrEmpty( addressType ) )
-                            {
-                                familyGroupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Name.Equals( addressType ) )
-                                    .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                            }
-
-                            familyGroupLocation.GroupId = familyGroup.Id;
-                            familyAddress.GroupLocations = new List<GroupLocation>();
-                            familyAddress.GroupLocations.Add( familyGroupLocation );
-                            familyAddress.Name = familyGroup.Name;
+                            groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
                         }
-                    }
-
-                    string address = row["Address_1"] as string;
-                    if ( address != null )
-                    {
-                        familyAddress.Street1 = address;
-                    }
-
-                    string supplemental = row["Address_2"] as string;
-                    if ( address != null )
-                    {
-                        familyAddress.Street2 = supplemental;
-                    }
-
-                    string city = row["City"] as string;
-                    if ( city != null )
-                    {
-                        familyAddress.City = city;
-                    }
-
-                    string state = row["State"] as string;
-                    if ( state != null )
-                    {
-                        familyAddress.State = state;
-                    }
-
-                    string country = row["Country"] as string;
-                    if ( country != null )
-                    {
-                        if ( country == "USA" )
+                        else if ( addressType.Equals( "Business" ) || addressType.Equals( "Org" ) )
                         {
-                            country = "US";
+                            groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
+                        }
+                        else if ( addressType.Equals( "Previous" ) )
+                        {
+                            groupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
+                        }
+                        else if ( !string.IsNullOrEmpty( addressType ) )
+                        {
+                            groupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Name.Equals( addressType ) )
+                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
-                        familyAddress.Country = country;
+                        groupLocation.GroupId = familyGroup.Id;
+                        RockTransactionScope.WrapTransaction( () =>
+                        {
+                            var groupLocationService = new GroupLocationService();
+                            groupLocationService.Add( groupLocation );
+                            groupLocationService.Save( groupLocation );
+                        } );
                     }
-
-                    string zip = row["Postal_Code"] as string;
-                    if ( zip != null && zip.Any( Char.IsDigit ) )
-                    {
-                        familyAddress.Zip = zip.Left( 10 );
-                    }
-
-                    DateTime? lastUpdated = row["Last_Updated_Date"] as DateTime?;
-                    if ( lastUpdated != null )
-                    {
-                        familyAddress.ModifiedDateTime = lastUpdated;
-                    }
-
-                    RockTransactionScope.WrapTransaction( () =>
-                    {
-                        var locationService = new LocationService();
-                        locationService.Add( familyAddress, ImportPersonAlias );
-                        locationService.Save( familyAddress, ImportPersonAlias );
-
-                        // save group location too?  or auto saved
-                    } );
                 }
             }
 
