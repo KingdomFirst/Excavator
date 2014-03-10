@@ -63,7 +63,6 @@
   <ItemGroup>
     <Compile Include="F1Component.cs" />
     <Compile Include="Maps\Attendance.cs" />
-    <Compile Include="Maps\Company.cs" />
     <Compile Include="Maps\Financial.cs" />
     <Compile Include="Maps\Locations.cs" />
     <Compile Include="Model\Group_Attendance.cs" />

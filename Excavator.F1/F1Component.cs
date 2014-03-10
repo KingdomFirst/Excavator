@@ -87,9 +87,9 @@ namespace Excavator.F1
 
             // Orders the nodes so the primary tables get imported first
             var orderedNodes = loadedNodes.Where( n => n.Checked != false ).ToList();
-            if ( orderedNodes.Any() && orderedNodes.All( n => primaryTables.Contains( n.Name ) ) )
+            if ( orderedNodes.Any( n => primaryTables.Contains( n.Name ) ) )
             {
-                orderedNodes = orderedNodes.OrderBy( n => primaryTables.IndexOf( n.Name ) ).ToList();
+                orderedNodes = orderedNodes.OrderBy( n => Decimal.Negate( primaryTables.IndexOf( n.Name ) ) ).ToList();
             }
 
             int workerCount = 0;
@@ -109,11 +109,11 @@ namespace Excavator.F1
                 {
                     if ( node.Name == "Individual_Household" )
                     {
-                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Batch" )
                     {
-                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Company" )
                     {
@@ -191,20 +191,19 @@ namespace Excavator.F1
             var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
             var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
 
-            ImportedPersonList = listHouseholdId.Join( listIndividualId, household => household.PersonId
-                , individual => individual.PersonId
-                , ( household, individual ) => new ImportedPerson
+            ImportedPersonList = listHouseholdId.GroupJoin( listIndividualId, household => household.PersonId,
+                individual => individual.PersonId, ( household, individual ) => new ImportedPerson
                 {
                     PersonId = household.PersonId,
                     HouseholdId = household.HouseholdId.AsType<int?>(),
-                    IndividualId = individual.IndividualId.AsType<int?>()
+                    IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
                 } ).ToList();
 
             CampusList = new CampusService().Queryable().ToList();
         }
 
         /// <summary>
-        /// Checks if this person has been imported and returns the Rock.Person Id
+        /// Checks if this person or business has been imported and returns the Rock.Person Id
         /// </summary>
         /// <param name="individualId">The individual identifier.</param>
         /// <param name="householdId">The household identifier.</param>
@@ -218,8 +217,18 @@ namespace Excavator.F1
             }
             else
             {
-                string f1IndividualId = individualId.ToString();
-                var lookupAttribute = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == IndividualAttributeId && av.Value == f1IndividualId );
+                var lookup = new AttributeValueService().Queryable();
+                string lookupId = individualId.HasValue ? individualId.ToString() : householdId.ToString();
+                if ( individualId != null )
+                {
+                    lookup = lookup.Where( av => av.AttributeId == IndividualAttributeId && av.Value == lookupId );
+                }
+                else
+                {
+                    lookup = lookup.Where( av => av.AttributeId == HouseholdAttributeId && av.Value == lookupId );
+                }
+
+                var lookupAttribute = lookup.FirstOrDefault();
                 if ( lookupAttribute != null )
                 {
                     ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId, IndividualId = individualId } );
@@ -229,32 +238,6 @@ namespace Excavator.F1
 
             return null;
         }
-
-        /// <summary>
-        /// Checks if this group has been imported and returns the Rock.Group Id
-        /// </summary>
-        /// <param name="householdId">The household identifier.</param>
-        /// <returns></returns>
-        //private int? GetGroupId( int? householdId = null )
-        //{
-        //    var existingPerson = ImportedPersonList.FirstOrDefault( p => p.HouseholdId == householdId );
-        //    if ( existingPerson != null )
-        //    {
-        //        return existingPerson.PersonId;
-        //    }
-        //    else
-        //    {
-        //        string f1HouseholdId = householdId.ToString();
-        //        var lookupAttribute = new AttributeValueService().Queryable().FirstOrDefault( av => av.AttributeId == HouseholdAttributeId && av.Value == f1HouseholdId );
-        //        if ( lookupAttribute != null )
-        //        {
-        //            ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId } );
-        //            return lookupAttribute.Id;
-        //        }
-        //    }
-
-        //    return null;
-        //}
 
         #endregion
 
@@ -284,7 +267,7 @@ namespace Excavator.F1
                         break;
 
                     case "Contribution":
-                        MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
+                        //MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Household_Address":
@@ -292,7 +275,7 @@ namespace Excavator.F1
                         break;
 
                     case "Pledge":
-                        MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
+                        //MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "RLC":
@@ -314,7 +297,9 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private void bwSpawnWorker_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
-            //return completed to original thread;
+            if ( e.Cancelled != true )
+            {
+            }
         }
 
         /// <summary>

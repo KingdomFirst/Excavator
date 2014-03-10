@@ -18,6 +18,7 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Excavator
 {
@@ -58,15 +59,21 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnStart_Click( object sender, RoutedEventArgs e )
         {
-            BackgroundWorker bwTransformData = new BackgroundWorker();
-            bwTransformData.DoWork += bwTransformData_DoWork;
-            bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
-            bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
-            bwTransformData.RunWorkerAsync();
+            var btnSender = (Button)sender;
+            if ( btnSender != null && btnSender.Content == "Start" )
+            {
+                BackgroundWorker bwTransformData = new BackgroundWorker();
+                bwTransformData.DoWork += bwTransformData_DoWork;
+                bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
+                bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
+                bwTransformData.RunWorkerAsync();
 
-            // if progressing, check for cancel
-            // btnStart.Style = (Style)FindResource( "labelStyle" );
-            // btnStart.Content = "Cancel";
+                btnStart.Content = "Cancel";
+                btnStart.Style = (Style)FindResource( "buttonStyle" );
+            }
+            else
+            {
+            }
         }
 
         /// <summary>
