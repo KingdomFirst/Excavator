@@ -87,6 +87,8 @@ namespace Excavator.F1
                     if ( name != null )
                     {
                         batch.Name = name;
+                        batch.CampusId = CampusList.Where( c => name.StartsWith( c.Name ) || name.StartsWith( c.ShortCode ) )
+                            .Select( c => (int?)c.Id ).FirstOrDefault();
                     }
 
                     DateTime? batchDate = row["BatchDate"] as DateTime?;
