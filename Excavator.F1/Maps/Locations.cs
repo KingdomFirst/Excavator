@@ -209,7 +209,7 @@ namespace Excavator.F1
                         string supplemental = row["Address_2"] as string;
                         string city = row["City"] as string;
                         string state = row["State"] as string;
-                        string country = row["country"] as string; // not a typo, F1 has property in lower-case
+                        string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
                         // Get new or existing location and associate it with group
