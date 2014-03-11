@@ -1,7 +1,7 @@
-*.pdb
-*.vshost.exe
-*.vshost.exe.config
-*.xml
+/*.pdb
+/*.vshost.exe
+/*.vshost.exe.config
+/*.xml
 
 #Specific files
 System.Net.Http.Formatting.xml
