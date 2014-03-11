@@ -78,8 +78,8 @@ namespace Excavator
             Mouse.OverrideCursor = Cursors.Wait;
 
             BackgroundWorker bwLoadPreview = new BackgroundWorker();
-            bwLoadPreview.DoWork += bwLoadPreview_DoWork;
-            bwLoadPreview.RunWorkerCompleted += bwLoadPreview_RunWorkerCompleted;
+            bwLoadPreview.DoWork += bwPreview_DoWork;
+            bwLoadPreview.RunWorkerCompleted += bwPreview_RunWorkerCompleted;
             bwLoadPreview.RunWorkerAsync( lstDatabaseTypes.SelectedValue.ToString() );
         }
 
@@ -150,7 +150,7 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
-        private void bwLoadPreview_DoWork( object sender, DoWorkEventArgs e )
+        private void bwPreview_DoWork( object sender, DoWorkEventArgs e )
         {
             var mdfPicker = new OpenFileDialog();
             mdfPicker.Filter = "SQL Database files|*.mdf";
@@ -182,7 +182,7 @@ namespace Excavator
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void bwLoadPreview_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        private void bwPreview_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
             if ( e.Cancelled != true )
             {

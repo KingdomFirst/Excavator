@@ -43,13 +43,15 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>
+    </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SqlServer.ConnectionInfo, Version=11.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
@@ -66,9 +68,11 @@
     </Reference>
     <Reference Include="OrcaMDF.Core">
       <HintPath>Packages\OrcaMDF.Core.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="OrcaMDF.Framework">
       <HintPath>Packages\OrcaMDF.Framework.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -194,27 +198,27 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Packages\AjaxControlToolkit.dll" />
-    <Content Include="Packages\AjaxMin.dll" />
-    <Content Include="Packages\Antlr3.Runtime.dll" />
-    <Content Include="Packages\C5.dll" />
-    <Content Include="Packages\CronExpressionDescriptor.dll" />
-    <Content Include="Packages\DDay.iCal.dll" />
-    <Content Include="Packages\DotLiquid.dll" />
-    <Content Include="Packages\EntityFramework.dll" />
-    <Content Include="Packages\EntityFramework.SqlServer.dll" />
-    <Content Include="Packages\EPPlus.dll" />
-    <Content Include="Packages\Facebook.dll" />
-    <Content Include="Packages\HtmlAgilityPack.dll" />
-    <Content Include="Packages\ImageResizer.dll" />
-    <Content Include="Packages\Newtonsoft.Json.dll" />
-    <Content Include="Packages\NuGet.Core.dll" />
-    <Content Include="Packages\OrcaMDF.Core.dll" />
-    <Content Include="Packages\OrcaMDF.Framework.dll" />
-    <Content Include="Packages\Quartz.dll" />
-    <Content Include="Packages\RestSharp.dll" />
+    <EmbeddedResource Include="Packages\AjaxControlToolkit.dll" />
+    <EmbeddedResource Include="Packages\AjaxMin.dll" />
+    <EmbeddedResource Include="Packages\Antlr3.Runtime.dll" />
+    <EmbeddedResource Include="Packages\C5.dll" />
+    <EmbeddedResource Include="Packages\CronExpressionDescriptor.dll" />
+    <EmbeddedResource Include="Packages\DDay.iCal.dll" />
+    <EmbeddedResource Include="Packages\DotLiquid.dll" />
+    <EmbeddedResource Include="Packages\EntityFramework.dll" />
+    <EmbeddedResource Include="Packages\EntityFramework.SqlServer.dll" />
+    <EmbeddedResource Include="Packages\EPPlus.dll" />
+    <EmbeddedResource Include="Packages\Facebook.dll" />
+    <EmbeddedResource Include="Packages\HtmlAgilityPack.dll" />
+    <EmbeddedResource Include="Packages\ImageResizer.dll" />
+    <EmbeddedResource Include="Packages\Newtonsoft.Json.dll" />
+    <EmbeddedResource Include="Packages\NuGet.Core.dll" />
+    <EmbeddedResource Include="Packages\OrcaMDF.Core.dll" />
+    <EmbeddedResource Include="Packages\OrcaMDF.Framework.dll" />
+    <EmbeddedResource Include="Packages\Quartz.dll" />
+    <EmbeddedResource Include="Packages\RestSharp.dll" />
     <Content Include="Packages\Rock.dll" />
-    <Content Include="Packages\Twilio.Api.dll" />
+    <EmbeddedResource Include="Packages\Twilio.Api.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

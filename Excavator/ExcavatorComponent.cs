@@ -195,23 +195,20 @@ namespace Excavator
             {
                 catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder ) );
             }
-            //else
-            //{
+
             // too many other assemblies in current directory to use this
             //var currentDirectory = Path.GetDirectoryName( Application.ExecutablePath );
             //catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory ) );
-            //}
 
-            var container = new CompositionContainer( catalog );
-            container.ComposeParts( this );
-
-            //try
-            //{
-            //}
-            //catch
-            //{
-            //    // no extensions exist
-            //}
+            try
+            {
+                var container = new CompositionContainer( catalog );
+                container.ComposeParts( this );
+            }
+            catch
+            {
+                // no extensions in this folder
+            }
         }
     }
 }

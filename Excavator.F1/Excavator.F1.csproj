@@ -15,67 +15,83 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>..\Excavator\bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\Excavator\bin\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>
+    </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AjaxControlToolkit">
       <HintPath>..\Excavator\Packages\AjaxControlToolkit.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
     <Reference Include="AjaxMin">
       <HintPath>..\Excavator\Packages\AjaxMin.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Antlr3.Runtime">
       <HintPath>..\Excavator\Packages\Antlr3.Runtime.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="C5">
       <HintPath>..\Excavator\Packages\C5.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="CronExpressionDescriptor">
       <HintPath>..\Excavator\Packages\CronExpressionDescriptor.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="DDay.iCal">
       <HintPath>..\Excavator\Packages\DDay.iCal.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="DotLiquid">
       <HintPath>..\Excavator\Packages\DotLiquid.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="EntityFramework">
       <HintPath>..\Excavator\Packages\EntityFramework.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="EntityFramework.SqlServer">
       <HintPath>..\Excavator\Packages\EntityFramework.SqlServer.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="EPPlus">
       <HintPath>..\Excavator\Packages\EPPlus.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Facebook">
       <HintPath>..\Excavator\Packages\Facebook.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="HtmlAgilityPack">
       <HintPath>..\Excavator\Packages\HtmlAgilityPack.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="ImageResizer">
       <HintPath>..\Excavator\Packages\ImageResizer.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Excavator\Packages\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="NuGet.Core, Version=1.6.30117.9648, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Excavator\Packages\NuGet.Core.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="OrcaMDF.Core">
       <HintPath>..\Excavator\Packages\OrcaMDF.Core.dll</HintPath>
@@ -87,12 +103,15 @@
     </Reference>
     <Reference Include="Quartz">
       <HintPath>..\Excavator\Packages\Quartz.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="RestSharp">
       <HintPath>..\Excavator\Packages\RestSharp.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Rock">
       <HintPath>..\Excavator\Packages\Rock.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -105,6 +124,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="Twilio.Api">
       <HintPath>..\Excavator\Packages\Twilio.Api.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
