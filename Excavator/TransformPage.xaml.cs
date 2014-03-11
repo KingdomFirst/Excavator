@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -60,19 +61,26 @@ namespace Excavator
         private void btnStart_Click( object sender, RoutedEventArgs e )
         {
             var btnSender = (Button)sender;
-            if ( btnSender != null && btnSender.Content == "Start" )
+            if ( btnSender != null && (string)btnSender.Content == "Start" )
             {
+                btnStart.Content = "Cancel";
+                btnStart.Style = (Style)FindResource( "buttonStyle" );
+
                 BackgroundWorker bwTransformData = new BackgroundWorker();
                 bwTransformData.DoWork += bwTransformData_DoWork;
                 bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
                 bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
                 bwTransformData.RunWorkerAsync();
-
-                btnStart.Content = "Cancel";
-                btnStart.Style = (Style)FindResource( "buttonStyle" );
             }
             else
             {
+                if ( excavator == null )
+                {
+                    lblDataUpload.Content = "Couldn't load the excavator component";
+                }
+
+                lblDataUpload.Visibility = Visibility.Visible;
+                btnStart.Visibility = Visibility.Hidden;
             }
         }
 

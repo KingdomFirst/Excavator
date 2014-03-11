@@ -15,6 +15,8 @@
 // </copyright>
 //
 
+using System;
+using System.Reflection;
 using System.Windows.Navigation;
 
 namespace Excavator

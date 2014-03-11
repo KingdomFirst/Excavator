@@ -34,7 +34,7 @@
             Grid.Row="0" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom"
             Style="{StaticResource labelStyleAlert}">
-            No data was selected on the previous page.
+            No data is currently selected.  Please select a table on the previous page.
         </Label>
 
         <!-- Navigation -->

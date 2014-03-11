@@ -23,6 +23,7 @@ using System.Configuration;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 using OrcaMDF.Core.Engine;
 using OrcaMDF.Core.MetaData;
 
@@ -189,11 +190,26 @@ namespace Excavator
         public FrontEndLoader()
         {
             var extensionFolder = ConfigurationManager.AppSettings["ExtensionPath"];
-            var solutionPath = Directory.GetParent( System.IO.Directory.GetCurrentDirectory() ).Parent.FullName;
             var catalog = new AggregateCatalog();
-            catalog.Catalogs.Add( new DirectoryCatalog( solutionPath + extensionFolder ) );
-            var container = new CompositionContainer( catalog );
-            container.ComposeParts( this );
+            if ( Directory.Exists( extensionFolder ) )
+            {
+                catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder ) );
+            }
+            else
+            {
+                var currentDirectory = Path.GetDirectoryName( Application.ExecutablePath );
+                catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory ) );
+            }
+
+            try
+            {
+                var container = new CompositionContainer( catalog );
+                container.ComposeParts( this );
+            }
+            catch
+            {
+                // no extensions exist
+            }
         }
     }
 }

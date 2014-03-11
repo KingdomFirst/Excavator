@@ -21,7 +21,6 @@ using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
 using OrcaMDF.Core.Engine;
-using OrcaMDF.Core.MetaData;
 using Rock.Model;
 using Rock.Web.Cache;
 
@@ -109,11 +108,11 @@ namespace Excavator.F1
                 {
                     if ( node.Name == "Individual_Household" )
                     {
-                        //MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Batch" )
                     {
-                        //MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Company" )
                     {
@@ -130,10 +129,9 @@ namespace Excavator.F1
         /// </summary>
         public void LoadExistingRockData()
         {
-            // change this to user-defined person
+            // this needs to be a user-defined person instead of the default Admin
             var aliasService = new PersonAliasService();
             ImportPersonAlias = aliasService.Get( 1 );
-            // end change
 
             var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
@@ -267,7 +265,7 @@ namespace Excavator.F1
                         break;
 
                     case "Contribution":
-                        //MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
+                        MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Household_Address":
@@ -275,7 +273,7 @@ namespace Excavator.F1
                         break;
 
                     case "Pledge":
-                        //MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
+                        MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "RLC":

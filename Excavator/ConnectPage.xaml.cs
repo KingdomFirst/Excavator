@@ -16,6 +16,7 @@
 //
 
 using System.ComponentModel;
+using System.Configuration;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -55,9 +56,11 @@ namespace Excavator
             }
             else
             {
+                btnNext.Visibility = Visibility.Hidden;
                 lblNoData.Visibility = Visibility.Visible;
                 lblDatabaseTypes.Visibility = Visibility.Hidden;
                 lstDatabaseTypes.Visibility = Visibility.Hidden;
+                lblNoData.Content += " (" + ConfigurationManager.AppSettings["ExtensionPath"] + ")";
             }
         }
 
