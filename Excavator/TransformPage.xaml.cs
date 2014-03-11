@@ -74,11 +74,6 @@ namespace Excavator
             }
             else
             {
-                if ( excavator == null )
-                {
-                    lblDataUpload.Content = "Couldn't load the excavator component";
-                }
-
                 lblDataUpload.Visibility = Visibility.Visible;
                 btnStart.Visibility = Visibility.Hidden;
             }
@@ -141,7 +136,7 @@ namespace Excavator
             this.Dispatcher.Invoke( (Action)( () =>
             {
                 lblDataUpload.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDataUpload.Content = "Successfully uploaded all the content";
+                lblDataUpload.Content = "Successfully uploaded all the data!";
                 btnClose.Visibility = Visibility.Visible;
             } ) );
         }

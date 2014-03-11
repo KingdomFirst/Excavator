@@ -36,6 +36,46 @@ namespace Excavator.F1
         private Dictionary<int?, int?> ImportedBatches;
 
         /// <summary>
+        /// Maps the account data.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <returns></returns>
+        private int MapAccount( IQueryable<Row> tableData )
+        {
+            foreach ( var row in tableData )
+            {
+                int? individualId = row["Individual_ID"] as int?;
+                int? householdId = row["Household_ID"] as int?;
+                int? personId = GetPersonId( individualId, householdId );
+                if ( personId != null )
+                {
+                    var account = new FinancialPersonBankAccount();
+                    account.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    account.PersonId = (int)personId;
+
+                    int? routingNumber = row["Routing_Number"] as int?;
+                    int? accountNumber = row["Account"] as int?;
+                    if ( accountNumber != null )
+                    {
+                        // Generate AccountNumberSecured
+                    }
+
+                    // Other Attributes (not used):
+                    // Account_Type_Name
+
+                    RockTransactionScope.WrapTransaction( () =>
+                    {
+                        var accountService = new FinancialPersonBankAccountService();
+                        accountService.Add( account, ImportPersonAlias );
+                        accountService.Save( account, ImportPersonAlias );
+                    } );
+                }
+            }
+
+            return tableData.Count();
+        }
+
+        /// <summary>
         /// Maps the batch data.
         /// </summary>
         /// <param name="tableData">The table data.</param>
