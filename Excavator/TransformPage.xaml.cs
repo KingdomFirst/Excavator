@@ -74,8 +74,7 @@ namespace Excavator
             }
             else
             {
-                lblDataUpload.Visibility = Visibility.Visible;
-                btnStart.Visibility = Visibility.Hidden;
+                btnClose_Click( sender, e );
             }
         }
 
@@ -96,8 +95,8 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnClose_Click( object sender, RoutedEventArgs e )
         {
-            // Run in Background finished?
-            // if not wait until all models have been saved
+            // Should this run in background until finished?
+            // if not then at least wait until all currently processing models have been saved?
             Application.Current.Shutdown();
         }
 

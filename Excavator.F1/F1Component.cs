@@ -108,15 +108,15 @@ namespace Excavator.F1
                 {
                     if ( node.Name == "Individual_Household" )
                     {
-                        //MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Batch" )
                     {
-                        //MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Company" )
                     {
-                        //MapCompany( scanner.ScanTable( node.Name ).AsQueryable() );
+                        MapCompany( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                 }
             }
@@ -255,7 +255,8 @@ namespace Excavator.F1
                 switch ( nodeName )
                 {
                     case "Account":
-                        MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
+                        //Waiting on Rock encryption key
+                        //MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Attendance":
@@ -269,15 +270,15 @@ namespace Excavator.F1
                         break;
 
                     case "Contribution":
-                        //MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
+                        MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Household_Address":
-                        //MapFamilyAddress( scanner.ScanTable( nodeName ).AsQueryable() );
+                        MapFamilyAddress( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Pledge":
-                        //MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
+                        MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "RLC":
