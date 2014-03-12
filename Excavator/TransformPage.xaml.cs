@@ -134,10 +134,19 @@ namespace Excavator
         {
             this.Dispatcher.Invoke( (Action)( () =>
             {
+                btnStart.IsEnabled = false;
+                btnStart.Content = "Complete";
                 lblDataUpload.Style = (Style)FindResource( "labelStyleSuccess" );
                 lblDataUpload.Content = "Successfully uploaded all the data!";
+                lblDataUpload.Visibility = Visibility.Visible;
                 btnClose.Visibility = Visibility.Visible;
             } ) );
+
+            BackgroundWorker bwTransformData = sender as BackgroundWorker;
+            bwTransformData.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwTransformData_RunWorkerCompleted );
+            bwTransformData.ProgressChanged -= new ProgressChangedEventHandler( bwTransformData_ProgressChanged );
+            bwTransformData.DoWork -= new DoWorkEventHandler( bwTransformData_DoWork );
+            bwTransformData.Dispose();
         }
 
         #endregion

@@ -27,15 +27,15 @@
             Start
         </Button>
 
-        <!-- progress bar here -->
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Text="Progress bar will go here." />
-
         <Label Name="lblDataUpload" Visibility="Hidden"
-            Grid.Row="0" HorizontalAlignment="Center"
-            Grid.ColumnSpan="2" VerticalAlignment="Bottom"
+            Grid.Row="1" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyleAlert}">
             No data is currently selected.  Please select a table on the previous page.
         </Label>
+
+        <!-- progress bar here -->
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Text="Progress bar will go here." />
 
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">
