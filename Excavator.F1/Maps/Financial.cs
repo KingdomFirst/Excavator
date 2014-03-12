@@ -110,6 +110,7 @@ namespace Excavator.F1
             }
 
             var batchAttribute = AttributeCache.Read( batchAttributeId );
+            var batchStatusClosed = Rock.Model.BatchStatus.Closed;
 
             // Get all imported batches
             ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttributeId )
@@ -123,11 +124,13 @@ namespace Excavator.F1
                 {
                     var batch = new FinancialBatch();
                     batch.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    batch.Status = batchStatusClosed;
 
                     string name = row["BatchName"] as string;
                     if ( name != null )
                     {
-                        batch.Name = name;
+                        name = name.Trim();
+                        batch.Name = name.Left( 50 );
                         batch.CampusId = CampusList.Where( c => name.StartsWith( c.Name ) || name.StartsWith( c.ShortCode ) )
                             .Select( c => (int?)c.Id ).FirstOrDefault();
                     }
@@ -295,8 +298,9 @@ namespace Excavator.F1
                         {
                             fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
-                            matchingAccount = accountList.FirstOrDefault( a => ( a.Name.StartsWith( fundName ) && a.CampusId == fundCampusId ) ||
-                                ( a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) );
+                            matchingAccount = accountList.FirstOrDefault( a => ( a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) )
+                                || ( a.ParentAccount != null && a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) )
+                                || ( a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) );
                         }
                         else
                         {
@@ -381,24 +385,28 @@ namespace Excavator.F1
                     pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     pledge.StartDate = (DateTime)startDate;
                     pledge.EndDate = (DateTime)endDate;
+                    pledge.TotalAmount = (decimal)amount;
 
                     string fundName = row["Fund_Name"] as string;
                     string subFund = row["Sub_Fund_Name"] as string;
                     if ( fundName != null )
                     {
-                        // does subFund match a campus?
-                        int? fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
-                            .Select( c => (int?)c.Id ).FirstOrDefault();
+                        int? fundCampusId = null;
+                        if ( subFund != null )
+                        {
+                            fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
+                                .Select( c => (int?)c.Id ).FirstOrDefault();
 
-                        // if not, try to match subFund by name
-                        pledge.AccountId = accountList.Where( a => ( a.Name.StartsWith( fundName ) && a.CampusId == fundCampusId )
-                            || ( a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) )
-                            .Select( a => (int?)a.Id ).FirstOrDefault();
-                    }
-                    else
-                    {
-                        pledge.AccountId = accountList.Where( a => a.Name.StartsWith( fundName ) )
-                            .Select( a => (int?)a.Id ).FirstOrDefault();
+                            pledge.AccountId = accountList.Where( a => ( a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) )
+                                || ( a.ParentAccount != null && a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) )
+                                || ( a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) )
+                                .Select( a => (int?)a.Id ).FirstOrDefault();
+                        }
+                        else
+                        {
+                            pledge.AccountId = accountList.Where( a => a.Name.StartsWith( fundName ) )
+                                .Select( a => (int?)a.Id ).FirstOrDefault();
+                        }
                     }
 
                     string frequency = row["Pledge_Frequency_Name"] as string;
