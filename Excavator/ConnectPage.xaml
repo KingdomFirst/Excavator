@@ -6,7 +6,7 @@
         d:DesignHeight="350" d:DesignWidth="500"
         mc:Ignorable="d" Margin="10"
         Title="Connect">
-    <Grid>
+    <Grid x:Name="grdLayout">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="1*" />
@@ -35,7 +35,6 @@
             1. Select the database type:
         </Label>
         <ListBox x:Name="lstDatabaseTypes"
-            Style="{StaticResource textboxStyle}"
             Grid.Row="0" VerticalAlignment="Center"
             Grid.Column="2" HorizontalAlignment="Left">
         </ListBox>
