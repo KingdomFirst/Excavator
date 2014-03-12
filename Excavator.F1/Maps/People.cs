@@ -337,9 +337,14 @@ namespace Excavator.F1
                 {
                     familyGroup.Name = familyGroup.Members.FirstOrDefault().Person.LastName + " Family";
                     familyGroup.GroupTypeId = familyGroupTypeId;
-                    string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() ).Select( c => c.Key ).FirstOrDefault();
-                    familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( primaryHouseholdCampus ) || c.ShortCode == primaryHouseholdCampus )
-                        .Select( c => (int?)c.Id ).FirstOrDefault();
+
+                    string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() )
+                        .Select( c => c.Key ).FirstOrDefault();
+                    if ( primaryHouseholdCampus != null )
+                    {
+                        familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( primaryHouseholdCampus ) || c.ShortCode == primaryHouseholdCampus )
+                            .Select( c => (int?)c.Id ).FirstOrDefault();
+                    }
 
                     RockTransactionScope.WrapTransaction( () =>
                     {

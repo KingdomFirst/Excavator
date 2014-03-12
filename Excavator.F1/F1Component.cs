@@ -230,7 +230,7 @@ namespace Excavator.F1
                 if ( lookupAttribute != null )
                 {
                     ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId, IndividualId = individualId } );
-                    return lookupAttribute.Id;
+                    return lookupAttribute.EntityId;
                 }
             }
 
