@@ -80,9 +80,9 @@ namespace Excavator.F1
 
             var scanner = new DataScanner( database );
             var primaryTables = new List<string>();
-            primaryTables.Add( "Individual_Household" );
-            primaryTables.Add( "Company" );
             primaryTables.Add( "Batch" );
+            primaryTables.Add( "Company" );
+            primaryTables.Add( "Individual_Household" );
 
             // Orders the nodes so the primary tables get imported first
             var orderedNodes = loadedNodes.Where( n => n.Checked != false ).ToList();
@@ -97,26 +97,26 @@ namespace Excavator.F1
             {
                 if ( !primaryTables.Contains( node.Name ) )
                 {
-                    BackgroundWorker bwSpawnWorker = new BackgroundWorker();
-                    bwSpawnWorker.DoWork += bwSpawnWorker_DoWork;
-                    bwSpawnWorker.ProgressChanged += bwSpawnWorker_ProgressChanged;
-                    bwSpawnWorker.RunWorkerCompleted += bwSpawnWorker_RunWorkerCompleted;
-                    bwSpawnWorker.RunWorkerAsync( node.Name );
+                    BackgroundWorker bwSpawnProcess = new BackgroundWorker();
+                    bwSpawnProcess.DoWork += bwSpawnProcess_DoWork;
+                    bwSpawnProcess.ProgressChanged += bwSpawnProcess_ProgressChanged;
+                    bwSpawnProcess.RunWorkerCompleted += bwSpawnProcess_RunWorkerCompleted;
+                    bwSpawnProcess.RunWorkerAsync( node.Name );
                     workerCount++;
                 }
                 else
                 {
                     if ( node.Name == "Individual_Household" )
                     {
-                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Batch" )
                     {
-                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                     else if ( node.Name == "Company" )
                     {
-                        MapCompany( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapCompany( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                 }
             }
@@ -246,7 +246,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
-        private void bwSpawnWorker_DoWork( object sender, DoWorkEventArgs e )
+        private void bwSpawnProcess_DoWork( object sender, DoWorkEventArgs e )
         {
             var scanner = new DataScanner( database );
             var nodeName = (string)e.Argument;
@@ -254,31 +254,35 @@ namespace Excavator.F1
             {
                 switch ( nodeName )
                 {
+                    case "Account":
+                        MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
+                        break;
+
                     case "Attendance":
                         //Not run because attendance/locations/groups data is so custom
-                        //MapAttendance( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapAttendance( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "ActivityMinistry":
                         //Not run because attendance/locations/groups data is so custom
-                        //MapActivityMinistry( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapActivityMinistry( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Contribution":
-                        MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
+                        //MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Household_Address":
-                        MapFamilyAddress( scanner.ScanTable( nodeName ).AsQueryable() );
+                        //MapFamilyAddress( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Pledge":
-                        MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
+                        //MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "RLC":
                         //Not run because attendance/locations/groups data is so custom
-                        //MapRLC( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //MapRLC( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     default:
@@ -293,10 +297,15 @@ namespace Excavator.F1
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void bwSpawnWorker_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        private void bwSpawnProcess_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
             if ( e.Cancelled != true )
             {
+                BackgroundWorker bwSpawnProcess = sender as BackgroundWorker;
+                bwSpawnProcess.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwSpawnProcess_RunWorkerCompleted );
+                bwSpawnProcess.ProgressChanged -= new ProgressChangedEventHandler( bwSpawnProcess_ProgressChanged );
+                bwSpawnProcess.DoWork -= new DoWorkEventHandler( bwSpawnProcess_DoWork );
+                bwSpawnProcess.Dispose();
             }
         }
 
@@ -306,7 +315,7 @@ namespace Excavator.F1
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void bwSpawnWorker_ProgressChanged( object sender, ProgressChangedEventArgs e )
+        private void bwSpawnProcess_ProgressChanged( object sender, ProgressChangedEventArgs e )
         {
             //throw new NotImplementedException();
         }

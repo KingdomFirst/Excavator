@@ -21,6 +21,7 @@ using System.Linq;
 using OrcaMDF.Core.MetaData;
 using Rock.Data;
 using Rock.Model;
+using Rock.Security;
 using Rock.Web.Cache;
 
 namespace Excavator.F1
@@ -54,10 +55,10 @@ namespace Excavator.F1
                     account.PersonId = (int)personId;
 
                     int? routingNumber = row["Routing_Number"] as int?;
-                    int? accountNumber = row["Account"] as int?;
-                    if ( accountNumber != null )
+                    string accountNumber = row["Account"] as string;
+                    if ( routingNumber != null && accountNumber != null )
                     {
-                        // Generate AccountNumberSecured
+                        //account.AccountNumberSecured = Encryption.EncryptString( string.Format( "{0}_{1}_1", routingNumber, accountNumber ) );
                     }
 
                     // Other Attributes (not used):
