@@ -16,6 +16,7 @@
 //
 
 using System.ComponentModel;
+using System.Configuration;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -55,9 +56,11 @@ namespace Excavator
             }
             else
             {
+                btnNext.Visibility = Visibility.Hidden;
                 lblNoData.Visibility = Visibility.Visible;
                 lblDatabaseTypes.Visibility = Visibility.Hidden;
                 lstDatabaseTypes.Visibility = Visibility.Hidden;
+                lblNoData.Content += " (" + ConfigurationManager.AppSettings["ExtensionPath"] + ")";
             }
         }
 
@@ -74,10 +77,10 @@ namespace Excavator
         {
             Mouse.OverrideCursor = Cursors.Wait;
 
-            BackgroundWorker bwLoadSchema = new BackgroundWorker();
-            bwLoadSchema.DoWork += bwLoadSchema_DoWork;
-            bwLoadSchema.RunWorkerCompleted += bwLoadSchema_RunWorkerCompleted;
-            bwLoadSchema.RunWorkerAsync( lstDatabaseTypes.SelectedValue.ToString() );
+            BackgroundWorker bwLoadPreview = new BackgroundWorker();
+            bwLoadPreview.DoWork += bwPreview_DoWork;
+            bwLoadPreview.RunWorkerCompleted += bwPreview_RunWorkerCompleted;
+            bwLoadPreview.RunWorkerAsync( lstDatabaseTypes.SelectedValue.ToString() );
         }
 
         /// <summary>
@@ -147,7 +150,7 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
-        private void bwLoadSchema_DoWork( object sender, DoWorkEventArgs e )
+        private void bwPreview_DoWork( object sender, DoWorkEventArgs e )
         {
             var mdfPicker = new OpenFileDialog();
             mdfPicker.Filter = "SQL Database files|*.mdf";
@@ -179,7 +182,7 @@ namespace Excavator
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void bwLoadSchema_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        private void bwPreview_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
             if ( e.Cancelled != true )
             {

@@ -16,8 +16,10 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Excavator
 {
@@ -58,15 +60,22 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnStart_Click( object sender, RoutedEventArgs e )
         {
-            BackgroundWorker bwTransformData = new BackgroundWorker();
-            bwTransformData.DoWork += bwTransformData_DoWork;
-            bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
-            bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
-            bwTransformData.RunWorkerAsync();
+            var btnSender = (Button)sender;
+            if ( btnSender != null && (string)btnSender.Content == "Start" )
+            {
+                btnStart.Content = "Cancel";
+                btnStart.Style = (Style)FindResource( "buttonStyle" );
 
-            // if progressing, check for cancel
-            // btnStart.Style = (Style)FindResource( "labelStyle" );
-            // btnStart.Content = "Cancel";
+                BackgroundWorker bwTransformData = new BackgroundWorker();
+                bwTransformData.DoWork += bwTransformData_DoWork;
+                bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
+                bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
+                bwTransformData.RunWorkerAsync();
+            }
+            else
+            {
+                btnClose_Click( sender, e );
+            }
         }
 
         /// <summary>
@@ -86,8 +95,8 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnClose_Click( object sender, RoutedEventArgs e )
         {
-            // Run in Background finished?
-            // if not wait until all models have been saved
+            // Should this run in background until finished?
+            // if not then at least wait until all currently processing models have been saved?
             Application.Current.Shutdown();
         }
 
@@ -126,7 +135,7 @@ namespace Excavator
             this.Dispatcher.Invoke( (Action)( () =>
             {
                 lblDataUpload.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDataUpload.Content = "Successfully uploaded all the content";
+                lblDataUpload.Content = "Successfully uploaded all the data!";
                 btnClose.Visibility = Visibility.Visible;
             } ) );
         }

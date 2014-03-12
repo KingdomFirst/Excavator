@@ -7,7 +7,7 @@
                 MinHeight="450" MinWidth="600"
                 Background="#EFEFEF"
                 ShowsNavigationUI="False"
-                Source="ConnectPage.xaml"
+                Source=".\ConnectPage.xaml"
                 FontFamily="Resources/#Open Sans" FontSize="14"
                 WindowStartupLocation="CenterScreen">
 </NavigationWindow>

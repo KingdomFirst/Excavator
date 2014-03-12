@@ -15,6 +15,9 @@
 // </copyright>
 //
 
+using System;
+using System.Configuration;
+using System.Reflection;
 using System.Windows.Navigation;
 
 namespace Excavator
@@ -30,6 +33,21 @@ namespace Excavator
         public MainWindow()
         {
             InitializeComponent();
+
+            string embedPath = ConfigurationManager.AppSettings["EmbeddedResources"];
+
+            AppDomain.CurrentDomain.AssemblyResolve += ( sender, args ) =>
+            {
+                string resourceName = embedPath + "." + new AssemblyName( args.Name ).Name + ".dll";
+                using ( var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream( resourceName ) )
+                {
+                    Byte[] assemblyData = new Byte[stream.Length];
+
+                    stream.Read( assemblyData, 0, assemblyData.Length );
+
+                    return Assembly.Load( assemblyData );
+                }
+            };
         }
     }
 }

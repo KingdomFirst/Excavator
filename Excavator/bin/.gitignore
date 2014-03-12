@@ -1,0 +1,12 @@
+/*.pdb
+/*.vshost.exe
+/*.vshost.exe.config
+/*.xml
+
+#Specific files
+System.Net.Http.Formatting.xml
+System.Web.Http.WebHost.xml
+System.Web.Http.xml
+System.Net.Http.Formatting.dll
+System.Web.Http.dll
+System.Web.Http.WebHost.dll

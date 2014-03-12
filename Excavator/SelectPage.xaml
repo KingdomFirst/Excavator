@@ -34,7 +34,7 @@
             Style="{StaticResource labelStyleAlert}"
             Grid.RowSpan="2" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Top">
-            No database loaded. Please load a database from the previous page.
+            Please select the source and destination from the previous page.
         </Label>
 
         <!-- Data Selector -->
@@ -63,6 +63,7 @@
             AlternationCount="2" Visibility="Hidden"
             AlternatingRowBackground="Gray"
             CanUserAddRows="False" IsReadOnly="True"
+            ColumnWidth="Auto" HorizontalContentAlignment="Stretch"
             Grid.Row="1" VerticalAlignment="Top"
             Grid.Column="1" HorizontalAlignment="Left">
             <DataGrid.LayoutTransform>
