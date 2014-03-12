@@ -33,6 +33,7 @@ Completed:
 * Companies
 
 Coming Soon:
+* Communication
 * Accounts
 * Notes
 
