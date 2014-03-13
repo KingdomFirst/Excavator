@@ -18,8 +18,8 @@ Adding other database models:
 
 1. Download the entire Excavator solution from GitHub 
 2. Add a new Class Library that extends the base ExcavatorComponent class
-3. Add references to all the packages inside Excavator\Packages and set their "Copy Local" property to false
-(These packages are embedded in the Excavator app; if you have additional references set "Copy Local" to true.)
+3. Add references to all the packages inside Excavator\Packages and set their "Copy Local" property to false. 
+These packages are embedded in the Excavator app; if you have additional references set "Copy Local" to true.
 4. Implement the TransformData function inside your ExcavatorComponent
 5. Build or copy the compiled library (.dll) to Excavator\bin or Excavator\Extensions
 6. Run Excavator and your new database model should be in the list on the first page
