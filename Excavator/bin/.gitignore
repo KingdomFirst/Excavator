@@ -1,5 +1,4 @@
-/*.pdb
-/*.vshost.exe
+.vshost.exe
 /*.vshost.exe.config
 /*.xml
 
@@ -10,4 +9,3 @@ System.Web.Http.xml
 System.Net.Http.Formatting.dll
 System.Web.Http.dll
 System.Web.Http.WebHost.dll
-*.vshost.exe.manifest
