@@ -47,6 +47,7 @@ namespace Excavator
                 bwImportData.DoWork += bwImportData_DoWork;
                 bwImportData.ProgressChanged += bwImportData_ProgressChanged;
                 bwImportData.RunWorkerCompleted += bwImportData_RunWorkerCompleted;
+                bwImportData.WorkerReportsProgress = true;
                 bwImportData.RunWorkerAsync();
             }
         }
@@ -89,6 +90,7 @@ namespace Excavator
         /// <exception cref="System.NotImplementedException"></exception>
         private void bwImportData_DoWork( object sender, DoWorkEventArgs e )
         {
+            var worker = (BackgroundWorker)sender;
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
             bool isComplete = excavator.TransformData( importUser );
         }
