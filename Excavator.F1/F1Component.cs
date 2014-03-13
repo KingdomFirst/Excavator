@@ -111,7 +111,7 @@ namespace Excavator.F1
                     switch ( table.Name )
                     {
                         case "Account":
-                            //MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                             break;
 
                         case "Attendance":
@@ -129,11 +129,11 @@ namespace Excavator.F1
                             break;
 
                         case "Household_Address":
-                            //MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
                             break;
 
                         case "Pledge":
-                            //MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
                             break;
 
                         case "RLC":
@@ -156,18 +156,15 @@ namespace Excavator.F1
                 {
                     if ( table.Name == "Individual_Household" )
                     {
-                        //rowsToImport += tableData.Count();
-                        //MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
+                        MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
                     }
                     else if ( table.Name == "Batch" )
                     {
-                        //rowsToImport += tableData.Count();
                         MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                     }
                     else if ( table.Name == "Company" )
                     {
-                        //rowsToImport += tableData.Count();
-                        //MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
+                        MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
                     }
                 }
             }
