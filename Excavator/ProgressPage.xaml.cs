@@ -42,10 +42,10 @@ namespace Excavator
             if ( parameter != null )
             {
                 excavator = parameter;
+                excavator.ProgressUpdated += new ReportProgress( UpdateInterface );
 
                 BackgroundWorker bwImportData = new BackgroundWorker();
                 bwImportData.DoWork += bwImportData_DoWork;
-                bwImportData.ProgressChanged += bwImportData_ProgressChanged;
                 bwImportData.RunWorkerCompleted += bwImportData_RunWorkerCompleted;
                 bwImportData.WorkerReportsProgress = true;
                 bwImportData.RunWorkerAsync();
@@ -73,14 +73,26 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnClose_Click( object sender, RoutedEventArgs e )
         {
-            // Should this run in background until finished?
-            // if not then at least wait until all currently processing models have been saved?
             Application.Current.Shutdown();
         }
 
         #endregion
 
         #region Async Tasks
+
+        /// <summary>
+        /// Updates the interface.
+        /// </summary>
+        /// <param name="progress">The progress.</param>
+        /// <param name="status">The status.</param>
+        private void UpdateInterface( int progress, string status )
+        {
+            this.Dispatcher.Invoke( (Action)( () =>
+            {
+                txtProgress.AppendText( status );
+                txtProgress.ScrollToEnd();
+            } ) );
+        }
 
         /// <summary>
         /// Handles the DoWork event of the bwTransformData control.
@@ -92,20 +104,7 @@ namespace Excavator
         {
             var worker = (BackgroundWorker)sender;
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
-            bool isComplete = excavator.TransformData( importUser );
-        }
-
-        /// <summary>
-        /// Handles the ProgressChanged event of the bwTransformData control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
-        private void bwImportData_ProgressChanged( object sender, ProgressChangedEventArgs e )
-        {
-            var percentComplete = e.ProgressPercentage;
-            var updateMessage = e.UserState;
-
-            txtProgress.AppendText( Environment.NewLine + updateMessage );
+            excavator.TransformData( importUser );
         }
 
         /// <summary>
@@ -117,13 +116,14 @@ namespace Excavator
         {
             this.Dispatcher.Invoke( (Action)( () =>
             {
-                lblProgress.Visibility = Visibility.Visible;
+                lblHeader.Content = "Import Complete";
+                txtProgress.AppendText( "Uploaded all the data!" );
+                txtProgress.ScrollToEnd();
                 btnClose.Visibility = Visibility.Visible;
             } ) );
 
             BackgroundWorker bwTransformData = sender as BackgroundWorker;
             bwTransformData.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwImportData_RunWorkerCompleted );
-            bwTransformData.ProgressChanged -= new ProgressChangedEventHandler( bwImportData_ProgressChanged );
             bwTransformData.DoWork -= new DoWorkEventHandler( bwImportData_DoWork );
             bwTransformData.Dispose();
         }

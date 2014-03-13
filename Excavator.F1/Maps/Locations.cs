@@ -37,7 +37,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <returns></returns>
-        private int MapRLC( IQueryable<Row> tableData )
+        private void MapRLC( IQueryable<Row> tableData )
         {
             int locationEntityTypeId = EntityTypeCache.Read( "Rock.Model.Location" ).Id;
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
@@ -118,8 +118,6 @@ namespace Excavator.F1
                     // Building_Name
                 }
             }
-
-            return tableData.Count();
         }
 
         /// <summary>
@@ -127,7 +125,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <returns></returns>
-        private int MapActivityMinistry( IQueryable<Row> tableData )
+        private void MapActivityMinistry( IQueryable<Row> tableData )
         {
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
             var attributeService = new AttributeService();
@@ -172,8 +170,6 @@ namespace Excavator.F1
                     // Activity_Active
                 }
             }
-
-            return tableData.Count();
         }
 
         /// <summary>
@@ -181,7 +177,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <returns></returns>
-        private int MapFamilyAddress( IQueryable<Row> tableData )
+        private void MapFamilyAddress( IQueryable<Row> tableData )
         {
             var locationService = new LocationService();
 
@@ -194,6 +190,11 @@ namespace Excavator.F1
             int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
             int previousGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS ) ).Id;
+
+            int completed = 0;
+            int totalRows = tableData.Count();
+            int percentage = totalRows / 100;
+            ReportProgress( 0, Environment.NewLine + string.Format( "Starting address import ({0} to import)...", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -253,11 +254,25 @@ namespace Excavator.F1
                             groupLocationService.Add( groupLocation, ImportPersonAlias );
                             groupLocationService.Save( groupLocation, ImportPersonAlias );
                         } );
+
+                        completed++;
+                        if ( completed % 30 == 0 )
+                        {
+                            if ( completed % percentage != 0 )
+                            {
+                                ReportProgress( 0, "." );
+                            }
+                            else
+                            {
+                                int percentComplete = completed / percentage;
+                                ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0} addresses imported ({1}% complete)...", completed, percentComplete ) );
+                            }
+                        }
                     }
                 }
             }
 
-            return tableData.Count();
+            ReportProgress( 100, Environment.NewLine + string.Format( "Finished address import: {0} addresses imported.", completed ) );
         }
     }
 }

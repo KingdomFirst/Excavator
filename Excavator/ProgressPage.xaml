@@ -23,26 +23,16 @@
             Grid.Row="0" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
-            Importing Data
+            Import in Progress
         </Label>
 
         <!-- Display progress here -->
         <TextBox Name="txtProgress"
             Margin="20,0" VerticalScrollBarVisibility="Auto"
             Grid.Row="1" HorizontalAlignment="Stretch"
-            Grid.ColumnSpan="2" VerticalAlignment="Stretch" />
-        <!--<ScrollViewer Margin="20,0"
-            Grid.Row="1" HorizontalAlignment="Stretch"
-            Grid.ColumnSpan="2" VerticalAlignment="Stretch">
-            <TextBox Name="txtProgress" />
-        </ScrollViewer>-->
-
-        <Label Name="lblProgress" Visibility="Hidden"
-            Grid.Row="1" HorizontalAlignment="Center"
-            Grid.ColumnSpan="2" VerticalAlignment="Center"
-            Style="{StaticResource labelStyleSuccess}">
-            Successfully uploaded all the data!
-        </Label>
+            Grid.ColumnSpan="2" VerticalAlignment="Stretch"
+            IsReadOnly="True" Background="#EFEFEF"
+            BorderThickness="0" />
 
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">

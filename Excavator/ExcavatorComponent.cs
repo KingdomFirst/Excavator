@@ -29,7 +29,12 @@ using OrcaMDF.Core.MetaData;
 
 namespace Excavator
 {
-    public delegate void ProgressUpdate( int value );
+    /// <summary>
+    /// Reports the progress
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="status">The status.</param>
+    public delegate void ReportProgress( int value, string status );
 
     /// <summary>
     /// Excavator class holds the base methods and properties needed to convert data to Rock
@@ -92,9 +97,8 @@ namespace Excavator
         /// <returns></returns>
         public bool LoadSchema( object db )
         {
-            // currently only handles orca framework
+            // Currently only imports MDF's (using OrcaMDF framework)
             database = (Database)db;
-            // TODO: implement option to read from SQL //
             loadedNodes = new List<DatabaseNode>();
             var scanner = new DataScanner( database );
             var tables = database.Dmvs.Tables;
@@ -168,7 +172,29 @@ namespace Excavator
         /// Transforms and saves the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public abstract bool TransformData( string importUser = null );
+        public abstract int TransformData( string importUser = null );
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Occurs when progress updated.
+        /// </summary>
+        public event ReportProgress ProgressUpdated;
+
+        /// <summary>
+        /// Reports the progress.
+        /// </summary>
+        /// <param name="progress">The progress.</param>
+        /// <param name="status">The status.</param>
+        public void ReportProgress( int progress, string status )
+        {
+            if ( ProgressUpdated != null )
+            {
+                ProgressUpdated( progress, status );
+            }
+        }
 
         #endregion
     }
@@ -196,7 +222,6 @@ namespace Excavator
                 catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder ) );
             }
 
-            // also look in the current directory
             var currentDirectory = Path.GetDirectoryName( Application.ExecutablePath );
             catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory ) );
 

@@ -76,11 +76,19 @@ namespace Excavator
                 var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
                 appConfig.AppSettings.Settings.Add( "DataEncryptionKey", txtDataEncryption.Text );
                 appConfig.AppSettings.Settings.Add( "ImportUser", txtImportUser.Text );
-                appConfig.Save( ConfigurationSaveMode.Modified );
-                ConfigurationManager.RefreshSection( "appSettings" );
 
-                var progressPage = new ProgressPage( excavator );
-                this.NavigationService.Navigate( progressPage );
+                try
+                {
+                    appConfig.Save( ConfigurationSaveMode.Modified );
+                    ConfigurationManager.RefreshSection( "appSettings" );
+                    var progressPage = new ProgressPage( excavator );
+                    this.NavigationService.Navigate( progressPage );
+                }
+                catch
+                {
+                    lblNoData.Content = "Unable to save the DataEncryptionKey. Please check the permissions on the current directory.";
+                    lblNoData.Visibility = Visibility.Visible;
+                }
             }
             else
             {

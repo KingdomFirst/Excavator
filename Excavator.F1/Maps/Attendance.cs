@@ -33,7 +33,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <returns></returns>
-        private int MapAttendance( IQueryable<Row> tableData )
+        private void MapAttendance( IQueryable<Row> tableData )
         {
             foreach ( var row in tableData )
             {
@@ -91,8 +91,6 @@ namespace Excavator.F1
                     } );
                 }
             }
-
-            return tableData.Count();
         }
     }
 }

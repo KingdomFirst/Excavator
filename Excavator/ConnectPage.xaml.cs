@@ -60,7 +60,7 @@ namespace Excavator
                 lblNoData.Visibility = Visibility.Visible;
                 lblDatabaseTypes.Visibility = Visibility.Hidden;
                 lstDatabaseTypes.Visibility = Visibility.Hidden;
-                lblNoData.Content += " (" + ConfigurationManager.AppSettings["ExtensionPath"] + ")";
+                lblNoData.Content += string.Format( " ({0})", ConfigurationManager.AppSettings["ExtensionPath"] );
             }
         }
 
