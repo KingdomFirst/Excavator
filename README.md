@@ -1,7 +1,9 @@
 Excavator
 =========
 
-A conversion tool to pull data into Rock from other church management systems.  An auto-generated FellowshipOne model is provided (in-progress).  
+A conversion app to import data into Rock from other church management systems.  This app requires a SQL file from your previous database and an active Rock connection.
+
+An auto-generated FellowshipOne model is provided (in-progress).
 
 Files you need to start an import (Excavator\bin):
 - Excavator.exe
@@ -12,29 +14,31 @@ Files you need to start an import (Excavator\bin):
 Note: master branch contains fully-tested code; develop branch is beta/in-progress.
 
 =========
-Other Databases:
+Extending to other databases:
 
-Additional models can be added by adding a new Class Library and extending the base ExcavatorComponent class.  
-
-Your extension class must implement the TransformData function. 
-
-Export the compiled class (.dll) to the Extensions folder and the app will display the new model on the initial screen.
+1. Download the entire Excavator solution from GitHub 
+2. Add a new Class Library that extends the base ExcavatorComponent class
+3. Add references to all the packages inside Excavator\Packages and set their "Copy Local" property to false
+* Note: These packages are embedded in the Excavator app; if you have additional references set "Copy Local" to true
+4. Implement the TransformData function inside your ExcavatorComponent
+5. Build or copy the compiled library (.dll) to Excavator\bin or Excavator\Extensions
+6. Run Excavator and your new database model should be in the list on the first page
 
 =========
 Fellowship One Conversion Progress:
 
 Completed:
-* Individuals
-* Families
+* Individuals 
+* Families (excluding visitors)
 * Batches
 * Contributions
 * Pledges
 * Addresses
 * Companies
+* Accounts
 
 Coming Soon:
 * Communication
-* Accounts
 * Notes
 
 Inconsistent/Not Supported:
