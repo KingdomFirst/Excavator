@@ -77,16 +77,9 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool TransformData( string importUser = null )
         {
-            var aliasService = new PersonAliasService();
-            var importPerson = new PersonService().GetByFullName( importUser, false, false ).FirstOrDefault();
-            if ( importPerson != null )
-            {
-                ImportPersonAlias = aliasService.Get( importPerson.Id );
-            }
-            else
-            {
-                ImportPersonAlias = aliasService.Get( 1 );
-            }
+            var personService = new PersonService();
+            var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
+            ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
 
             LoadExistingRockData();
 
