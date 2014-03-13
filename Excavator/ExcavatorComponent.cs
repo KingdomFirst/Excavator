@@ -168,7 +168,7 @@ namespace Excavator
         /// Transforms and saves the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public abstract bool TransformData();
+        public abstract bool TransformData( string importUser = null );
 
         #endregion
     }

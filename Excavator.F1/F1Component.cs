@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.Configuration;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using Rock.Model;
@@ -74,8 +75,19 @@ namespace Excavator.F1
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public override bool TransformData()
+        public override bool TransformData( string importUser = null )
         {
+            var aliasService = new PersonAliasService();
+            var importPerson = new PersonService().GetByFullName( importUser, false, false ).FirstOrDefault();
+            if ( importPerson != null )
+            {
+                ImportPersonAlias = aliasService.Get( importPerson.Id );
+            }
+            else
+            {
+                ImportPersonAlias = aliasService.Get( 1 );
+            }
+
             LoadExistingRockData();
 
             var scanner = new DataScanner( database );
@@ -129,10 +141,6 @@ namespace Excavator.F1
         /// </summary>
         public void LoadExistingRockData()
         {
-            // this needs to be a user-defined person instead of the default Admin
-            var aliasService = new PersonAliasService();
-            ImportPersonAlias = aliasService.Get( 1 );
-
             var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
 

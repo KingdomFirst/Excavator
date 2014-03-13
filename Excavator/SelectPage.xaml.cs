@@ -49,8 +49,6 @@ namespace Excavator
             {
                 lblNoData.Visibility = Visibility.Visible;
                 btnNext.Visibility = Visibility.Hidden;
-                lblPreviewField.Visibility = Visibility.Hidden;
-                lblSelectFields.Visibility = Visibility.Hidden;
                 grdPreviewData.Visibility = Visibility.Hidden;
             }
         }
