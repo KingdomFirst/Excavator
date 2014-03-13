@@ -1,0 +1,66 @@
+﻿<Page x:Class="Excavator.ProgressPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      d:DesignHeight="300" d:DesignWidth="500"
+      mc:Ignorable="d" Margin="10"
+      Title="Progress">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="9*" />
+            <RowDefinition Height="40" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Page Header -->
+        <Label Name="lblHeader" FontSize="16"
+            Grid.Row="0" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyle}">
+            Importing Data
+        </Label>
+
+        <!-- Display progress here -->
+        <TextBox Name="txtProgress"
+            Margin="20,0" VerticalScrollBarVisibility="Auto"
+            Grid.Row="1" HorizontalAlignment="Stretch"
+            Grid.ColumnSpan="2" VerticalAlignment="Stretch" />
+        <!--<ScrollViewer Margin="20,0"
+            Grid.Row="1" HorizontalAlignment="Stretch"
+            Grid.ColumnSpan="2" VerticalAlignment="Stretch">
+            <TextBox Name="txtProgress" />
+        </ScrollViewer>-->
+
+        <Label Name="lblProgress" Visibility="Hidden"
+            Grid.Row="1" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyleSuccess}">
+            Successfully uploaded all the data!
+        </Label>
+
+        <!-- Navigation -->
+        <Grid Grid.Row="2" Grid.ColumnSpan="2">
+            <Button Style="{StaticResource buttonStyle}"
+                x:Name="btnBack"
+                VerticalAlignment="Bottom"
+                IsEnabled="{Binding CanGoBack}"
+                Grid.Column="0" HorizontalAlignment="Left"
+                Click="btnBack_Click">
+                Back
+            </Button>
+            <Button Style="{StaticResource buttonStylePrimary}"
+                x:Name="btnClose" Visibility="Hidden"
+                VerticalAlignment="Bottom"
+                Grid.Column="1" HorizontalAlignment="Right"
+                Click="btnClose_Click">
+                Close
+            </Button>
+        </Grid>
+    </Grid>
+</Page>

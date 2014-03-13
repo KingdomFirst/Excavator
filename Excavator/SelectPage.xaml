@@ -7,6 +7,7 @@
       d:DesignHeight="350" d:DesignWidth="500"
       mc:Ignorable="d" Margin="10"
 	  Title="Select" UseLayoutRounding="True">
+
     <Page.Resources>
         <!-- DatabaseNode TreeView -->
         <HierarchicalDataTemplate DataType="{x:Type local:DatabaseNode}" ItemsSource="{Binding Columns}">
@@ -19,16 +20,25 @@
             </StackPanel>
         </HierarchicalDataTemplate>
     </Page.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
-            <RowDefinition Height="14*" />
+            <RowDefinition Height="10*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
+
+        <!-- Page Header -->
+        <Label Name="lblHeader" FontSize="16"
+            Grid.Row="0" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyle}">
+            Select / Preview Tables
+        </Label>
 
         <Label Name="lblNoData" Visibility="Hidden"
             Style="{StaticResource labelStyleAlert}"
@@ -37,26 +47,12 @@
             Please select the source and destination from the previous page.
         </Label>
 
-        <!-- Data Selector -->
-        <Label Name="lblSelectFields" Style="{StaticResource labelStyle}"
-            Grid.Row="0" VerticalAlignment="Top"
-            Grid.Column="0" HorizontalAlignment="Left">
-            Select the fields to import:
-        </Label>
-
         <TreeView Name="treeView"
                 Grid.Row="1" Grid.Column="0"
                 Background="{x:Null}"
                 BorderBrush="{x:Null}">
             <!-- Content will be filled here -->
         </TreeView>
-
-        <!-- Preview Data -->
-        <Label Name="lblPreviewField" Style="{StaticResource labelStyle}"
-            Grid.Row="0" VerticalAlignment="Top"
-            Grid.Column="1" HorizontalAlignment="Left">
-            Data preview:
-        </Label>
 
         <DataGrid Name="grdPreviewData"
             AutoGenerateColumns="True"
@@ -110,7 +106,7 @@
         <Grid Grid.Row="2" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStyle}"
                 x:Name="btnBack"
-                VerticalAlignment="Bottom"
+                VerticalAlignment="Center"
                 IsEnabled="{Binding CanGoBack}"
                 Grid.Column="0" HorizontalAlignment="Left"
                 Click="btnBack_Click">
@@ -118,7 +114,7 @@
             </Button>
             <Button Style="{StaticResource buttonStylePrimary}"
                 x:Name="btnNext"
-                VerticalAlignment="Bottom"
+                VerticalAlignment="Center"
                 Grid.Column="1" HorizontalAlignment="Right"
                 Click="btnNext_Click">
                 Next

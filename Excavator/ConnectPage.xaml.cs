@@ -51,7 +51,7 @@ namespace Excavator
             frontEndLoader = new FrontEndLoader();
             if ( frontEndLoader.excavatorTypes.Any() )
             {
-                lstDatabaseTypes.ItemsSource = frontEndLoader.excavatorTypes;
+                lstDatabaseTypes.ItemsSource = frontEndLoader.excavatorTypes.GroupBy( t => t.FullName ).Select( g => g.FirstOrDefault() );
                 lstDatabaseTypes.SelectedItem = frontEndLoader.excavatorTypes.FirstOrDefault();
             }
             else

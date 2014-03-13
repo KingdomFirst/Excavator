@@ -168,7 +168,7 @@ namespace Excavator
         /// Transforms and saves the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public abstract bool TransformData();
+        public abstract bool TransformData( string importUser = null );
 
         #endregion
     }
@@ -196,9 +196,9 @@ namespace Excavator
                 catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder ) );
             }
 
-            // too many other assemblies in current directory to use this
-            //var currentDirectory = Path.GetDirectoryName( Application.ExecutablePath );
-            //catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory ) );
+            // also look in the current directory
+            var currentDirectory = Path.GetDirectoryName( Application.ExecutablePath );
+            catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory ) );
 
             try
             {

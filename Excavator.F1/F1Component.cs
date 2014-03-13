@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.Configuration;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using Rock.Model;
@@ -57,14 +58,21 @@ namespace Excavator.F1
         private List<ImportedPerson> ImportedPersonList;
 
         /// <summary>
+        /// All imported batches. Used in Batches & Contributions
+        /// </summary>
+        private Dictionary<int?, int?> ImportedBatches;
+
+        /// <summary>
         /// The list of current campuses
         /// </summary>
         private List<Campus> CampusList;
 
         private int IntegerFieldTypeId;
         private int PersonEntityTypeId;
+        private int BatchEntityTypeId;
         private int IndividualAttributeId;
         private int HouseholdAttributeId;
+        private int BatchAttributeId;
 
         #endregion
 
@@ -74,8 +82,12 @@ namespace Excavator.F1
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public override bool TransformData()
+        public override bool TransformData( string importUser = null )
         {
+            var personService = new PersonService();
+            var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
+            ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
+
             LoadExistingRockData();
 
             var scanner = new DataScanner( database );
@@ -88,7 +100,7 @@ namespace Excavator.F1
             var orderedNodes = loadedNodes.Where( n => n.Checked != false ).ToList();
             if ( orderedNodes.Any( n => primaryTables.Contains( n.Name ) ) )
             {
-                orderedNodes = orderedNodes.OrderBy( n => Decimal.Negate( primaryTables.IndexOf( n.Name ) ) ).ToList();
+                orderedNodes = orderedNodes.OrderByDescending( n => primaryTables.IndexOf( n.Name ) ).ToList();
             }
 
             int workerCount = 0;
@@ -129,15 +141,12 @@ namespace Excavator.F1
         /// </summary>
         public void LoadExistingRockData()
         {
-            // this needs to be a user-defined person instead of the default Admin
-            var aliasService = new PersonAliasService();
-            ImportPersonAlias = aliasService.Get( 1 );
-
             var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
 
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
+            BatchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
             var householdAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" );
@@ -197,6 +206,34 @@ namespace Excavator.F1
                     IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
                 } ).ToList();
 
+            var batchAttribute = attributeService.Queryable().FirstOrDefault( a => a.EntityTypeId == BatchEntityTypeId
+                && a.Key == "F1BatchId" );
+            if ( batchAttribute == null )
+            {
+                batchAttribute = new Rock.Model.Attribute();
+                batchAttribute.Key = "F1BatchId";
+                batchAttribute.Name = "F1 Batch Id";
+                batchAttribute.FieldTypeId = IntegerFieldTypeId;
+                batchAttribute.EntityTypeId = BatchEntityTypeId;
+                batchAttribute.EntityTypeQualifierValue = string.Empty;
+                batchAttribute.EntityTypeQualifierColumn = string.Empty;
+                batchAttribute.Description = "The FellowshipOne identifier for the batch that was imported";
+                batchAttribute.DefaultValue = string.Empty;
+                batchAttribute.IsMultiValue = false;
+                batchAttribute.IsRequired = false;
+                batchAttribute.Order = 0;
+
+                attributeService.Add( batchAttribute, ImportPersonAlias );
+                attributeService.Save( batchAttribute, ImportPersonAlias );
+            }
+
+            BatchAttributeId = batchAttribute.Id;
+
+            // Get all imported batches
+            ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttribute.Id )
+                .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
+                .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );
+
             CampusList = new CampusService().Queryable().ToList();
         }
 
@@ -230,7 +267,7 @@ namespace Excavator.F1
                 if ( lookupAttribute != null )
                 {
                     ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId, IndividualId = individualId } );
-                    return lookupAttribute.Id;
+                    return lookupAttribute.EntityId;
                 }
             }
 
@@ -255,8 +292,7 @@ namespace Excavator.F1
                 switch ( nodeName )
                 {
                     case "Account":
-                        //Waiting on Rock encryption key
-                        //MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
+                        MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Attendance":

@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -44,39 +45,14 @@ namespace Excavator
             }
             else
             {
-                lblDataUpload.Visibility = Visibility.Visible;
-                btnClose.Visibility = Visibility.Hidden;
+                lblNoData.Visibility = Visibility.Visible;
+                btnNext.Visibility = Visibility.Hidden;
             }
         }
 
         #endregion
 
         #region Events
-
-        /// <summary>
-        /// Handles the Click event of the btnStart control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnStart_Click( object sender, RoutedEventArgs e )
-        {
-            var btnSender = (Button)sender;
-            if ( btnSender != null && (string)btnSender.Content == "Start" )
-            {
-                btnStart.Content = "Cancel";
-                btnStart.Style = (Style)FindResource( "buttonStyle" );
-
-                BackgroundWorker bwTransformData = new BackgroundWorker();
-                bwTransformData.DoWork += bwTransformData_DoWork;
-                bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
-                bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
-                bwTransformData.RunWorkerAsync();
-            }
-            else
-            {
-                btnClose_Click( sender, e );
-            }
-        }
 
         /// <summary>
         /// Handles the Click event of the btnBack control.
@@ -93,51 +69,24 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnClose_Click( object sender, RoutedEventArgs e )
+        private void btnNext_Click( object sender, RoutedEventArgs e )
         {
-            // Should this run in background until finished?
-            // if not then at least wait until all currently processing models have been saved?
-            Application.Current.Shutdown();
-        }
-
-        #endregion
-
-        #region Async Tasks
-
-        /// <summary>
-        /// Handles the DoWork event of the bwTransformData control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
-        private void bwTransformData_DoWork( object sender, DoWorkEventArgs e )
-        {
-            bool isComplete = excavator.TransformData();
-        }
-
-        /// <summary>
-        /// Handles the ProgressChanged event of the bwTransformData control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
-        private void bwTransformData_ProgressChanged( object sender, ProgressChangedEventArgs e )
-        {
-            //lblUploadProgress.Content = string.Format( "Uploading Scanned Checks {0}%", e.ProgressPercentage );
-        }
-
-        /// <summary>
-        /// Handles the RunWorkerCompleted event of the bwTransformData control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
-        private void bwTransformData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
-        {
-            this.Dispatcher.Invoke( (Action)( () =>
+            if ( !string.IsNullOrEmpty( txtDataEncryption.Text ) )
             {
-                lblDataUpload.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDataUpload.Content = "Successfully uploaded all the data!";
-                btnClose.Visibility = Visibility.Visible;
-            } ) );
+                var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
+                appConfig.AppSettings.Settings.Add( "DataEncryptionKey", txtDataEncryption.Text );
+                appConfig.AppSettings.Settings.Add( "ImportUser", txtImportUser.Text );
+                appConfig.Save( ConfigurationSaveMode.Modified );
+                ConfigurationManager.RefreshSection( "appSettings" );
+
+                var progressPage = new ProgressPage( excavator );
+                this.NavigationService.Navigate( progressPage );
+            }
+            else
+            {
+                lblNoData.Content = "Please enter the DataEncryptionKey. This key is required to import financial accounts.";
+                lblNoData.Visibility = Visibility.Visible;
+            }
         }
 
         #endregion
