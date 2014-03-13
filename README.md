@@ -1,7 +1,7 @@
 Excavator
 =========
 
-A conversion app to import data into Rock from other church management systems.  This app requires a SQL file from your previous database and an active Rock connection.
+A conversion app to import data into Rock from other church management systems.  This app requires the SQL file (.mdf) from your previous database and an active Rock connection.
 
 An auto-generated FellowshipOne model is provided (in-progress).
 
@@ -14,7 +14,7 @@ Files you need to start an import (Excavator\bin):
 Note: master branch contains fully-tested code; develop branch is beta/in-progress.
 
 =========
-Extending to other databases:
+Adding other database models:
 
 1. Download the entire Excavator solution from GitHub 
 2. Add a new Class Library that extends the base ExcavatorComponent class
