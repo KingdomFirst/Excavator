@@ -58,7 +58,8 @@ namespace Excavator.F1
                     string accountNumber = row["Account"] as string;
                     if ( routingNumber != null && accountNumber != null )
                     {
-                        //account.AccountNumberSecured = Encryption.EncryptString( string.Format( "{0}_{1}_1", routingNumber, accountNumber ) );
+                        // check number set to 1
+                        account.AccountNumberSecured = Encryption.EncryptString( string.Format( "{0}_{1}_1", routingNumber, accountNumber ) );
                     }
 
                     // Other Attributes (not used):
@@ -281,9 +282,8 @@ namespace Excavator.F1
                     string checkNumber = row["Check_Number"] as string;
                     if ( checkNumber != null && checkNumber.AsType<int?>() != null )
                     {
-                        // encryption here would require a public key already set
-                        // + routing and account numbers aren't available
-                        transaction.CheckMicrEncrypted = string.Format( "ImportedCheck_{0}", checkNumber );
+                        // routing & account set to zero here
+                        transaction.CheckMicrEncrypted = Encryption.EncryptString( string.Format( "{0}_{1}_{2}", 0, 0, checkNumber ) );
                     }
 
                     string fundName = row["Fund_Name"] as string;
@@ -293,14 +293,24 @@ namespace Excavator.F1
                     {
                         // match the fund account if we can
                         FinancialAccount matchingAccount = null;
+                        fundName = fundName.Trim();
+
                         int? fundCampusId = null;
                         if ( subFund != null )
                         {
+                            subFund = subFund.Trim();
                             fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
-                            matchingAccount = accountList.FirstOrDefault( a => ( a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) )
-                                || ( a.ParentAccount != null && a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) )
-                                || ( a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) );
+
+                            if ( fundCampusId != null )
+                            {
+                                matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName )
+                                    && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
+                            }
+                            else
+                            {
+                                matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) );
+                            }
                         }
                         else
                         {
