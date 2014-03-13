@@ -35,7 +35,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <param name="selectedColumns">The selected columns.</param>
-        private int MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
+        private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
             var attributeValueService = new AttributeValueService();
@@ -76,11 +76,6 @@ namespace Excavator.F1
             // Group roles: Adult, Child, others
             int adultRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
             int childRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD ) ).Id;
-            //int visitorRoleId
-            //int canCheckInRoleId
-            //int allowCheckInRoleId
-            //int invitedRoleId
-            //int invitedByRoleId
 
             // Group type: Family
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
@@ -98,10 +93,13 @@ namespace Excavator.F1
             var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "School" ) );
             var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
 
+            int completed = 0;
+            int totalRows = tableData.Count() - ImportedPeople.Count();
+            int percentage = totalRows / 100;
+            ReportProgress( 0, Environment.NewLine + string.Format( "Starting person import ({0} to import)...", totalRows ) );
+
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
-                // only import where selectedColumns.Contains( row.Column )
-
                 var familyGroup = new Group();
                 var householdCampusList = new List<string>();
 
@@ -379,10 +377,24 @@ namespace Excavator.F1
                             }
                         }
                     } );
+
+                    completed++;
+                    if ( completed % 30 == 0 )
+                    {
+                        if ( completed % percentage != 0 )
+                        {
+                            ReportProgress( 0, "." );
+                        }
+                        else
+                        {
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0} people imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                    }
                 }
             }
 
-            return tableData.Count();
+            ReportProgress( 100, Environment.NewLine + string.Format( "Finished person import: {0} people imported.", completed ) );
         }
 
         /// <summary>
