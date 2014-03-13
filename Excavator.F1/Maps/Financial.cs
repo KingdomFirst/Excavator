@@ -32,11 +32,6 @@ namespace Excavator.F1
     partial class F1Component
     {
         /// <summary>
-        /// The imported batches. Used in Batches & Contributions
-        /// </summary>
-        private Dictionary<int?, int?> ImportedBatches;
-
-        /// <summary>
         /// Maps the account data.
         /// </summary>
         /// <param name="tableData">The table data.</param>
@@ -84,39 +79,10 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private int MapBatch( IQueryable<Row> tableData )
         {
-            int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
+            
             var attributeService = new AttributeService();
-
-            // Add an Attribute for the unique F1 Batch Id
-            var batchAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == batchEntityTypeId
-                && a.Key == "F1BatchId" ).Select( a => a.Id ).FirstOrDefault();
-            if ( batchAttributeId == 0 )
-            {
-                var newBatchAttribute = new Rock.Model.Attribute();
-                newBatchAttribute.Key = "F1BatchId";
-                newBatchAttribute.Name = "F1 Batch Id";
-                newBatchAttribute.FieldTypeId = IntegerFieldTypeId;
-                newBatchAttribute.EntityTypeId = batchEntityTypeId;
-                newBatchAttribute.EntityTypeQualifierValue = string.Empty;
-                newBatchAttribute.EntityTypeQualifierColumn = string.Empty;
-                newBatchAttribute.Description = "The FellowshipOne identifier for the batch that was imported";
-                newBatchAttribute.DefaultValue = string.Empty;
-                newBatchAttribute.IsMultiValue = false;
-                newBatchAttribute.IsRequired = false;
-                newBatchAttribute.Order = 0;
-
-                attributeService.Add( newBatchAttribute, ImportPersonAlias );
-                attributeService.Save( newBatchAttribute, ImportPersonAlias );
-                batchAttributeId = newBatchAttribute.Id;
-            }
-
-            var batchAttribute = AttributeCache.Read( batchAttributeId );
-            var batchStatusClosed = Rock.Model.BatchStatus.Closed;
-
-            // Get all imported batches
-            ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttributeId )
-                .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
-                .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );
+            var batchAttribute = AttributeCache.Read( BatchAttributeId );
+            var batchStatusClosed = Rock.Model.BatchStatus.Closed;           
 
             foreach ( var row in tableData )
             {
