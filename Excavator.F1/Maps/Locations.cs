@@ -183,9 +183,13 @@ namespace Excavator.F1
         /// <returns></returns>
         private int MapFamilyAddress( IQueryable<Row> tableData )
         {
+            var locationService = new LocationService();
+
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
 
             List<DefinedValue> groupLocationTypeList = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
+
+            List<GroupMember> groupMembershipList = new GroupMemberService().Queryable().Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
 
             int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
@@ -198,8 +202,8 @@ namespace Excavator.F1
                 int? associatedPersonId = GetPersonId( individualId, householdId );
                 if ( associatedPersonId != null )
                 {
-                    var familyGroup = new GroupMemberService().Queryable().Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY )
-                        && gm.PersonId == (int)associatedPersonId ).Select( gm => gm.Group ).FirstOrDefault();
+                    var familyGroup = groupMembershipList.Where( gm => gm.PersonId == (int)associatedPersonId )
+                        .Select( gm => gm.Group ).FirstOrDefault();
 
                     if ( familyGroup != null )
                     {
@@ -213,12 +217,13 @@ namespace Excavator.F1
                         string zip = row["Postal_Code"] as string;
 
                         // Get new or existing location and associate it with group
-                        var familyAddress = new LocationService().Get( address, supplemental, city, state, zip );
+                        var familyAddress = locationService.Get( address, supplemental, city, state, zip );
                         familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         familyAddress.Name = familyGroup.Name;
                         familyAddress.IsActive = true;
 
-                        groupLocation.Location = familyAddress;
+                        groupLocation.GroupId = familyGroup.Id;
+                        groupLocation.LocationId = familyAddress.Id;
                         groupLocation.IsMailingLocation = true;
                         groupLocation.IsMappedLocation = true;
 
@@ -242,12 +247,11 @@ namespace Excavator.F1
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
-                        groupLocation.GroupId = familyGroup.Id;
                         RockTransactionScope.WrapTransaction( () =>
                         {
                             var groupLocationService = new GroupLocationService();
-                            groupLocationService.Add( groupLocation );
-                            groupLocationService.Save( groupLocation );
+                            groupLocationService.Add( groupLocation, ImportPersonAlias );
+                            groupLocationService.Save( groupLocation, ImportPersonAlias );
                         } );
                     }
                 }
