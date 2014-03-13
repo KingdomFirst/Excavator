@@ -27,6 +27,15 @@
         </Label>
 
         <!-- Display progress here -->
+        <TextBox Name="txtProgress"
+            Margin="20,0" VerticalScrollBarVisibility="Auto"
+            Grid.Row="1" HorizontalAlignment="Stretch"
+            Grid.ColumnSpan="2" VerticalAlignment="Stretch" />
+        <!--<ScrollViewer Margin="20,0"
+            Grid.Row="1" HorizontalAlignment="Stretch"
+            Grid.ColumnSpan="2" VerticalAlignment="Stretch">
+            <TextBox Name="txtProgress" />
+        </ScrollViewer>-->
 
         <Label Name="lblProgress" Visibility="Hidden"
             Grid.Row="1" HorizontalAlignment="Center"

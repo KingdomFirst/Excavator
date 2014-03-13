@@ -41,41 +41,19 @@ namespace Excavator
             InitializeComponent();
             if ( parameter != null )
             {
-                var importUser = ConfigurationManager.AppSettings["ImportUser"];
-
                 excavator = parameter;
-                excavator.TransformData( importUser );
+
+                BackgroundWorker bwImportData = new BackgroundWorker();
+                bwImportData.DoWork += bwImportData_DoWork;
+                bwImportData.ProgressChanged += bwImportData_ProgressChanged;
+                bwImportData.RunWorkerCompleted += bwImportData_RunWorkerCompleted;
+                bwImportData.RunWorkerAsync();
             }
         }
 
         #endregion
 
         #region Events
-
-        /// <summary>
-        /// Handles the Click event of the btnStart control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void btnNext_Click( object sender, RoutedEventArgs e )
-        {
-            //var btnSender = (Button)sender;
-            //if ( btnSender != null && (string)btnSender.Content == "Start" )
-            //{
-            //    btnStart.Content = "Cancel";
-            //    btnStart.Style = (Style)FindResource( "buttonStyle" );
-
-            //    BackgroundWorker bwTransformData = new BackgroundWorker();
-            //    bwTransformData.DoWork += bwTransformData_DoWork;
-            //    bwTransformData.ProgressChanged += bwTransformData_ProgressChanged;
-            //    bwTransformData.RunWorkerCompleted += bwTransformData_RunWorkerCompleted;
-            //    bwTransformData.RunWorkerAsync();
-            //}
-            //else
-            //{
-            //    btnClose_Click( sender, e );
-            //}
-        }
 
         /// <summary>
         /// Handles the Click event of the btnBack control.
@@ -109,7 +87,7 @@ namespace Excavator
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void bwTransformData_DoWork( object sender, DoWorkEventArgs e )
+        private void bwImportData_DoWork( object sender, DoWorkEventArgs e )
         {
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
             bool isComplete = excavator.TransformData( importUser );
@@ -120,9 +98,12 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
-        private void bwTransformData_ProgressChanged( object sender, ProgressChangedEventArgs e )
+        private void bwImportData_ProgressChanged( object sender, ProgressChangedEventArgs e )
         {
-            //lblUploadProgress.Content = string.Format( "Uploading Scanned Checks {0}%", e.ProgressPercentage );
+            var percentComplete = e.ProgressPercentage;
+            var updateMessage = e.UserState;
+
+            txtProgress.AppendText( Environment.NewLine + updateMessage );
         }
 
         /// <summary>
@@ -130,7 +111,7 @@ namespace Excavator
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
-        private void bwTransformData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        private void bwImportData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
             this.Dispatcher.Invoke( (Action)( () =>
             {
@@ -139,9 +120,9 @@ namespace Excavator
             } ) );
 
             BackgroundWorker bwTransformData = sender as BackgroundWorker;
-            bwTransformData.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwTransformData_RunWorkerCompleted );
-            bwTransformData.ProgressChanged -= new ProgressChangedEventHandler( bwTransformData_ProgressChanged );
-            bwTransformData.DoWork -= new DoWorkEventHandler( bwTransformData_DoWork );
+            bwTransformData.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwImportData_RunWorkerCompleted );
+            bwTransformData.ProgressChanged -= new ProgressChangedEventHandler( bwImportData_ProgressChanged );
+            bwTransformData.DoWork -= new DoWorkEventHandler( bwImportData_DoWork );
             bwTransformData.Dispose();
         }
 
