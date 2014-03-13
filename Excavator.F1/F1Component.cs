@@ -55,7 +55,7 @@ namespace Excavator.F1
         /// <summary>
         /// Holds a list of all the people who've been imported
         /// </summary>
-        private List<ImportedPerson> ImportedPersonList;
+        private List<ImportedPerson> ImportedPeople;
 
         /// <summary>
         /// All imported batches. Used in Batches & Contributions
@@ -82,8 +82,9 @@ namespace Excavator.F1
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public override bool TransformData( string importUser = null )
+        public override int TransformData( string importUser = null )
         {
+            ReportProgress( 0, "Starting import..." );
             var personService = new PersonService();
             var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
             ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
@@ -91,49 +92,87 @@ namespace Excavator.F1
             LoadExistingRockData();
 
             var scanner = new DataScanner( database );
-            var primaryTables = new List<string>();
-            primaryTables.Add( "Batch" );
-            primaryTables.Add( "Company" );
-            primaryTables.Add( "Individual_Household" );
+            var tableDependencies = new List<string>();
+            tableDependencies.Add( "Batch" );
+            tableDependencies.Add( "Company" );
+            tableDependencies.Add( "Individual_Household" );
 
-            // Orders the nodes so the primary tables get imported first
-            var orderedNodes = loadedNodes.Where( n => n.Checked != false ).ToList();
-            if ( orderedNodes.Any( n => primaryTables.Contains( n.Name ) ) )
+            ReportProgress( 0, Environment.NewLine + "Checking for  table dependencies..." );
+            var tableList = loadedNodes.Where( n => n.Checked != false ).ToList();
+            if ( tableList.Any( n => tableDependencies.Contains( n.Name ) ) )
             {
-                orderedNodes = orderedNodes.OrderByDescending( n => primaryTables.IndexOf( n.Name ) ).ToList();
+                tableList = tableList.OrderByDescending( n => tableDependencies.IndexOf( n.Name ) ).ToList();
             }
 
-            int workerCount = 0;
-
-            foreach ( var node in orderedNodes )
+            foreach ( var table in tableList )
             {
-                if ( !primaryTables.Contains( node.Name ) )
+                if ( !tableDependencies.Contains( table.Name ) )
                 {
-                    BackgroundWorker bwSpawnProcess = new BackgroundWorker();
-                    bwSpawnProcess.DoWork += bwSpawnProcess_DoWork;
-                    bwSpawnProcess.ProgressChanged += bwSpawnProcess_ProgressChanged;
-                    bwSpawnProcess.RunWorkerCompleted += bwSpawnProcess_RunWorkerCompleted;
-                    bwSpawnProcess.RunWorkerAsync( node.Name );
-                    workerCount++;
+                    switch ( table.Name )
+                    {
+                        case "Account":
+                            //MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Attendance":
+                            //Not run because attendance/locations/groups data is so custom
+                            //MapAttendance( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "ActivityMinistry":
+                            //Not run because attendance/locations/groups data is so custom
+                            //MapActivityMinistry( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Contribution":
+                            MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Household_Address":
+                            //MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Pledge":
+                            //MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "RLC":
+                            //Not run because attendance/locations/groups data is so custom
+                            //MapRLC( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        default:
+                            break;
+                    }
+
+                    // Don't use additional background workers (for now)
+                    //BackgroundWorker bwSpawnProcess = new BackgroundWorker();
+                    //bwSpawnProcess.DoWork += bwSpawnProcess_DoWork;
+                    //bwSpawnProcess.RunWorkerCompleted += bwSpawnProcess_RunWorkerCompleted;
+                    //bwSpawnProcess.RunWorkerAsync( table.Name );
+                    //bgWorkers.Add( bwSpawnProcess );
                 }
                 else
                 {
-                    if ( node.Name == "Individual_Household" )
+                    if ( table.Name == "Individual_Household" )
                     {
-                        MapPerson( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //rowsToImport += tableData.Count();
+                        //MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
                     }
-                    else if ( node.Name == "Batch" )
+                    else if ( table.Name == "Batch" )
                     {
-                        MapBatch( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //rowsToImport += tableData.Count();
+                        MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                     }
-                    else if ( node.Name == "Company" )
+                    else if ( table.Name == "Company" )
                     {
-                        MapCompany( scanner.ScanTable( node.Name ).AsQueryable() );
+                        //rowsToImport += tableData.Count();
+                        //MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
                     }
                 }
             }
 
-            return workerCount > 0 ? true : false;
+            return 0; // return total number of rows imported?
         }
 
         /// <summary>
@@ -141,6 +180,7 @@ namespace Excavator.F1
         /// </summary>
         public void LoadExistingRockData()
         {
+            ReportProgress( 0, Environment.NewLine + "Checking for existing attributes..." );
             var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
 
@@ -194,11 +234,11 @@ namespace Excavator.F1
             IndividualAttributeId = individualAttribute.Id;
             HouseholdAttributeId = householdAttribute.Id;
 
-            // Get all imported people with their F1 Id's
+            ReportProgress( 0, Environment.NewLine + "Checking for existing people..." );
             var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
             var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
 
-            ImportedPersonList = listHouseholdId.GroupJoin( listIndividualId, household => household.PersonId,
+            ImportedPeople = listHouseholdId.GroupJoin( listIndividualId, household => household.PersonId,
                 individual => individual.PersonId, ( household, individual ) => new ImportedPerson
                 {
                     PersonId = household.PersonId,
@@ -229,7 +269,7 @@ namespace Excavator.F1
 
             BatchAttributeId = batchAttribute.Id;
 
-            // Get all imported batches
+            ReportProgress( 0, Environment.NewLine + "Checking for existing contributions..." );
             ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttribute.Id )
                 .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
                 .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );
@@ -245,7 +285,7 @@ namespace Excavator.F1
         /// <returns></returns>
         private int? GetPersonId( int? individualId = null, int? householdId = null )
         {
-            var existingPerson = ImportedPersonList.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
+            var existingPerson = ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
             if ( existingPerson != null )
             {
                 return existingPerson.PersonId;
@@ -266,7 +306,7 @@ namespace Excavator.F1
                 var lookupAttribute = lookup.FirstOrDefault();
                 if ( lookupAttribute != null )
                 {
-                    ImportedPersonList.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId, IndividualId = individualId } );
+                    ImportedPeople.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId, IndividualId = individualId } );
                     return lookupAttribute.EntityId;
                 }
             }
@@ -283,50 +323,15 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
-        private void bwSpawnProcess_DoWork( object sender, DoWorkEventArgs e )
-        {
-            var scanner = new DataScanner( database );
-            var nodeName = (string)e.Argument;
-            if ( nodeName != null )
-            {
-                switch ( nodeName )
-                {
-                    case "Account":
-                        MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    case "Attendance":
-                        //Not run because attendance/locations/groups data is so custom
-                        //MapAttendance( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    case "ActivityMinistry":
-                        //Not run because attendance/locations/groups data is so custom
-                        //MapActivityMinistry( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    case "Contribution":
-                        MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    case "Household_Address":
-                        MapFamilyAddress( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    case "Pledge":
-                        MapPledge( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    case "RLC":
-                        //Not run because attendance/locations/groups data is so custom
-                        //MapRLC( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    default:
-                        break;
-                }
-            }
-        }
+        //private void bwSpawnProcess_DoWork( object sender, DoWorkEventArgs e )
+        //{
+        //    var scanner = new DataScanner( database );
+        //    var nodeName = (string)e.Argument;
+        //    if ( nodeName != null )
+        //    {
+        //        switch statement
+        //    }
+        //}
 
         /// <summary>
         /// Runs when the background process for each method completes
@@ -334,28 +339,18 @@ namespace Excavator.F1
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void bwSpawnProcess_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
-        {
-            if ( e.Cancelled != true )
-            {
-                BackgroundWorker bwSpawnProcess = sender as BackgroundWorker;
-                bwSpawnProcess.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwSpawnProcess_RunWorkerCompleted );
-                bwSpawnProcess.ProgressChanged -= new ProgressChangedEventHandler( bwSpawnProcess_ProgressChanged );
-                bwSpawnProcess.DoWork -= new DoWorkEventHandler( bwSpawnProcess_DoWork );
-                bwSpawnProcess.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// Reports the progress for each background worker that was started
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="ProgressChangedEventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
-        private void bwSpawnProcess_ProgressChanged( object sender, ProgressChangedEventArgs e )
-        {
-            //throw new NotImplementedException();
-        }
+        //private void bwSpawnProcess_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
+        //{
+        //    if ( e.Cancelled != true )
+        //    {
+        //        BackgroundWorker bwSpawnProcess = sender as BackgroundWorker;
+        //        bwSpawnProcess.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwSpawnProcess_RunWorkerCompleted );
+        //        bwSpawnProcess.ProgressChanged -= new ProgressChangedEventHandler( bwSpawnProcess_ProgressChanged );
+        //        bwSpawnProcess.DoWork -= new DoWorkEventHandler( bwSpawnProcess_DoWork );
+        //        bwSpawnProcess.Dispose();
+        //        bgWorkers.Remove( (BackgroundWorker)sender )
+        //    }
+        //}
 
         #endregion
     }
