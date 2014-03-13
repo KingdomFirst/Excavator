@@ -291,7 +291,6 @@ namespace Excavator.F1
                     decimal? amount = row["Amount"] as decimal?;
                     if ( fundName != null & amount != null )
                     {
-                        // match the fund account if we can
                         FinancialAccount matchingAccount = null;
                         fundName = fundName.Trim();
 
@@ -314,7 +313,7 @@ namespace Excavator.F1
                         }
                         else
                         {
-                            matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
+                            matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.CampusId == null );
                         }
 
                         if ( matchingAccount == null )
@@ -325,6 +324,7 @@ namespace Excavator.F1
                             matchingAccount.IsTaxDeductible = true;
                             matchingAccount.IsActive = true;
                             matchingAccount.CampusId = fundCampusId;
+                            matchingAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
                             accountService.Add( matchingAccount );
                             accountService.Save( matchingAccount );
@@ -379,7 +379,9 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private int MapPledge( IQueryable<Row> tableData )
         {
-            List<FinancialAccount> accountList = new FinancialAccountService().Queryable().ToList();
+            var accountService = new FinancialAccountService();
+
+            List<FinancialAccount> accountList = accountService.Queryable().ToList();
 
             List<DefinedValue> pledgeFrequencies = new DefinedValueService().Queryable()
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
@@ -401,21 +403,41 @@ namespace Excavator.F1
                     string subFund = row["Sub_Fund_Name"] as string;
                     if ( fundName != null )
                     {
+                        FinancialAccount matchingAccount = null;
                         int? fundCampusId = null;
                         if ( subFund != null )
                         {
                             fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
 
-                            pledge.AccountId = accountList.Where( a => ( a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) )
-                                || ( a.ParentAccount != null && a.ParentAccount.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) )
-                                || ( a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) ) )
-                                .Select( a => (int?)a.Id ).FirstOrDefault();
+                            if ( fundCampusId != null )
+                            {
+                                matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
+                            }
+                            else
+                            {
+                                matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) );
+                            }
                         }
                         else
                         {
-                            pledge.AccountId = accountList.Where( a => a.Name.StartsWith( fundName ) )
-                                .Select( a => (int?)a.Id ).FirstOrDefault();
+                            matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
+                        }
+
+                        if ( matchingAccount == null )
+                        {
+                            matchingAccount = new FinancialAccount();
+                            matchingAccount.Name = fundName;
+                            matchingAccount.PublicName = fundName;
+                            matchingAccount.IsTaxDeductible = true;
+                            matchingAccount.IsActive = true;
+                            matchingAccount.CampusId = fundCampusId;
+                            matchingAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
+
+                            accountService.Add( matchingAccount );
+                            accountService.Save( matchingAccount );
+                            accountList.Add( matchingAccount );
+                            pledge.AccountId = matchingAccount.Id;
                         }
                     }
 
