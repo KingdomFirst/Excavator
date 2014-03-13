@@ -85,6 +85,7 @@ namespace Excavator.F1
 
             var scanner = new DataScanner( database );
             var primaryTables = new List<string>();
+            primaryTables.Add( "Contribution" );
             primaryTables.Add( "Batch" );
             primaryTables.Add( "Company" );
             primaryTables.Add( "Individual_Household" );
@@ -93,7 +94,7 @@ namespace Excavator.F1
             var orderedNodes = loadedNodes.Where( n => n.Checked != false ).ToList();
             if ( orderedNodes.Any( n => primaryTables.Contains( n.Name ) ) )
             {
-                orderedNodes = orderedNodes.OrderBy( n => Decimal.Negate( primaryTables.IndexOf( n.Name ) ) ).ToList();
+                orderedNodes = orderedNodes.OrderByDescending( n => primaryTables.IndexOf( n.Name ) ).ToList();
             }
 
             int workerCount = 0;
@@ -122,6 +123,10 @@ namespace Excavator.F1
                     else if ( node.Name == "Company" )
                     {
                         MapCompany( scanner.ScanTable( node.Name ).AsQueryable() );
+                    }
+                    else if ( node.Name == "Contribution" )
+                    {
+                        MapContribution( scanner.ScanTable( node.Name ).AsQueryable() );
                     }
                 }
             }
@@ -256,8 +261,7 @@ namespace Excavator.F1
                 switch ( nodeName )
                 {
                     case "Account":
-                        //Waiting on Rock encryption key
-                        //MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
+                        MapAccount( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Attendance":
@@ -268,10 +272,6 @@ namespace Excavator.F1
                     case "ActivityMinistry":
                         //Not run because attendance/locations/groups data is so custom
                         //MapActivityMinistry( scanner.ScanTable( nodeName ).AsQueryable() );
-                        break;
-
-                    case "Contribution":
-                        MapContribution( scanner.ScanTable( nodeName ).AsQueryable() );
                         break;
 
                     case "Household_Address":
