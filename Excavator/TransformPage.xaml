@@ -9,8 +9,10 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="4*" />
-            <RowDefinition Height="10*" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="3*" />
+            <RowDefinition Height="3*" />
+            <RowDefinition Height="3*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -18,41 +20,63 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Button x:Name="btnStart"
-                Grid.Row="0" VerticalAlignment="Center"
-                Grid.ColumnSpan="2" HorizontalAlignment="Center"
-                Style="{StaticResource buttonStylePrimary}"
-                Width="150" Height="50"
-                Click="btnStart_Click">
-            Start
-        </Button>
+        <!-- Page Header -->
+        <Label Name="lblHeader" FontSize="16"
+            Grid.Row="0" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyle}">
+            Import Configuration
+        </Label>
 
-        <Label Name="lblDataUpload" Visibility="Hidden"
+        <Label Name="lblImportUser"
             Grid.Row="1" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyle}">
+            Please enter the name of the user account doing the import (default is Admin):
+        </Label>
+
+        <TextBox Name="txtImportUser"
+            Grid.Row="1" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom"
+            Style="{StaticResource textboxStyle}">
+        </TextBox>
+
+        <Label Name="lblDataEncryption"
+            Grid.Row="2" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyle}">
+            Please enter the DataEncryptionKey found in your server's web.config:
+        </Label>
+
+        <TextBox Name="txtDataEncryption" MinWidth="400"
+            Grid.Row="2" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom"
+            Style="{StaticResource textboxStyle}">
+        </TextBox>
+
+        <Label Name="lblNoData" Visibility="Hidden"
+            Grid.Row="3" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyleAlert}">
             No data is currently selected.  Please select a table on the previous page.
         </Label>
 
-        <!-- progress bar here -->
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Text="Progress bar will go here." />
-
         <!-- Navigation -->
-        <Grid Grid.Row="2" Grid.ColumnSpan="2">
+        <Grid Grid.Row="5" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStyle}"
                 x:Name="btnBack"
-                VerticalAlignment="Bottom"
+                VerticalAlignment="Center"
                 IsEnabled="{Binding CanGoBack}"
                 Grid.Column="0" HorizontalAlignment="Left"
                 Click="btnBack_Click">
                 Back
             </Button>
             <Button Style="{StaticResource buttonStylePrimary}"
-                x:Name="btnClose" Visibility="Hidden"
-                VerticalAlignment="Bottom"
+                x:Name="btnNext" Width="100"
+                VerticalAlignment="Center"
                 Grid.Column="1" HorizontalAlignment="Right"
-                Click="btnClose_Click">
-                Close
+                Click="btnNext_Click">
+                Start
             </Button>
         </Grid>
     </Grid>
