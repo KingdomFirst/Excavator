@@ -37,7 +37,7 @@
             Grid.Row="0" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
-            Select / Preview Tables
+            Select / Preview Data to Import
         </Label>
 
         <Label Name="lblNoData" Visibility="Hidden"
@@ -55,7 +55,7 @@
         </TreeView>
 
         <DataGrid Name="grdPreviewData"
-            AutoGenerateColumns="True"
+            AutoGenerateColumns="True" BorderThickness="0"
             AlternationCount="2" Visibility="Hidden"
             AlternatingRowBackground="Gray"
             CanUserAddRows="False" IsReadOnly="True"
