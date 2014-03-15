@@ -8,6 +8,6 @@
                 Background="#EFEFEF"
                 ShowsNavigationUI="False"
                 Source=".\ConnectPage.xaml"
-                FontFamily="Resources/#Open Sans" FontSize="14"
+                FontFamily="Resources/#Open Sans Regular" FontSize="14"
                 WindowStartupLocation="CenterScreen">
 </NavigationWindow>
