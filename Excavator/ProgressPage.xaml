@@ -44,6 +44,17 @@
                 Click="btnBack_Click">
                 Back
             </Button>
+            <Label Name="lblFoundIssue" FontSize="16"
+                Grid.Row="0" HorizontalAlignment="Center"
+                Grid.ColumnSpan="2" VerticalAlignment="Center"
+                Style="{StaticResource labelStyle}">
+                <TextBlock>Found a bug?  Submit an issue
+                    <Hyperlink NavigateUri="http://github.com/NewSpring/Excavator/issues"
+                               RequestNavigate="Issue_RequestNavigate">
+                        here.
+                    </Hyperlink>
+                </TextBlock>
+            </Label>
             <Button Style="{StaticResource buttonStylePrimary}"
                 x:Name="btnClose" Visibility="Hidden"
                 VerticalAlignment="Bottom"

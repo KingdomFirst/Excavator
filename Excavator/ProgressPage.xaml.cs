@@ -19,8 +19,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Navigation;
 
 namespace Excavator
 {
@@ -64,6 +66,17 @@ namespace Excavator
         private void btnBack_Click( object sender, RoutedEventArgs e )
         {
             this.NavigationService.GoBack();
+        }
+
+        /// <summary>
+        /// Handles the RequestNavigate event of the Hyperlink control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RequestNavigateEventArgs"/> instance containing the event data.</param>
+        private void Issue_RequestNavigate( object sender, RequestNavigateEventArgs e )
+        {
+            Process.Start( new ProcessStartInfo( e.Uri.AbsoluteUri ) );
+            e.Handled = true;
         }
 
         /// <summary>
