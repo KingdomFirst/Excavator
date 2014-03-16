@@ -19,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
-using System.Configuration;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using Rock.Model;
@@ -94,7 +93,7 @@ namespace Excavator.F1
             var personService = new PersonService();
             var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
             ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
-            var tableList = loadedNodes.Where( n => n.Checked != false ).ToList();
+            var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
             ReportProgress( 0, Environment.NewLine + "Checking for existing attributes..." );
             LoadExistingRockData();
