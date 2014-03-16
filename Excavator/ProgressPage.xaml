@@ -44,7 +44,7 @@
                 Click="btnBack_Click">
                 Back
             </Button>
-            <Label Name="lblFoundIssue" FontSize="16"
+            <Label Name="lblFoundIssue"
                 Grid.Row="0" HorizontalAlignment="Center"
                 Grid.ColumnSpan="2" VerticalAlignment="Center"
                 Style="{StaticResource labelStyle}">

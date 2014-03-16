@@ -73,7 +73,7 @@
             Grid.Row="4" VerticalAlignment="Top" Margin="30,0"
             Grid.Column="0" HorizontalAlignment="Right">
             <TextBlock>Connect to the Rock server:<LineBreak />
-            (Disabled, please use App.config)</TextBlock>
+            (Disabled, please use the config)</TextBlock>
         </Label>
         <Button Style="{StaticResource buttonStyle}"
             x:Name="btnConnect" Margin="30,0"
