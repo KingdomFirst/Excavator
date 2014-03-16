@@ -117,7 +117,6 @@ namespace Excavator.F1
                     tableList = tableList.OrderByDescending( n => tableDependencies.IndexOf( n.Name ) ).ToList();
                 }
 
-                ReportProgress( 0, Environment.NewLine + "Launching unique table imports..." );
                 var scanner = new DataScanner( database );
                 foreach ( var table in tableList )
                 {
@@ -160,7 +159,7 @@ namespace Excavator.F1
                     {
                         if ( table.Name == "Individual_Household" )
                         {
-                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
+                            //MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Batch" )
                         {

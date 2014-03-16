@@ -63,6 +63,9 @@ namespace Excavator.Example
         /// </summary>
         public override int TransformData( string importUser = null )
         {
+            // Report progress to the main thread so it can update the UI
+            ReportProgress( 0, "Starting import..." );
+
             // Connects to the source database (already loaded in memory by the UI)
             var scanner = new DataScanner( database );
 
@@ -95,7 +98,8 @@ namespace Excavator.Example
                 } );
             }
 
-            return 0;
+            ReportProgress( 0, Environment.NewLine + "Completed import." );
+            return tableData.Count();
         }
 
         #endregion
