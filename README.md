@@ -1,7 +1,7 @@
 <b>Excavator</b>
 =========
 
-Excavator converts data into Rock RMS from other church management systems.  You will need the SQL file (.mdf) from your previous database and an active Rock connection.
+Excavator converts data into [Rock RMS](http://www.rockrms.com/) from other church management systems.  You will need the SQL file (.mdf) from your previous database and an active Rock connection.
 
 A FellowshipOne database model is provided (in-progress).
 
