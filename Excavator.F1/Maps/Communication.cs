@@ -112,7 +112,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting communication import ({0} to import)...", totalRows ) );
+            ReportProgress( 0, Environment.NewLine + string.Format( "Starting communication import ({0:N0} to import)...", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -143,7 +143,7 @@ namespace Excavator.F1
                         }
 
                         bool numberExists = numberService.Queryable().Any( v => v.PersonId == personId && v.Number.Equals( value ) );
-                        if ( !numberExists )
+                        if ( !numberExists && !string.IsNullOrWhiteSpace( value ) )
                         {
                             var newNumber = new PhoneNumber();
                             newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
@@ -153,9 +153,10 @@ namespace Excavator.F1
                             newNumber.Number = value.Left( 20 );
                             newNumber.IsUnlisted = !isListed;
                             newNumber.Description = communicationComment;
+                            newNumber.PersonId = (int)personId;
 
                             // set the type if it matches
-                            newNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Name.StartsWith( type ) )
+                            newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
                                 .Select( v => (int?)v.Id ).FirstOrDefault();
 
                             RockTransactionScope.WrapTransaction( () =>
@@ -163,6 +164,8 @@ namespace Excavator.F1
                                 numberService.Add( newNumber, ImportPersonAlias );
                                 numberService.Save( newNumber, ImportPersonAlias );
                             } );
+
+                            completed++;
                         }
                     }
                     else
@@ -184,7 +187,7 @@ namespace Excavator.F1
                                 person.ModifiedDateTime = lastUpdated;
                                 person.EmailNote = communicationComment;
                             }
-                            else
+                            else if ( !person.Email.Equals( value ) )
                             {
                                 secondaryEmail = value;
                             }
@@ -227,7 +230,6 @@ namespace Excavator.F1
 
                         RockTransactionScope.WrapTransaction( () =>
                         {
-                            personService.Add( person, ImportPersonAlias );
                             personService.Save( person, ImportPersonAlias );
 
                             foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
@@ -236,9 +238,10 @@ namespace Excavator.F1
                                 Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
                             }
                         } );
+
+                        completed++;
                     }
 
-                    completed++;
                     if ( completed % ReportingNumber == 0 )
                     {
                         if ( completed % percentage >= ReportingNumber )
@@ -248,13 +251,13 @@ namespace Excavator.F1
                         else
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0} records imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:N0} records imported ({1}% complete)...", completed, percentComplete ) );
                         }
                     }
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished communication import ({0} records imported).", completed ) );
+            ReportProgress( 100, Environment.NewLine + string.Format( "Finished communication import: {0:N0} records imported.", completed ) );
         }
     }
 }
