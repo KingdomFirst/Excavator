@@ -96,7 +96,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count() - ImportedPeople.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting person import ({0:#,###0} to import)...", totalRows ) );
+            ReportProgress( 0, Environment.NewLine + string.Format( "Starting person import ({0:N0} to import)...", totalRows ) );
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
@@ -388,13 +388,13 @@ namespace Excavator.F1
                         else
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:#,###0} people imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:N0} people imported ({1}% complete)...", completed, percentComplete ) );
                         }
                     }
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished person import: {0:#,###0} people imported.", completed ) );
+            ReportProgress( 100, Environment.NewLine + string.Format( "Finished person import: {0:N0} people imported.", completed ) );
         }
 
         /// <summary>

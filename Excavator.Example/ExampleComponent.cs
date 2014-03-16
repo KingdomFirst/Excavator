@@ -99,7 +99,7 @@ namespace Excavator.Example
             }
 
             int numberImported = tableData.Count();
-            ReportProgress( 0, Environment.NewLine + string.Format( "Completed import: {0:#,###0} records imported.", numberImported ) );
+            ReportProgress( 0, Environment.NewLine + string.Format( "Completed import: {0:N0} records imported.", numberImported ) );
             return numberImported;
         }
 
