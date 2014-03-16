@@ -34,7 +34,7 @@ Advanced:
 \*Note: These packages are needed for Rock but are embedded in the Excavator app.  If you use additional references, set "Copy Local" to true.
 
 =========
-Fellowship One Conversion Progress:
+Fellowship One Conversion Notes:
 
 Completed:
 * Individuals 
@@ -58,6 +58,8 @@ Inconsistent/Not Supported*:
 * Assignments
 
 \* These tables depend on the specific structure of your church's ministries and groups.  Given enough sample data, it's possible generic import maps could be added.  Otherwise these import maps are custom to each church.
+
+\** If you are a multi-site church and have contributions tied to campuses, enter each campus in Rock before starting the import.  The Pledge & Contribution maps look for an exact match on the name or shortcode to assign a specific campus.
 
 =========
 Licensed under the Apache License, Version 2.0. You may not use this application except in compliance with the License.
