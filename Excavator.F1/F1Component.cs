@@ -79,6 +79,9 @@ namespace Excavator.F1
         private int HouseholdAttributeId;
         private int BatchAttributeId;
 
+        // Report progress when a multiple of this number has been imported
+        private static int ReportingNumber = 30;
+
         #endregion
 
         #region Methods
@@ -123,7 +126,7 @@ namespace Excavator.F1
                         switch ( table.Name )
                         {
                             case "Account":
-                                MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Communication":
@@ -131,15 +134,15 @@ namespace Excavator.F1
                                 break;
 
                             case "Contribution":
-                                MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Household_Address":
-                                MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Pledge":
-                                MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             default:
@@ -161,11 +164,11 @@ namespace Excavator.F1
                         }
                         else if ( table.Name == "Batch" )
                         {
-                            MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
+                            //MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Company" )
                         {
-                            MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
+                            //MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                     }
                 }

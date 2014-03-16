@@ -239,9 +239,9 @@ namespace Excavator.F1
                     }
 
                     completed++;
-                    if ( completed % 30 == 0 )
+                    if ( completed % ReportingNumber == 0 )
                     {
-                        if ( completed % percentage != 0 )
+                        if ( completed % percentage >= ReportingNumber )
                         {
                             ReportPartialProgress();
                         }

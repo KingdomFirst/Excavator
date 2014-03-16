@@ -118,7 +118,7 @@ namespace Excavator
         {
             var worker = (BackgroundWorker)sender;
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
-            excavator.TransformData( importUser );
+            e.Result = excavator.TransformData( importUser );
         }
 
         /// <summary>
@@ -128,6 +128,7 @@ namespace Excavator
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         private void bwImportData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
+            var rowsImported = (int)e.Result;
             this.Dispatcher.Invoke( (Action)( () =>
             {
                 lblHeader.Content = "Import Complete";
