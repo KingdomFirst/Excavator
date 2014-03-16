@@ -19,8 +19,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Navigation;
 
 namespace Excavator
 {
@@ -67,6 +69,17 @@ namespace Excavator
         }
 
         /// <summary>
+        /// Handles the RequestNavigate event of the Hyperlink control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RequestNavigateEventArgs"/> instance containing the event data.</param>
+        private void Issue_RequestNavigate( object sender, RequestNavigateEventArgs e )
+        {
+            Process.Start( new ProcessStartInfo( e.Uri.AbsoluteUri ) );
+            e.Handled = true;
+        }
+
+        /// <summary>
         /// Handles the Click event of the btnNext control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
@@ -89,6 +102,7 @@ namespace Excavator
         {
             this.Dispatcher.Invoke( (Action)( () =>
             {
+                // use progress in a progress bar?
                 txtProgress.AppendText( status );
                 txtProgress.ScrollToEnd();
             } ) );
@@ -104,7 +118,7 @@ namespace Excavator
         {
             var worker = (BackgroundWorker)sender;
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
-            excavator.TransformData( importUser );
+            e.Result = excavator.TransformData( importUser );
         }
 
         /// <summary>
@@ -114,6 +128,7 @@ namespace Excavator
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         private void bwImportData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
+            var rowsImported = (int)e.Result;
             this.Dispatcher.Invoke( (Action)( () =>
             {
                 lblHeader.Content = "Import Complete";

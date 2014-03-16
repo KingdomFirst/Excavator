@@ -51,7 +51,7 @@
         <Label Style="{StaticResource labelStyle}"
             Grid.Row="3" VerticalAlignment="Top" Margin="30,0"
             Grid.Column="0" HorizontalAlignment="Right">
-            Upload the source SQL file:
+            Upload the source database file:
         </Label>
         <Button Style="{StaticResource buttonStyle}"
             x:Name="btnUpload" Margin="30,0"
@@ -63,7 +63,7 @@
         <Label Name="lblDbUpload" Visibility="Hidden"
             Grid.Row="3" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom"
-               Margin="0 0 0 10"
+               Margin="0 0 0 20"
             Style="{StaticResource labelStyleAlert}">
             Could not open mdf file. Please make sure the file is not in use.
         </Label>
@@ -72,13 +72,14 @@
         <Label Style="{StaticResource labelStyle}"
             Grid.Row="4" VerticalAlignment="Top" Margin="30,0"
             Grid.Column="0" HorizontalAlignment="Right">
-            Connect to the Rock server:
+            <TextBlock>Connect to the Rock server:<LineBreak />
+            (Disabled, please use App.config)</TextBlock>
         </Label>
         <Button Style="{StaticResource buttonStyle}"
             x:Name="btnConnect" Margin="30,0"
             Grid.Row="4" VerticalAlignment="Top"
             Grid.Column="1" HorizontalAlignment="Left"
-            Content="Connect"
+            Content="Connect" IsEnabled="False"
             Click="btnConnect_Click" />
 
         <Label Name="lblDbConnect" Visibility="Hidden"

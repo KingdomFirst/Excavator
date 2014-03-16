@@ -34,20 +34,20 @@ namespace Excavator
         {
             InitializeComponent();
 
-            string embedPath = ConfigurationManager.AppSettings["EmbeddedResources"];
+            //string embedPath = ConfigurationManager.AppSettings["EmbeddedResources"];
 
-            AppDomain.CurrentDomain.AssemblyResolve += ( sender, args ) =>
-            {
-                string resourceName = embedPath + "." + new AssemblyName( args.Name ).Name + ".dll";
-                using ( var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream( resourceName ) )
-                {
-                    Byte[] assemblyData = new Byte[stream.Length];
+            //AppDomain.CurrentDomain.AssemblyResolve += ( sender, args ) =>
+            //{
+            //    string resourceName = embedPath + "." + new AssemblyName( args.Name ).Name + ".dll";
+            //    using ( var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream( resourceName ) )
+            //    {
+            //        Byte[] assemblyData = new Byte[stream.Length];
 
-                    stream.Read( assemblyData, 0, assemblyData.Length );
+            //        stream.Read( assemblyData, 0, assemblyData.Length );
 
-                    return Assembly.Load( assemblyData );
-                }
-            };
+            //        return Assembly.Load( assemblyData );
+            //    }
+            //};
         }
     }
 }

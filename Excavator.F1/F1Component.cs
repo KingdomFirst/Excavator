@@ -19,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
-using System.Configuration;
 using System.Linq;
 using OrcaMDF.Core.Engine;
 using Rock.Model;
@@ -53,7 +52,7 @@ namespace Excavator.F1
         private PersonAlias ImportPersonAlias;
 
         /// <summary>
-        /// Holds a list of all the people who've been imported
+        /// All the people who've been imported
         /// </summary>
         private List<ImportedPerson> ImportedPeople;
 
@@ -67,12 +66,21 @@ namespace Excavator.F1
         /// </summary>
         private List<Campus> CampusList;
 
+        // Existing entity types
+
         private int IntegerFieldTypeId;
+        private int TextFieldTypeId;
         private int PersonEntityTypeId;
         private int BatchEntityTypeId;
+
+        // Custom entity types
+
         private int IndividualAttributeId;
         private int HouseholdAttributeId;
         private int BatchAttributeId;
+
+        // Report progress when a multiple of this number has been imported
+        private static int ReportingNumber = 30;
 
         #endregion
 
@@ -88,85 +96,87 @@ namespace Excavator.F1
             var personService = new PersonService();
             var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
             ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
+            var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
+            ReportProgress( 0, Environment.NewLine + "Checking for existing attributes..." );
             LoadExistingRockData();
 
-            var scanner = new DataScanner( database );
+            ReportProgress( 0, Environment.NewLine + "Checking for table dependencies..." );
+            bool isValidImport = ImportedPeople.Any() || tableList.Any( n => n.Name.Equals( "Individual_Household" ) );
+
             var tableDependencies = new List<string>();
-            tableDependencies.Add( "Batch" );
-            tableDependencies.Add( "Company" );
-            tableDependencies.Add( "Individual_Household" );
+            tableDependencies.Add( "Batch" );                // needed to attribute contributions properly
+            tableDependencies.Add( "Company" );              // needed to attribute any company items
+            tableDependencies.Add( "Individual_Household" ); // needed for just about everything
 
-            ReportProgress( 0, Environment.NewLine + "Checking for  table dependencies..." );
-            var tableList = loadedNodes.Where( n => n.Checked != false ).ToList();
-            if ( tableList.Any( n => tableDependencies.Contains( n.Name ) ) )
+            if ( isValidImport )
             {
-                tableList = tableList.OrderByDescending( n => tableDependencies.IndexOf( n.Name ) ).ToList();
+                // Order tables so non-dependents are imported first
+                if ( tableList.Any( n => tableDependencies.Contains( n.Name ) ) )
+                {
+                    tableList = tableList.OrderByDescending( n => tableDependencies.IndexOf( n.Name ) ).ToList();
+                }
+
+                var scanner = new DataScanner( database );
+                foreach ( var table in tableList )
+                {
+                    if ( !tableDependencies.Contains( table.Name ) )
+                    {
+                        switch ( table.Name )
+                        {
+                            case "Account":
+                                MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                                break;
+
+                            case "Communication":
+                                MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
+                                break;
+
+                            case "Contribution":
+                                MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
+                                break;
+
+                            case "Household_Address":
+                                MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                                break;
+
+                            case "Pledge":
+                                MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        // Don't use additional background workers (for now)
+                        //BackgroundWorker bwSpawnProcess = new BackgroundWorker();
+                        //bwSpawnProcess.DoWork += bwSpawnProcess_DoWork;
+                        //bwSpawnProcess.RunWorkerCompleted += bwSpawnProcess_RunWorkerCompleted;
+                        //bwSpawnProcess.RunWorkerAsync( table.Name );
+                        //bgWorkers.Add( bwSpawnProcess );
+                    }
+                    else
+                    {
+                        if ( table.Name == "Individual_Household" )
+                        {
+                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
+                        }
+                        else if ( table.Name == "Batch" )
+                        {
+                            MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
+                        }
+                        else if ( table.Name == "Company" )
+                        {
+                            MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
+                        }
+                    }
+                }
+
+                ReportProgress( 100, Environment.NewLine + "Import completed." );
             }
-
-            foreach ( var table in tableList )
+            else
             {
-                if ( !tableDependencies.Contains( table.Name ) )
-                {
-                    switch ( table.Name )
-                    {
-                        case "Account":
-                            MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
-                        case "Attendance":
-                            //Not run because attendance/locations/groups data is so custom
-                            //MapAttendance( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
-                        case "ActivityMinistry":
-                            //Not run because attendance/locations/groups data is so custom
-                            //MapActivityMinistry( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
-                        case "Contribution":
-                            MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
-                        case "Household_Address":
-                            MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
-                        case "Pledge":
-                            MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
-                        case "RLC":
-                            //Not run because attendance/locations/groups data is so custom
-                            //MapRLC( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
-                        default:
-                            break;
-                    }
-
-                    // Don't use additional background workers (for now)
-                    //BackgroundWorker bwSpawnProcess = new BackgroundWorker();
-                    //bwSpawnProcess.DoWork += bwSpawnProcess_DoWork;
-                    //bwSpawnProcess.RunWorkerCompleted += bwSpawnProcess_RunWorkerCompleted;
-                    //bwSpawnProcess.RunWorkerAsync( table.Name );
-                    //bgWorkers.Add( bwSpawnProcess );
-                }
-                else
-                {
-                    if ( table.Name == "Individual_Household" )
-                    {
-                        MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
-                    }
-                    else if ( table.Name == "Batch" )
-                    {
-                        MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
-                    }
-                    else if ( table.Name == "Company" )
-                    {
-                        MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
-                    }
-                }
+                ReportProgress( 0, "No imported people exist. Please include the Individual_Household table during the import." );
             }
 
             return 0; // return total number of rows imported?
@@ -175,13 +185,13 @@ namespace Excavator.F1
         /// <summary>
         /// Loads Rock data that's used globally by the transform
         /// </summary>
-        public void LoadExistingRockData()
+        private void LoadExistingRockData()
         {
-            ReportProgress( 0, Environment.NewLine + "Checking for existing attributes..." );
             var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
 
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
+            TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             BatchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();

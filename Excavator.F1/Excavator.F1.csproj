@@ -130,6 +130,7 @@
   <ItemGroup>
     <Compile Include="F1Component.cs" />
     <Compile Include="Maps\Attendance.cs" />
+    <Compile Include="Maps\Communication.cs" />
     <Compile Include="Maps\Financial.cs" />
     <Compile Include="Maps\Locations.cs" />
     <Compile Include="Model\Group_Attendance.cs" />
@@ -174,7 +175,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
-</PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

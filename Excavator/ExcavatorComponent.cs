@@ -30,14 +30,14 @@ using OrcaMDF.Core.MetaData;
 namespace Excavator
 {
     /// <summary>
-    /// Reports the progress
+    /// Provides a type-safe reference to report progress to the UI
     /// </summary>
     /// <param name="value">The value.</param>
     /// <param name="status">The status.</param>
     public delegate void ReportProgress( int value, string status );
 
     /// <summary>
-    /// Excavator class holds the base methods and properties needed to convert data to Rock
+    /// Excavator holds the base methods and properties needed to convert data to Rock
     /// </summary>
     public abstract class ExcavatorComponent
     {
@@ -52,7 +52,7 @@ namespace Excavator
         /// Gets the full name of the excavator type.
         /// </summary>
         /// <value>
-        /// The full name.
+        /// The name of the database being imported.
         /// </value>
         public abstract string FullName
         {
@@ -60,21 +60,9 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Gets the error message.
-        /// </summary>
-        /// <value>
-        /// The error message.
-        /// </value>
-        public virtual string errorMessage
-        {
-            get { return string.Empty; }
-            set { errorMessage = value; }
-        }
-
-        /// <summary>
         /// Holds a reference to the loaded nodes
         /// </summary>
-        public List<DatabaseNode> loadedNodes;
+        public List<DatabaseNode> TableNodes;
 
         #endregion
 
@@ -99,7 +87,7 @@ namespace Excavator
         {
             // Currently only imports MDF's (using OrcaMDF framework)
             database = (Database)db;
-            loadedNodes = new List<DatabaseNode>();
+            TableNodes = new List<DatabaseNode>();
             var scanner = new DataScanner( database );
             var tables = database.Dmvs.Tables;
 
@@ -123,10 +111,10 @@ namespace Excavator
                     }
                 }
 
-                loadedNodes.Add( tableItem );
+                TableNodes.Add( tableItem );
             }
 
-            return loadedNodes.Count() > 0 ? true : false;
+            return TableNodes.Count() > 0 ? true : false;
         }
 
         /// <summary>
@@ -136,12 +124,12 @@ namespace Excavator
         /// <returns></returns>
         public DataTable PreviewData( string nodeId )
         {
-            var node = loadedNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
+            var node = TableNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
 
             // if the current node has a parent, preview the parent's data
             if ( node.Table.Any() )
             {
-                node = loadedNodes.Where( n => n.Id.Equals( node.Table.Select( t => t.Id ) ) ).FirstOrDefault();
+                node = TableNodes.Where( n => n.Id.Equals( node.Table.Select( t => t.Id ) ) ).FirstOrDefault();
             }
 
             var scanner = new DataScanner( database );
@@ -184,7 +172,7 @@ namespace Excavator
         public event ReportProgress ProgressUpdated;
 
         /// <summary>
-        /// Reports the progress.
+        /// Reports the progress with a custom status.
         /// </summary>
         /// <param name="progress">The progress.</param>
         /// <param name="status">The status.</param>
@@ -193,6 +181,19 @@ namespace Excavator
             if ( ProgressUpdated != null )
             {
                 ProgressUpdated( progress, status );
+            }
+        }
+
+        /// <summary>
+        /// Reports a partial progress with extra ellipses
+        /// </summary>
+        /// <param name="progress">The progress.</param>
+        /// <param name="status">The status.</param>
+        public void ReportPartialProgress()
+        {
+            if ( ProgressUpdated != null )
+            {
+                ProgressUpdated( 0, "." );
             }
         }
 
