@@ -125,7 +125,7 @@ namespace Excavator.F1
                         switch ( table.Name )
                         {
                             case "Account":
-                                //MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Communication":
@@ -133,15 +133,15 @@ namespace Excavator.F1
                                 break;
 
                             case "Contribution":
-                                //MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Household_Address":
-                                //MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Pledge":
-                                //MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             default:
@@ -159,20 +159,20 @@ namespace Excavator.F1
                     {
                         if ( table.Name == "Individual_Household" )
                         {
-                            //MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Batch" )
                         {
-                            //MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Company" )
                         {
-                            //MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                     }
                 }
 
-                ReportProgress( 100, "Import completed." );
+                ReportProgress( 100, Environment.NewLine + "Import completed." );
             }
             else
             {
