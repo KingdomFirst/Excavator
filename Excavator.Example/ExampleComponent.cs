@@ -49,10 +49,15 @@ namespace Excavator.Example
             get { return "Example"; }
         }
 
+        // Disable compiler warning: value never assigned
+		#pragma warning disable 0649
+
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
         private PersonAlias ImportPersonAlias;
+
+		#pragma warning restore
 
         #endregion
 
