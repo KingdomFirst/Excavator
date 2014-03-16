@@ -53,7 +53,7 @@ namespace Excavator.F1
         private PersonAlias ImportPersonAlias;
 
         /// <summary>
-        /// Holds a list of all the people who've been imported
+        /// All the people who've been imported
         /// </summary>
         private List<ImportedPerson> ImportedPeople;
 
@@ -67,9 +67,15 @@ namespace Excavator.F1
         /// </summary>
         private List<Campus> CampusList;
 
+        // Existing entity types
+
         private int IntegerFieldTypeId;
+        private int TextFieldTypeId;
         private int PersonEntityTypeId;
         private int BatchEntityTypeId;
+
+        // Custom entity types
+
         private int IndividualAttributeId;
         private int HouseholdAttributeId;
         private int BatchAttributeId;
@@ -182,6 +188,7 @@ namespace Excavator.F1
             var attributeService = new AttributeService();
 
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
+            TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             BatchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();

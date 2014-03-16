@@ -179,7 +179,7 @@ namespace Excavator.F1
             List<FinancialAccount> accountList = accountService.Queryable().ToList();
 
             // Add an Attribute for the unique F1 Contribution Id
-            var contributionAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == transactionEntityTypeId
+            int contributionAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == transactionEntityTypeId
                 && a.Key == "F1ContributionId" ).Select( a => a.Id ).FirstOrDefault();
             if ( contributionAttributeId == 0 )
             {
