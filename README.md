@@ -31,7 +31,7 @@ Advanced:
 7. Build or copy the compiled library (.dll) to Excavator\bin or Excavator\Extensions
 8. Run Excavator and select your new database component from the list on the first page
 
-\*Note: These packages are needed for Rock but are embedded in the Excavator app.  If you use additional references, set "Copy Local" to true.
+**Note: These packages are needed for Rock but are embedded in the Excavator app.  If you use additional references, set "Copy Local" to true.
 
 =========
 Fellowship One Conversion Notes:
@@ -57,9 +57,9 @@ Inconsistent/Not Supported*:
 * Ministries
 * Assignments
 
-\* These tables depend on the specific structure of your church's ministries and groups.  Given enough sample data, it's possible generic import maps could be added.  Otherwise these import maps are custom to each church.
+** These tables depend on the specific structure of your church's ministries and groups.  Given enough sample data, it's possible generic import maps could be added.  Otherwise these import maps are custom to each church.
 
-\** If you are a multi-site church and have contributions tied to campuses, enter each campus in Rock before starting the import.  The Pledge & Contribution maps look for an exact match on the name or shortcode to assign a specific campus.
+*** If you are a multi-site church and have contributions tied to campuses, enter each campus in Rock before starting the import.  The Pledge & Contribution maps look for an exact match on the name or shortcode to assign a specific campus.
 
 =========
 Licensed under the Apache License, Version 2.0. You may not use this application except in compliance with the License.
