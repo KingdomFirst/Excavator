@@ -98,8 +98,9 @@ namespace Excavator.Example
                 } );
             }
 
-            ReportProgress( 0, Environment.NewLine + "Completed import." );
-            return tableData.Count();
+            int numberImported = tableData.Count();
+            ReportProgress( 0, Environment.NewLine + string.Format( "Completed import: {0:#,###0} records imported.", numberImported ) );
+            return numberImported;
         }
 
         #endregion

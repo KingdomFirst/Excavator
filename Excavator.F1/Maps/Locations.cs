@@ -28,97 +28,9 @@ namespace Excavator.F1
     partial class F1Component
     {
         /// <summary>
-        /// The imported Activity Id's. Used in RLC & ActivityMinistry
+        /// The imported Activity Id's. Used in ActivityMinistry & RLC
         /// </summary>
         private Dictionary<int?, int?> ImportedActivities;
-
-        /// <summary>
-        /// Maps the RLC data to rooms, locations & classes
-        /// </summary>
-        /// <param name="tableData">The table data.</param>
-        /// <returns></returns>
-        private void MapRLC( IQueryable<Row> tableData )
-        {
-            int locationEntityTypeId = EntityTypeCache.Read( "Rock.Model.Location" ).Id;
-            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
-            var attributeService = new AttributeService();
-
-            // Add an Attribute for the unique F1 RLC Id
-            var rlcAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == locationEntityTypeId
-                && a.Key == "F1RLCId" ).Select( a => a.Id ).FirstOrDefault();
-            if ( rlcAttributeId == 0 )
-            {
-                var newRLCAttribute = new Rock.Model.Attribute();
-                newRLCAttribute.Key = "F1RLCId";
-                newRLCAttribute.Name = "F1 RLC Id";
-                newRLCAttribute.FieldTypeId = IntegerFieldTypeId;
-                newRLCAttribute.EntityTypeId = locationEntityTypeId;
-                newRLCAttribute.EntityTypeQualifierValue = string.Empty;
-                newRLCAttribute.EntityTypeQualifierColumn = string.Empty;
-                newRLCAttribute.Description = "The FellowshipOne identifier for the RLC (Room/Location/Class) that was imported";
-                newRLCAttribute.DefaultValue = string.Empty;
-                newRLCAttribute.IsMultiValue = false;
-                newRLCAttribute.IsRequired = false;
-                newRLCAttribute.Order = 0;
-
-                attributeService.Add( newRLCAttribute, ImportPersonAlias );
-                attributeService.Save( newRLCAttribute, ImportPersonAlias );
-                rlcAttributeId = newRLCAttribute.Id;
-            }
-
-            var activityAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == locationEntityTypeId
-                && a.Key == "F1ActivityId" ).Select( a => a.Id ).FirstOrDefault();
-            if ( rlcAttributeId == 0 )
-            {
-                var newActivityAttribute = new Rock.Model.Attribute();
-                newActivityAttribute.Key = "F1ActivityId";
-                newActivityAttribute.Name = "F1 Activity Id";
-                newActivityAttribute.FieldTypeId = IntegerFieldTypeId;
-                newActivityAttribute.EntityTypeId = locationEntityTypeId;
-                newActivityAttribute.EntityTypeQualifierValue = string.Empty;
-                newActivityAttribute.EntityTypeQualifierColumn = string.Empty;
-                newActivityAttribute.Description = "The FellowshipOne identifier for the activity that was imported";
-                newActivityAttribute.DefaultValue = string.Empty;
-                newActivityAttribute.IsMultiValue = false;
-                newActivityAttribute.IsRequired = false;
-                newActivityAttribute.Order = 0;
-
-                attributeService.Add( newActivityAttribute, ImportPersonAlias );
-                attributeService.Save( newActivityAttribute, ImportPersonAlias );
-                activityAttributeId = newActivityAttribute.Id;
-            }
-
-            var rlcAttribute = AttributeCache.Read( rlcAttributeId );
-            var activityAttribute = AttributeCache.Read( activityAttributeId );
-
-            // Get previously imported RLCs
-            var importedRLC = new AttributeValueService().GetByAttributeId( rlcAttributeId )
-                .Select( av => new { RLCId = av.Value.AsType<int?>(), LocationId = av.EntityId } )
-                .ToDictionary( t => t.RLCId, t => t.LocationId );
-
-            ImportedActivities = new AttributeValueService().GetByAttributeId( activityAttributeId )
-                .Select( av => new { ActivityId = av.Value.AsType<int?>(), GroupId = av.EntityId } )
-                .ToDictionary( t => t.ActivityId, t => t.GroupId );
-
-            foreach ( var row in tableData )
-            {
-                int? rlcId = row["RLC_ID"] as int?;
-                if ( rlcId != null && !importedRLC.ContainsKey( rlcId ) )
-                {
-                    // Activity_ID
-                    // RLC_Name
-                    // Activity_Group_ID
-                    // Start_Age_Date
-                    // End_Age_Date
-                    // Is_Active
-                    // Room_Code
-                    // Room_Desc
-                    // Room_Name
-                    // Max_Capacity
-                    // Building_Name
-                }
-            }
-        }
 
         /// <summary>
         /// Maps the activity ministry.
@@ -173,6 +85,95 @@ namespace Excavator.F1
         }
 
         /// <summary>
+        /// Maps the RLC data to rooms, locations & classes
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <returns></returns>
+        private void MapRLC( IQueryable<Row> tableData )
+        {
+            int locationEntityTypeId = EntityTypeCache.Read( "Rock.Model.Location" ).Id;
+            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
+            var attributeService = new AttributeService();
+
+            // Add an Attribute for the unique F1 RLC Id
+            var rlcAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == locationEntityTypeId
+                && a.Key == "F1RLCId" ).Select( a => a.Id ).FirstOrDefault();
+            if ( rlcAttributeId == 0 )
+            {
+                var newRLCAttribute = new Rock.Model.Attribute();
+                newRLCAttribute.Key = "F1RLCId";
+                newRLCAttribute.Name = "F1 RLC Id";
+                newRLCAttribute.FieldTypeId = IntegerFieldTypeId;
+                newRLCAttribute.EntityTypeId = locationEntityTypeId;
+                newRLCAttribute.EntityTypeQualifierValue = string.Empty;
+                newRLCAttribute.EntityTypeQualifierColumn = string.Empty;
+                newRLCAttribute.Description = "The FellowshipOne identifier for the RLC (Room/Location/Class) that was imported";
+                newRLCAttribute.DefaultValue = string.Empty;
+                newRLCAttribute.IsMultiValue = false;
+                newRLCAttribute.IsRequired = false;
+                newRLCAttribute.Order = 0;
+
+                attributeService.Add( newRLCAttribute, ImportPersonAlias );
+                attributeService.Save( newRLCAttribute, ImportPersonAlias );
+                rlcAttributeId = newRLCAttribute.Id;
+            }
+
+            // Add an Attribute for the unique F1 Activity Id
+            var activityAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == locationEntityTypeId
+                && a.Key == "F1ActivityId" ).Select( a => a.Id ).FirstOrDefault();
+            if ( rlcAttributeId == 0 )
+            {
+                var newActivityAttribute = new Rock.Model.Attribute();
+                newActivityAttribute.Key = "F1ActivityId";
+                newActivityAttribute.Name = "F1 Activity Id";
+                newActivityAttribute.FieldTypeId = IntegerFieldTypeId;
+                newActivityAttribute.EntityTypeId = locationEntityTypeId;
+                newActivityAttribute.EntityTypeQualifierValue = string.Empty;
+                newActivityAttribute.EntityTypeQualifierColumn = string.Empty;
+                newActivityAttribute.Description = "The FellowshipOne identifier for the activity that was imported";
+                newActivityAttribute.DefaultValue = string.Empty;
+                newActivityAttribute.IsMultiValue = false;
+                newActivityAttribute.IsRequired = false;
+                newActivityAttribute.Order = 0;
+
+                attributeService.Add( newActivityAttribute, ImportPersonAlias );
+                attributeService.Save( newActivityAttribute, ImportPersonAlias );
+                activityAttributeId = newActivityAttribute.Id;
+            }
+
+            var rlcAttribute = AttributeCache.Read( rlcAttributeId );
+            var activityAttribute = AttributeCache.Read( activityAttributeId );
+
+            // Get any previously imported RLCs
+            var importedRLC = new AttributeValueService().GetByAttributeId( rlcAttributeId )
+                .Select( av => new { RLCId = av.Value.AsType<int?>(), LocationId = av.EntityId } )
+                .ToDictionary( t => t.RLCId, t => t.LocationId );
+
+            ImportedActivities = new AttributeValueService().GetByAttributeId( activityAttributeId )
+                .Select( av => new { ActivityId = av.Value.AsType<int?>(), GroupId = av.EntityId } )
+                .ToDictionary( t => t.ActivityId, t => t.GroupId );
+
+            foreach ( var row in tableData )
+            {
+                int? rlcId = row["RLC_ID"] as int?;
+                if ( rlcId != null && !importedRLC.ContainsKey( rlcId ) )
+                {
+                    // Activity_ID
+                    // RLC_Name
+                    // Activity_Group_ID
+                    // Start_Age_Date
+                    // End_Age_Date
+                    // Is_Active
+                    // Room_Code
+                    // Room_Desc
+                    // Room_Name
+                    // Max_Capacity
+                    // Building_Name
+                }
+            }
+        }
+
+        /// <summary>
         /// Maps the family address.
         /// </summary>
         /// <param name="tableData">The table data.</param>
@@ -194,7 +195,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting address import ({0} to import)...", totalRows ) );
+            ReportProgress( 0, Environment.NewLine + string.Format( "Starting address import ({0:#,###0} to import)...", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -265,14 +266,14 @@ namespace Excavator.F1
                             else
                             {
                                 int percentComplete = completed / percentage;
-                                ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0} addresses imported ({1}% complete)...", completed, percentComplete ) );
+                                ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:#,###0} addresses imported ({1}% complete)...", completed, percentComplete ) );
                             }
                         }
                     }
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished address import: {0} addresses imported.", completed ) );
+            ReportProgress( 100, Environment.NewLine + string.Format( "Finished address import: {0:#,###0} addresses imported.", completed ) );
         }
     }
 }
