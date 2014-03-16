@@ -184,7 +184,7 @@ namespace Excavator
         public event ReportProgress ProgressUpdated;
 
         /// <summary>
-        /// Reports the progress.
+        /// Reports the progress with a custom status.
         /// </summary>
         /// <param name="progress">The progress.</param>
         /// <param name="status">The status.</param>
@@ -193,6 +193,19 @@ namespace Excavator
             if ( ProgressUpdated != null )
             {
                 ProgressUpdated( progress, status );
+            }
+        }
+
+        /// <summary>
+        /// Reports a partial progress with extra ellipses
+        /// </summary>
+        /// <param name="progress">The progress.</param>
+        /// <param name="status">The status.</param>
+        public void ReportPartialProgress()
+        {
+            if ( ProgressUpdated != null )
+            {
+                ProgressUpdated( 0, "." );
             }
         }
 

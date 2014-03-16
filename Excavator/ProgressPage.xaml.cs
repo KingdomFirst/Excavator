@@ -102,6 +102,7 @@ namespace Excavator
         {
             this.Dispatcher.Invoke( (Action)( () =>
             {
+                // use progress in a progress bar?
                 txtProgress.AppendText( status );
                 txtProgress.ScrollToEnd();
             } ) );

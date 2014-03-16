@@ -71,6 +71,20 @@ namespace Excavator.F1
                         accountService.Add( account, ImportPersonAlias );
                         accountService.Save( account, ImportPersonAlias );
                     } );
+
+                    completed++;
+                    if ( completed % 30 == 0 )
+                    {
+                        if ( completed % percentage != 0 )
+                        {
+                            ReportPartialProgress();
+                        }
+                        else
+                        {
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0} numbers imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                    }
                 }
             }
 
@@ -140,7 +154,7 @@ namespace Excavator.F1
                     {
                         if ( completed % percentage != 0 )
                         {
-                            ReportProgress( 0, "." );
+                            ReportPartialProgress();
                         }
                         else
                         {
@@ -364,7 +378,7 @@ namespace Excavator.F1
                     {
                         if ( completed % percentage != 0 )
                         {
-                            ReportProgress( 0, "." );
+                            ReportPartialProgress();
                         }
                         else
                         {
@@ -489,7 +503,7 @@ namespace Excavator.F1
                     {
                         if ( completed % percentage != 0 )
                         {
-                            ReportProgress( 0, "." );
+                            ReportPartialProgress();
                         }
                         else
                         {

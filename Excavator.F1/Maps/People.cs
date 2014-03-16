@@ -383,7 +383,7 @@ namespace Excavator.F1
                     {
                         if ( completed % percentage != 0 )
                         {
-                            ReportProgress( 0, "." );
+                            ReportPartialProgress();
                         }
                         else
                         {

@@ -33,9 +33,6 @@ namespace Excavator.F1
             var numberService = new PhoneNumberService();
             var personService = new PersonService();
 
-            //int homePhoneTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME ) ).Id;
-            //int mobilePhoneTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ) ).Id;
-            //int workPhoneTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_WORK ) ).Id;
             List<DefinedValue> numberTypeValues = new DefinedValueService().Queryable()
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
 
@@ -88,7 +85,7 @@ namespace Excavator.F1
 
             // Add an Attribute for Facebook
             var facebookAttributeId = personAttributes.Where( a => a.Name.StartsWith( "FacebookUsername" ) ).Select( a => a.Id ).FirstOrDefault();
-            if ( facebookAttributeId == null )
+            if ( facebookAttributeId == 0 )
             {
                 var newFacebookAttribute = new Rock.Model.Attribute();
                 newFacebookAttribute.Key = "FacebookUsername";
@@ -157,6 +154,7 @@ namespace Excavator.F1
                             newNumber.IsUnlisted = !isListed;
                             newNumber.Description = communicationComment;
 
+                            // set the type if it matches
                             newNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Name.StartsWith( type ) )
                                 .Select( v => (int?)v.Id ).FirstOrDefault();
 
@@ -173,7 +171,7 @@ namespace Excavator.F1
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
 
-                        // type doesn't matter if this is a valid email
+                        // type doesn't matter as long as this is a valid email
                         if ( value.IsValidEmail() )
                         {
                             string secondaryEmail = string.Empty;
@@ -245,7 +243,7 @@ namespace Excavator.F1
                     {
                         if ( completed % percentage != 0 )
                         {
-                            ReportProgress( 0, "." );
+                            ReportPartialProgress();
                         }
                         else
                         {
