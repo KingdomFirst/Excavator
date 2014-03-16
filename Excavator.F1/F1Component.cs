@@ -130,6 +130,10 @@ namespace Excavator.F1
                             //MapActivityMinistry( scanner.ScanTable( table.Name ).AsQueryable() );
                             break;
 
+                        case "Communication":
+                            MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
                         case "Contribution":
                             MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
                             break;
