@@ -103,7 +103,7 @@ namespace Excavator.F1
             tableDependencies.Add( "Company" );
             tableDependencies.Add( "Individual_Household" );
 
-            ReportProgress( 0, Environment.NewLine + "Checking for  table dependencies..." );
+            ReportProgress( 0, Environment.NewLine + "Checking for table dependencies..." );
             var tableList = loadedNodes.Where( n => n.Checked != false ).ToList();
             if ( tableList.Any( n => tableDependencies.Contains( n.Name ) ) )
             {
