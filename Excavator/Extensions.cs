@@ -17,6 +17,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
 
 namespace Excavator
@@ -116,6 +117,26 @@ namespace Excavator
             {
                 return str.Substring( 0, length );
             }
+        }
+
+        /// <summary>
+        /// Removes any non-numeric characters
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string AsNumeric( this string str )
+        {
+            return Regex.Replace( str, @"[^0-9]", "" );
+        }
+
+        /// <summary>
+        /// Returns true if the given string is a valid email address.
+        /// </summary>
+        /// <param name="email">The string to validate</param>
+        /// <returns>true if valid email, false otherwise</returns>
+        public static bool IsValidEmail( this string email )
+        {
+            return Regex.IsMatch( email, @"\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*" );
         }
     }
 }
