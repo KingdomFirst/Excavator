@@ -29,96 +29,216 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapCommunication( IQueryable<Row> tableData )
         {
-            // Individual_ID
-            // Household_ID
-            // Communication_Type
-            // Communication_Value
-            // Listed
-            // Communication_Comment
-            // LastUpdatedDate
-
             var attributeService = new AttributeService();
+            var numberService = new PhoneNumberService();
+            var personService = new PersonService();
 
-            //Communication type
-            //Email	108888
-            //Home Phone	90971
-            //Mobile	73878
-            //Infellowship Login	14407
-            //Alternate Phone	8255
-            //Work Phone	7819
-            //Previous Phone	3280
-            //Emergency Phone	1833
+            //int homePhoneTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME ) ).Id;
+            //int mobilePhoneTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ) ).Id;
+            //int workPhoneTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_WORK ) ).Id;
+            List<DefinedValue> numberTypeValues = new DefinedValueService().Queryable()
+                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
 
             // Look up additional Person attributes (existing)
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            // Add an Attribute for the secondary F1 Contribution Id
-            var secondaryEmailAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1SecondaryEmail" );
-            if ( secondaryEmailAttribute == null )
+            // Add an Attribute for the secondary email
+            var secondaryEmailAttributeId = personAttributes.Where( a => a.Key == "SecondaryEmail" ).Select( a => a.Id ).FirstOrDefault();
+            if ( secondaryEmailAttributeId == 0 )
             {
-                secondaryEmailAttribute = new Rock.Model.Attribute();
-                secondaryEmailAttribute.Key = "F1SecondaryEmail";
-                secondaryEmailAttribute.Name = "F1 Secondary Email";
-                secondaryEmailAttribute.FieldTypeId = TextFieldTypeId;
-                secondaryEmailAttribute.EntityTypeId = PersonEntityTypeId;
-                secondaryEmailAttribute.EntityTypeQualifierValue = string.Empty;
-                secondaryEmailAttribute.EntityTypeQualifierColumn = string.Empty;
-                secondaryEmailAttribute.Description = "The secondary email for FellowshipOne person that was imported";
-                secondaryEmailAttribute.DefaultValue = string.Empty;
-                secondaryEmailAttribute.IsMultiValue = false;
-                secondaryEmailAttribute.IsRequired = false;
-                secondaryEmailAttribute.Order = 0;
+                var newSecondaryEmailAttribute = new Rock.Model.Attribute();
+                newSecondaryEmailAttribute.Key = "SecondaryEmail";
+                newSecondaryEmailAttribute.Name = "Secondary Email";
+                newSecondaryEmailAttribute.FieldTypeId = TextFieldTypeId;
+                newSecondaryEmailAttribute.EntityTypeId = PersonEntityTypeId;
+                newSecondaryEmailAttribute.EntityTypeQualifierValue = string.Empty;
+                newSecondaryEmailAttribute.EntityTypeQualifierColumn = string.Empty;
+                newSecondaryEmailAttribute.Description = "The secondary email for this person";
+                newSecondaryEmailAttribute.DefaultValue = string.Empty;
+                newSecondaryEmailAttribute.IsMultiValue = false;
+                newSecondaryEmailAttribute.IsRequired = false;
+                newSecondaryEmailAttribute.Order = 0;
 
-                attributeService.Add( secondaryEmailAttribute, ImportPersonAlias );
-                attributeService.Save( secondaryEmailAttribute, ImportPersonAlias );
+                attributeService.Add( newSecondaryEmailAttribute, ImportPersonAlias );
+                attributeService.Save( newSecondaryEmailAttribute, ImportPersonAlias );
+                secondaryEmailAttributeId = newSecondaryEmailAttribute.Id;
             }
+
+            // Add an Attribute for Twitter
+            int twitterAttributeId = personAttributes.Where( a => a.Name.StartsWith( "TwitterUsername" ) ).Select( a => a.Id ).FirstOrDefault();
+            if ( twitterAttributeId == 0 )
+            {
+                var newTwitterAttribute = new Rock.Model.Attribute();
+                newTwitterAttribute.Key = "TwitterUsername";
+                newTwitterAttribute.Name = "Twitter Username";
+                newTwitterAttribute.FieldTypeId = TextFieldTypeId;
+                newTwitterAttribute.EntityTypeId = PersonEntityTypeId;
+                newTwitterAttribute.EntityTypeQualifierValue = string.Empty;
+                newTwitterAttribute.EntityTypeQualifierColumn = string.Empty;
+                newTwitterAttribute.Description = "The Twitter username (or link) for this person";
+                newTwitterAttribute.DefaultValue = string.Empty;
+                newTwitterAttribute.IsMultiValue = false;
+                newTwitterAttribute.IsRequired = false;
+                newTwitterAttribute.Order = 0;
+
+                attributeService.Add( newTwitterAttribute, ImportPersonAlias );
+                attributeService.Save( newTwitterAttribute, ImportPersonAlias );
+                twitterAttributeId = newTwitterAttribute.Id;
+            }
+
+            // Add an Attribute for Facebook
+            var facebookAttributeId = personAttributes.Where( a => a.Name.StartsWith( "FacebookUsername" ) ).Select( a => a.Id ).FirstOrDefault();
+            if ( facebookAttributeId == null )
+            {
+                var newFacebookAttribute = new Rock.Model.Attribute();
+                newFacebookAttribute.Key = "FacebookUsername";
+                newFacebookAttribute.Name = "Facebook Username";
+                newFacebookAttribute.FieldTypeId = TextFieldTypeId;
+                newFacebookAttribute.EntityTypeId = PersonEntityTypeId;
+                newFacebookAttribute.EntityTypeQualifierValue = string.Empty;
+                newFacebookAttribute.EntityTypeQualifierColumn = string.Empty;
+                newFacebookAttribute.Description = "The Facebook username (or link) for this person";
+                newFacebookAttribute.DefaultValue = string.Empty;
+                newFacebookAttribute.IsMultiValue = false;
+                newFacebookAttribute.IsRequired = false;
+                newFacebookAttribute.Order = 0;
+
+                attributeService.Add( newFacebookAttribute, ImportPersonAlias );
+                attributeService.Save( newFacebookAttribute, ImportPersonAlias );
+                facebookAttributeId = newFacebookAttribute.Id;
+            }
+
+            var secondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttributeId );
+            var twitterUsernameAttribute = AttributeCache.Read( twitterAttributeId );
+            var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
 
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting batch import ({0} to import)...", totalRows ) );
+            ReportProgress( 0, Environment.NewLine + string.Format( "Starting communication import ({0} to import)...", totalRows ) );
+
             foreach ( var row in tableData )
             {
-                int? batchId = row["BatchID"] as int?;
-                if ( batchId != null )
+                string value = row["Communication_Value"] as string;
+                int? individualId = row["Individual_ID"] as int?;
+                int? householdId = row["Household_ID"] as int?;
+                int? personId = GetPersonId( individualId, householdId );
+
+                if ( personId != null && !string.IsNullOrWhiteSpace( value ) )
                 {
-                    var batch = new FinancialBatch();
-                    batch.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    batch.Status = batchStatusClosed;
+                    DateTime? lastUpdated = row["LastUpdatedDate"] as DateTime?;
+                    string communicationComment = row["Communication_Comment"] as string;
+                    string type = row["Communication_Type"] as string;
+                    bool isListed = (bool)row["Listed"];
 
-                    string name = row["BatchName"] as string;
-                    if ( name != null )
+                    if ( type.Contains( "Phone" ) || type.Contains( "Mobile" ) )
                     {
-                        name = name.Trim();
-                        batch.Name = name.Left( 50 );
-                        batch.CampusId = CampusList.Where( c => name.StartsWith( c.Name ) || name.StartsWith( c.ShortCode ) )
-                            .Select( c => (int?)c.Id ).FirstOrDefault();
+                        var extension = string.Empty;
+                        int extensionIndex = value.LastIndexOf( 'x' );
+                        if ( extensionIndex > 0 )
+                        {
+                            extension = value.Substring( extensionIndex ).AsNumeric();
+                            value = value.Substring( 0, extensionIndex ).AsNumeric();
+                        }
+                        else
+                        {
+                            value = value.AsNumeric();
+                        }
+
+                        bool numberExists = numberService.Queryable().Any( v => v.PersonId == personId && v.Number.Equals( value ) );
+                        if ( !numberExists )
+                        {
+                            var newNumber = new PhoneNumber();
+                            newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            newNumber.ModifiedDateTime = lastUpdated;
+                            newNumber.IsMessagingEnabled = false;
+                            newNumber.Extension = extension.Left( 20 );
+                            newNumber.Number = value.Left( 20 );
+                            newNumber.IsUnlisted = !isListed;
+                            newNumber.Description = communicationComment;
+
+                            newNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Name.StartsWith( type ) )
+                                .Select( v => (int?)v.Id ).FirstOrDefault();
+
+                            RockTransactionScope.WrapTransaction( () =>
+                            {
+                                numberService.Add( newNumber, ImportPersonAlias );
+                                numberService.Save( newNumber, ImportPersonAlias );
+                            } );
+                        }
                     }
-
-                    DateTime? batchDate = row["BatchDate"] as DateTime?;
-                    if ( batchDate != null )
+                    else
                     {
-                        batch.BatchStartDateTime = batchDate;
-                        batch.BatchEndDateTime = batchDate;
+                        var person = personService.Get( (int)personId );
+                        person.Attributes = new Dictionary<string, AttributeCache>();
+                        person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+
+                        // type doesn't matter if this is a valid email
+                        if ( value.IsValidEmail() )
+                        {
+                            string secondaryEmail = string.Empty;
+                            if ( string.IsNullOrWhiteSpace( person.Email ) || ( isListed && person.IsEmailActive == false ) )
+                            {
+                                secondaryEmail = person.Email;
+                                person.Email = value.Left( 75 );
+                                person.IsEmailActive = isListed;
+                                person.DoNotEmail = !isListed;
+                                person.ModifiedDateTime = lastUpdated;
+                                person.EmailNote = communicationComment;
+                            }
+                            else
+                            {
+                                secondaryEmail = value;
+                            }
+
+                            if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
+                            {
+                                person.Attributes.Add( "SecondaryEmail", secondaryEmailAttribute );
+                                person.AttributeValues.Add( "SecondaryEmail", new List<AttributeValue>() );
+                                person.AttributeValues["SecondaryEmail"].Add( new AttributeValue()
+                                {
+                                    AttributeId = secondaryEmailAttribute.Id,
+                                    Value = secondaryEmail
+                                } );
+                            }
+                        }
+                        else if ( type.Contains( "Twitter" ) )
+                        {
+                            person.Attributes.Add( "TwitterUsername", twitterUsernameAttribute );
+                            person.AttributeValues.Add( "TwitterUsername", new List<AttributeValue>() );
+                            person.AttributeValues["TwitterUsername"].Add( new AttributeValue()
+                            {
+                                AttributeId = twitterUsernameAttribute.Id,
+                                Value = value
+                            } );
+                        }
+                        else if ( type.Contains( "Facebook" ) )
+                        {
+                            person.Attributes.Add( "FacebookUsername", facebookUsernameAttribute );
+                            person.AttributeValues.Add( "FacebookUsername", new List<AttributeValue>() );
+                            person.AttributeValues["FacebookUsername"].Add( new AttributeValue()
+                            {
+                                AttributeId = facebookUsernameAttribute.Id,
+                                Value = value
+                            } );
+                        }
+                        else
+                        {
+                            // supplemental? add a note?
+                        }
+
+                        RockTransactionScope.WrapTransaction( () =>
+                        {
+                            personService.Add( person, ImportPersonAlias );
+                            personService.Save( person, ImportPersonAlias );
+
+                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                            {
+                                string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
+                                Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
+                            }
+                        } );
                     }
-
-                    decimal? amount = row["BatchAmount"] as decimal?;
-                    if ( amount != null )
-                    {
-                        batch.ControlAmount = amount.HasValue ? amount.Value : new decimal();
-                    }
-
-                    RockTransactionScope.WrapTransaction( () =>
-                    {
-                        var batchService = new FinancialBatchService();
-                        batchService.Add( batch, ImportPersonAlias );
-                        batchService.Save( batch, ImportPersonAlias );
-
-                        batch.Attributes = new Dictionary<string, AttributeCache>();
-                        batch.Attributes.Add( "F1BatchId", secondaryEmailAttribute );
-                        batch.AttributeValues = new Dictionary<string, List<AttributeValue>>();
-                        Rock.Attribute.Helper.SaveAttributeValue( batch, batchAttribute, batchId.ToString(), ImportPersonAlias );
-                    } );
 
                     completed++;
                     if ( completed % 30 == 0 )
@@ -136,7 +256,7 @@ namespace Excavator.F1
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished communications import ({0} batches imported).", completed ) );
+            ReportProgress( 100, Environment.NewLine + string.Format( "Finished communication import ({0} records imported).", completed ) );
         }
     }
 }
