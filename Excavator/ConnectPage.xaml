@@ -3,8 +3,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        d:DesignHeight="350" d:DesignWidth="500"
-        mc:Ignorable="d" Margin="10"
+        d:DesignHeight="350" d:DesignWidth="500" mc:Ignorable="d"
         Title="Connect">
     <Grid x:Name="grdLayout">
         <Grid.RowDefinitions>
@@ -21,7 +20,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page Header -->
-        <Border Name="clrBorder" CornerRadius="8"
+        <Border Name="clrBorder"
             Grid.Row="0" Grid.ColumnSpan="2"
             Background="{StaticResource headerBackground}">
         </Border>
@@ -97,7 +96,7 @@
         <!-- Navigation -->
         <Grid Grid.Row="5" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStylePrimary}"
-                x:Name="btnNext"
+                x:Name="btnNext" Margin="10,0"
                 VerticalAlignment="Center"
                 Grid.Column="1" HorizontalAlignment="Right"
                 Click="btnNext_Click">

@@ -4,8 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Excavator"
-      d:DesignHeight="350" d:DesignWidth="500"
-      mc:Ignorable="d" Margin="10"
+      d:DesignHeight="350" d:DesignWidth="500" mc:Ignorable="d"
 	  Title="Select" UseLayoutRounding="True">
 
     <Page.Resources>
@@ -33,7 +32,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page Header -->
-        <Border Name="clrBorder" CornerRadius="8"
+        <Border Name="clrBorder"
             Grid.Row="0" Grid.ColumnSpan="2"
             Background="{StaticResource headerBackground}">
         </Border>
@@ -110,7 +109,7 @@
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStyle}"
-                x:Name="btnBack"
+                x:Name="btnBack" Margin="10,0"
                 VerticalAlignment="Center"
                 IsEnabled="{Binding CanGoBack}"
                 Grid.Column="0" HorizontalAlignment="Left"
@@ -118,7 +117,7 @@
                 Back
             </Button>
             <Button Style="{StaticResource buttonStylePrimary}"
-                x:Name="btnNext"
+                x:Name="btnNext" Margin="10,0"
                 VerticalAlignment="Center"
                 Grid.Column="1" HorizontalAlignment="Right"
                 Click="btnNext_Click">

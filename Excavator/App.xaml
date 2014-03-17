@@ -9,7 +9,7 @@
                 <ResourceDictionary Source="/Rock.Wpf;component/StyleResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <SolidColorBrush x:Key="headerBackground" Color="#5279A0" />
+            <SolidColorBrush x:Key="headerBackground" Color="#323B44" />
 
             <Style x:Key="labelStyleSuccess" TargetType="{x:Type Label}">
                 <Setter Property="Label.Foreground"
