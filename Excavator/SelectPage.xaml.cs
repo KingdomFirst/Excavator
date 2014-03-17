@@ -116,7 +116,7 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnNext_Click( object sender, RoutedEventArgs e )
         {
-            var transformPage = new TransformPage( excavator );
+            var transformPage = new ConfigurationPage( excavator );
             this.NavigationService.Navigate( transformPage );
         }
 
