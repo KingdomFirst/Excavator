@@ -36,8 +36,9 @@
             Margin="20,0" VerticalScrollBarVisibility="Auto"
             Grid.Row="1" HorizontalAlignment="Stretch"
             Grid.ColumnSpan="2" VerticalAlignment="Stretch"
-            IsReadOnly="True" Background="#EFEFEF"
-            BorderThickness="0" />
+            IsReadOnly="True" BorderThickness="0"
+            Background="{StaticResource windowBackground}">
+        </TextBox>
 
         <!-- Navigation -->
         <Grid Grid.Row="2" Grid.ColumnSpan="2">

@@ -41,7 +41,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting check number import ({0:N0} to import)...", totalRows ) );
+            ReportProgress( 0, string.Format( "Starting check number import ({0:N0} to import)...", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -82,13 +82,13 @@ namespace Excavator.F1
                         else
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:N0} numbers imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, string.Format( "{0:N0} numbers imported ({1}% complete)...", completed, percentComplete ) );
                         }
                     }
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished check number import: {0:N0} numbers imported.", completed ) );
+            ReportProgress( 100, string.Format( "Finished check number import: {0:N0} numbers imported.", completed ) );
         }
 
         /// <summary>
@@ -104,8 +104,9 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count() - ImportedBatches.Count();
+            totalRows = totalRows > 0 ? totalRows : 0;
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting batch import ({0:N0} to import)...", totalRows ) );
+            ReportProgress( 0, string.Format( "Starting batch import ({0:N0} to import)...", totalRows ) );
             foreach ( var row in tableData )
             {
                 int? batchId = row["BatchID"] as int?;
@@ -159,13 +160,13 @@ namespace Excavator.F1
                         else
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:N0} batches imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, string.Format( "{0:N0} batches imported ({1}% complete)...", completed, percentComplete ) );
                         }
                     }
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
+            ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
         }
 
         /// <summary>
@@ -224,8 +225,9 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count() - importedContributions.Count();
+            totalRows = totalRows > 0 ? totalRows : 0;
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting contribution import ({0:N0} to import)...", totalRows ) );
+            ReportProgress( 0, string.Format( "Starting contribution import ({0:N0} to import)...", totalRows ) );
             foreach ( var row in tableData )
             {
                 int? individualId = row["Individual_ID"] as int?;
@@ -383,13 +385,13 @@ namespace Excavator.F1
                         else
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:N0} contributions imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, string.Format( "{0:N0} contributions imported ({1}% complete)...", completed, percentComplete ) );
                         }
                     }
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
+            ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
         }
 
         /// <summary>
@@ -407,9 +409,9 @@ namespace Excavator.F1
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
 
             int completed = 0;
-            int totalRows = tableData.Count() - ImportedPeople.Count();
+            int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, Environment.NewLine + string.Format( "Starting pledge import ({0:N0} to import)...", totalRows ) );
+            ReportProgress( 0, string.Format( "Starting pledge import ({0:N0} to import)...", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -508,13 +510,13 @@ namespace Excavator.F1
                         else
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, Environment.NewLine + string.Format( "{0:N0} pledges imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, string.Format( "{0:N0} pledges imported ({1}% complete)...", completed, percentComplete ) );
                         }
                     }
                 }
             }
 
-            ReportProgress( 100, Environment.NewLine + string.Format( "Finished pledge import: {0:N0} pledges imported.", completed ) );
+            ReportProgress( 100, string.Format( "Finished pledge import: {0:N0} pledges imported.", completed ) );
         }
     }
 }
