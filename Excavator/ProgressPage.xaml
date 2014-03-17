@@ -9,8 +9,8 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*" />
-            <RowDefinition Height="9*" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -19,7 +19,13 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page Header -->
-        <Label Name="lblHeader" FontSize="16"
+        <!-- Page Header -->
+        <Border Name="clrBorder" CornerRadius="8"
+            Grid.Row="0" Grid.ColumnSpan="2"
+            Background="{StaticResource headerBackground}">
+        </Border>
+        <Label Name="lblHeader"
+            Foreground="White" FontSize="16"
             Grid.Row="0" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
@@ -44,7 +50,7 @@
                 Click="btnBack_Click">
                 Back
             </Button>
-            <Label Name="lblFoundIssue" FontSize="16"
+            <Label Name="lblFoundIssue"
                 Grid.Row="0" HorizontalAlignment="Center"
                 Grid.ColumnSpan="2" VerticalAlignment="Center"
                 Style="{StaticResource labelStyle}">

@@ -9,7 +9,7 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*" />
+            <RowDefinition Height="40" />
             <RowDefinition Height="3*" />
             <RowDefinition Height="3*" />
             <RowDefinition Height="3*" />
@@ -21,7 +21,12 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page Header -->
-        <Label Name="lblHeader" FontSize="16"
+        <Border Name="clrBorder" CornerRadius="8"
+            Grid.Row="0" Grid.ColumnSpan="2"
+            Background="{StaticResource headerBackground}">
+        </Border>
+        <Label Name="lblHeader"
+            Foreground="White" FontSize="16"
             Grid.Row="0" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
@@ -32,7 +37,7 @@
             Grid.Row="1" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
-            Please enter the name of the user account doing the import (default is Admin):
+            Please enter the user doing the import (default is Admin):
         </Label>
 
         <TextBox Name="txtImportUser"

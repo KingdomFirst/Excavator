@@ -172,7 +172,7 @@ namespace Excavator.F1
                     }
                 }
 
-                ReportProgress( 100, Environment.NewLine + "Import completed." );
+                ReportProgress( 100, Environment.NewLine + "Import completed.  " );
             }
             else
             {

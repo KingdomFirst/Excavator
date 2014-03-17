@@ -23,8 +23,8 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*" />
-            <RowDefinition Height="10*" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -33,7 +33,12 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page Header -->
-        <Label Name="lblHeader" FontSize="16"
+        <Border Name="clrBorder" CornerRadius="8"
+            Grid.Row="0" Grid.ColumnSpan="2"
+            Background="{StaticResource headerBackground}">
+        </Border>
+        <Label Name="lblHeader"
+            Foreground="White" FontSize="16"
             Grid.Row="0" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
@@ -42,7 +47,7 @@
 
         <Label Name="lblNoData" Visibility="Hidden"
             Style="{StaticResource labelStyleAlert}"
-            Grid.RowSpan="2" HorizontalAlignment="Center"
+            Grid.Row="1" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Top">
             Please select the source and destination from the previous page.
         </Label>

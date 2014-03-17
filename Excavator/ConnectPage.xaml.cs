@@ -186,8 +186,8 @@ namespace Excavator
         {
             if ( e.Cancelled != true )
             {
-                lblDbUpload.Style = (Style)FindResource( "labelStyleBold" );
-                lblDbUpload.Content = "Successfully uploaded the database file";
+                lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
+                lblDbUpload.Content = "Successfully read the database file";
             }
 
             lblDbUpload.Visibility = Visibility.Visible;
