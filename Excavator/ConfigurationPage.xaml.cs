@@ -42,6 +42,9 @@ namespace Excavator
             if ( parameter != null )
             {
                 excavator = parameter;
+                txtPasswordKey.Text = ConfigurationManager.AppSettings["PasswordKey"];
+                txtDataEncryption.Text = ConfigurationManager.AppSettings["DataEncryptionKey"];
+                txtImportUser.Text = ConfigurationManager.AppSettings["ImportUser"];
             }
             else
             {
