@@ -98,10 +98,10 @@ namespace Excavator.F1
             ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
             var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
-            ReportProgress( 0, Environment.NewLine + "Checking for existing attributes..." );
+            ReportProgress( 0, "Checking for existing attributes..." );
             LoadExistingRockData();
 
-            ReportProgress( 0, Environment.NewLine + "Checking for table dependencies..." );
+            ReportProgress( 0, "Checking for table dependencies..." );
             bool isValidImport = ImportedPeople.Any() || tableList.Any( n => n.Name.Equals( "Individual_Household" ) );
 
             var tableDependencies = new List<string>();
@@ -172,7 +172,7 @@ namespace Excavator.F1
                     }
                 }
 
-                ReportProgress( 100, Environment.NewLine + "Import completed.  " );
+                ReportProgress( 100, "Import completed.  " );
             }
             else
             {
@@ -241,7 +241,7 @@ namespace Excavator.F1
             IndividualAttributeId = individualAttribute.Id;
             HouseholdAttributeId = householdAttribute.Id;
 
-            ReportProgress( 0, Environment.NewLine + "Checking for existing people..." );
+            ReportProgress( 0, "Checking for existing people..." );
             var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
             var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
 
@@ -276,7 +276,7 @@ namespace Excavator.F1
 
             BatchAttributeId = batchAttribute.Id;
 
-            ReportProgress( 0, Environment.NewLine + "Checking for existing contributions..." );
+            ReportProgress( 0, "Checking for existing contributions..." );
             ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttribute.Id )
                 .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
                 .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );

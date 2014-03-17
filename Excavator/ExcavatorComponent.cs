@@ -180,7 +180,7 @@ namespace Excavator
         {
             if ( ProgressUpdated != null )
             {
-                ProgressUpdated( progress, status );
+                ProgressUpdated( progress, Environment.NewLine + DateTime.Now.ToLongTimeString() + "  " + status );
             }
         }
 

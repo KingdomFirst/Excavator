@@ -50,14 +50,14 @@ namespace Excavator.Example
         }
 
         // Disable compiler warning: value never assigned
-		#pragma warning disable 0649
+#pragma warning disable 0649
 
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
         private PersonAlias ImportPersonAlias;
 
-		#pragma warning restore
+#pragma warning restore
 
         #endregion
 
@@ -104,7 +104,7 @@ namespace Excavator.Example
             }
 
             int numberImported = tableData.Count();
-            ReportProgress( 0, Environment.NewLine + string.Format( "Completed import: {0:N0} records imported.", numberImported ) );
+            ReportProgress( 0, string.Format( "Completed import: {0:N0} records imported.", numberImported ) );
             return numberImported;
         }
 
