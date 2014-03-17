@@ -3,6 +3,7 @@
 *.vshost.exe.manifest
 *.vshost.exe.config
 
+
 #Specific files
 System.Net.Http.Formatting.xml
 System.Web.Http.WebHost.xml
