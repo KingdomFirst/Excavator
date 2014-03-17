@@ -37,25 +37,28 @@ Note: master branch contains fully-tested code; develop branch is beta/in-progre
 <b>Fellowship One Conversion Notes:</b>
 
 Completed:
-* Individuals 
-* Families (excluding visitors)
-* Batches
-* Contributions
-* Pledges
-* Addresses
-* Companies
 * Accounts
+* Addresses
+* Batches
 * Communication
+* Companies
+* Contributions
+* Families (excluding visitors)
+* Individuals 
+* Pledges
 
 Coming Soon:
 * Notes
+* Users
 
 Inconsistent/Not Supported**:
-* Attendance
-* Campuses***
-* RLC (Room, Location, Class)
-* Ministries
 * Assignments
+* Attendance
+* Attributes
+* Campuses***
+* Groups
+* Ministries
+* RLC (Room, Location, Class)
 
 ** These tables depend on the specific structure of your church's ministries and groups.  Given enough sample data, it's possible generic import maps could be added.  Otherwise these import maps are custom to each church.
 

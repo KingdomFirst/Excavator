@@ -54,8 +54,7 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>
-    </ApplicationIcon>
+    <ApplicationIcon>Resources\rock.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SqlServer.ConnectionInfo, Version=11.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
@@ -117,8 +116,8 @@
     <Compile Include="ProgressPage.xaml.cs">
       <DependentUpon>ProgressPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TransformPage.xaml.cs">
-      <DependentUpon>TransformPage.xaml</DependentUpon>
+    <Compile Include="ConfigurationPage.xaml.cs">
+      <DependentUpon>ConfigurationPage.xaml</DependentUpon>
     </Compile>
     <Page Include="ConnectPage.xaml">
       <SubType>Designer</SubType>
@@ -145,7 +144,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="TransformPage.xaml">
+    <Page Include="ConfigurationPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

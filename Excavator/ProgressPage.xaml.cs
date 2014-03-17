@@ -36,7 +36,7 @@ namespace Excavator
         #region Constructor
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransformPage"/> class.
+        /// Initializes a new instance of the <see cref="ConfigurationPage"/> class.
         /// </summary>
         public ProgressPage( ExcavatorComponent parameter = null )
         {
@@ -116,7 +116,6 @@ namespace Excavator
         /// <exception cref="System.NotImplementedException"></exception>
         private void bwImportData_DoWork( object sender, DoWorkEventArgs e )
         {
-            var worker = (BackgroundWorker)sender;
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
             e.Result = excavator.TransformData( importUser );
         }

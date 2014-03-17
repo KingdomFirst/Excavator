@@ -59,7 +59,7 @@ namespace Excavator.F1
                     if ( routingNumber != null && !string.IsNullOrWhiteSpace( accountNumber ) )
                     {
                         accountNumber.Replace( " ", string.Empty );
-                        account.AccountNumberSecured = Encryption.EncryptString( string.Format( "{0}_{1}_1", routingNumber, accountNumber ) );
+                        account.AccountNumberSecured = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
                     }
 
                     // Other Attributes (not used):
@@ -290,7 +290,7 @@ namespace Excavator.F1
                     string checkNumber = row["Check_Number"] as string;
                     if ( checkNumber != null && checkNumber.AsType<int?>() != null )
                     {
-                        // routing & account set to zero here
+                        // routing & account set to zero
                         transaction.CheckMicrEncrypted = Encryption.EncryptString( string.Format( "{0}_{1}_{2}", 0, 0, checkNumber ) );
                     }
 
