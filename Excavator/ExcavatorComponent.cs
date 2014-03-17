@@ -124,33 +124,30 @@ namespace Excavator
         /// <returns></returns>
         public DataTable PreviewData( string nodeId )
         {
-            var node = TableNodes.Where( n => n.Id.Equals( nodeId ) ).FirstOrDefault();
+            var node = TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
 
-            // if the current node has a parent, preview the parent's data
-            if ( node.Table.Any() )
+            if ( node != null )
             {
-                node = TableNodes.Where( n => n.Id.Equals( node.Table.Select( t => t.Id ) ) ).FirstOrDefault();
-            }
-
-            var scanner = new DataScanner( database );
-            var rows = scanner.ScanTable( node.Name );
-            var dataTable = new DataTable();
-            foreach ( var column in node.Columns )
-            {
-                dataTable.Columns.Add( column.Name, column.NodeType );
-            }
-
-            var rowData = rows.FirstOrDefault();
-            if ( rowData != null )
-            {
-                var rowPreview = dataTable.NewRow();
-                foreach ( var column in rowData.Columns )
+                var scanner = new DataScanner( database );
+                var rows = scanner.ScanTable( node.Name );
+                var dataTable = new DataTable();
+                foreach ( var column in node.Columns )
                 {
-                    rowPreview[column.Name] = rowData[column] ?? DBNull.Value;
+                    dataTable.Columns.Add( column.Name, column.NodeType );
                 }
 
-                dataTable.Rows.Add( rowPreview );
-                return dataTable;
+                var rowData = rows.FirstOrDefault();
+                if ( rowData != null )
+                {
+                    var rowPreview = dataTable.NewRow();
+                    foreach ( var column in rowData.Columns )
+                    {
+                        rowPreview[column.Name] = rowData[column] ?? DBNull.Value;
+                    }
+
+                    dataTable.Rows.Add( rowPreview );
+                    return dataTable;
+                }
             }
 
             return null;
