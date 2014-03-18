@@ -42,9 +42,9 @@ namespace Excavator
             if ( parameter != null )
             {
                 excavator = parameter;
+                txtImportUser.Text = ConfigurationManager.AppSettings["ImportUser"];
                 txtPasswordKey.Text = ConfigurationManager.AppSettings["PasswordKey"];
                 txtDataEncryption.Text = ConfigurationManager.AppSettings["DataEncryptionKey"];
-                txtImportUser.Text = ConfigurationManager.AppSettings["ImportUser"];
             }
             else
             {
@@ -77,14 +77,21 @@ namespace Excavator
             if ( !string.IsNullOrEmpty( txtPasswordKey.Text ) && !string.IsNullOrEmpty( txtDataEncryption.Text ) )
             {
                 var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
-                appConfig.AppSettings.Settings.Add( "PasswordKey", txtPasswordKey.Text );
-                appConfig.AppSettings.Settings.Add( "DataEncryptionKey", txtDataEncryption.Text );
-                appConfig.AppSettings.Settings.Add( "ImportUser", txtImportUser.Text ?? string.Empty );
+                if ( appConfig.AppSettings.Settings.Count < 3 )
+                {
+                    appConfig.AppSettings.Settings.Add( "ImportUser", string.Empty );
+                    appConfig.AppSettings.Settings.Add( "PasswordKey", string.Empty );
+                    appConfig.AppSettings.Settings.Add( "DataEncryptionKey", string.Empty );
+                }
 
                 try
                 {
+                    appConfig.AppSettings.Settings["ImportUser"].Value = txtImportUser.Text;
+                    appConfig.AppSettings.Settings["PasswordKey"].Value = txtPasswordKey.Text;
+                    appConfig.AppSettings.Settings["DataEncryptionKey"].Value = txtDataEncryption.Text;
                     appConfig.Save( ConfigurationSaveMode.Modified );
                     ConfigurationManager.RefreshSection( "appSettings" );
+
                     var progressPage = new ProgressPage( excavator );
                     this.NavigationService.Navigate( progressPage );
                 }
