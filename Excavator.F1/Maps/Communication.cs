@@ -142,39 +142,41 @@ namespace Excavator.F1
                             value = value.AsNumeric();
                         }
 
-                        bool numberExists = numberService.Queryable().Any( v => v.PersonId == personId && v.Number.Equals( value ) );
-                        if ( !numberExists && !string.IsNullOrWhiteSpace( value ) )
+                        if ( !string.IsNullOrWhiteSpace( value ) )
                         {
-                            var newNumber = new PhoneNumber();
-                            newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                            newNumber.ModifiedDateTime = lastUpdated;
-                            newNumber.IsMessagingEnabled = false;
-                            newNumber.Extension = extension.Left( 20 );
-                            newNumber.Number = value.Left( 20 );
-                            newNumber.IsUnlisted = !isListed;
-                            newNumber.Description = communicationComment;
-                            newNumber.PersonId = (int)personId;
-
-                            // set the type if it matches
-                            newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
-                                .Select( v => (int?)v.Id ).FirstOrDefault();
-
-                            RockTransactionScope.WrapTransaction( () =>
+                            var numberExists = numberService.GetByPersonId( (int)personId ).Any( n => n.Number.Equals( value ) );
+                            if ( !numberExists )
                             {
-                                numberService.Add( newNumber, ImportPersonAlias );
-                                numberService.Save( newNumber, ImportPersonAlias );
-                            } );
+                                var newNumber = new PhoneNumber();
+                                newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                                newNumber.ModifiedDateTime = lastUpdated;
+                                newNumber.PersonId = (int)personId;
+                                newNumber.IsMessagingEnabled = false;
+                                newNumber.IsUnlisted = !isListed;
+                                newNumber.Extension = extension.Left( 20 );
+                                newNumber.Number = value.Left( 20 );
+                                newNumber.Description = communicationComment;
 
-                            completed++;
+                                newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
+                                    .Select( v => (int?)v.Id ).FirstOrDefault();
+
+                                RockTransactionScope.WrapTransaction( () =>
+                                {
+                                    numberService.Add( newNumber, ImportPersonAlias );
+                                    numberService.Save( newNumber, ImportPersonAlias );
+                                } );
+
+                                completed++;
+                            }
                         }
                     }
                     else
                     {
+                        var updateValues = true;
                         var person = personService.Get( (int)personId );
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
 
-                        // type doesn't matter as long as this is a valid email
                         if ( value.IsValidEmail() )
                         {
                             string secondaryEmail = string.Empty;
@@ -190,6 +192,10 @@ namespace Excavator.F1
                             else if ( !person.Email.Equals( value ) )
                             {
                                 secondaryEmail = value;
+                            }
+                            else
+                            {
+                                updateValues = false;
                             }
 
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
@@ -225,33 +231,36 @@ namespace Excavator.F1
                         }
                         else
                         {
-                            // supplemental? add a note?
+                            updateValues = false;
                         }
 
-                        RockTransactionScope.WrapTransaction( () =>
+                        if ( updateValues )
                         {
-                            personService.Save( person, ImportPersonAlias );
-
-                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                            RockTransactionScope.WrapTransaction( () =>
                             {
-                                string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
-                                Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
-                            }
-                        } );
+                                personService.Save( person, ImportPersonAlias );
 
-                        completed++;
+                                foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                                {
+                                    string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
+                                    Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
+                                }
+                            } );
+
+                            completed++;
+                        }
                     }
 
-                    if ( completed % ReportingNumber == 0 )
+                    if ( completed % ReportingNumber == 1 )
                     {
-                        if ( completed % percentage >= ReportingNumber )
-                        {
-                            ReportPartialProgress();
-                        }
-                        else
+                        if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
                             ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                        else
+                        {
+                            ReportPartialProgress();
                         }
                     }
                 }
