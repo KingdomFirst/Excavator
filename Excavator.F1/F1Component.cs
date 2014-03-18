@@ -125,7 +125,7 @@ namespace Excavator.F1
                         switch ( table.Name )
                         {
                             case "Account":
-                                //MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Communication":
@@ -336,7 +336,7 @@ namespace Excavator.F1
         //    var nodeName = (string)e.Argument;
         //    if ( nodeName != null )
         //    {
-        //        switch statement
+        //        //switch statement
         //    }
         //}
 
@@ -355,7 +355,7 @@ namespace Excavator.F1
         //        bwSpawnProcess.ProgressChanged -= new ProgressChangedEventHandler( bwSpawnProcess_ProgressChanged );
         //        bwSpawnProcess.DoWork -= new DoWorkEventHandler( bwSpawnProcess_DoWork );
         //        bwSpawnProcess.Dispose();
-        //        bgWorkers.Remove( (BackgroundWorker)sender )
+        //        bgWorkers.Remove( (BackgroundWorker)sender );
         //    }
         //}
 
