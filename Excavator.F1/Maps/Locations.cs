@@ -195,7 +195,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, string.Format( "Starting address import ({0:N0} to import)...", totalRows ) );
+            ReportProgress( 0, string.Format( "Starting address import ({0:N0} to import).", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -262,7 +262,7 @@ namespace Excavator.F1
                             if ( completed % percentage < ReportingNumber )
                             {
                                 int percentComplete = completed / percentage;
-                                ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete)...", completed, percentComplete ) );
+                                ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
                             }
                             else
                             {

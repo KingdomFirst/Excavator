@@ -94,10 +94,9 @@ namespace Excavator.F1
             var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
 
             int completed = 0;
-            int totalRows = tableData.Count() - ImportedPeople.Count();
-            totalRows = totalRows > 0 ? totalRows : 0;
+            int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, string.Format( "Starting person import ({0:N0} to import)...", totalRows ) );
+            ReportProgress( 0, string.Format( "Starting person import ({0:N0} found, {1:N0} already imported).", totalRows, ImportedPeople.Count() ) );
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
@@ -385,7 +384,7 @@ namespace Excavator.F1
                         if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} people imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, string.Format( "{0:N0} people imported ({1}% complete).", completed, percentComplete ) );
                         }
                         else
                         {
@@ -427,10 +426,9 @@ namespace Excavator.F1
             var householdIdAttribute = AttributeCache.Read( HouseholdAttributeId );
 
             int completed = 0;
-            int totalRows = tableData.Count() - ImportedPeople.Count();
-            totalRows = totalRows > 0 ? totalRows : 0;
+            int totalRows = tableData.Count();
             int percentage = totalRows / 100;
-            ReportProgress( 0, string.Format( "Starting company import ({0:N0} to import)...", totalRows ) );
+            ReportProgress( 0, string.Format( "Starting company import ({0:N0} found).", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -499,7 +497,7 @@ namespace Excavator.F1
                         if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} companies imported ({1}% complete)...", completed, percentComplete ) );
+                            ReportProgress( percentComplete, string.Format( "{0:N0} companies imported ({1}% complete).", completed, percentComplete ) );
                         }
                         else
                         {
