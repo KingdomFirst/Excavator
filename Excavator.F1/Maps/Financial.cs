@@ -38,6 +38,8 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapAccount( IQueryable<Row> tableData )
         {
+            var accountService = new FinancialPersonBankAccountService();
+
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = totalRows / 100;
@@ -50,39 +52,41 @@ namespace Excavator.F1
                 int? personId = GetPersonId( individualId, householdId );
                 if ( personId != null )
                 {
-                    var account = new FinancialPersonBankAccount();
-                    account.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    account.PersonId = (int)personId;
-
                     int? routingNumber = row["Routing_Number"] as int?;
                     string accountNumber = row["Account"] as string;
                     if ( routingNumber != null && !string.IsNullOrWhiteSpace( accountNumber ) )
                     {
-                        accountNumber.Replace( " ", string.Empty );
-                        account.AccountNumberSecured = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
-                    }
-
-                    // Other Attributes (not used):
-                    // Account_Type_Name
-
-                    RockTransactionScope.WrapTransaction( () =>
-                    {
-                        var accountService = new FinancialPersonBankAccountService();
-                        accountService.Add( account, ImportPersonAlias );
-                        accountService.Save( account, ImportPersonAlias );
-                    } );
-
-                    completed++;
-                    if ( completed % ReportingNumber == 1 )
-                    {
-                        if ( completed % percentage < ReportingNumber )
+                        accountNumber = accountNumber.Replace( " ", string.Empty );
+                        string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
+                        if ( accountService.Queryable().Where( a => a.AccountNumberSecured == encodedNumber && a.PersonId == personId ).FirstOrDefault() == null )
                         {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} numbers imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else
-                        {
-                            ReportPartialProgress();
+                            var account = new FinancialPersonBankAccount();
+                            account.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            account.AccountNumberSecured = encodedNumber;
+                            account.PersonId = (int)personId;
+
+                            // Other Attributes (not used):
+                            // Account_Type_Name
+
+                            RockTransactionScope.WrapTransaction( () =>
+                            {
+                                accountService.Add( account, ImportPersonAlias );
+                                accountService.Save( account, ImportPersonAlias );
+                            } );
+
+                            completed++;
+                            if ( completed % ReportingNumber == 1 )
+                            {
+                                if ( completed % percentage < ReportingNumber )
+                                {
+                                    int percentComplete = completed / percentage;
+                                    ReportProgress( percentComplete, string.Format( "{0:N0} numbers imported ({1}% complete).", completed, percentComplete ) );
+                                }
+                                else
+                                {
+                                    ReportPartialProgress();
+                                }
+                            }
                         }
                     }
                 }
