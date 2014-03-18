@@ -73,16 +73,16 @@ namespace Excavator.F1
                     } );
 
                     completed++;
-                    if ( completed % ReportingNumber == 0 )
+                    if ( completed % ReportingNumber == 1 )
                     {
-                        if ( completed % percentage >= ReportingNumber )
-                        {
-                            ReportPartialProgress();
-                        }
-                        else
+                        if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
                             ReportProgress( percentComplete, string.Format( "{0:N0} numbers imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                        else
+                        {
+                            ReportPartialProgress();
                         }
                     }
                 }
@@ -151,16 +151,16 @@ namespace Excavator.F1
                     } );
 
                     completed++;
-                    if ( completed % ReportingNumber == 0 )
+                    if ( completed % ReportingNumber == 1 )
                     {
-                        if ( completed % percentage >= ReportingNumber )
-                        {
-                            ReportPartialProgress();
-                        }
-                        else
+                        if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
                             ReportProgress( percentComplete, string.Format( "{0:N0} batches imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                        else
+                        {
+                            ReportPartialProgress();
                         }
                     }
                 }
@@ -376,16 +376,16 @@ namespace Excavator.F1
                     } );
 
                     completed++;
-                    if ( completed % ReportingNumber == 0 )
+                    if ( completed % ReportingNumber == 1 )
                     {
-                        if ( completed % percentage >= ReportingNumber )
-                        {
-                            ReportPartialProgress();
-                        }
-                        else
+                        if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
                             ReportProgress( percentComplete, string.Format( "{0:N0} contributions imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                        else
+                        {
+                            ReportPartialProgress();
                         }
                     }
                 }
@@ -501,16 +501,16 @@ namespace Excavator.F1
                     } );
 
                     completed++;
-                    if ( completed % ReportingNumber == 0 )
+                    if ( completed % ReportingNumber == 1 )
                     {
-                        if ( completed % percentage >= ReportingNumber )
-                        {
-                            ReportPartialProgress();
-                        }
-                        else
+                        if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
                             ReportProgress( percentComplete, string.Format( "{0:N0} pledges imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                        else
+                        {
+                            ReportPartialProgress();
                         }
                     }
                 }
