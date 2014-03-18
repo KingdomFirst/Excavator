@@ -351,7 +351,7 @@ namespace Excavator.F1
                             var transactionRefund = new FinancialTransactionRefund();
                             transactionRefund.CreatedDateTime = receivedDate;
                             transactionRefund.RefundReasonSummary = summary;
-                            transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary.Contains( dv.Name ) )
+                            transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Name.Contains( summary ) )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                             transaction.Refund = transactionRefund;
                         }
