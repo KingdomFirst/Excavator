@@ -257,16 +257,16 @@ namespace Excavator.F1
                         } );
 
                         completed++;
-                        if ( completed % ReportingNumber == 0 )
+                        if ( completed % ReportingNumber == 1 )
                         {
-                            if ( completed % percentage >= ReportingNumber )
-                            {
-                                ReportPartialProgress();
-                            }
-                            else
+                            if ( completed % percentage < ReportingNumber )
                             {
                                 int percentComplete = completed / percentage;
                                 ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete)...", completed, percentComplete ) );
+                            }
+                            else
+                            {
+                                ReportPartialProgress();
                             }
                         }
                     }

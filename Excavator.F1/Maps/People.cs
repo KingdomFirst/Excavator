@@ -380,16 +380,16 @@ namespace Excavator.F1
                     } );
 
                     completed++;
-                    if ( completed % ReportingNumber == 0 )
+                    if ( completed % ReportingNumber == 1 )
                     {
-                        if ( completed % percentage >= ReportingNumber )
-                        {
-                            ReportPartialProgress();
-                        }
-                        else
+                        if ( completed % percentage < ReportingNumber )
                         {
                             int percentComplete = completed / percentage;
                             ReportProgress( percentComplete, string.Format( "{0:N0} people imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                        else
+                        {
+                            ReportPartialProgress();
                         }
                     }
                 }
@@ -403,7 +403,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <returns></returns>
-        private int MapCompany( IQueryable<Row> tableData )
+        private void MapCompany( IQueryable<Row> tableData )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
             var attributeValueService = new AttributeValueService();
@@ -425,6 +425,12 @@ namespace Excavator.F1
 
             // Cached F1 attribute: HouseholdId
             var householdIdAttribute = AttributeCache.Read( HouseholdAttributeId );
+
+            int completed = 0;
+            int totalRows = tableData.Count() - ImportedPeople.Count();
+            totalRows = totalRows > 0 ? totalRows : 0;
+            int percentage = totalRows / 100;
+            ReportProgress( 0, string.Format( "Starting company import ({0:N0} to import)...", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -486,9 +492,24 @@ namespace Excavator.F1
                             personService.Save( person, ImportPersonAlias );
                         }
                     } );
+
+                    completed++;
+                    if ( completed % ReportingNumber == 1 )
+                    {
+                        if ( completed % percentage < ReportingNumber )
+                        {
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, string.Format( "{0:N0} companies imported ({1}% complete)...", completed, percentComplete ) );
+                        }
+                        else
+                        {
+                            ReportPartialProgress();
+                        }
+                    }
                 }
             }
-            return tableData.Count();
+
+            ReportProgress( 100, string.Format( "Finished company import: {0:N0} companies imported.", completed ) );
         }
     }
 }
