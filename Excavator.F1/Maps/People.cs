@@ -290,19 +290,6 @@ namespace Excavator.F1
                             } );
                         }
 
-                        DateTime? firstVisit = row["First_Record"] as DateTime?;
-                        if ( firstVisit != null )
-                        {
-                            person.CreatedDateTime = firstVisit;
-                            person.Attributes.Add( "FirstVisit", firstVisitAttribute );
-                            person.AttributeValues.Add( "FirstVisit", new List<AttributeValue>() );
-                            person.AttributeValues["FirstVisit"].Add( new AttributeValue()
-                            {
-                                AttributeId = firstVisitAttribute.Id,
-                                Value = firstVisit.Value.ToString( "MM/dd/yyyy" )
-                            } );
-                        }
-
                         DateTime? membershipDate = row["Status_Date"] as DateTime?;
                         if ( membershipDate != null )
                         {
@@ -313,6 +300,20 @@ namespace Excavator.F1
                             {
                                 AttributeId = membershipDateAttribute.Id,
                                 Value = membershipDate.Value.ToString( "MM/dd/yyyy" )
+                            } );
+                        }
+
+                        DateTime? firstVisit = row["First_Record"] as DateTime?;
+                        if ( firstVisit != null )
+                        {
+                            person.CreatedDateTime = firstVisit;
+                            firstVisit = firstVisit < membershipDate ? firstVisit : membershipDate;
+                            person.Attributes.Add( "FirstVisit", firstVisitAttribute );
+                            person.AttributeValues.Add( "FirstVisit", new List<AttributeValue>() );
+                            person.AttributeValues["FirstVisit"].Add( new AttributeValue()
+                            {
+                                AttributeId = firstVisitAttribute.Id,
+                                Value = firstVisit.Value.ToString( "MM/dd/yyyy" )
                             } );
                         }
 
