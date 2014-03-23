@@ -181,6 +181,8 @@ namespace Excavator.F1
         private void MapFamilyAddress( IQueryable<Row> tableData )
         {
             var locationService = new LocationService();
+            var groupLocationService = new GroupLocationService();
+            var groupLocationContext = groupLocationService.RockContext.GroupLocations;
 
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
 
@@ -249,25 +251,18 @@ namespace Excavator.F1
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
-                        RockTransactionScope.WrapTransaction( () =>
-                        {
-                            var groupLocationService = new GroupLocationService();
-                            groupLocationService.Add( groupLocation, ImportPersonAlias );
-                            groupLocationService.Save( groupLocation, ImportPersonAlias );
-                        } );
-
+                        groupLocationContext.Add( groupLocation );
                         completed++;
-                        if ( completed % ReportingNumber == 1 )
+
+                        if ( completed % percentage < 1 )
                         {
-                            if ( completed % percentage < ReportingNumber )
-                            {
-                                int percentComplete = completed / percentage;
-                                ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
-                            }
-                            else
-                            {
-                                ReportPartialProgress();
-                            }
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
+                        }
+                        else if ( completed % ReportingNumber < 1 )
+                        {
+                            groupLocationService.RockContext.SaveChanges();
+                            ReportPartialProgress();
                         }
                     }
                 }

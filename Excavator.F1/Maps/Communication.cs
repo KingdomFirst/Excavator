@@ -32,6 +32,8 @@ namespace Excavator.F1
             var attributeService = new AttributeService();
             var numberService = new PhoneNumberService();
             var personService = new PersonService();
+            var numberContext = numberService.RockContext.PhoneNumbers;
+            var personContext = personService.RockContext.People;
 
             List<DefinedValue> numberTypeValues = new DefinedValueService().Queryable()
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
@@ -62,7 +64,7 @@ namespace Excavator.F1
             }
 
             // Add an Attribute for Twitter
-            int twitterAttributeId = personAttributes.Where( a => a.Name.StartsWith( "TwitterUsername" ) ).Select( a => a.Id ).FirstOrDefault();
+            int twitterAttributeId = personAttributes.Where( a => a.Key == "TwitterUsername" ).Select( a => a.Id ).FirstOrDefault();
             if ( twitterAttributeId == 0 )
             {
                 var newTwitterAttribute = new Rock.Model.Attribute();
@@ -84,7 +86,7 @@ namespace Excavator.F1
             }
 
             // Add an Attribute for Facebook
-            var facebookAttributeId = personAttributes.Where( a => a.Name.StartsWith( "FacebookUsername" ) ).Select( a => a.Id ).FirstOrDefault();
+            var facebookAttributeId = personAttributes.Where( a => a.Key == "FacebookUsername" ).Select( a => a.Id ).FirstOrDefault();
             if ( facebookAttributeId == 0 )
             {
                 var newFacebookAttribute = new Rock.Model.Attribute();
@@ -160,19 +162,14 @@ namespace Excavator.F1
                                 newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
                                     .Select( v => (int?)v.Id ).FirstOrDefault();
 
-                                RockTransactionScope.WrapTransaction( () =>
-                                {
-                                    numberService.Add( newNumber, ImportPersonAlias );
-                                    numberService.Save( newNumber, ImportPersonAlias );
-                                } );
-
+                                numberContext.Add( newNumber );
                                 completed++;
                             }
                         }
                     }
                     else
                     {
-                        var updateValues = true;
+                        var setNewValues = true;
                         var person = personService.Get( (int)personId );
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
@@ -195,7 +192,7 @@ namespace Excavator.F1
                             }
                             else
                             {
-                                updateValues = false;
+                                setNewValues = false;
                             }
 
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
@@ -231,10 +228,10 @@ namespace Excavator.F1
                         }
                         else
                         {
-                            updateValues = false;
+                            setNewValues = false;
                         }
 
-                        if ( updateValues )
+                        if ( setNewValues )
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
@@ -251,21 +248,21 @@ namespace Excavator.F1
                         }
                     }
 
-                    if ( completed % ReportingNumber == 1 )
+                    if ( completed % percentage < 1 )
                     {
-                        if ( completed % percentage < ReportingNumber )
-                        {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else
-                        {
-                            ReportPartialProgress();
-                        }
+                        int percentComplete = completed / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        numberService.RockContext.SaveChanges();
+                        ReportPartialProgress();
                     }
                 }
             }
 
+            numberService.RockContext.SaveChanges();
+            //personService.RockContext.SaveChanges();
             ReportProgress( 100, string.Format( "Finished communication import: {0:N0} records imported.", completed ) );
         }
     }

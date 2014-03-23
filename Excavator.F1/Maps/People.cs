@@ -380,17 +380,14 @@ namespace Excavator.F1
                     } );
 
                     completed++;
-                    if ( completed % ReportingNumber == 1 )
+                    if ( completed % percentage < 1 )
                     {
-                        if ( completed % percentage < ReportingNumber )
-                        {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} people imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else
-                        {
-                            ReportPartialProgress();
-                        }
+                        int percentComplete = completed / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} people imported ({1}% complete).", completed, percentComplete ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        ReportPartialProgress();
                     }
                 }
             }
@@ -493,17 +490,14 @@ namespace Excavator.F1
                     } );
 
                     completed++;
-                    if ( completed % ReportingNumber == 1 )
+                    if ( completed % percentage < 1 )
                     {
-                        if ( completed % percentage < ReportingNumber )
-                        {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} companies imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else
-                        {
-                            ReportPartialProgress();
-                        }
+                        int percentComplete = completed / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} companies imported ({1}% complete).", completed, percentComplete ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        ReportPartialProgress();
                     }
                 }
             }
