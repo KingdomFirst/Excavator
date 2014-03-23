@@ -81,15 +81,16 @@ namespace Excavator.Example
             var tableData = scanner.ScanTable( "TableName" ).AsQueryable();
 
             // Iterate and do something with the data
-            foreach ( var row in tableData )
+            foreach ( var dataRow in tableData )
             {
                 // Get a value from the row. This has to be a nullable type.
-                string columnValue = row["ColumnName"] as string;
+                string columnValue = dataRow["ColumnName"] as string;
 
                 // Create a Rock model and assign data to it
                 Person person = new Person();
 
-                // Standard process to save data in Rock
+                // Save data to Rock using method #1 or #2
+                // 1. Standard process to save data in Rock
                 RockTransactionScope.WrapTransaction( () =>
                 {
                     // Instantiate the object model service
@@ -103,7 +104,28 @@ namespace Excavator.Example
                 } );
             }
 
-            int numberImported = tableData.Count();
+            // 2. More efficient process to import large data sets
+            int completed = 0;
+            var batchPersonService = new PersonService();
+            var batchPersonContext = batchPersonService.RockContext.People;
+
+            // foreach ( var dataRow in tableData )
+            completed++;
+            batchPersonContext.Add( new Person() );
+
+            // Save 100 people at a time
+            if ( completed % 100 < 1 )
+            {
+                batchPersonService.RockContext.SaveChanges();
+            }
+
+            // end foreach
+
+            // Save any that haven't been saved yet.
+            batchPersonService.RockContext.SaveChanges();
+
+            // Report the final progress count
+            int numberImported = completed;
             ReportProgress( 0, string.Format( "Completed import: {0:N0} records imported.", numberImported ) );
             return numberImported;
         }
