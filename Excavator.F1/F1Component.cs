@@ -80,7 +80,7 @@ namespace Excavator.F1
         private int BatchAttributeId;
 
         // Report progress when a multiple of this number has been imported
-        private static int ReportingNumber = 30;
+        private static int ReportingNumber = 50;
 
         #endregion
 
@@ -125,11 +125,11 @@ namespace Excavator.F1
                         switch ( table.Name )
                         {
                             case "Account":
-                                MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Communication":
-                                MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Contribution":
@@ -137,37 +137,30 @@ namespace Excavator.F1
                                 break;
 
                             case "Household_Address":
-                                MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Pledge":
-                                MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                                //MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             default:
                                 break;
                         }
-
-                        // Don't use additional background workers (for now)
-                        //BackgroundWorker bwSpawnProcess = new BackgroundWorker();
-                        //bwSpawnProcess.DoWork += bwSpawnProcess_DoWork;
-                        //bwSpawnProcess.RunWorkerCompleted += bwSpawnProcess_RunWorkerCompleted;
-                        //bwSpawnProcess.RunWorkerAsync( table.Name );
-                        //bgWorkers.Add( bwSpawnProcess );
                     }
                     else
                     {
                         if ( table.Name == "Individual_Household" )
                         {
-                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
+                            //MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Batch" )
                         {
-                            MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
+                            //MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Company" )
                         {
-                            MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
+                            //MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                     }
                 }
@@ -299,65 +292,27 @@ namespace Excavator.F1
             }
             else
             {
-                var lookup = new AttributeValueService().Queryable();
-                string lookupId = individualId.HasValue ? individualId.ToString() : householdId.ToString();
-                if ( individualId != null )
-                {
-                    lookup = lookup.Where( av => av.AttributeId == IndividualAttributeId && av.Value == lookupId );
-                }
-                else
-                {
-                    lookup = lookup.Where( av => av.AttributeId == HouseholdAttributeId && av.Value == lookupId );
-                }
+                int lookupAttributeId = individualId.HasValue ? IndividualAttributeId : HouseholdAttributeId;
+                string lookupValueId = individualId.HasValue ? individualId.ToString() : householdId.ToString();
+                var lookup = new AttributeValueService().Queryable()
+                    .Where( av => av.AttributeId == lookupAttributeId && av.Value == lookupValueId );
 
-                var lookupAttribute = lookup.FirstOrDefault();
-                if ( lookupAttribute != null )
+                var lookupPerson = lookup.FirstOrDefault();
+                if ( lookupPerson != null )
                 {
-                    ImportedPeople.Add( new ImportedPerson() { PersonId = lookupAttribute.EntityId, HouseholdId = householdId, IndividualId = individualId } );
-                    return lookupAttribute.EntityId;
+                    ImportedPeople.Add( new ImportedPerson()
+                    {
+                        PersonId = lookupPerson.EntityId,
+                        HouseholdId = householdId,
+                        IndividualId = individualId
+                    } );
+
+                    return lookupPerson.EntityId;
                 }
             }
 
             return null;
         }
-
-        #endregion
-
-        #region Async Tasks
-
-        /// <summary>
-        /// Runs the background worker method that matches the selected table name
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
-        //private void bwSpawnProcess_DoWork( object sender, DoWorkEventArgs e )
-        //{
-        //    var scanner = new DataScanner( database );
-        //    var nodeName = (string)e.Argument;
-        //    if ( nodeName != null )
-        //    {
-        //        //switch statement
-        //    }
-        //}
-
-        /// <summary>
-        /// Runs when the background process for each method completes
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
-        //private void bwSpawnProcess_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
-        //{
-        //    if ( e.Cancelled != true )
-        //    {
-        //        BackgroundWorker bwSpawnProcess = sender as BackgroundWorker;
-        //        bwSpawnProcess.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwSpawnProcess_RunWorkerCompleted );
-        //        bwSpawnProcess.ProgressChanged -= new ProgressChangedEventHandler( bwSpawnProcess_ProgressChanged );
-        //        bwSpawnProcess.DoWork -= new DoWorkEventHandler( bwSpawnProcess_DoWork );
-        //        bwSpawnProcess.Dispose();
-        //        bgWorkers.Remove( (BackgroundWorker)sender );
-        //    }
-        //}
 
         #endregion
     }
