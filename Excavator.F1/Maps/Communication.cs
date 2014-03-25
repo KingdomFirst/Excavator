@@ -38,12 +38,9 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapCommunication( IQueryable<Row> tableData )
         {
-            var attributeValueService = new AttributeValueService();
-            //var attributeService = new AttributeService();
             var numberService = new PhoneNumberService();
             var categoryService = new CategoryService();
             var personService = new PersonService();
-            var personList = new List<Person>();
 
             List<DefinedValue> numberTypeValues = new DefinedValueService().Queryable()
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
@@ -159,6 +156,9 @@ namespace Excavator.F1
             var twitterUsernameAttribute = AttributeCache.Read( twitterAttributeId );
             var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
 
+            var newNumberList = new List<PhoneNumber>();
+            var updatedPersonList = new List<Person>();
+
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
@@ -272,7 +272,7 @@ namespace Excavator.F1
                             } );
                         }
 
-                        personList.Add( person );
+                        updatedPersonList.Add( person );
                         completed++;
                     }
 
@@ -288,7 +288,8 @@ namespace Excavator.F1
                             personService.RockContext.SaveChanges();
                             numberService.RockContext.SaveChanges();
 
-                            foreach ( var updatedPerson in personList.Where( p => p.Attributes.Any() ) )
+                            var attributeValueService = new AttributeValueService();
+                            foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                             {
                                 foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                                 {
@@ -303,7 +304,8 @@ namespace Excavator.F1
 
                             attributeValueService.RockContext.SaveChanges();
                         }
-                        personList.Clear();
+
+                        updatedPersonList.Clear();
                         ReportPartialProgress();
                     }
                 }
@@ -315,7 +317,8 @@ namespace Excavator.F1
                 personService.RockContext.SaveChanges();
                 numberService.RockContext.SaveChanges();
 
-                foreach ( var updatedPerson in personList.Where( p => p.Attributes.Any() ) )
+                var attributeValueService = new AttributeValueService();
+                foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                 {
                     foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                     {
