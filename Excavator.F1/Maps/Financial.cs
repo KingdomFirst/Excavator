@@ -39,10 +39,7 @@ namespace Excavator.F1
         private void MapAccount( IQueryable<Row> tableData )
         {
             var accountService = new FinancialPersonBankAccountService();
-            var accountContext = accountService.RockContext.FinancialPersonBankAccounts;
-
-            //var accountList = new
-            var accountList = accountService.Queryable().ToList();
+            var importedAccounts = accountService.Queryable().ToList();
 
             int completed = 0;
             int totalRows = tableData.Count();
@@ -62,7 +59,7 @@ namespace Excavator.F1
                     {
                         accountNumber = accountNumber.Replace( " ", string.Empty );
                         string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
-                        if ( !accountList.Any( a => a.PersonId == personId && a.AccountNumberSecured == encodedNumber ) )
+                        if ( !importedAccounts.Any( a => a.PersonId == personId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var account = new FinancialPersonBankAccount();
                             account.CreatedByPersonAliasId = ImportPersonAlias.Id;
@@ -72,7 +69,7 @@ namespace Excavator.F1
                             // Other Attributes (not used):
                             // Account_Type_Name
 
-                            accountContext.Add( account );
+                            accountService.RockContext.FinancialPersonBankAccounts.Add( account );
                             completed++;
                             if ( completed % percentage < 1 )
                             {
@@ -100,9 +97,9 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private void MapBatch( IQueryable<Row> tableData )
         {
+            var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
             var batchService = new FinancialBatchService();
-            var batchContext = batchService.RockContext.FinancialBatches;
             var batchAttribute = AttributeCache.Read( BatchAttributeId );
             var batchStatusClosed = Rock.Model.BatchStatus.Closed;
             var newBatches = new List<FinancialBatch>();
@@ -166,9 +163,15 @@ namespace Excavator.F1
 
                         foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
                         {
-                            Rock.Attribute.Helper.SaveAttributeValue( newBatch.Id, batchAttribute, newBatch.AttributeValues[batchAttribute.Key].Select( av => av.Value ).FirstOrDefault(), ImportPersonAlias );
+                            var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
+                            if ( attributeValue != null )
+                            {
+                                attributeValue.EntityId = newBatch.Id;
+                                attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                            }
                         }
 
+                        attributeValueService.RockContext.SaveChanges();
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -182,8 +185,15 @@ namespace Excavator.F1
 
                 foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
                 {
-                    Rock.Attribute.Helper.SaveAttributeValue( newBatch.Id, batchAttribute, newBatch.AttributeValues[batchAttribute.Key].Select( av => av.Value ).FirstOrDefault(), ImportPersonAlias );
+                    var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
+                    if ( attributeValue != null )
+                    {
+                        attributeValue.EntityId = newBatch.Id;
+                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                    }
                 }
+
+                attributeValueService.RockContext.SaveChanges();
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -197,6 +207,7 @@ namespace Excavator.F1
         private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
+            var attributeValueService = new AttributeValueService();
             var transactionService = new FinancialTransactionService();
             var accountService = new FinancialAccountService();
             var attributeService = new AttributeService();
@@ -240,7 +251,7 @@ namespace Excavator.F1
             var contributionAttribute = AttributeCache.Read( contributionAttributeId );
 
             // Get all imported contributions
-            var importedContributions = new AttributeValueService().GetByAttributeId( contributionAttributeId )
+            var importedContributions = attributeValueService.GetByAttributeId( contributionAttributeId )
                .Select( av => new { ContributionId = av.Value.AsType<int?>(), TransactionId = av.EntityId } )
                .ToDictionary( t => t.ContributionId, t => t.TransactionId );
 
@@ -410,9 +421,15 @@ namespace Excavator.F1
 
                         foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
                         {
-                            Rock.Attribute.Helper.SaveAttributeValue( contribution.Id, contributionAttribute, contribution.AttributeValues[contributionAttribute.Key].Select( av => av.Value ).FirstOrDefault(), ImportPersonAlias );
+                            var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
+                            if ( attributeValue != null )
+                            {
+                                attributeValue.EntityId = contribution.Id;
+                                attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                            }
                         }
 
+                        attributeValueService.RockContext.SaveChanges();
                         newContributions.Clear();
                         ReportPartialProgress();
                     }
@@ -426,8 +443,15 @@ namespace Excavator.F1
 
                 foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
                 {
-                    Rock.Attribute.Helper.SaveAttributeValue( contribution.Id, contributionAttribute, contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault().Value, ImportPersonAlias );
+                    var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
+                    if ( attributeValue != null )
+                    {
+                        attributeValue.EntityId = contribution.Id;
+                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                    }
                 }
+
+                attributeValueService.RockContext.SaveChanges();
             }
 
             ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
@@ -442,9 +466,8 @@ namespace Excavator.F1
         {
             var accountService = new FinancialAccountService();
             var pledgeService = new FinancialPledgeService();
-            var pledgeContext = pledgeService.RockContext.FinancialPledges;
 
-            List<FinancialAccount> accountList = accountService.Queryable().ToList();
+            List<FinancialAccount> importedAccounts = accountService.Queryable().ToList();
 
             List<DefinedValue> pledgeFrequencies = new DefinedValueService().Queryable()
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
@@ -497,21 +520,22 @@ namespace Excavator.F1
                             int? fundCampusId = null;
                             if ( subFund != null )
                             {
+                                // match by campus if the subfund appears to be a campus
                                 fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
                                     .Select( c => (int?)c.Id ).FirstOrDefault();
 
                                 if ( fundCampusId != null )
                                 {
-                                    matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
+                                    matchingAccount = importedAccounts.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
                                 }
                                 else
                                 {
-                                    matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) );
+                                    matchingAccount = importedAccounts.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) );
                                 }
                             }
                             else
                             {
-                                matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
+                                matchingAccount = importedAccounts.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
                             }
 
                             if ( matchingAccount == null )
@@ -526,7 +550,7 @@ namespace Excavator.F1
 
                                 accountService.Add( matchingAccount );
                                 accountService.Save( matchingAccount );
-                                accountList.Add( matchingAccount );
+                                importedAccounts.Add( matchingAccount );
                                 pledge.AccountId = matchingAccount.Id;
                             }
                         }
@@ -534,7 +558,7 @@ namespace Excavator.F1
                         // Attributes to add?
                         // Pledge_Drive_Name
 
-                        pledgeContext.Add( pledge );
+                        pledgeService.RockContext.FinancialPledges.Add( pledge );
                         completed++;
                         if ( completed % percentage < 1 )
                         {
