@@ -38,7 +38,6 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapCommunication( IQueryable<Row> tableData )
         {
-            var numberService = new PhoneNumberService();
             var categoryService = new CategoryService();
             var personService = new PersonService();
 
@@ -156,6 +155,8 @@ namespace Excavator.F1
             var twitterUsernameAttribute = AttributeCache.Read( twitterAttributeId );
             var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
 
+            var existingNumbers = new PhoneNumberService().Queryable().ToList();
+
             var newNumberList = new List<PhoneNumber>();
             var updatedPersonList = new List<Person>();
 
@@ -193,7 +194,7 @@ namespace Excavator.F1
 
                         if ( !string.IsNullOrWhiteSpace( value ) )
                         {
-                            bool numberExists = numberService.GetByPersonId( (int)personId ).Any( n => n.Number.Equals( value ) );
+                            bool numberExists = existingNumbers.Any( n => n.PersonId == (int)personId && n.Number.Equals( value ) );
                             if ( !numberExists )
                             {
                                 var newNumber = new PhoneNumber();
@@ -209,7 +210,7 @@ namespace Excavator.F1
                                 newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
                                     .Select( v => (int?)v.Id ).FirstOrDefault();
 
-                                numberService.RockContext.PhoneNumbers.Add( newNumber );
+                                newNumberList.Add( newNumber );
                                 completed++;
                             }
                         }
@@ -285,8 +286,13 @@ namespace Excavator.F1
                     {
                         using ( new UnitOfWorkScope() )
                         {
-                            personService.RockContext.SaveChanges();
+                            var numberService = new PhoneNumberService();
+                            numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
                             numberService.RockContext.SaveChanges();
+
+                            // create a new context with existing data models
+                            // updated person data being tracked with current context
+                            personService.RockContext.SaveChanges();
 
                             var attributeValueService = new AttributeValueService();
                             foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
@@ -314,8 +320,10 @@ namespace Excavator.F1
             // Catch any numbers or person changes outside the last batch
             using ( new UnitOfWorkScope() )
             {
-                personService.RockContext.SaveChanges();
+                var numberService = new PhoneNumberService();
+                numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
                 numberService.RockContext.SaveChanges();
+                personService.RockContext.SaveChanges();
 
                 var attributeValueService = new AttributeValueService();
                 foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
