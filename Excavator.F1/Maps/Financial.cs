@@ -146,7 +146,8 @@ namespace Excavator.F1
                     batch.AttributeValues[batchAttribute.Key].Add( new AttributeValue()
                     {
                         AttributeId = batchAttribute.Id,
-                        Value = batchId.ToString()
+                        Value = batchId.ToString(),
+                        Order = 0
                     } );
 
                     newBatches.Add( batch );
@@ -404,7 +405,8 @@ namespace Excavator.F1
                     transaction.AttributeValues[contributionAttribute.Key].Add( new AttributeValue()
                     {
                         AttributeId = contributionAttribute.Id,
-                        Value = contributionId.ToString()
+                        Value = contributionId.ToString(),
+                        Order = 0
                     } );
 
                     newContributions.Add( transaction );
