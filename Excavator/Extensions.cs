@@ -17,6 +17,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Text;
 using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
 
@@ -137,6 +138,24 @@ namespace Excavator
         public static bool IsValidEmail( this string email )
         {
             return Regex.IsMatch( email, @"\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*" );
+        }
+
+        /// <summary>
+        /// Removes special characters from strings.
+        /// </summary>
+        /// <param name="str">The identifier.</param>
+        /// <returns></returns>
+        public static string RemoveSpecialCharacters( this string str )
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach ( char c in str )
+            {
+                if ( ( c >= '0' && c <= '9' ) || ( c >= 'A' && c <= 'Z' ) || ( c >= 'a' && c <= 'z' ) )
+                {
+                    sb.Append( c );
+                }
+            }
+            return sb.ToString();
         }
     }
 }

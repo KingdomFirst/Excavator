@@ -181,7 +181,7 @@ namespace Excavator.F1
         private void MapFamilyAddress( IQueryable<Row> tableData )
         {
             var locationService = new LocationService();
-
+            var groupLocationService = new GroupLocationService();
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
 
             List<DefinedValue> groupLocationTypeList = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
@@ -194,8 +194,8 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
-            ReportProgress( 0, string.Format( "Starting address import ({0:N0} to import)...", totalRows ) );
+            int percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, string.Format( "Starting address import ({0:N0} to import).", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -249,30 +249,24 @@ namespace Excavator.F1
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
-                        RockTransactionScope.WrapTransaction( () =>
-                        {
-                            var groupLocationService = new GroupLocationService();
-                            groupLocationService.Add( groupLocation, ImportPersonAlias );
-                            groupLocationService.Save( groupLocation, ImportPersonAlias );
-                        } );
-
+                        groupLocationService.RockContext.GroupLocations.Add( groupLocation );
                         completed++;
-                        if ( completed % ReportingNumber == 1 )
+
+                        if ( completed % percentage < 1 )
                         {
-                            if ( completed % percentage < ReportingNumber )
-                            {
-                                int percentComplete = completed / percentage;
-                                ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete)...", completed, percentComplete ) );
-                            }
-                            else
-                            {
-                                ReportPartialProgress();
-                            }
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
+                        }
+                        else if ( completed % ReportingNumber < 1 )
+                        {
+                            groupLocationService.RockContext.SaveChanges();
+                            ReportPartialProgress();
                         }
                     }
                 }
             }
 
+            groupLocationService.RockContext.SaveChanges();
             ReportProgress( 100, string.Format( "Finished address import: {0:N0} addresses imported.", completed ) );
         }
     }

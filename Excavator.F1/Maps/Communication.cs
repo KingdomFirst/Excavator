@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OrcaMDF.Core.MetaData;
+using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -29,18 +30,41 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapCommunication( IQueryable<Row> tableData )
         {
-            var attributeService = new AttributeService();
+            var attributeValueService = new AttributeValueService();
+            //var attributeService = new AttributeService();
             var numberService = new PhoneNumberService();
+            var categoryService = new CategoryService();
             var personService = new PersonService();
+            var personList = new List<Person>();
 
             List<DefinedValue> numberTypeValues = new DefinedValueService().Queryable()
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
 
+            // Add a Social Media category if it doesn't exist
+            int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
+            int socialMediaCategoryId = categoryService.Queryable().Where( c => c.EntityType.Id == attributeEntityTypeId && c.Name == "Social Media" ).Select( c => c.Id ).FirstOrDefault();
+            if ( socialMediaCategoryId == 0 )
+            {
+                var socialMediaCategory = new Category();
+                socialMediaCategory.IsSystem = false;
+                socialMediaCategory.Name = "Social Media";
+                socialMediaCategory.IconCssClass = "fa fa-twitter";
+                socialMediaCategory.EntityTypeId = attributeEntityTypeId;
+                socialMediaCategory.EntityTypeQualifierColumn = "EntityTypeId";
+                socialMediaCategory.EntityTypeQualifierValue = PersonEntityTypeId.ToString();
+                socialMediaCategory.Order = 0;
+
+                categoryService.Add( socialMediaCategory, ImportPersonAlias );
+                categoryService.Save( socialMediaCategory, ImportPersonAlias );
+            }
+
+            int visitInfoCategoryId = categoryService.Queryable().Where( c => c.EntityTypeId == attributeEntityTypeId && c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
+
             // Look up additional Person attributes (existing)
-            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            var personAttributes = new AttributeService().GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
             // Add an Attribute for the secondary email
-            var secondaryEmailAttributeId = personAttributes.Where( a => a.Key == "SecondaryEmail" ).Select( a => a.Id ).FirstOrDefault();
+            int secondaryEmailAttributeId = personAttributes.Where( a => a.Key == "SecondaryEmail" ).Select( a => a.Id ).FirstOrDefault();
             if ( secondaryEmailAttributeId == 0 )
             {
                 var newSecondaryEmailAttribute = new Rock.Model.Attribute();
@@ -56,13 +80,19 @@ namespace Excavator.F1
                 newSecondaryEmailAttribute.IsRequired = false;
                 newSecondaryEmailAttribute.Order = 0;
 
-                attributeService.Add( newSecondaryEmailAttribute, ImportPersonAlias );
-                attributeService.Save( newSecondaryEmailAttribute, ImportPersonAlias );
-                secondaryEmailAttributeId = newSecondaryEmailAttribute.Id;
+                using ( new UnitOfWorkScope() )
+                {
+                    var attributeService = new AttributeService();
+                    attributeService.Add( newSecondaryEmailAttribute );
+                    var visitInfoCategory = new CategoryService().Get( visitInfoCategoryId );
+                    newSecondaryEmailAttribute.Categories.Add( visitInfoCategory );
+                    attributeService.Save( newSecondaryEmailAttribute );
+                    secondaryEmailAttributeId = newSecondaryEmailAttribute.Id;
+                }
             }
 
             // Add an Attribute for Twitter
-            int twitterAttributeId = personAttributes.Where( a => a.Name.StartsWith( "TwitterUsername" ) ).Select( a => a.Id ).FirstOrDefault();
+            int twitterAttributeId = personAttributes.Where( a => a.Key == "TwitterUsername" ).Select( a => a.Id ).FirstOrDefault();
             if ( twitterAttributeId == 0 )
             {
                 var newTwitterAttribute = new Rock.Model.Attribute();
@@ -78,13 +108,19 @@ namespace Excavator.F1
                 newTwitterAttribute.IsRequired = false;
                 newTwitterAttribute.Order = 0;
 
-                attributeService.Add( newTwitterAttribute, ImportPersonAlias );
-                attributeService.Save( newTwitterAttribute, ImportPersonAlias );
-                twitterAttributeId = newTwitterAttribute.Id;
+                using ( new UnitOfWorkScope() )
+                {
+                    var attributeService = new AttributeService();
+                    attributeService.Add( newTwitterAttribute );
+                    var socialMediaCategory = new CategoryService().Get( socialMediaCategoryId );
+                    newTwitterAttribute.Categories.Add( socialMediaCategory );
+                    attributeService.Save( newTwitterAttribute );
+                    twitterAttributeId = newTwitterAttribute.Id;
+                }
             }
 
             // Add an Attribute for Facebook
-            var facebookAttributeId = personAttributes.Where( a => a.Name.StartsWith( "FacebookUsername" ) ).Select( a => a.Id ).FirstOrDefault();
+            var facebookAttributeId = personAttributes.Where( a => a.Key == "FacebookUsername" ).Select( a => a.Id ).FirstOrDefault();
             if ( facebookAttributeId == 0 )
             {
                 var newFacebookAttribute = new Rock.Model.Attribute();
@@ -100,9 +136,15 @@ namespace Excavator.F1
                 newFacebookAttribute.IsRequired = false;
                 newFacebookAttribute.Order = 0;
 
-                attributeService.Add( newFacebookAttribute, ImportPersonAlias );
-                attributeService.Save( newFacebookAttribute, ImportPersonAlias );
-                facebookAttributeId = newFacebookAttribute.Id;
+                using ( new UnitOfWorkScope() )
+                {
+                    var attributeService = new AttributeService();
+                    attributeService.Add( newFacebookAttribute );
+                    var socialMediaCategory = new CategoryService().Get( socialMediaCategoryId );
+                    newFacebookAttribute.Categories.Add( socialMediaCategory );
+                    attributeService.Save( newFacebookAttribute );
+                    facebookAttributeId = newFacebookAttribute.Id;
+                }
             }
 
             var secondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttributeId );
@@ -111,8 +153,8 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
-            ReportProgress( 0, string.Format( "Starting communication import ({0:N0} to import)...", totalRows ) );
+            int percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, string.Format( "Starting communication import ({0:N0} to import).", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -120,7 +162,6 @@ namespace Excavator.F1
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
                 int? personId = GetPersonId( individualId, householdId );
-
                 if ( personId != null && !string.IsNullOrWhiteSpace( value ) )
                 {
                     DateTime? lastUpdated = row["LastUpdatedDate"] as DateTime?;
@@ -144,7 +185,7 @@ namespace Excavator.F1
 
                         if ( !string.IsNullOrWhiteSpace( value ) )
                         {
-                            var numberExists = numberService.GetByPersonId( (int)personId ).Any( n => n.Number.Equals( value ) );
+                            bool numberExists = numberService.GetByPersonId( (int)personId ).Any( n => n.Number.Equals( value ) );
                             if ( !numberExists )
                             {
                                 var newNumber = new PhoneNumber();
@@ -160,19 +201,13 @@ namespace Excavator.F1
                                 newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
                                     .Select( v => (int?)v.Id ).FirstOrDefault();
 
-                                RockTransactionScope.WrapTransaction( () =>
-                                {
-                                    numberService.Add( newNumber, ImportPersonAlias );
-                                    numberService.Save( newNumber, ImportPersonAlias );
-                                } );
-
+                                numberService.RockContext.PhoneNumbers.Add( newNumber );
                                 completed++;
                             }
                         }
                     }
                     else
                     {
-                        var updateValues = true;
                         var person = personService.Get( (int)personId );
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
@@ -193,10 +228,6 @@ namespace Excavator.F1
                             {
                                 secondaryEmail = value;
                             }
-                            else
-                            {
-                                updateValues = false;
-                            }
 
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
                             {
@@ -205,7 +236,8 @@ namespace Excavator.F1
                                 person.AttributeValues["SecondaryEmail"].Add( new AttributeValue()
                                 {
                                     AttributeId = secondaryEmailAttribute.Id,
-                                    Value = secondaryEmail
+                                    Value = secondaryEmail,
+                                    Order = 0
                                 } );
                             }
                         }
@@ -216,7 +248,8 @@ namespace Excavator.F1
                             person.AttributeValues["TwitterUsername"].Add( new AttributeValue()
                             {
                                 AttributeId = twitterUsernameAttribute.Id,
-                                Value = value
+                                Value = value,
+                                Order = 0
                             } );
                         }
                         else if ( type.Contains( "Facebook" ) )
@@ -226,45 +259,62 @@ namespace Excavator.F1
                             person.AttributeValues["FacebookUsername"].Add( new AttributeValue()
                             {
                                 AttributeId = facebookUsernameAttribute.Id,
-                                Value = value
+                                Value = value,
+                                Order = 0
                             } );
                         }
-                        else
-                        {
-                            updateValues = false;
-                        }
 
-                        if ( updateValues )
-                        {
-                            RockTransactionScope.WrapTransaction( () =>
-                            {
-                                personService.Save( person, ImportPersonAlias );
-
-                                foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
-                                {
-                                    string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
-                                    Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
-                                }
-                            } );
-
-                            completed++;
-                        }
+                        personList.Add( person );
+                        completed++;
                     }
 
-                    if ( completed % ReportingNumber == 1 )
+                    if ( completed % percentage < 1 )
                     {
-                        if ( completed % percentage < ReportingNumber )
+                        int percentComplete = completed / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        personService.RockContext.SaveChanges();
+                        numberService.RockContext.SaveChanges();
+
+                        foreach ( var updatedPerson in personList.Where( p => p.Attributes.Any() ) )
                         {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete)...", completed, percentComplete ) );
+                            foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
+                            {
+                                var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                if ( newValue != null )
+                                {
+                                    newValue.EntityId = updatedPerson.Id;
+                                    attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                }
+                            }
                         }
-                        else
-                        {
-                            ReportPartialProgress();
-                        }
+
+                        attributeValueService.RockContext.SaveChanges();
+                        personList.Clear();
+                        ReportPartialProgress();
                     }
                 }
             }
+
+            personService.RockContext.SaveChanges();
+            numberService.RockContext.SaveChanges();
+
+            foreach ( var updatedPerson in personList.Where( p => p.Attributes.Any() ) )
+            {
+                foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
+                {
+                    var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                    if ( newValue != null )
+                    {
+                        newValue.EntityId = updatedPerson.Id;
+                        attributeValueService.RockContext.AttributeValues.Add( newValue );
+                    }
+                }
+            }
+
+            attributeValueService.RockContext.SaveChanges();
 
             ReportProgress( 100, string.Format( "Finished communication import: {0:N0} records imported.", completed ) );
         }
