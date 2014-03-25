@@ -195,7 +195,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Starting address import ({0:N0} to import).", totalRows ) );
+            ReportProgress( 0, string.Format( "Checking address import ({0:N0} found).", totalRows ) );
 
             foreach ( var row in tableData )
             {

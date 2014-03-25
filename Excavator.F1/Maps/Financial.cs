@@ -44,7 +44,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Starting check number import ({0:N0} to import).", totalRows ) );
+            ReportProgress( 0, string.Format( "Checking check number import ({0:N0} found).", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -107,7 +107,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Starting batch import ({0:N0} found, {1:N0} already imported).", totalRows, ImportedBatches.Count() ) );
+            ReportProgress( 0, string.Format( "Checking batch import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedBatches.Count() ) );
             foreach ( var row in tableData )
             {
                 int? batchId = row["BatchID"] as int?;
@@ -262,7 +262,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Starting contribution import ({0:N0} found, {1:N0} already imported).", totalRows, importedContributions.Count() ) );
+            ReportProgress( 0, string.Format( "Checking contribution import ({0:N0} found, {1:N0} already exist).", totalRows, importedContributions.Count() ) );
             foreach ( var row in tableData )
             {
                 int? individualId = row["Individual_ID"] as int?;
@@ -479,7 +479,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Starting pledge import ({0:N0} to import).", totalRows ) );
+            ReportProgress( 0, string.Format( "Checking pledge import ({0:N0} found).", totalRows ) );
 
             foreach ( var row in tableData )
             {
