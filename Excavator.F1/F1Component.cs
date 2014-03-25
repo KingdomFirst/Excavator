@@ -125,11 +125,11 @@ namespace Excavator.F1
                         switch ( table.Name )
                         {
                             case "Account":
-                                //MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Communication":
-                                //MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Contribution":
@@ -137,11 +137,11 @@ namespace Excavator.F1
                                 break;
 
                             case "Household_Address":
-                                //MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Pledge":
-                                //MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             default:
@@ -152,15 +152,15 @@ namespace Excavator.F1
                     {
                         if ( table.Name == "Individual_Household" )
                         {
-                            //MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Batch" )
                         {
-                            //MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Company" )
                         {
-                            //MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
+                            MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                     }
                 }
@@ -187,6 +187,7 @@ namespace Excavator.F1
             TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             BatchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
+
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
             var householdAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" );
