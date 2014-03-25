@@ -196,7 +196,7 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
+            int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Starting address import ({0:N0} to import).", totalRows ) );
 
             foreach ( var row in tableData )
@@ -268,6 +268,7 @@ namespace Excavator.F1
                 }
             }
 
+            groupLocationService.RockContext.SaveChanges();
             ReportProgress( 100, string.Format( "Finished address import: {0:N0} addresses imported.", completed ) );
         }
     }

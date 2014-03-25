@@ -46,7 +46,7 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
+            int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Starting check number import ({0:N0} to import).", totalRows ) );
 
             foreach ( var row in tableData )
@@ -105,10 +105,11 @@ namespace Excavator.F1
             var batchContext = batchService.RockContext.FinancialBatches;
             var batchAttribute = AttributeCache.Read( BatchAttributeId );
             var batchStatusClosed = Rock.Model.BatchStatus.Closed;
+            var newBatches = new List<FinancialBatch>();
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
+            int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Starting batch import ({0:N0} found, {1:N0} already imported).", totalRows, ImportedBatches.Count() ) );
             foreach ( var row in tableData )
             {
@@ -141,21 +142,18 @@ namespace Excavator.F1
                         batch.ControlAmount = amount.HasValue ? amount.Value : new decimal();
                     }
 
-                    //RockTransactionScope.WrapTransaction( () =>
-                    //{
-                    //    var batchService = new FinancialBatchService();
-                    //    batchService.Add( batch, ImportPersonAlias );
-                    //    batchService.Save( batch, ImportPersonAlias );
+                    batch.Attributes = new Dictionary<string, AttributeCache>();
+                    batch.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                    batch.Attributes.Add( batchAttribute.Key, batchAttribute );
+                    batch.AttributeValues.Add( batchAttribute.Key, new List<AttributeValue>() );
+                    batch.AttributeValues[batchAttribute.Key].Add( new AttributeValue()
+                    {
+                        AttributeId = batchAttribute.Id,
+                        Value = batchId.ToString()
+                    } );
 
-                    //    batch.Attributes = new Dictionary<string, AttributeCache>();
-                    //    batch.Attributes.Add( "F1BatchId", batchAttribute );
-                    //    batch.AttributeValues = new Dictionary<string, List<AttributeValue>>();
-                    //    Rock.Attribute.Helper.SaveAttributeValue( batch, batchAttribute, batchId.ToString(), ImportPersonAlias );
-                    //} );
-
-                    batchContext.Add( batch );
+                    newBatches.Add( batch );
                     completed++;
-
                     if ( completed % percentage < 1 )
                     {
                         int percentComplete = completed / percentage;
@@ -163,13 +161,31 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
+                        batchService.RockContext.FinancialBatches.AddRange( newBatches );
                         batchService.RockContext.SaveChanges();
+
+                        foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                        {
+                            Rock.Attribute.Helper.SaveAttributeValue( newBatch.Id, batchAttribute, newBatch.AttributeValues[batchAttribute.Key].Select( av => av.Value ).FirstOrDefault(), ImportPersonAlias );
+                        }
+
+                        newBatches.Clear();
                         ReportPartialProgress();
                     }
                 }
             }
 
-            batchService.RockContext.SaveChanges();
+            if ( newBatches.Any() )
+            {
+                batchService.RockContext.FinancialBatches.AddRange( newBatches );
+                batchService.RockContext.SaveChanges();
+
+                foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                {
+                    Rock.Attribute.Helper.SaveAttributeValue( newBatch.Id, batchAttribute, newBatch.AttributeValues[batchAttribute.Key].Select( av => av.Value ).FirstOrDefault(), ImportPersonAlias );
+                }
+            }
+
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
         }
 
@@ -181,10 +197,9 @@ namespace Excavator.F1
         private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
+            var transactionService = new FinancialTransactionService();
             var accountService = new FinancialAccountService();
             var attributeService = new AttributeService();
-
-            var transactionService = new FinancialTransactionService();
 
             var transactionTypeContributionId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
 
@@ -228,11 +243,13 @@ namespace Excavator.F1
             var importedContributions = new AttributeValueService().GetByAttributeId( contributionAttributeId )
                .Select( av => new { ContributionId = av.Value.AsType<int?>(), TransactionId = av.EntityId } )
                .ToDictionary( t => t.ContributionId, t => t.TransactionId );
+
+            // List for batching new contributions
             var newContributions = new List<FinancialTransaction>();
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
+            int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Starting contribution import ({0:N0} found, {1:N0} already imported).", totalRows, importedContributions.Count() ) );
             foreach ( var row in tableData )
             {
@@ -381,18 +398,6 @@ namespace Excavator.F1
 
                     newContributions.Add( transaction );
                     completed++;
-
-                    //RockTransactionScope.WrapTransaction( () =>
-                    //{
-                    //    var transactionService = new FinancialTransactionService();
-                    //    transactionService.Add( transaction, ImportPersonAlias );
-                    //    transactionService.Save( transaction, ImportPersonAlias );
-                    //transaction.Attributes = new Dictionary<string, AttributeCache>();
-                    //transaction.Attributes.Add( "F1ContributionId", contributionAttribute );
-                    //transaction.AttributeValues = new Dictionary<string, List<AttributeValue>>();
-                    //Rock.Attribute.Helper.SaveAttributeValue( transaction, contributionAttribute, contributionId.ToString(), ImportPersonAlias );
-                    //} );
-
                     if ( completed % percentage < 1 )
                     {
                         int percentComplete = completed / percentage;
@@ -403,9 +408,9 @@ namespace Excavator.F1
                         transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
                         transactionService.RockContext.SaveChanges();
 
-                        foreach ( var contribution in newContributions )
+                        foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
                         {
-                            Rock.Attribute.Helper.SaveAttributeValue( transaction.Id, contributionAttribute, transaction.AttributeValues[contributionAttribute.Key].FirstOrDefault().Value, ImportPersonAlias );
+                            Rock.Attribute.Helper.SaveAttributeValue( contribution.Id, contributionAttribute, contribution.AttributeValues[contributionAttribute.Key].Select( av => av.Value ).FirstOrDefault(), ImportPersonAlias );
                         }
 
                         newContributions.Clear();
@@ -414,8 +419,17 @@ namespace Excavator.F1
                 }
             }
 
-            transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
-            transactionService.RockContext.SaveChanges();
+            if ( newContributions.Any() )
+            {
+                transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
+                transactionService.RockContext.SaveChanges();
+
+                foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
+                {
+                    Rock.Attribute.Helper.SaveAttributeValue( contribution.Id, contributionAttribute, contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault().Value, ImportPersonAlias );
+                }
+            }
+
             ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
         }
 
@@ -439,7 +453,7 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
+            int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Starting pledge import ({0:N0} to import).", totalRows ) );
 
             foreach ( var row in tableData )

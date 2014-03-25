@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using OrcaMDF.Core.MetaData;
 using Rock.Data;
@@ -41,6 +42,9 @@ namespace Excavator.F1
             var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
             var dvService = new DefinedValueService();
+            var personService = new PersonService();
+            var groupService = new GroupService();
+            var familyList = new List<Group>();
 
             // Marital statuses: Married, Single, Separated, etc
             List<DefinedValue> maritalStatusTypes = dvService.Queryable()
@@ -95,7 +99,7 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
+            int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Starting person import ({0:N0} found, {1:N0} already imported).", totalRows, ImportedPeople.Count() ) );
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
@@ -107,8 +111,6 @@ namespace Excavator.F1
                 {
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-
-                    // Check if person already imported
                     if ( GetPersonId( individualId, householdId ) == null )
                     {
                         var person = new Person();
@@ -130,14 +132,16 @@ namespace Excavator.F1
                         string prefix = row["Prefix"] as string;
                         if ( prefix != null )
                         {
-                            person.TitleValueId = titleTypes.Where( s => s.Name == prefix )
+                            prefix = prefix.RemoveSpecialCharacters().Trim();
+                            person.TitleValueId = titleTypes.Where( s => prefix == s.Name.RemoveSpecialCharacters() )
                                 .Select( s => (int?)s.Id ).FirstOrDefault();
                         }
 
                         string suffix = row["Suffix"] as string;
                         if ( suffix != null )
                         {
-                            person.SuffixValueId = suffixTypes.Where( s => s.Name == suffix )
+                            suffix = suffix.RemoveSpecialCharacters().Trim();
+                            person.SuffixValueId = suffixTypes.Where( s => suffix == s.Name.RemoveSpecialCharacters() )
                                 .Select( s => (int?)s.Id ).FirstOrDefault();
                         }
 
@@ -226,7 +230,8 @@ namespace Excavator.F1
                             person.AttributeValues["F1IndividualId"].Add( new AttributeValue()
                             {
                                 AttributeId = individualIdAttribute.Id,
-                                Value = individualId.ToString()
+                                Value = individualId.ToString(),
+                                Order = 0
                             } );
                         }
 
@@ -238,7 +243,8 @@ namespace Excavator.F1
                             person.AttributeValues["F1HouseholdId"].Add( new AttributeValue()
                             {
                                 AttributeId = householdIdAttribute.Id,
-                                Value = householdId.ToString()
+                                Value = householdId.ToString(),
+                                Order = 0
                             } );
                         }
 
@@ -250,7 +256,8 @@ namespace Excavator.F1
                             person.AttributeValues["PreviousChurch"].Add( new AttributeValue()
                             {
                                 AttributeId = previousChurchAttribute.Id,
-                                Value = previousChurch
+                                Value = previousChurch,
+                                Order = 0
                             } );
                         }
 
@@ -262,7 +269,8 @@ namespace Excavator.F1
                             person.AttributeValues["Employer"].Add( new AttributeValue()
                             {
                                 AttributeId = employerAttribute.Id,
-                                Value = employer
+                                Value = employer,
+                                Order = 0
                             } );
                         }
 
@@ -274,7 +282,8 @@ namespace Excavator.F1
                             person.AttributeValues["Position"].Add( new AttributeValue()
                             {
                                 AttributeId = positionAttribute.Id,
-                                Value = position
+                                Value = position,
+                                Order = 0
                             } );
                         }
 
@@ -286,7 +295,8 @@ namespace Excavator.F1
                             person.AttributeValues["School"].Add( new AttributeValue()
                             {
                                 AttributeId = schoolAttribute.Id,
-                                Value = school
+                                Value = school,
+                                Order = 0
                             } );
                         }
 
@@ -299,7 +309,8 @@ namespace Excavator.F1
                             person.AttributeValues["MembershipDate"].Add( new AttributeValue()
                             {
                                 AttributeId = membershipDateAttribute.Id,
-                                Value = membershipDate.Value.ToString( "MM/dd/yyyy" )
+                                Value = membershipDate.Value.ToString( "MM/dd/yyyy" ),
+                                Order = 0
                             } );
                         }
 
@@ -307,13 +318,15 @@ namespace Excavator.F1
                         if ( firstVisit != null )
                         {
                             person.CreatedDateTime = firstVisit;
-                            firstVisit = firstVisit < membershipDate ? firstVisit : membershipDate;
+                            // will always pick firstVisit if membershipDate is null
+                            firstVisit = firstVisit > membershipDate ? membershipDate : firstVisit;
                             person.Attributes.Add( "FirstVisit", firstVisitAttribute );
                             person.AttributeValues.Add( "FirstVisit", new List<AttributeValue>() );
                             person.AttributeValues["FirstVisit"].Add( new AttributeValue()
                             {
                                 AttributeId = firstVisitAttribute.Id,
-                                Value = firstVisit.Value.ToString( "MM/dd/yyyy" )
+                                Value = firstVisit.Value.ToString( "MM/dd/yyyy" ),
+                                Order = 0
                             } );
                         }
 
@@ -331,7 +344,6 @@ namespace Excavator.F1
                     }
                 }
 
-                // If this family hasn't already been imported
                 if ( familyGroup.Members.Any() )
                 {
                     familyGroup.Name = familyGroup.Members.FirstOrDefault().Person.LastName + " Family";
@@ -345,40 +357,7 @@ namespace Excavator.F1
                             .Select( c => (int?)c.Id ).FirstOrDefault();
                     }
 
-                    RockTransactionScope.WrapTransaction( () =>
-                    {
-                        var groupService = new GroupService();
-                        groupService.Add( familyGroup, ImportPersonAlias );
-                        groupService.Save( familyGroup, ImportPersonAlias );
-
-                        var personService = new PersonService();
-                        foreach ( var groupMember in familyGroup.Members )
-                        {
-                            var person = groupMember.Person;
-                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
-                            {
-                                string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
-                                Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
-                            }
-
-                            person = personService.Get( groupMember.PersonId );
-                            if ( person != null )
-                            {
-                                if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
-                                {
-                                    person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
-                                }
-
-                                if ( groupMember.GroupRoleId != childRoleId )
-                                {
-                                    person.GivingGroupId = familyGroup.Id;
-                                }
-
-                                personService.Save( person, ImportPersonAlias );
-                            }
-                        }
-                    } );
-
+                    familyList.Add( familyGroup );
                     completed++;
                     if ( completed % percentage < 1 )
                     {
@@ -387,9 +366,79 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
+                        groupService.RockContext.Groups.AddRange( familyList );
+                        groupService.RockContext.SaveChanges();
+
+                        foreach ( var newFamilyGroup in familyList )
+                        {
+                            foreach ( var groupMember in newFamilyGroup.Members )
+                            {
+                                var person = groupMember.Person;
+                                foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                                {
+                                    var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                    if ( newValue != null )
+                                    {
+                                        newValue.EntityId = person.Id;
+                                        attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                    }
+                                }
+
+                                if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                                {
+                                    person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                                }
+
+                                if ( groupMember.GroupRoleId != childRoleId )
+                                {
+                                    person.GivingGroupId = newFamilyGroup.Id;
+                                }
+                            }
+                        }
+
+                        attributeValueService.RockContext.SaveChanges();
+                        personService.RockContext.SaveChanges();
+                        familyList.Clear();
                         ReportPartialProgress();
                     }
                 }
+            }
+
+            // Save any remaining families in the batch
+            if ( familyList.Any() )
+            {
+                groupService.RockContext.Groups.AddRange( familyList );
+                groupService.RockContext.SaveChanges();
+
+                foreach ( var newFamilyGroup in familyList )
+                {
+                    foreach ( var groupMember in newFamilyGroup.Members )
+                    {
+                        var person = groupMember.Person;
+                        foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                        {
+                            var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+                            if ( newValue != null )
+                            {
+                                newValue.EntityId = person.Id;
+                                attributeValueService.RockContext.AttributeValues.Add( newValue );
+                            }
+                        }
+
+                        if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                        {
+                            person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                        }
+
+                        if ( groupMember.GroupRoleId != childRoleId )
+                        {
+                            person.GivingGroupId = newFamilyGroup.Id;
+                        }
+                    }
+                }
+
+                attributeValueService.RockContext.SaveChanges();
+                personService.RockContext.SaveChanges();
             }
 
             ReportProgress( 100, string.Format( "Finished person import: {0:N0} people imported.", completed ) );
@@ -405,6 +454,9 @@ namespace Excavator.F1
             var groupTypeRoleService = new GroupTypeRoleService();
             var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
+            var personService = new PersonService();
+            var groupService = new GroupService();
+            var businessList = new List<Group>();
 
             // Record status: Active, Inactive, Pending
             int? statusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
@@ -425,19 +477,19 @@ namespace Excavator.F1
 
             int completed = 0;
             int totalRows = tableData.Count();
-            int percentage = totalRows / 100;
+            int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Starting company import ({0:N0} found).", totalRows ) );
 
             foreach ( var row in tableData )
             {
                 int? householdId = row["Household_ID"] as int?;
-                // Check if person already imported
                 if ( GetPersonId( null, householdId ) == null )
                 {
                     var businessGroup = new Group();
                     var business = new Person();
 
                     var businessName = row["Household_Name"] as string;
+
                     if ( businessName != null )
                     {
                         businessName.Replace( "&#39;", "'" );
@@ -457,7 +509,8 @@ namespace Excavator.F1
                     business.AttributeValues["F1HouseholdId"].Add( new AttributeValue()
                     {
                         AttributeId = householdIdAttribute.Id,
-                        Value = householdId.ToString()
+                        Value = householdId.ToString(),
+                        Order = 0
                     } );
 
                     var groupMember = new GroupMember();
@@ -466,28 +519,7 @@ namespace Excavator.F1
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
                     businessGroup.Members.Add( groupMember );
                     businessGroup.GroupTypeId = familyGroupTypeId;
-
-                    RockTransactionScope.WrapTransaction( () =>
-                    {
-                        var groupService = new GroupService();
-                        groupService.Add( businessGroup, ImportPersonAlias );
-                        groupService.Save( businessGroup, ImportPersonAlias );
-
-                        var personService = new PersonService();
-                        var person = groupMember.Person;
-                        foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
-                        {
-                            string newValue = person.AttributeValues[attributeCache.Key][0].Value ?? string.Empty;
-                            Rock.Attribute.Helper.SaveAttributeValue( person, attributeCache, newValue, ImportPersonAlias );
-                        }
-
-                        person = personService.Get( groupMember.PersonId );
-                        if ( person != null )
-                        {
-                            person.GivingGroupId = businessGroup.Id;
-                            personService.Save( person, ImportPersonAlias );
-                        }
-                    } );
+                    businessList.Add( businessGroup );
 
                     completed++;
                     if ( completed % percentage < 1 )
@@ -497,9 +529,62 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
+                        groupService.RockContext.Groups.AddRange( businessList );
+                        groupService.RockContext.SaveChanges();
+
+                        foreach ( var newBusiness in businessList )
+                        {
+                            foreach ( var businessMember in newBusiness.Members )
+                            {
+                                var person = businessMember.Person;
+                                foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                                {
+                                    var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                    if ( newValue != null )
+                                    {
+                                        newValue.EntityId = person.Id;
+                                        attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                    }
+                                }
+
+                                person.GivingGroupId = newBusiness.Id;
+                            }
+                        }
+
+                        attributeValueService.RockContext.SaveChanges();
+                        personService.RockContext.SaveChanges();
+                        businessList.Clear();
                         ReportPartialProgress();
                     }
                 }
+            }
+
+            if ( businessList.Any() )
+            {
+                groupService.RockContext.Groups.AddRange( businessList );
+                groupService.RockContext.SaveChanges();
+
+                foreach ( var newBusiness in businessList )
+                {
+                    foreach ( var businessMember in newBusiness.Members )
+                    {
+                        var person = businessMember.Person;
+                        foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                        {
+                            var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+                            if ( newValue != null )
+                            {
+                                newValue.EntityId = person.Id;
+                                attributeValueService.RockContext.AttributeValues.Add( newValue );
+                            }
+                        }
+
+                        person.GivingGroupId = newBusiness.Id;
+                    }
+                }
+
+                attributeValueService.RockContext.SaveChanges();
+                personService.RockContext.SaveChanges();
             }
 
             ReportProgress( 100, string.Format( "Finished company import: {0:N0} companies imported.", completed ) );
