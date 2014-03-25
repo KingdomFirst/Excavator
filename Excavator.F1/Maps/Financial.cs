@@ -39,7 +39,7 @@ namespace Excavator.F1
         private void MapAccount( IQueryable<Row> tableData )
         {
             var accountService = new FinancialPersonBankAccountService();
-            var importedAccounts = accountService.Queryable().ToList();
+            var importedBankAccounts = accountService.Queryable().ToList();
 
             int completed = 0;
             int totalRows = tableData.Count();
@@ -59,17 +59,17 @@ namespace Excavator.F1
                     {
                         accountNumber = accountNumber.Replace( " ", string.Empty );
                         string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
-                        if ( !importedAccounts.Any( a => a.PersonId == personId && a.AccountNumberSecured == encodedNumber ) )
+                        if ( !importedBankAccounts.Any( a => a.PersonId == personId && a.AccountNumberSecured == encodedNumber ) )
                         {
-                            var account = new FinancialPersonBankAccount();
-                            account.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                            account.AccountNumberSecured = encodedNumber;
-                            account.PersonId = (int)personId;
+                            var bankAccount = new FinancialPersonBankAccount();
+                            bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            bankAccount.AccountNumberSecured = encodedNumber;
+                            bankAccount.PersonId = (int)personId;
 
                             // Other Attributes (not used):
                             // Account_Type_Name
 
-                            accountService.RockContext.FinancialPersonBankAccounts.Add( account );
+                            accountService.RockContext.FinancialPersonBankAccounts.Add( bankAccount );
                             completed++;
                             if ( completed % percentage < 1 )
                             {
