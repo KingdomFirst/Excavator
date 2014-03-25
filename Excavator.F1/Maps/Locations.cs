@@ -182,8 +182,6 @@ namespace Excavator.F1
         {
             var locationService = new LocationService();
             var groupLocationService = new GroupLocationService();
-            var groupLocationContext = groupLocationService.RockContext.GroupLocations;
-
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
 
             List<DefinedValue> groupLocationTypeList = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
@@ -251,7 +249,7 @@ namespace Excavator.F1
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
-                        groupLocationContext.Add( groupLocation );
+                        groupLocationService.RockContext.GroupLocations.Add( groupLocation );
                         completed++;
 
                         if ( completed % percentage < 1 )
