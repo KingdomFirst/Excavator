@@ -80,7 +80,7 @@ namespace Excavator.F1
                 newSecondaryEmailAttribute.IsRequired = false;
                 newSecondaryEmailAttribute.Order = 0;
 
-                using ( new Rock.Data.UnitOfWorkScope() )
+                using ( new UnitOfWorkScope() )
                 {
                     var attributeService = new AttributeService();
                     attributeService.Add( newSecondaryEmailAttribute );
@@ -108,7 +108,7 @@ namespace Excavator.F1
                 newTwitterAttribute.IsRequired = false;
                 newTwitterAttribute.Order = 0;
 
-                using ( new Rock.Data.UnitOfWorkScope() )
+                using ( new UnitOfWorkScope() )
                 {
                     var attributeService = new AttributeService();
                     attributeService.Add( newTwitterAttribute );
@@ -136,7 +136,7 @@ namespace Excavator.F1
                 newFacebookAttribute.IsRequired = false;
                 newFacebookAttribute.Order = 0;
 
-                using ( new Rock.Data.UnitOfWorkScope() )
+                using ( new UnitOfWorkScope() )
                 {
                     var attributeService = new AttributeService();
                     attributeService.Add( newFacebookAttribute );
@@ -208,7 +208,6 @@ namespace Excavator.F1
                     }
                     else
                     {
-                        var setNewValues = true;
                         var person = personService.Get( (int)personId );
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
@@ -228,10 +227,6 @@ namespace Excavator.F1
                             else if ( !person.Email.Equals( value ) )
                             {
                                 secondaryEmail = value;
-                            }
-                            else
-                            {
-                                setNewValues = false;
                             }
 
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
@@ -268,16 +263,9 @@ namespace Excavator.F1
                                 Order = 0
                             } );
                         }
-                        else
-                        {
-                            setNewValues = false;
-                        }
 
-                        if ( setNewValues )
-                        {
-                            personList.Add( person );
-                            completed++;
-                        }
+                        personList.Add( person );
+                        completed++;
                     }
 
                     if ( completed % percentage < 1 )
@@ -287,7 +275,6 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        personService.RockContext.People.AddRange( personList );
                         personService.RockContext.SaveChanges();
                         numberService.RockContext.SaveChanges();
 
@@ -311,7 +298,6 @@ namespace Excavator.F1
                 }
             }
 
-            personService.RockContext.People.AddRange( personList );
             personService.RockContext.SaveChanges();
             numberService.RockContext.SaveChanges();
 
