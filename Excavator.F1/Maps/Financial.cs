@@ -78,7 +78,10 @@ namespace Excavator.F1
                             }
                             else if ( completed % ReportingNumber < 1 )
                             {
-                                accountService.RockContext.SaveChanges();
+                                using ( new UnitOfWorkScope() )
+                                {
+                                    accountService.RockContext.SaveChanges();
+                                }
                                 ReportPartialProgress();
                             }
                         }
@@ -86,7 +89,11 @@ namespace Excavator.F1
                 }
             }
 
-            accountService.RockContext.SaveChanges();
+            using ( new UnitOfWorkScope() )
+            {
+                accountService.RockContext.SaveChanges();
+            }
+
             ReportProgress( 100, string.Format( "Finished check number import: {0:N0} numbers imported.", completed ) );
         }
 
@@ -159,20 +166,23 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        batchService.RockContext.FinancialBatches.AddRange( newBatches );
-                        batchService.RockContext.SaveChanges();
-
-                        foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                        using ( new UnitOfWorkScope() )
                         {
-                            var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
-                            if ( attributeValue != null )
-                            {
-                                attributeValue.EntityId = newBatch.Id;
-                                attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                            }
-                        }
+                            batchService.RockContext.FinancialBatches.AddRange( newBatches );
+                            batchService.RockContext.SaveChanges();
 
-                        attributeValueService.RockContext.SaveChanges();
+                            foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                            {
+                                var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
+                                if ( attributeValue != null )
+                                {
+                                    attributeValue.EntityId = newBatch.Id;
+                                    attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                }
+                            }
+
+                            attributeValueService.RockContext.SaveChanges();
+                        }
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -181,20 +191,23 @@ namespace Excavator.F1
 
             if ( newBatches.Any() )
             {
-                batchService.RockContext.FinancialBatches.AddRange( newBatches );
-                batchService.RockContext.SaveChanges();
-
-                foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                using ( new UnitOfWorkScope() )
                 {
-                    var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
-                    if ( attributeValue != null )
-                    {
-                        attributeValue.EntityId = newBatch.Id;
-                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                    }
-                }
+                    batchService.RockContext.FinancialBatches.AddRange( newBatches );
+                    batchService.RockContext.SaveChanges();
 
-                attributeValueService.RockContext.SaveChanges();
+                    foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                    {
+                        var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
+                        if ( attributeValue != null )
+                        {
+                            attributeValue.EntityId = newBatch.Id;
+                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                        }
+                    }
+
+                    attributeValueService.RockContext.SaveChanges();
+                }
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -418,20 +431,23 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
-                        transactionService.RockContext.SaveChanges();
-
-                        foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
+                        using ( new UnitOfWorkScope() )
                         {
-                            var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
-                            if ( attributeValue != null )
-                            {
-                                attributeValue.EntityId = contribution.Id;
-                                attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                            }
-                        }
+                            transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
+                            transactionService.RockContext.SaveChanges();
 
-                        attributeValueService.RockContext.SaveChanges();
+                            foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
+                            {
+                                var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
+                                if ( attributeValue != null )
+                                {
+                                    attributeValue.EntityId = contribution.Id;
+                                    attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                }
+                            }
+
+                            attributeValueService.RockContext.SaveChanges();
+                        }
                         newContributions.Clear();
                         ReportPartialProgress();
                     }
@@ -440,20 +456,23 @@ namespace Excavator.F1
 
             if ( newContributions.Any() )
             {
-                transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
-                transactionService.RockContext.SaveChanges();
-
-                foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
+                using ( new UnitOfWorkScope() )
                 {
-                    var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
-                    if ( attributeValue != null )
-                    {
-                        attributeValue.EntityId = contribution.Id;
-                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                    }
-                }
+                    transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
+                    transactionService.RockContext.SaveChanges();
 
-                attributeValueService.RockContext.SaveChanges();
+                    foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
+                    {
+                        var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
+                        if ( attributeValue != null )
+                        {
+                            attributeValue.EntityId = contribution.Id;
+                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                        }
+                    }
+
+                    attributeValueService.RockContext.SaveChanges();
+                }
             }
 
             ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
@@ -569,14 +588,21 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            pledgeService.RockContext.SaveChanges();
+                            using ( new UnitOfWorkScope() )
+                            {
+                                pledgeService.RockContext.SaveChanges();
+                            }
                             ReportPartialProgress();
                         }
                     }
                 }
             }
 
-            pledgeService.RockContext.SaveChanges();
+            using ( new UnitOfWorkScope() )
+            {
+                pledgeService.RockContext.SaveChanges();
+            }
+
             ReportProgress( 100, string.Format( "Finished pledge import: {0:N0} pledges imported.", completed ) );
         }
     }

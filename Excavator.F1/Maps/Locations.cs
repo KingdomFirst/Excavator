@@ -259,14 +259,21 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            groupLocationService.RockContext.SaveChanges();
+                            using ( new UnitOfWorkScope() )
+                            {
+                                groupLocationService.RockContext.SaveChanges();
+                            }
                             ReportPartialProgress();
                         }
                     }
                 }
             }
 
-            groupLocationService.RockContext.SaveChanges();
+            using ( new UnitOfWorkScope() )
+            {
+                groupLocationService.RockContext.SaveChanges();
+            }
+
             ReportProgress( 100, string.Format( "Finished address import: {0:N0} addresses imported.", completed ) );
         }
     }
