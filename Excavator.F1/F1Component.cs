@@ -107,6 +107,7 @@ namespace Excavator.F1
             var tableDependencies = new List<string>();
             tableDependencies.Add( "Batch" );                // needed to attribute contributions properly
             tableDependencies.Add( "Company" );              // needed to attribute any company items
+            tableDependencies.Add( "Users" );                // needed for notes, user logins
             tableDependencies.Add( "Individual_Household" ); // needed for just about everything
 
             if ( isValidImport )
@@ -150,17 +151,21 @@ namespace Excavator.F1
                     }
                     else
                     {
-                        if ( table.Name == "Individual_Household" )
-                        {
-                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
-                        }
-                        else if ( table.Name == "Batch" )
+                        if ( table.Name == "Batch" )
                         {
                             MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Company" )
                         {
                             MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
+                        }
+                        else if ( table.Name == "Individual_Household" )
+                        {
+                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
+                        }
+                        else if ( table.Name == "Users" )
+                        {
+                            MapUsers( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                     }
                 }
@@ -285,6 +290,43 @@ namespace Excavator.F1
         /// <param name="householdId">The household identifier.</param>
         /// <returns></returns>
         private int? GetPersonId( int? individualId = null, int? householdId = null )
+        {
+            var existingPerson = ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
+            if ( existingPerson != null )
+            {
+                return existingPerson.PersonId;
+            }
+            else
+            {
+                int lookupAttributeId = individualId.HasValue ? IndividualAttributeId : HouseholdAttributeId;
+                string lookupValueId = individualId.HasValue ? individualId.ToString() : householdId.ToString();
+                var lookup = new AttributeValueService().Queryable()
+                    .Where( av => av.AttributeId == lookupAttributeId && av.Value == lookupValueId );
+
+                var lookupPerson = lookup.FirstOrDefault();
+                if ( lookupPerson != null )
+                {
+                    ImportedPeople.Add( new ImportedPerson()
+                    {
+                        PersonId = lookupPerson.EntityId,
+                        HouseholdId = householdId,
+                        IndividualId = individualId
+                    } );
+
+                    return lookupPerson.EntityId;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checks if this person or business has been imported and returns the Rock.Person Id
+        /// </summary>
+        /// <param name="individualId">The individual identifier.</param>
+        /// <param name="householdId">The household identifier.</param>
+        /// <returns></returns>
+        private int? GetUserId( int? individualId = null, int? householdId = null )
         {
             var existingPerson = ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
             if ( existingPerson != null )

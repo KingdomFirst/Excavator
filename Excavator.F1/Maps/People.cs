@@ -32,6 +32,162 @@ namespace Excavator.F1
     partial class F1Component
     {
         /// <summary>
+        /// Maps the company.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <returns></returns>
+        private void MapCompany( IQueryable<Row> tableData )
+        {
+            var groupTypeRoleService = new GroupTypeRoleService();
+            var attributeService = new AttributeService();
+            var businessList = new List<Group>();
+
+            // Record status: Active, Inactive, Pending
+            int? statusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
+            int? statusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
+            int? statusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
+
+            // Record type: Business
+            int? businessRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS ) ).Id;
+
+            // Group role: TBD
+            int groupRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
+
+            // Group type: Family
+            int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+
+            // Cached F1 attribute: HouseholdId
+            var householdIdAttribute = AttributeCache.Read( HouseholdAttributeId );
+
+            int completed = 0;
+            int totalRows = tableData.Count();
+            int percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, string.Format( "Checking company import ({0:N0} found).", totalRows ) );
+
+            foreach ( var row in tableData )
+            {
+                int? householdId = row["Household_ID"] as int?;
+                if ( GetPersonId( null, householdId ) == null )
+                {
+                    var businessGroup = new Group();
+                    var business = new Person();
+
+                    var businessName = row["Household_Name"] as string;
+
+                    if ( businessName != null )
+                    {
+                        businessName.Replace( "&#39;", "'" );
+                        businessName.Replace( "&amp;", "&" );
+                        business.LastName = businessName.Left( 50 );
+                        businessGroup.Name = businessName.Left( 50 );
+                    }
+
+                    business.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    business.CreatedDateTime = row["Created_Date"] as DateTime?;
+                    business.RecordTypeValueId = businessRecordTypeId;
+
+                    business.Attributes = new Dictionary<string, AttributeCache>();
+                    business.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                    business.Attributes.Add( "F1HouseholdId", householdIdAttribute );
+                    business.AttributeValues.Add( "F1HouseholdId", new List<AttributeValue>() );
+                    business.AttributeValues["F1HouseholdId"].Add( new AttributeValue()
+                    {
+                        AttributeId = householdIdAttribute.Id,
+                        Value = householdId.ToString(),
+                        Order = 0
+                    } );
+
+                    var groupMember = new GroupMember();
+                    groupMember.Person = business;
+                    groupMember.GroupRoleId = groupRoleId;
+                    groupMember.GroupMemberStatus = GroupMemberStatus.Active;
+                    businessGroup.Members.Add( groupMember );
+                    businessGroup.GroupTypeId = familyGroupTypeId;
+                    businessList.Add( businessGroup );
+
+                    completed++;
+                    if ( completed % percentage < 1 )
+                    {
+                        int percentComplete = completed / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} companies imported ({1}% complete).", completed, percentComplete ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        RockTransactionScope.WrapTransaction( () =>
+                        {
+                            var groupService = new GroupService();
+                            var personService = new PersonService();
+                            var attributeValueService = new AttributeValueService();
+                            groupService.RockContext.Groups.AddRange( businessList );
+                            groupService.RockContext.SaveChanges();
+
+                            foreach ( var newBusiness in businessList )
+                            {
+                                foreach ( var businessMember in newBusiness.Members )
+                                {
+                                    var person = businessMember.Person;
+                                    foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                                    {
+                                        var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                        if ( newValue != null )
+                                        {
+                                            newValue.EntityId = person.Id;
+                                            attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                        }
+                                    }
+
+                                    person.GivingGroupId = newBusiness.Id;
+                                }
+                            }
+
+                            attributeValueService.RockContext.SaveChanges();
+                            personService.RockContext.SaveChanges();
+                        } );
+
+                        businessList.Clear();
+                        ReportPartialProgress();
+                    }
+                }
+            }
+
+            if ( businessList.Any() )
+            {
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    var groupService = new GroupService();
+                    var personService = new PersonService();
+                    var attributeValueService = new AttributeValueService();
+                    groupService.RockContext.Groups.AddRange( businessList );
+                    groupService.RockContext.SaveChanges();
+
+                    foreach ( var newBusiness in businessList )
+                    {
+                        foreach ( var businessMember in newBusiness.Members )
+                        {
+                            var person = businessMember.Person;
+                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                            {
+                                var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                if ( newValue != null )
+                                {
+                                    newValue.EntityId = person.Id;
+                                    attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                }
+                            }
+
+                            person.GivingGroupId = newBusiness.Id;
+                        }
+                    }
+
+                    attributeValueService.RockContext.SaveChanges();
+                    personService.RockContext.SaveChanges();
+                } );
+            }
+
+            ReportProgress( 100, string.Format( "Finished company import: {0:N0} companies imported.", completed ) );
+        }
+
+        /// <summary>
         /// Maps the person.
         /// </summary>
         /// <param name="tableData">The table data.</param>
@@ -455,162 +611,164 @@ namespace Excavator.F1
         }
 
         /// <summary>
-        /// Maps the company.
+        /// Maps the users.
         /// </summary>
         /// <param name="tableData">The table data.</param>
-        /// <returns></returns>
-        private void MapCompany( IQueryable<Row> tableData )
+        private void MapUsers( IQueryable<Row> tableData )
         {
-            var groupTypeRoleService = new GroupTypeRoleService();
-            //var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
-            //var personService = new PersonService();
-            //var groupService = new GroupService();
-            var businessList = new List<Group>();
+            var personService = new PersonService();
 
-            // Record status: Active, Inactive, Pending
-            int? statusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
-            int? statusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
-            int? statusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
+            int rockAuthenticatedTypeId = EntityTypeCache.Read( "Rock.Security.Authentication.Database" ).Id;
 
-            // Record type: Business
-            int? businessRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS ) ).Id;
+            // Look up existing Person attributes
+            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            // Group role: TBD
-            int groupRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
+            // Add an Attribute for the user id if it doesn't exist
+            int userLoginAttributeId = personAttributes.Where( a => a.Key == "F1UserId" ).Select( a => a.Id ).FirstOrDefault();
+            if ( userLoginAttributeId == 0 )
+            {
+                var newUserLoginAttribute = new Rock.Model.Attribute();
+                newUserLoginAttribute.Key = "F1UserId";
+                newUserLoginAttribute.Name = "F1 User Id";
+                newUserLoginAttribute.FieldTypeId = TextFieldTypeId;
+                newUserLoginAttribute.EntityTypeId = PersonEntityTypeId;
+                newUserLoginAttribute.EntityTypeQualifierValue = string.Empty;
+                newUserLoginAttribute.EntityTypeQualifierColumn = string.Empty;
+                newUserLoginAttribute.Description = "The FellowshipOne user identifier for the login that was imported";
+                newUserLoginAttribute.DefaultValue = string.Empty;
+                newUserLoginAttribute.IsMultiValue = false;
+                newUserLoginAttribute.IsRequired = false;
+                newUserLoginAttribute.Order = 0;
 
-            // Group type: Family
-            int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+                attributeService.Add( newUserLoginAttribute );
+                attributeService.Save( newUserLoginAttribute );
+                userLoginAttributeId = newUserLoginAttribute.Id;
+            }
 
-            // Cached F1 attribute: HouseholdId
-            var householdIdAttribute = AttributeCache.Read( HouseholdAttributeId );
+            var userLoginAttribute = AttributeCache.Read( userLoginAttributeId );
+
+            var importedUsers = new AttributeValueService().GetByAttributeId( userLoginAttributeId )
+               .Select( av => new { UserId = av.Value.AsType<int?>(), PersonId = av.EntityId } )
+               .ToDictionary( t => t.UserId, t => t.PersonId );
+
+            var newUserLogins = new List<UserLogin>();
 
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking company import ({0:N0} found).", totalRows ) );
+            ReportProgress( 0, string.Format( "Checking communication import ({0:N0} found).", totalRows ) );
 
             foreach ( var row in tableData )
             {
-                int? householdId = row["Household_ID"] as int?;
-                if ( GetPersonId( null, householdId ) == null )
+                int? individualId = row["LinkedIndividualID"] as int?;
+                string userName = row["UserLogin"] as string;
+                int? userId = row["UserID"] as int?;
+                if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !importedUsers.ContainsKey( userId ) )
                 {
-                    var businessGroup = new Group();
-                    var business = new Person();
-
-                    var businessName = row["Household_Name"] as string;
-
-                    if ( businessName != null )
+                    int? personId = GetPersonId( individualId, null );
+                    if ( personId != null )
                     {
-                        businessName.Replace( "&#39;", "'" );
-                        businessName.Replace( "&amp;", "&" );
-                        business.LastName = businessName.Left( 50 );
-                        businessGroup.Name = businessName.Left( 50 );
-                    }
+                        DateTime? createdDate = row["UserCreatedDate"] as DateTime?;
+                        string userPhone = row["UserPhone"] as string;
+                        string userEmail = row["UserEmail"] as string;
+                        bool? isConfirmed = row["IsUserEnabled"] as bool?;
+                        bool? isStaff = row["IsStaff"] as bool?;
 
-                    business.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    business.CreatedDateTime = row["Created_Date"] as DateTime?;
-                    business.RecordTypeValueId = businessRecordTypeId;
+                        var user = new UserLogin();
+                        user.UserName = userName;
+                        user.IsConfirmed = isConfirmed;
+                        user.EntityTypeId = rockAuthenticatedTypeId;
 
-                    business.Attributes = new Dictionary<string, AttributeCache>();
-                    business.AttributeValues = new Dictionary<string, List<AttributeValue>>();
-                    business.Attributes.Add( "F1HouseholdId", householdIdAttribute );
-                    business.AttributeValues.Add( "F1HouseholdId", new List<AttributeValue>() );
-                    business.AttributeValues["F1HouseholdId"].Add( new AttributeValue()
-                    {
-                        AttributeId = householdIdAttribute.Id,
-                        Value = householdId.ToString(),
-                        Order = 0
-                    } );
-
-                    var groupMember = new GroupMember();
-                    groupMember.Person = business;
-                    groupMember.GroupRoleId = groupRoleId;
-                    groupMember.GroupMemberStatus = GroupMemberStatus.Active;
-                    businessGroup.Members.Add( groupMember );
-                    businessGroup.GroupTypeId = familyGroupTypeId;
-                    businessList.Add( businessGroup );
-
-                    completed++;
-                    if ( completed % percentage < 1 )
-                    {
-                        int percentComplete = completed / percentage;
-                        ReportProgress( percentComplete, string.Format( "{0:N0} companies imported ({1}% complete).", completed, percentComplete ) );
-                    }
-                    else if ( completed % ReportingNumber < 1 )
-                    {
-                        RockTransactionScope.WrapTransaction( () =>
+                        if ( isStaff == true )
                         {
-                            var groupService = new GroupService();
-                            var personService = new PersonService();
-                            var attributeValueService = new AttributeValueService();
-                            groupService.RockContext.Groups.AddRange( businessList );
-                            groupService.RockContext.SaveChanges();
+                            // add this to proper group
+                        }
 
-                            foreach ( var newBusiness in businessList )
-                            {
-                                foreach ( var businessMember in newBusiness.Members )
-                                {
-                                    var person = businessMember.Person;
-                                    foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
-                                    {
-                                        var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                        if ( newValue != null )
-                                        {
-                                            newValue.EntityId = person.Id;
-                                            attributeValueService.RockContext.AttributeValues.Add( newValue );
-                                        }
-                                    }
-
-                                    person.GivingGroupId = newBusiness.Id;
-                                }
-                            }
-
-                            attributeValueService.RockContext.SaveChanges();
-                            personService.RockContext.SaveChanges();
+                        user.Attributes = new Dictionary<string, AttributeCache>();
+                        user.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                        user.Attributes.Add( userLoginAttribute.Key, userLoginAttribute );
+                        user.AttributeValues.Add( userLoginAttribute.Key, new List<AttributeValue>() );
+                        user.AttributeValues[userLoginAttribute.Key].Add( new AttributeValue()
+                        {
+                            AttributeId = userLoginAttribute.Id,
+                            Value = userId.ToString(),
+                            Order = 0
                         } );
 
-                        businessList.Clear();
-                        ReportPartialProgress();
+                        // other Attributes to save
+                        // UserLogin
+                        // FirstName
+                        // MiddleName
+                        // LastName
+                        // GoesBy
+                        // UserBio
+                        // DepartmentName
+                        // IsPastor
+                        // IsStaff
+                        // UserTitle
+
+                        newUserLogins.Add( user );
+                        completed++;
+
+                        if ( completed % percentage < 1 )
+                        {
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
+                        }
+                        else if ( completed % ReportingNumber < 1 )
+                        {
+                            RockTransactionScope.WrapTransaction( () =>
+                            {
+                                var userLoginService = new UserLoginService();
+                                userLoginService.RockContext.UserLogins.AddRange( newUserLogins );
+                                userLoginService.RockContext.SaveChanges();
+
+                                var attributeValueService = new AttributeValueService();
+                                foreach ( var userLogin in newUserLogins.Where( p => p.Attributes.Any() ) )
+                                {
+                                    var attributeValue = userLogin.AttributeValues[userLoginAttribute.Key].FirstOrDefault();
+                                    if ( attributeValue != null )
+                                    {
+                                        attributeValue.EntityId = userLogin.Id;
+                                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                    }
+                                }
+
+                                attributeValueService.RockContext.SaveChanges();
+                            } );
+
+                            newUserLogins.Clear();
+                            ReportPartialProgress();
+                        }
                     }
                 }
             }
 
-            if ( businessList.Any() )
+            if ( newUserLogins.Any() )
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var groupService = new GroupService();
-                    var personService = new PersonService();
+                    var userLoginService = new UserLoginService();
+                    userLoginService.RockContext.UserLogins.AddRange( newUserLogins );
+                    userLoginService.RockContext.SaveChanges();
+
                     var attributeValueService = new AttributeValueService();
-                    groupService.RockContext.Groups.AddRange( businessList );
-                    groupService.RockContext.SaveChanges();
-
-                    foreach ( var newBusiness in businessList )
+                    foreach ( var userLogin in newUserLogins.Where( p => p.Attributes.Any() ) )
                     {
-                        foreach ( var businessMember in newBusiness.Members )
+                        var attributeValue = userLogin.AttributeValues[userLoginAttribute.Key].FirstOrDefault();
+                        if ( attributeValue != null )
                         {
-                            var person = businessMember.Person;
-                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
-                            {
-                                var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                if ( newValue != null )
-                                {
-                                    newValue.EntityId = person.Id;
-                                    attributeValueService.RockContext.AttributeValues.Add( newValue );
-                                }
-                            }
-
-                            person.GivingGroupId = newBusiness.Id;
+                            attributeValue.EntityId = userLogin.Id;
+                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
                         }
                     }
 
                     attributeValueService.RockContext.SaveChanges();
-                    personService.RockContext.SaveChanges();
                 } );
             }
 
-            ReportProgress( 100, string.Format( "Finished company import: {0:N0} companies imported.", completed ) );
+            ReportProgress( 100, string.Format( "Finished user import: {0:N0} users imported.", completed ) );
         }
     }
 }
