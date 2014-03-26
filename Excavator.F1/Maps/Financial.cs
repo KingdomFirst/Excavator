@@ -36,10 +36,10 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <returns></returns>
-        private void MapAccount( IQueryable<Row> tableData )
+        private void MapBankAccount( IQueryable<Row> tableData )
         {
-            var accountService = new FinancialPersonBankAccountService();
-            var importedBankAccounts = accountService.Queryable().ToList();
+            var importedBankAccounts = new FinancialPersonBankAccountService().Queryable().ToList();
+            var newBankAccounts = new List<FinancialPersonBankAccount>();
 
             int completed = 0;
             int totalRows = tableData.Count();
@@ -69,7 +69,7 @@ namespace Excavator.F1
                             // Other Attributes (not used):
                             // Account_Type_Name
 
-                            accountService.RockContext.FinancialPersonBankAccounts.Add( bankAccount );
+                            newBankAccounts.Add( bankAccount );
                             completed++;
                             if ( completed % percentage < 1 )
                             {
@@ -78,7 +78,14 @@ namespace Excavator.F1
                             }
                             else if ( completed % ReportingNumber < 1 )
                             {
-                                accountService.RockContext.SaveChanges();
+                                RockTransactionScope.WrapTransaction( () =>
+                                {
+                                    var bankAccountService = new FinancialPersonBankAccountService();
+                                    bankAccountService.RockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
+                                    bankAccountService.RockContext.SaveChanges();
+                                } );
+
+                                newBankAccounts.Clear();
                                 ReportPartialProgress();
                             }
                         }
@@ -86,7 +93,16 @@ namespace Excavator.F1
                 }
             }
 
-            accountService.RockContext.SaveChanges();
+            if ( newBankAccounts.Any() )
+            {
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    var bankAccountService = new FinancialPersonBankAccountService();
+                    bankAccountService.RockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
+                    bankAccountService.RockContext.SaveChanges();
+                } );
+            }
+
             ReportProgress( 100, string.Format( "Finished check number import: {0:N0} numbers imported.", completed ) );
         }
 
@@ -97,9 +113,6 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private void MapBatch( IQueryable<Row> tableData )
         {
-            var attributeValueService = new AttributeValueService();
-            var attributeService = new AttributeService();
-            var batchService = new FinancialBatchService();
             var batchAttribute = AttributeCache.Read( BatchAttributeId );
             var batchStatusClosed = Rock.Model.BatchStatus.Closed;
             var newBatches = new List<FinancialBatch>();
@@ -159,20 +172,26 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        batchService.RockContext.FinancialBatches.AddRange( newBatches );
-                        batchService.RockContext.SaveChanges();
-
-                        foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
-                            var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
-                            if ( attributeValue != null )
-                            {
-                                attributeValue.EntityId = newBatch.Id;
-                                attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                            }
-                        }
+                            var batchService = new FinancialBatchService();
+                            batchService.RockContext.FinancialBatches.AddRange( newBatches );
+                            batchService.RockContext.SaveChanges();
 
-                        attributeValueService.RockContext.SaveChanges();
+                            var attributeValueService = new AttributeValueService();
+                            foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                            {
+                                var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
+                                if ( attributeValue != null )
+                                {
+                                    attributeValue.EntityId = newBatch.Id;
+                                    attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                }
+                            }
+
+                            attributeValueService.RockContext.SaveChanges();
+                        } );
+
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -181,20 +200,25 @@ namespace Excavator.F1
 
             if ( newBatches.Any() )
             {
-                batchService.RockContext.FinancialBatches.AddRange( newBatches );
-                batchService.RockContext.SaveChanges();
-
-                foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                RockTransactionScope.WrapTransaction( () =>
                 {
-                    var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
-                    if ( attributeValue != null )
-                    {
-                        attributeValue.EntityId = newBatch.Id;
-                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                    }
-                }
+                    var batchService = new FinancialBatchService();
+                    batchService.RockContext.FinancialBatches.AddRange( newBatches );
+                    batchService.RockContext.SaveChanges();
 
-                attributeValueService.RockContext.SaveChanges();
+                    var attributeValueService = new AttributeValueService();
+                    foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
+                    {
+                        var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
+                        if ( attributeValue != null )
+                        {
+                            attributeValue.EntityId = newBatch.Id;
+                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                        }
+                    }
+
+                    attributeValueService.RockContext.SaveChanges();
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -208,8 +232,6 @@ namespace Excavator.F1
         private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
-            var attributeValueService = new AttributeValueService();
-            var transactionService = new FinancialTransactionService();
             var accountService = new FinancialAccountService();
             var attributeService = new AttributeService();
 
@@ -252,12 +274,12 @@ namespace Excavator.F1
             var contributionAttribute = AttributeCache.Read( contributionAttributeId );
 
             // Get all imported contributions
-            var importedContributions = attributeValueService.GetByAttributeId( contributionAttributeId )
+            var importedContributions = new AttributeValueService().GetByAttributeId( contributionAttributeId )
                .Select( av => new { ContributionId = av.Value.AsType<int?>(), TransactionId = av.EntityId } )
                .ToDictionary( t => t.ContributionId, t => t.TransactionId );
 
             // List for batching new contributions
-            var newContributions = new List<FinancialTransaction>();
+            var newTransactions = new List<FinancialTransaction>();
 
             int completed = 0;
             int totalRows = tableData.Count();
@@ -409,7 +431,7 @@ namespace Excavator.F1
                         Order = 0
                     } );
 
-                    newContributions.Add( transaction );
+                    newTransactions.Add( transaction );
                     completed++;
                     if ( completed % percentage < 1 )
                     {
@@ -418,42 +440,53 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
-                        transactionService.RockContext.SaveChanges();
-
-                        foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
-                            var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
-                            if ( attributeValue != null )
-                            {
-                                attributeValue.EntityId = contribution.Id;
-                                attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                            }
-                        }
+                            var transactionService = new FinancialTransactionService();
+                            transactionService.RockContext.FinancialTransactions.AddRange( newTransactions );
+                            transactionService.RockContext.SaveChanges();
 
-                        attributeValueService.RockContext.SaveChanges();
-                        newContributions.Clear();
+                            var attributeValueService = new AttributeValueService();
+                            foreach ( var contribution in newTransactions.Where( c => c.Attributes.Any() ) )
+                            {
+                                var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
+                                if ( attributeValue != null )
+                                {
+                                    attributeValue.EntityId = contribution.Id;
+                                    attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                }
+                            }
+
+                            attributeValueService.RockContext.SaveChanges();
+                        } );
+
+                        newTransactions.Clear();
                         ReportPartialProgress();
                     }
                 }
             }
 
-            if ( newContributions.Any() )
+            if ( newTransactions.Any() )
             {
-                transactionService.RockContext.FinancialTransactions.AddRange( newContributions );
-                transactionService.RockContext.SaveChanges();
-
-                foreach ( var contribution in newContributions.Where( c => c.Attributes.Any() ) )
+                RockTransactionScope.WrapTransaction( () =>
                 {
-                    var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
-                    if ( attributeValue != null )
-                    {
-                        attributeValue.EntityId = contribution.Id;
-                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
-                    }
-                }
+                    var transactionService = new FinancialTransactionService();
+                    transactionService.RockContext.FinancialTransactions.AddRange( newTransactions );
+                    transactionService.RockContext.SaveChanges();
 
-                attributeValueService.RockContext.SaveChanges();
+                    var attributeValueService = new AttributeValueService();
+                    foreach ( var contribution in newTransactions.Where( c => c.Attributes.Any() ) )
+                    {
+                        var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
+                        if ( attributeValue != null )
+                        {
+                            attributeValue.EntityId = contribution.Id;
+                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                        }
+                    }
+
+                    attributeValueService.RockContext.SaveChanges();
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
@@ -467,14 +500,14 @@ namespace Excavator.F1
         private void MapPledge( IQueryable<Row> tableData )
         {
             var accountService = new FinancialAccountService();
-            var pledgeService = new FinancialPledgeService();
 
             List<FinancialAccount> importedAccounts = accountService.Queryable().ToList();
 
-            List<DefinedValue> pledgeFrequencies = new DefinedValueService().Queryable()
-                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
+            List<DefinedValue> pledgeFrequencies = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
 
             List<FinancialPledge> importedPledges = new FinancialPledgeService().Queryable().ToList();
+
+            var newPledges = new List<FinancialPledge>();
 
             int completed = 0;
             int totalRows = tableData.Count();
@@ -560,7 +593,7 @@ namespace Excavator.F1
                         // Attributes to add?
                         // Pledge_Drive_Name
 
-                        pledgeService.RockContext.FinancialPledges.Add( pledge );
+                        newPledges.Add( pledge );
                         completed++;
                         if ( completed % percentage < 1 )
                         {
@@ -569,14 +602,29 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            pledgeService.RockContext.SaveChanges();
+                            RockTransactionScope.WrapTransaction( () =>
+                            {
+                                var pledgeService = new FinancialPledgeService();
+                                pledgeService.RockContext.FinancialPledges.AddRange( newPledges );
+                                pledgeService.RockContext.SaveChanges();
+                            } );
+
                             ReportPartialProgress();
                         }
                     }
                 }
             }
 
-            pledgeService.RockContext.SaveChanges();
+            if ( newPledges.Any() )
+            {
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    var pledgeService = new FinancialPledgeService();
+                    pledgeService.RockContext.FinancialPledges.AddRange( newPledges );
+                    pledgeService.RockContext.SaveChanges();
+                } );
+            }
+
             ReportProgress( 100, string.Format( "Finished pledge import: {0:N0} pledges imported.", completed ) );
         }
     }

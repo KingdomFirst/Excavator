@@ -1,4 +1,12 @@
-﻿//
+﻿// <copyright>
+// Copyright 2013 by the Spark Development Network
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,12 +38,8 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapCommunication( IQueryable<Row> tableData )
         {
-            var attributeValueService = new AttributeValueService();
-            //var attributeService = new AttributeService();
-            var numberService = new PhoneNumberService();
             var categoryService = new CategoryService();
             var personService = new PersonService();
-            var personList = new List<Person>();
 
             List<DefinedValue> numberTypeValues = new DefinedValueService().Queryable()
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
@@ -56,6 +60,7 @@ namespace Excavator.F1
 
                 categoryService.Add( socialMediaCategory, ImportPersonAlias );
                 categoryService.Save( socialMediaCategory, ImportPersonAlias );
+                socialMediaCategoryId = socialMediaCategory.Id;
             }
 
             int visitInfoCategoryId = categoryService.Queryable().Where( c => c.EntityTypeId == attributeEntityTypeId && c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
@@ -151,6 +156,11 @@ namespace Excavator.F1
             var twitterUsernameAttribute = AttributeCache.Read( twitterAttributeId );
             var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
 
+            var existingNumbers = new PhoneNumberService().Queryable().ToList();
+
+            var newNumberList = new List<PhoneNumber>();
+            var updatedPersonList = new List<Person>();
+
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
@@ -185,7 +195,7 @@ namespace Excavator.F1
 
                         if ( !string.IsNullOrWhiteSpace( value ) )
                         {
-                            bool numberExists = numberService.GetByPersonId( (int)personId ).Any( n => n.Number.Equals( value ) );
+                            bool numberExists = existingNumbers.Any( n => n.PersonId == (int)personId && n.Number.Equals( value ) );
                             if ( !numberExists )
                             {
                                 var newNumber = new PhoneNumber();
@@ -201,7 +211,7 @@ namespace Excavator.F1
                                 newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
                                     .Select( v => (int?)v.Id ).FirstOrDefault();
 
-                                numberService.RockContext.PhoneNumbers.Add( newNumber );
+                                newNumberList.Add( newNumber );
                                 completed++;
                             }
                         }
@@ -264,7 +274,7 @@ namespace Excavator.F1
                             } );
                         }
 
-                        personList.Add( person );
+                        updatedPersonList.Add( person );
                         completed++;
                     }
 
@@ -275,46 +285,68 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        personService.RockContext.SaveChanges();
-                        numberService.RockContext.SaveChanges();
-
-                        foreach ( var updatedPerson in personList.Where( p => p.Attributes.Any() ) )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
-                            foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
+                            var numberService = new PhoneNumberService();
+                            numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
+                            numberService.RockContext.SaveChanges();
+
+                            // don't add updatedPeople, they're already tracked with current context
+                            personService.RockContext.SaveChanges();
+
+                            var attributeValueService = new AttributeValueService();
+                            foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                             {
-                                var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                if ( newValue != null )
+                                foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                                 {
-                                    newValue.EntityId = updatedPerson.Id;
-                                    attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                    var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                    if ( newValue != null )
+                                    {
+                                        newValue.EntityId = updatedPerson.Id;
+                                        attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                    }
                                 }
                             }
+
+                            attributeValueService.RockContext.SaveChanges();
+                        } );
+
+                        // reset the person context so it doesn't bloat
+                        if ( updatedPersonList.Any() )
+                        {
+                            personService = new PersonService();
+                            updatedPersonList.Clear();
                         }
 
-                        attributeValueService.RockContext.SaveChanges();
-                        personList.Clear();
+                        newNumberList.Clear();
                         ReportPartialProgress();
                     }
                 }
             }
 
-            personService.RockContext.SaveChanges();
-            numberService.RockContext.SaveChanges();
-
-            foreach ( var updatedPerson in personList.Where( p => p.Attributes.Any() ) )
+            RockTransactionScope.WrapTransaction( () =>
             {
-                foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
+                var numberService = new PhoneNumberService();
+                numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
+                numberService.RockContext.SaveChanges();
+                personService.RockContext.SaveChanges();
+
+                var attributeValueService = new AttributeValueService();
+                foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                 {
-                    var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                    if ( newValue != null )
+                    foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                     {
-                        newValue.EntityId = updatedPerson.Id;
-                        attributeValueService.RockContext.AttributeValues.Add( newValue );
+                        var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                        if ( newValue != null )
+                        {
+                            newValue.EntityId = updatedPerson.Id;
+                            attributeValueService.RockContext.AttributeValues.Add( newValue );
+                        }
                     }
                 }
-            }
 
-            attributeValueService.RockContext.SaveChanges();
+                attributeValueService.RockContext.SaveChanges();
+            } );
 
             ReportProgress( 100, string.Format( "Finished communication import: {0:N0} records imported.", completed ) );
         }

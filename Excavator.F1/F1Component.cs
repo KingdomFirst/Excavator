@@ -125,7 +125,7 @@ namespace Excavator.F1
                         switch ( table.Name )
                         {
                             case "Account":
-                                MapAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                                MapBankAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
                             case "Communication":
