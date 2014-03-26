@@ -324,29 +324,32 @@ namespace Excavator.F1
                 }
             }
 
-            RockTransactionScope.WrapTransaction( () =>
+            if ( newNumberList.Any() || updatedPersonList.Any() )
             {
-                var numberService = new PhoneNumberService();
-                numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
-                numberService.RockContext.SaveChanges();
-                personService.RockContext.SaveChanges();
-
-                var attributeValueService = new AttributeValueService();
-                foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                RockTransactionScope.WrapTransaction( () =>
                 {
-                    foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
+                    var numberService = new PhoneNumberService();
+                    numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
+                    numberService.RockContext.SaveChanges();
+                    personService.RockContext.SaveChanges();
+
+                    var attributeValueService = new AttributeValueService();
+                    foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                     {
-                        var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                        if ( newValue != null )
+                        foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                         {
-                            newValue.EntityId = updatedPerson.Id;
-                            attributeValueService.RockContext.AttributeValues.Add( newValue );
+                            var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                            if ( newValue != null )
+                            {
+                                newValue.EntityId = updatedPerson.Id;
+                                attributeValueService.RockContext.AttributeValues.Add( newValue );
+                            }
                         }
                     }
-                }
 
-                attributeValueService.RockContext.SaveChanges();
-            } );
+                    attributeValueService.RockContext.SaveChanges();
+                } );
+            }
 
             ReportProgress( 100, string.Format( "Finished communication import: {0:N0} records imported.", completed ) );
         }
