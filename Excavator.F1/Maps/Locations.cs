@@ -181,7 +181,7 @@ namespace Excavator.F1
         private void MapFamilyAddress( IQueryable<Row> tableData )
         {
             var locationService = new LocationService();
-            var groupLocationService = new GroupLocationService();
+
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
 
             List<DefinedValue> groupLocationTypeList = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
@@ -191,6 +191,8 @@ namespace Excavator.F1
             int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
             int previousGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS ) ).Id;
+
+            var newGroupLocations = new List<GroupLocation>();
 
             int completed = 0;
             int totalRows = tableData.Count();
@@ -249,7 +251,7 @@ namespace Excavator.F1
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
-                        groupLocationService.RockContext.GroupLocations.Add( groupLocation );
+                        newGroupLocations.Add( groupLocation );
                         completed++;
 
                         if ( completed % percentage < 1 )
@@ -259,20 +261,25 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            using ( new UnitOfWorkScope() )
+                            RockTransactionScope.WrapTransaction( () =>
                             {
+                                var groupLocationService = new GroupLocationService();
+                                groupLocationService.RockContext.GroupLocations.AddRange( newGroupLocations );
                                 groupLocationService.RockContext.SaveChanges();
-                            }
+                            } );
+
                             ReportPartialProgress();
                         }
                     }
                 }
             }
 
-            using ( new UnitOfWorkScope() )
+            RockTransactionScope.WrapTransaction( () =>
             {
+                var groupLocationService = new GroupLocationService();
+                groupLocationService.RockContext.GroupLocations.AddRange( newGroupLocations );
                 groupLocationService.RockContext.SaveChanges();
-            }
+            } );
 
             ReportProgress( 100, string.Format( "Finished address import: {0:N0} addresses imported.", completed ) );
         }

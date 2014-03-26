@@ -39,11 +39,8 @@ namespace Excavator.F1
         private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
-            var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
             var dvService = new DefinedValueService();
-            var personService = new PersonService();
-            var groupService = new GroupService();
             var familyList = new List<Group>();
 
             // Marital statuses: Married, Single, Separated, etc
@@ -366,8 +363,11 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        using ( new UnitOfWorkScope() )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
+                            var groupService = new GroupService();
+                            var personService = new PersonService();
+                            var attributeValueService = new AttributeValueService();
                             groupService.RockContext.Groups.AddRange( familyList );
                             groupService.RockContext.SaveChanges();
 
@@ -400,7 +400,7 @@ namespace Excavator.F1
 
                             attributeValueService.RockContext.SaveChanges();
                             personService.RockContext.SaveChanges();
-                        }
+                        } );
 
                         familyList.Clear();
                         ReportPartialProgress();
@@ -411,8 +411,11 @@ namespace Excavator.F1
             // Save any remaining families in the batch
             if ( familyList.Any() )
             {
-                using ( new UnitOfWorkScope() )
+                RockTransactionScope.WrapTransaction( () =>
                 {
+                    var groupService = new GroupService();
+                    var personService = new PersonService();
+                    var attributeValueService = new AttributeValueService();
                     groupService.RockContext.Groups.AddRange( familyList );
                     groupService.RockContext.SaveChanges();
 
@@ -445,7 +448,7 @@ namespace Excavator.F1
 
                     attributeValueService.RockContext.SaveChanges();
                     personService.RockContext.SaveChanges();
-                }
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished person import: {0:N0} people imported.", completed ) );
@@ -459,10 +462,10 @@ namespace Excavator.F1
         private void MapCompany( IQueryable<Row> tableData )
         {
             var groupTypeRoleService = new GroupTypeRoleService();
-            var attributeValueService = new AttributeValueService();
+            //var attributeValueService = new AttributeValueService();
             var attributeService = new AttributeService();
-            var personService = new PersonService();
-            var groupService = new GroupService();
+            //var personService = new PersonService();
+            //var groupService = new GroupService();
             var businessList = new List<Group>();
 
             // Record status: Active, Inactive, Pending
@@ -536,8 +539,11 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        using ( new UnitOfWorkScope() )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
+                            var groupService = new GroupService();
+                            var personService = new PersonService();
+                            var attributeValueService = new AttributeValueService();
                             groupService.RockContext.Groups.AddRange( businessList );
                             groupService.RockContext.SaveChanges();
 
@@ -562,7 +568,7 @@ namespace Excavator.F1
 
                             attributeValueService.RockContext.SaveChanges();
                             personService.RockContext.SaveChanges();
-                        }
+                        } );
 
                         businessList.Clear();
                         ReportPartialProgress();
@@ -572,8 +578,11 @@ namespace Excavator.F1
 
             if ( businessList.Any() )
             {
-                using ( new UnitOfWorkScope() )
+                RockTransactionScope.WrapTransaction( () =>
                 {
+                    var groupService = new GroupService();
+                    var personService = new PersonService();
+                    var attributeValueService = new AttributeValueService();
                     groupService.RockContext.Groups.AddRange( businessList );
                     groupService.RockContext.SaveChanges();
 
@@ -598,7 +607,7 @@ namespace Excavator.F1
 
                     attributeValueService.RockContext.SaveChanges();
                     personService.RockContext.SaveChanges();
-                }
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished company import: {0:N0} companies imported.", completed ) );

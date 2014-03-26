@@ -78,12 +78,12 @@ namespace Excavator.F1
                             }
                             else if ( completed % ReportingNumber < 1 )
                             {
-                                using ( new UnitOfWorkScope() )
+                                RockTransactionScope.WrapTransaction( () =>
                                 {
                                     var bankAccountService = new FinancialPersonBankAccountService();
                                     bankAccountService.RockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
                                     bankAccountService.RockContext.SaveChanges();
-                                }
+                                } );
 
                                 newBankAccounts.Clear();
                                 ReportPartialProgress();
@@ -95,12 +95,12 @@ namespace Excavator.F1
 
             if ( newBankAccounts.Any() )
             {
-                using ( new UnitOfWorkScope() )
+                RockTransactionScope.WrapTransaction( () =>
                 {
                     var bankAccountService = new FinancialPersonBankAccountService();
                     bankAccountService.RockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
                     bankAccountService.RockContext.SaveChanges();
-                }
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished check number import: {0:N0} numbers imported.", completed ) );
@@ -172,7 +172,7 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        using ( new UnitOfWorkScope() )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
                             var batchService = new FinancialBatchService();
                             batchService.RockContext.FinancialBatches.AddRange( newBatches );
@@ -190,7 +190,8 @@ namespace Excavator.F1
                             }
 
                             attributeValueService.RockContext.SaveChanges();
-                        }
+                        } );
+
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -199,7 +200,7 @@ namespace Excavator.F1
 
             if ( newBatches.Any() )
             {
-                using ( new UnitOfWorkScope() )
+                RockTransactionScope.WrapTransaction( () =>
                 {
                     var batchService = new FinancialBatchService();
                     batchService.RockContext.FinancialBatches.AddRange( newBatches );
@@ -217,7 +218,7 @@ namespace Excavator.F1
                     }
 
                     attributeValueService.RockContext.SaveChanges();
-                }
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -439,7 +440,7 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        using ( new UnitOfWorkScope() )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
                             var transactionService = new FinancialTransactionService();
                             transactionService.RockContext.FinancialTransactions.AddRange( newTransactions );
@@ -457,7 +458,7 @@ namespace Excavator.F1
                             }
 
                             attributeValueService.RockContext.SaveChanges();
-                        }
+                        } );
 
                         newTransactions.Clear();
                         ReportPartialProgress();
@@ -467,7 +468,7 @@ namespace Excavator.F1
 
             if ( newTransactions.Any() )
             {
-                using ( new UnitOfWorkScope() )
+                RockTransactionScope.WrapTransaction( () =>
                 {
                     var transactionService = new FinancialTransactionService();
                     transactionService.RockContext.FinancialTransactions.AddRange( newTransactions );
@@ -485,7 +486,7 @@ namespace Excavator.F1
                     }
 
                     attributeValueService.RockContext.SaveChanges();
-                }
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
@@ -502,8 +503,7 @@ namespace Excavator.F1
 
             List<FinancialAccount> importedAccounts = accountService.Queryable().ToList();
 
-            List<DefinedValue> pledgeFrequencies = new DefinedValueService().Queryable()
-                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
+            List<DefinedValue> pledgeFrequencies = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
 
             List<FinancialPledge> importedPledges = new FinancialPledgeService().Queryable().ToList();
 
@@ -602,12 +602,12 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            using ( new UnitOfWorkScope() )
+                            RockTransactionScope.WrapTransaction( () =>
                             {
                                 var pledgeService = new FinancialPledgeService();
                                 pledgeService.RockContext.FinancialPledges.AddRange( newPledges );
                                 pledgeService.RockContext.SaveChanges();
-                            }
+                            } );
 
                             ReportPartialProgress();
                         }
@@ -617,12 +617,12 @@ namespace Excavator.F1
 
             if ( newPledges.Any() )
             {
-                using ( new UnitOfWorkScope() )
+                RockTransactionScope.WrapTransaction( () =>
                 {
                     var pledgeService = new FinancialPledgeService();
                     pledgeService.RockContext.FinancialPledges.AddRange( newPledges );
                     pledgeService.RockContext.SaveChanges();
-                }
+                } );
             }
 
             ReportProgress( 100, string.Format( "Finished pledge import: {0:N0} pledges imported.", completed ) );
