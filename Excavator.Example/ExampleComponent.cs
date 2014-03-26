@@ -80,7 +80,12 @@ namespace Excavator.Example
             // Supplies a lazy-loaded database queryable
             var tableData = scanner.ScanTable( "TableName" ).AsQueryable();
 
-            // Iterate and do something with the data
+            // Hold a count of how many records have been imported
+            int completed = 0;
+
+            // Pick a method to save data to Rock: #1 (simple) or #2 (fast)
+
+            // Option #1. Standard way to put data in Rock
             foreach ( var dataRow in tableData )
             {
                 // Get a value from the row. This has to be a nullable type.
@@ -88,9 +93,8 @@ namespace Excavator.Example
 
                 // Create a Rock model and assign data to it
                 Person person = new Person();
+                person.LastName = columnValue;
 
-                // Save data to Rock using method #1 or #2
-                // 1. Standard process to save data in Rock
                 RockTransactionScope.WrapTransaction( () =>
                 {
                     // Instantiate the object model service
@@ -102,32 +106,54 @@ namespace Excavator.Example
                     // Save the data to the database
                     personService.Save( person, ImportPersonAlias );
                 } );
+
+                completed++;
             }
 
-            // 2. More efficient process to import large data sets
-            int completed = 0;
-            var batchPersonService = new PersonService();
-            var batchPersonContext = batchPersonService.RockContext.People;
+            // end option #1
 
-            // foreach ( var dataRow in tableData )
-            completed++;
-            batchPersonContext.Add( new Person() );
+            // Option #2. More efficient way to import large data sets
+            var newPersonList = new List<Person>();
 
-            // Save 100 people at a time
-            if ( completed % 100 < 1 )
+            foreach ( var dataRow in tableData )
             {
-                batchPersonService.RockContext.SaveChanges();
+                // Get a value from the row. This has to be a nullable type.
+                string columnValue = dataRow["ColumnName"] as string;
+
+                // Create a Rock model and assign data to it
+                Person person = new Person();
+
+                newPersonList.Add( new Person() );
+                completed++;
+
+                // Save 100 people at a time
+                if ( completed % 100 < 1 )
+                {
+                    RockTransactionScope.WrapTransaction( () =>
+                    {
+                        var personService = new PersonService();
+                        personService.RockContext.People.AddRange( newPersonList );
+                        personService.RockContext.SaveChanges();
+                    } );
+                }
             }
 
-            // end foreach
+            // Outside foreach, save any that haven't been saved yet
+            if ( newPersonList.Any() )
+            {
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    var personService = new PersonService();
+                    personService.RockContext.People.AddRange( newPersonList );
+                    personService.RockContext.SaveChanges();
+                } );
+            }
 
-            // Save any that haven't been saved yet.
-            batchPersonService.RockContext.SaveChanges();
+            // end option #2
 
-            // Report the final progress count
-            int numberImported = completed;
-            ReportProgress( 0, string.Format( "Completed import: {0:N0} records imported.", numberImported ) );
-            return numberImported;
+            // Report the final imported count
+            ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
+            return completed;
         }
 
         #endregion
