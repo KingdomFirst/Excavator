@@ -60,6 +60,7 @@ namespace Excavator.F1
 
                 categoryService.Add( socialMediaCategory, ImportPersonAlias );
                 categoryService.Save( socialMediaCategory, ImportPersonAlias );
+                socialMediaCategoryId = socialMediaCategory.Id;
             }
 
             int visitInfoCategoryId = categoryService.Queryable().Where( c => c.EntityTypeId == attributeEntityTypeId && c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
@@ -284,14 +285,13 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        using ( new UnitOfWorkScope() )
+                        RockTransactionScope.WrapTransaction( () =>
                         {
                             var numberService = new PhoneNumberService();
                             numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
                             numberService.RockContext.SaveChanges();
 
-                            // create a new context with existing data models
-                            // updated person data being tracked with current context
+                            // don't add updatedPeople, they're already tracked with current context
                             personService.RockContext.SaveChanges();
 
                             var attributeValueService = new AttributeValueService();
@@ -309,16 +309,22 @@ namespace Excavator.F1
                             }
 
                             attributeValueService.RockContext.SaveChanges();
+                        } );
+
+                        // reset the person context so it doesn't bloat
+                        if ( updatedPersonList.Any() )
+                        {
+                            personService = new PersonService();
+                            updatedPersonList.Clear();
                         }
 
-                        updatedPersonList.Clear();
+                        newNumberList.Clear();
                         ReportPartialProgress();
                     }
                 }
             }
 
-            // Catch any numbers or person changes outside the last batch
-            using ( new UnitOfWorkScope() )
+            RockTransactionScope.WrapTransaction( () =>
             {
                 var numberService = new PhoneNumberService();
                 numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
@@ -340,7 +346,7 @@ namespace Excavator.F1
                 }
 
                 attributeValueService.RockContext.SaveChanges();
-            }
+            } );
 
             ReportProgress( 100, string.Format( "Finished communication import: {0:N0} records imported.", completed ) );
         }
