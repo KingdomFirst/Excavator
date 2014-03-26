@@ -70,18 +70,69 @@ namespace Excavator.F1
                 .Select( av => new { RLCId = av.Value.AsType<int?>(), LocationId = av.EntityId } )
                 .ToDictionary( t => t.RLCId, t => t.LocationId );
 
+            var newGroups = new List<Group>();
+
+            int completed = 0;
+            int totalRows = tableData.Count();
+            int percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, string.Format( "Checking ministry import ({0:N0} found).", totalRows ) );
+
             foreach ( var row in tableData )
             {
                 int? ministryId = row["Ministry_ID"] as int?;
                 if ( ministryId != null && !importedMinistries.ContainsKey( ministryId ) )
                 {
-                    // Activity_ID
-                    // Ministry_Name
-                    // Activity_Name
-                    // Ministry_Active
-                    // Activity_Active
+                    string ministryName = row["Ministry_Name"] as string;
+                    bool? ministryIsActive = row["Ministry_Active"] as bool?;
+
+                    int? activityId = row["Activity_ID"] as int?;
+                    string activityName = row["Activity_Name"] as string;
+                    bool? activityIsActive = row["Activity_Active"] as bool?;
+
+                    if ( ministryName != null )
+                    {
+                        var ministry = new Group();
+                        ministry.Name = ministryName.Trim();
+                        ministry.IsActive = ministryIsActive ?? false;
+                        ministry.CampusId = CampusList.Where( c => ministryName.StartsWith( c.Name ) || ministryName.StartsWith( c.ShortCode ) )
+                            .Select( c => (int?)c.Id ).FirstOrDefault();
+
+                        // create new group for activity with ministry as parent group
+
+                        newGroups.Add( ministry );
+                        completed++;
+
+                        if ( completed % percentage < 1 )
+                        {
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, string.Format( "{0:N0} ministries imported ({1}% complete).", completed, percentComplete ) );
+                        }
+                        else if ( completed % ReportingNumber < 1 )
+                        {
+                            RockTransactionScope.WrapTransaction( () =>
+                            {
+                                var groupService = new GroupService();
+                                groupService.RockContext.Groups.AddRange( newGroups );
+                                groupService.RockContext.SaveChanges();
+                            } );
+
+                            ReportPartialProgress();
+                        }
+                    }
                 }
             }
+
+            if ( newGroups.Any() )
+            {
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    var groupService = new GroupService();
+                    groupService.RockContext.Groups.AddRange( newGroups );
+                    groupService.RockContext.SaveChanges();
+                } );
+            }
+
+            ReportProgress( 100, string.Format( "Finished ministry import: {0:N0} ministries imported.", completed ) );
         }
 
         /// <summary>
@@ -274,12 +325,15 @@ namespace Excavator.F1
                 }
             }
 
-            RockTransactionScope.WrapTransaction( () =>
+            if ( newGroupLocations.Any() )
             {
-                var groupLocationService = new GroupLocationService();
-                groupLocationService.RockContext.GroupLocations.AddRange( newGroupLocations );
-                groupLocationService.RockContext.SaveChanges();
-            } );
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    var groupLocationService = new GroupLocationService();
+                    groupLocationService.RockContext.GroupLocations.AddRange( newGroupLocations );
+                    groupLocationService.RockContext.SaveChanges();
+                } );
+            }
 
             ReportProgress( 100, string.Format( "Finished address import: {0:N0} addresses imported.", completed ) );
         }
