@@ -21,6 +21,7 @@ using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
 using OrcaMDF.Core.Engine;
+using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 
@@ -76,6 +77,7 @@ namespace Excavator.F1
 
         private int IndividualAttributeId;
         private int HouseholdAttributeId;
+        private int SecondaryEmailAttributeId;
         private int BatchAttributeId;
         private int UserLoginAttributeId;
 
@@ -141,6 +143,10 @@ namespace Excavator.F1
                                 MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
+                            case "Notes":
+                                MapNotes( scanner.ScanTable( table.Name ).AsQueryable() );
+                                break;
+
                             case "Pledge":
                                 MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
@@ -191,8 +197,13 @@ namespace Excavator.F1
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-            var batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
-            var userLoginTypeId = EntityTypeCache.Read( "Rock.Model.UserLogin" ).Id;
+
+            int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
+            int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
+            int userLoginTypeId = EntityTypeCache.Read( "Rock.Model.UserLogin" ).Id;
+
+            int visitInfoCategoryId = new CategoryService().GetByEntityTypeId( attributeEntityTypeId )
+                .Where( c => c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
 
             // Look up and create attributes for F1 unique identifiers if they don't exist
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
@@ -239,6 +250,32 @@ namespace Excavator.F1
                 personAttributes.Add( individualAttribute );
             }
 
+            var secondaryEmailAttribute = personAttributes.FirstOrDefault( a => a.Key == "SecondaryEmail" );
+            if ( secondaryEmailAttribute == null )
+            {
+                secondaryEmailAttribute = new Rock.Model.Attribute();
+                secondaryEmailAttribute.Key = "SecondaryEmail";
+                secondaryEmailAttribute.Name = "Secondary Email";
+                secondaryEmailAttribute.FieldTypeId = TextFieldTypeId;
+                secondaryEmailAttribute.EntityTypeId = PersonEntityTypeId;
+                secondaryEmailAttribute.EntityTypeQualifierValue = string.Empty;
+                secondaryEmailAttribute.EntityTypeQualifierColumn = string.Empty;
+                secondaryEmailAttribute.Description = "The secondary email for this person";
+                secondaryEmailAttribute.DefaultValue = string.Empty;
+                secondaryEmailAttribute.IsMultiValue = false;
+                secondaryEmailAttribute.IsRequired = false;
+                secondaryEmailAttribute.Order = 0;
+
+                using ( new UnitOfWorkScope() )
+                {
+                    var attrService = new AttributeService();
+                    attrService.Add( secondaryEmailAttribute );
+                    var visitInfoCategory = new CategoryService().Get( visitInfoCategoryId );
+                    secondaryEmailAttribute.Categories.Add( visitInfoCategory );
+                    attrService.Save( secondaryEmailAttribute );
+                }
+            }
+
             var batchAttribute = attributeService.Queryable().FirstOrDefault( a => a.EntityTypeId == batchEntityTypeId
                 && a.Key == "F1BatchId" );
             if ( batchAttribute == null )
@@ -267,7 +304,7 @@ namespace Excavator.F1
                 userLoginAttribute = new Rock.Model.Attribute();
                 userLoginAttribute.Key = "F1UserId";
                 userLoginAttribute.Name = "F1 User Id";
-                userLoginAttribute.FieldTypeId = TextFieldTypeId;
+                userLoginAttribute.FieldTypeId = IntegerFieldTypeId;
                 userLoginAttribute.EntityTypeId = userLoginTypeId;
                 userLoginAttribute.EntityTypeQualifierValue = string.Empty;
                 userLoginAttribute.EntityTypeQualifierColumn = string.Empty;
@@ -283,6 +320,7 @@ namespace Excavator.F1
 
             IndividualAttributeId = individualAttribute.Id;
             HouseholdAttributeId = householdAttribute.Id;
+            SecondaryEmailAttributeId = secondaryEmailAttribute.Id;
             BatchAttributeId = batchAttribute.Id;
             UserLoginAttributeId = userLoginAttribute.Id;
 
