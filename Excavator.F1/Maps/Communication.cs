@@ -41,8 +41,7 @@ namespace Excavator.F1
             var categoryService = new CategoryService();
             var personService = new PersonService();
 
-            List<DefinedValue> numberTypeValues = new DefinedValueService().Queryable()
-                .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
+            List<DefinedValue> numberTypeValues = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
 
             // Add a Social Media category if it doesn't exist
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
@@ -164,7 +163,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking communication import ({0:N0} found).", totalRows ) );
+            ReportProgress( 0, string.Format( "Checking communication import ({0:N0} found, {1:N0} already exist).", totalRows, existingNumbers.Count() ) );
 
             foreach ( var row in tableData )
             {
@@ -178,6 +177,7 @@ namespace Excavator.F1
                     string communicationComment = row["Communication_Comment"] as string;
                     string type = row["Communication_Type"] as string;
                     bool isListed = (bool)row["Listed"];
+                    value = value.Trim();
 
                     if ( type.Contains( "Phone" ) || type.Contains( "Mobile" ) )
                     {
@@ -241,9 +241,9 @@ namespace Excavator.F1
 
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
                             {
-                                person.Attributes.Add( "SecondaryEmail", secondaryEmailAttribute );
-                                person.AttributeValues.Add( "SecondaryEmail", new List<AttributeValue>() );
-                                person.AttributeValues["SecondaryEmail"].Add( new AttributeValue()
+                                person.Attributes.Add( secondaryEmailAttribute.Key, secondaryEmailAttribute );
+                                person.AttributeValues.Add( secondaryEmailAttribute.Key, new List<AttributeValue>() );
+                                person.AttributeValues[secondaryEmailAttribute.Key].Add( new AttributeValue()
                                 {
                                     AttributeId = secondaryEmailAttribute.Id,
                                     Value = secondaryEmail,
@@ -253,9 +253,9 @@ namespace Excavator.F1
                         }
                         else if ( type.Contains( "Twitter" ) )
                         {
-                            person.Attributes.Add( "TwitterUsername", twitterUsernameAttribute );
-                            person.AttributeValues.Add( "TwitterUsername", new List<AttributeValue>() );
-                            person.AttributeValues["TwitterUsername"].Add( new AttributeValue()
+                            person.Attributes.Add( twitterUsernameAttribute.Key, twitterUsernameAttribute );
+                            person.AttributeValues.Add( twitterUsernameAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[twitterUsernameAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = twitterUsernameAttribute.Id,
                                 Value = value,
@@ -264,9 +264,9 @@ namespace Excavator.F1
                         }
                         else if ( type.Contains( "Facebook" ) )
                         {
-                            person.Attributes.Add( "FacebookUsername", facebookUsernameAttribute );
-                            person.AttributeValues.Add( "FacebookUsername", new List<AttributeValue>() );
-                            person.AttributeValues["FacebookUsername"].Add( new AttributeValue()
+                            person.Attributes.Add( facebookUsernameAttribute.Key, facebookUsernameAttribute );
+                            person.AttributeValues.Add( facebookUsernameAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[facebookUsernameAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = facebookUsernameAttribute.Id,
                                 Value = value,
@@ -278,48 +278,51 @@ namespace Excavator.F1
                         completed++;
                     }
 
-                    if ( completed % percentage < 1 )
+                    if ( newNumberList.Any() || updatedPersonList.Any() )
                     {
-                        int percentComplete = completed / percentage;
-                        ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
-                    }
-                    else if ( completed % ReportingNumber < 1 )
-                    {
-                        RockTransactionScope.WrapTransaction( () =>
+                        if ( completed % percentage < 1 )
                         {
-                            var numberService = new PhoneNumberService();
-                            numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
-                            numberService.RockContext.SaveChanges();
-
-                            // don't add updatedPeople, they're already tracked with current context
-                            personService.RockContext.SaveChanges();
-
-                            var attributeValueService = new AttributeValueService();
-                            foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                            int percentComplete = completed / percentage;
+                            ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
+                        }
+                        else if ( completed % ReportingNumber < 1 )
+                        {
+                            RockTransactionScope.WrapTransaction( () =>
                             {
-                                foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
+                                var numberService = new PhoneNumberService();
+                                numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
+                                numberService.RockContext.SaveChanges();
+
+                                // don't add updatedPeople, they're already tracked with current context
+                                personService.RockContext.SaveChanges();
+
+                                var attributeValueService = new AttributeValueService();
+                                foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                                 {
-                                    var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                    if ( newValue != null )
+                                    foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                                     {
-                                        newValue.EntityId = updatedPerson.Id;
-                                        attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                        var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                        if ( newValue != null )
+                                        {
+                                            newValue.EntityId = updatedPerson.Id;
+                                            attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                        }
                                     }
                                 }
+
+                                attributeValueService.RockContext.SaveChanges();
+                            } );
+
+                            // reset the person context so it doesn't bloat
+                            if ( updatedPersonList.Any() )
+                            {
+                                personService = new PersonService();
+                                updatedPersonList.Clear();
                             }
 
-                            attributeValueService.RockContext.SaveChanges();
-                        } );
-
-                        // reset the person context so it doesn't bloat
-                        if ( updatedPersonList.Any() )
-                        {
-                            personService = new PersonService();
-                            updatedPersonList.Clear();
+                            newNumberList.Clear();
+                            ReportPartialProgress();
                         }
-
-                        newNumberList.Clear();
-                        ReportPartialProgress();
                     }
                 }
             }
