@@ -45,7 +45,9 @@ namespace Excavator.F1
 
             // Add a Social Media category if it doesn't exist
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
-            int socialMediaCategoryId = categoryService.Queryable().Where( c => c.EntityType.Id == attributeEntityTypeId && c.Name == "Social Media" ).Select( c => c.Id ).FirstOrDefault();
+            int socialMediaCategoryId = categoryService.GetByEntityTypeId( attributeEntityTypeId )
+                .Where( c => c.Name == "Social Media" ).Select( c => c.Id ).FirstOrDefault();
+
             if ( socialMediaCategoryId == 0 )
             {
                 var socialMediaCategory = new Category();
@@ -62,38 +64,8 @@ namespace Excavator.F1
                 socialMediaCategoryId = socialMediaCategory.Id;
             }
 
-            int visitInfoCategoryId = categoryService.Queryable().Where( c => c.EntityTypeId == attributeEntityTypeId && c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
-
             // Look up additional Person attributes (existing)
             var personAttributes = new AttributeService().GetByEntityTypeId( PersonEntityTypeId ).ToList();
-
-            // Add an Attribute for the secondary email
-            int secondaryEmailAttributeId = personAttributes.Where( a => a.Key == "SecondaryEmail" ).Select( a => a.Id ).FirstOrDefault();
-            if ( secondaryEmailAttributeId == 0 )
-            {
-                var newSecondaryEmailAttribute = new Rock.Model.Attribute();
-                newSecondaryEmailAttribute.Key = "SecondaryEmail";
-                newSecondaryEmailAttribute.Name = "Secondary Email";
-                newSecondaryEmailAttribute.FieldTypeId = TextFieldTypeId;
-                newSecondaryEmailAttribute.EntityTypeId = PersonEntityTypeId;
-                newSecondaryEmailAttribute.EntityTypeQualifierValue = string.Empty;
-                newSecondaryEmailAttribute.EntityTypeQualifierColumn = string.Empty;
-                newSecondaryEmailAttribute.Description = "The secondary email for this person";
-                newSecondaryEmailAttribute.DefaultValue = string.Empty;
-                newSecondaryEmailAttribute.IsMultiValue = false;
-                newSecondaryEmailAttribute.IsRequired = false;
-                newSecondaryEmailAttribute.Order = 0;
-
-                using ( new UnitOfWorkScope() )
-                {
-                    var attributeService = new AttributeService();
-                    attributeService.Add( newSecondaryEmailAttribute );
-                    var visitInfoCategory = new CategoryService().Get( visitInfoCategoryId );
-                    newSecondaryEmailAttribute.Categories.Add( visitInfoCategory );
-                    attributeService.Save( newSecondaryEmailAttribute );
-                    secondaryEmailAttributeId = newSecondaryEmailAttribute.Id;
-                }
-            }
 
             // Add an Attribute for Twitter
             int twitterAttributeId = personAttributes.Where( a => a.Key == "TwitterUsername" ).Select( a => a.Id ).FirstOrDefault();
@@ -151,9 +123,9 @@ namespace Excavator.F1
                 }
             }
 
-            var secondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttributeId );
             var twitterUsernameAttribute = AttributeCache.Read( twitterAttributeId );
             var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
+            var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
 
             var existingNumbers = new PhoneNumberService().Queryable().ToList();
 
