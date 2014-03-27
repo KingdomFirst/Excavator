@@ -88,9 +88,9 @@ namespace Excavator.F1
 
                     business.Attributes = new Dictionary<string, AttributeCache>();
                     business.AttributeValues = new Dictionary<string, List<AttributeValue>>();
-                    business.Attributes.Add( "F1HouseholdId", householdIdAttribute );
-                    business.AttributeValues.Add( "F1HouseholdId", new List<AttributeValue>() );
-                    business.AttributeValues["F1HouseholdId"].Add( new AttributeValue()
+                    business.Attributes.Add( householdIdAttribute.Key, householdIdAttribute );
+                    business.AttributeValues.Add( householdIdAttribute.Key, new List<AttributeValue>() );
+                    business.AttributeValues[householdIdAttribute.Key].Add( new AttributeValue()
                     {
                         AttributeId = householdIdAttribute.Id,
                         Value = householdId.ToString(),
@@ -378,9 +378,9 @@ namespace Excavator.F1
                         // individual_id already defined in scope
                         if ( individualId != null )
                         {
-                            person.Attributes.Add( "F1IndividualId", individualIdAttribute );
-                            person.AttributeValues.Add( "F1IndividualId", new List<AttributeValue>() );
-                            person.AttributeValues["F1IndividualId"].Add( new AttributeValue()
+                            person.Attributes.Add( individualIdAttribute.Key, individualIdAttribute );
+                            person.AttributeValues.Add( individualIdAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[individualIdAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = individualIdAttribute.Id,
                                 Value = individualId.ToString(),
@@ -391,9 +391,9 @@ namespace Excavator.F1
                         // household_id already defined in scope
                         if ( householdId != null )
                         {
-                            person.Attributes.Add( "F1HouseholdId", householdIdAttribute );
-                            person.AttributeValues.Add( "F1HouseholdId", new List<AttributeValue>() );
-                            person.AttributeValues["F1HouseholdId"].Add( new AttributeValue()
+                            person.Attributes.Add( householdIdAttribute.Key, householdIdAttribute );
+                            person.AttributeValues.Add( householdIdAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[householdIdAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = householdIdAttribute.Id,
                                 Value = householdId.ToString(),
@@ -404,9 +404,9 @@ namespace Excavator.F1
                         string previousChurch = row["Former_Church"] as string;
                         if ( previousChurch != null )
                         {
-                            person.Attributes.Add( "PreviousChurch", previousChurchAttribute );
-                            person.AttributeValues.Add( "PreviousChurch", new List<AttributeValue>() );
-                            person.AttributeValues["PreviousChurch"].Add( new AttributeValue()
+                            person.Attributes.Add( previousChurchAttribute.Key, previousChurchAttribute );
+                            person.AttributeValues.Add( previousChurchAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[previousChurchAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = previousChurchAttribute.Id,
                                 Value = previousChurch,
@@ -417,9 +417,9 @@ namespace Excavator.F1
                         string employer = row["Employer"] as string;
                         if ( employer != null )
                         {
-                            person.Attributes.Add( "Employer", employerAttribute );
-                            person.AttributeValues.Add( "Employer", new List<AttributeValue>() );
-                            person.AttributeValues["Employer"].Add( new AttributeValue()
+                            person.Attributes.Add( employerAttribute.Key, employerAttribute );
+                            person.AttributeValues.Add( employerAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[employerAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = employerAttribute.Id,
                                 Value = employer,
@@ -430,9 +430,9 @@ namespace Excavator.F1
                         string position = row["Occupation_Name"] as string ?? row["Occupation_Description"] as string;
                         if ( position != null )
                         {
-                            person.Attributes.Add( "Position", positionAttribute );
-                            person.AttributeValues.Add( "Position", new List<AttributeValue>() );
-                            person.AttributeValues["Position"].Add( new AttributeValue()
+                            person.Attributes.Add( positionAttribute.Key, positionAttribute );
+                            person.AttributeValues.Add( positionAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[positionAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = positionAttribute.Id,
                                 Value = position,
@@ -443,9 +443,9 @@ namespace Excavator.F1
                         string school = row["School_Name"] as string;
                         if ( school != null )
                         {
-                            person.Attributes.Add( "School", schoolAttribute );
-                            person.AttributeValues.Add( "School", new List<AttributeValue>() );
-                            person.AttributeValues["School"].Add( new AttributeValue()
+                            person.Attributes.Add( schoolAttribute.Key, schoolAttribute );
+                            person.AttributeValues.Add( schoolAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[schoolAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = schoolAttribute.Id,
                                 Value = school,
@@ -457,9 +457,9 @@ namespace Excavator.F1
                         if ( membershipDate != null )
                         {
                             person.CreatedDateTime = membershipDate;
-                            person.Attributes.Add( "MembershipDate", membershipDateAttribute );
-                            person.AttributeValues.Add( "MembershipDate", new List<AttributeValue>() );
-                            person.AttributeValues["MembershipDate"].Add( new AttributeValue()
+                            person.Attributes.Add( membershipDateAttribute.Key, membershipDateAttribute );
+                            person.AttributeValues.Add( membershipDateAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[membershipDateAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = membershipDateAttribute.Id,
                                 Value = membershipDate.Value.ToString( "MM/dd/yyyy" ),
@@ -473,9 +473,9 @@ namespace Excavator.F1
                             person.CreatedDateTime = firstVisit;
                             // will always pick firstVisit if membershipDate is null
                             firstVisit = firstVisit > membershipDate ? membershipDate : firstVisit;
-                            person.Attributes.Add( "FirstVisit", firstVisitAttribute );
-                            person.AttributeValues.Add( "FirstVisit", new List<AttributeValue>() );
-                            person.AttributeValues["FirstVisit"].Add( new AttributeValue()
+                            person.Attributes.Add( firstVisitAttribute.Key, firstVisitAttribute );
+                            person.AttributeValues.Add( firstVisitAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[firstVisitAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = firstVisitAttribute.Id,
                                 Value = firstVisit.Value.ToString( "MM/dd/yyyy" ),
@@ -621,43 +621,27 @@ namespace Excavator.F1
 
             int rockAuthenticatedTypeId = EntityTypeCache.Read( "Rock.Security.Authentication.Database" ).Id;
 
-            // Look up existing Person attributes
-            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            int secondaryEmailAttributeId = new AttributeService().GetByEntityTypeId( PersonEntityTypeId )
+                .Where( a => a.Key == "SecondaryEmail" ).Select( a => a.Id ).FirstOrDefault();
+            var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
+            var userLoginAttribute = AttributeCache.Read( UserLoginAttributeId );
 
-            // Add an Attribute for the user id if it doesn't exist
-            int userLoginAttributeId = personAttributes.Where( a => a.Key == "F1UserId" ).Select( a => a.Id ).FirstOrDefault();
-            if ( userLoginAttributeId == 0 )
-            {
-                var newUserLoginAttribute = new Rock.Model.Attribute();
-                newUserLoginAttribute.Key = "F1UserId";
-                newUserLoginAttribute.Name = "F1 User Id";
-                newUserLoginAttribute.FieldTypeId = TextFieldTypeId;
-                newUserLoginAttribute.EntityTypeId = PersonEntityTypeId;
-                newUserLoginAttribute.EntityTypeQualifierValue = string.Empty;
-                newUserLoginAttribute.EntityTypeQualifierColumn = string.Empty;
-                newUserLoginAttribute.Description = "The FellowshipOne user identifier for the login that was imported";
-                newUserLoginAttribute.DefaultValue = string.Empty;
-                newUserLoginAttribute.IsMultiValue = false;
-                newUserLoginAttribute.IsRequired = false;
-                newUserLoginAttribute.Order = 0;
+            int staffGroupId = new GroupService().GetByGuid( new Guid( Rock.SystemGuid.Group.GROUP_STAFF_MEMBERS ) ).Id;
+            int memberGroupRoleId = new GroupTypeRoleService().Queryable().Where( r => r.Guid.Equals( new Guid( "00F3AC1C-71B9-4EE5-A30E-4C48C8A0BF1F" ) ) )
+                .Select( r => r.Id ).FirstOrDefault();
 
-                attributeService.Add( newUserLoginAttribute );
-                attributeService.Save( newUserLoginAttribute );
-                userLoginAttributeId = newUserLoginAttribute.Id;
-            }
-
-            var userLoginAttribute = AttributeCache.Read( userLoginAttributeId );
-
-            var importedUsers = new AttributeValueService().GetByAttributeId( userLoginAttributeId )
+            var importedUsers = new AttributeValueService().GetByAttributeId( UserLoginAttributeId )
                .Select( av => new { UserId = av.Value.AsType<int?>(), PersonId = av.EntityId } )
                .ToDictionary( t => t.UserId, t => t.PersonId );
 
             var newUserLogins = new List<UserLogin>();
+            var newStaffMembers = new List<GroupMember>();
+            var updatedPersonList = new List<Person>();
 
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking communication import ({0:N0} found).", totalRows ) );
+            ReportProgress( 0, string.Format( "Checking user import ({0:N0} found, {1:N0} already exist).", totalRows, importedUsers.Count() ) );
 
             foreach ( var row in tableData )
             {
@@ -666,23 +650,38 @@ namespace Excavator.F1
                 int? userId = row["UserID"] as int?;
                 if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !importedUsers.ContainsKey( userId ) )
                 {
+                    bool? isStaff = row["IsStaff"] as bool?;
                     int? personId = GetPersonId( individualId, null );
                     if ( personId != null )
                     {
                         DateTime? createdDate = row["UserCreatedDate"] as DateTime?;
                         string userPhone = row["UserPhone"] as string;
                         string userEmail = row["UserEmail"] as string;
-                        bool? isConfirmed = row["IsUserEnabled"] as bool?;
-                        bool? isStaff = row["IsStaff"] as bool?;
+                        string userTitle = row["UserTitle"] as string;
+                        bool? isEnabled = row["IsUserEnabled"] as bool?;
+                        //bool? isStaff = row["IsStaff"] as bool?;
+                        bool isActive = isEnabled ?? false;
 
                         var user = new UserLogin();
-                        user.UserName = userName;
-                        user.IsConfirmed = isConfirmed;
+                        user.CreatedDateTime = createdDate;
+                        user.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         user.EntityTypeId = rockAuthenticatedTypeId;
+                        user.IsConfirmed = isEnabled;
+                        user.UserName = userName;
+                        user.PersonId = personId;
 
                         if ( isStaff == true )
                         {
-                            // add this to proper group
+                            // add this user to the staff group
+                            var staffMember = new GroupMember();
+                            staffMember.GroupId = staffGroupId;
+                            staffMember.PersonId = (int)personId;
+                            staffMember.GroupRoleId = memberGroupRoleId;
+                            staffMember.CreatedDateTime = createdDate;
+                            staffMember.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            staffMember.GroupMemberStatus = isActive ? GroupMemberStatus.Active : GroupMemberStatus.Inactive;
+
+                            newStaffMembers.Add( staffMember );
                         }
 
                         user.Attributes = new Dictionary<string, AttributeCache>();
@@ -696,17 +695,46 @@ namespace Excavator.F1
                             Order = 0
                         } );
 
+                        // set user login email to primary email
+                        if ( userEmail.IsValidEmail() )
+                        {
+                            var person = personService.Get( (int)personId );
+                            string secondaryEmail = string.Empty;
+                            userEmail = userEmail.Trim();
+                            if ( string.IsNullOrWhiteSpace( person.Email ) )
+                            {
+                                secondaryEmail = person.Email;
+                                person.Email = userEmail.Left( 75 );
+                                person.IsEmailActive = isEnabled;
+                                person.DoNotEmail = !isEnabled ?? true;
+                                person.EmailNote = userTitle;
+                            }
+                            else if ( !person.Email.Equals( userEmail ) )
+                            {
+                                secondaryEmail = userEmail;
+                            }
+
+                            if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
+                            {
+                                //person.Attributes = new Dictionary<string, AttributeCache>();
+                                //person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                                person.Attributes.Add( secondaryEmailAttribute.Key, secondaryEmailAttribute );
+                                person.AttributeValues.Add( secondaryEmailAttribute.Key, new List<AttributeValue>() );
+                                person.AttributeValues[secondaryEmailAttribute.Key].Add( new AttributeValue()
+                                {
+                                    AttributeId = secondaryEmailAttribute.Id,
+                                    Value = secondaryEmail,
+                                    Order = 0
+                                } );
+                            }
+
+                            updatedPersonList.Add( person );
+                        }
+
                         // other Attributes to save
-                        // UserLogin
-                        // FirstName
-                        // MiddleName
-                        // LastName
-                        // GoesBy
                         // UserBio
                         // DepartmentName
                         // IsPastor
-                        // IsStaff
-                        // UserTitle
 
                         newUserLogins.Add( user );
                         completed++;
@@ -714,28 +742,45 @@ namespace Excavator.F1
                         if ( completed % percentage < 1 )
                         {
                             int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
+                            ReportProgress( percentComplete, string.Format( "{0:N0} users imported ({1}% complete).", completed, percentComplete ) );
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var userLoginService = new UserLoginService();
-                                userLoginService.RockContext.UserLogins.AddRange( newUserLogins );
-                                userLoginService.RockContext.SaveChanges();
+                                var rockContext = new RockContext();
+                                rockContext.UserLogins.AddRange( newUserLogins );
+                                rockContext.GroupMembers.AddRange( newStaffMembers );
+                                rockContext.SaveChanges();
 
-                                var attributeValueService = new AttributeValueService();
+                                // save email changes to person
+                                if ( updatedPersonList.Any() )
+                                {
+                                    personService.RockContext.SaveChanges();
+                                    foreach ( var person in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                                    {
+                                        var attributeValue = person.AttributeValues[secondaryEmailAttribute.Key].FirstOrDefault();
+                                        if ( attributeValue != null )
+                                        {
+                                            attributeValue.EntityId = person.Id;
+                                            rockContext.AttributeValues.Add( attributeValue );
+                                        }
+                                    }
+
+                                    updatedPersonList.Clear();
+                                }
+
                                 foreach ( var userLogin in newUserLogins.Where( p => p.Attributes.Any() ) )
                                 {
                                     var attributeValue = userLogin.AttributeValues[userLoginAttribute.Key].FirstOrDefault();
                                     if ( attributeValue != null )
                                     {
                                         attributeValue.EntityId = userLogin.Id;
-                                        attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                        rockContext.AttributeValues.Add( attributeValue );
                                     }
                                 }
 
-                                attributeValueService.RockContext.SaveChanges();
+                                rockContext.SaveChanges();
                             } );
 
                             newUserLogins.Clear();
@@ -749,22 +794,39 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var userLoginService = new UserLoginService();
-                    userLoginService.RockContext.UserLogins.AddRange( newUserLogins );
-                    userLoginService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.UserLogins.AddRange( newUserLogins );
+                    rockContext.GroupMembers.AddRange( newStaffMembers );
+                    rockContext.SaveChanges();
 
-                    var attributeValueService = new AttributeValueService();
+                    // save email changes to person
+                    if ( updatedPersonList.Any() )
+                    {
+                        personService.RockContext.SaveChanges();
+                        foreach ( var person in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                        {
+                            var attributeValue = person.AttributeValues[secondaryEmailAttribute.Key].FirstOrDefault();
+                            if ( attributeValue != null )
+                            {
+                                attributeValue.EntityId = person.Id;
+                                rockContext.AttributeValues.Add( attributeValue );
+                            }
+                        }
+
+                        updatedPersonList.Clear();
+                    }
+
                     foreach ( var userLogin in newUserLogins.Where( p => p.Attributes.Any() ) )
                     {
                         var attributeValue = userLogin.AttributeValues[userLoginAttribute.Key].FirstOrDefault();
                         if ( attributeValue != null )
                         {
                             attributeValue.EntityId = userLogin.Id;
-                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                            rockContext.AttributeValues.Add( attributeValue );
                         }
                     }
 
-                    attributeValueService.RockContext.SaveChanges();
+                    rockContext.SaveChanges();
                 } );
             }
 
