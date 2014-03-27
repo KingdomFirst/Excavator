@@ -71,13 +71,13 @@ namespace Excavator.F1
         private int IntegerFieldTypeId;
         private int TextFieldTypeId;
         private int PersonEntityTypeId;
-        private int BatchEntityTypeId;
 
-        // Custom entity types
+        // Custom attribute types
 
         private int IndividualAttributeId;
         private int HouseholdAttributeId;
         private int BatchAttributeId;
+        private int UserLoginAttributeId;
 
         // Report progress when a multiple of this number has been imported
         private static int ReportingNumber = 50;
@@ -191,8 +191,10 @@ namespace Excavator.F1
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-            BatchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
+            var batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
+            var userLoginTypeId = EntityTypeCache.Read( "Rock.Model.UserLogin" ).Id;
 
+            // Look up and create attributes for F1 unique identifiers if they don't exist
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
             var householdAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" );
@@ -237,22 +239,7 @@ namespace Excavator.F1
                 personAttributes.Add( individualAttribute );
             }
 
-            IndividualAttributeId = individualAttribute.Id;
-            HouseholdAttributeId = householdAttribute.Id;
-
-            ReportProgress( 0, "Checking for existing people..." );
-            var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
-            var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
-
-            ImportedPeople = listHouseholdId.GroupJoin( listIndividualId, household => household.PersonId,
-                individual => individual.PersonId, ( household, individual ) => new ImportedPerson
-                {
-                    PersonId = household.PersonId,
-                    HouseholdId = household.HouseholdId.AsType<int?>(),
-                    IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
-                } ).ToList();
-
-            var batchAttribute = attributeService.Queryable().FirstOrDefault( a => a.EntityTypeId == BatchEntityTypeId
+            var batchAttribute = attributeService.Queryable().FirstOrDefault( a => a.EntityTypeId == batchEntityTypeId
                 && a.Key == "F1BatchId" );
             if ( batchAttribute == null )
             {
@@ -260,7 +247,7 @@ namespace Excavator.F1
                 batchAttribute.Key = "F1BatchId";
                 batchAttribute.Name = "F1 Batch Id";
                 batchAttribute.FieldTypeId = IntegerFieldTypeId;
-                batchAttribute.EntityTypeId = BatchEntityTypeId;
+                batchAttribute.EntityTypeId = batchEntityTypeId;
                 batchAttribute.EntityTypeQualifierValue = string.Empty;
                 batchAttribute.EntityTypeQualifierColumn = string.Empty;
                 batchAttribute.Description = "The FellowshipOne identifier for the batch that was imported";
@@ -273,7 +260,43 @@ namespace Excavator.F1
                 attributeService.Save( batchAttribute, ImportPersonAlias );
             }
 
+            var userLoginAttribute = attributeService.Queryable().FirstOrDefault( a => a.EntityTypeId == userLoginTypeId
+                && a.Key == "F1UserId" );
+            if ( userLoginAttribute == null )
+            {
+                userLoginAttribute = new Rock.Model.Attribute();
+                userLoginAttribute.Key = "F1UserId";
+                userLoginAttribute.Name = "F1 User Id";
+                userLoginAttribute.FieldTypeId = TextFieldTypeId;
+                userLoginAttribute.EntityTypeId = userLoginTypeId;
+                userLoginAttribute.EntityTypeQualifierValue = string.Empty;
+                userLoginAttribute.EntityTypeQualifierColumn = string.Empty;
+                userLoginAttribute.Description = "The FellowshipOne user identifier for the login that was imported";
+                userLoginAttribute.DefaultValue = string.Empty;
+                userLoginAttribute.IsMultiValue = false;
+                userLoginAttribute.IsRequired = false;
+                userLoginAttribute.Order = 0;
+
+                attributeService.Add( userLoginAttribute );
+                attributeService.Save( userLoginAttribute );
+            }
+
+            IndividualAttributeId = individualAttribute.Id;
+            HouseholdAttributeId = householdAttribute.Id;
             BatchAttributeId = batchAttribute.Id;
+            UserLoginAttributeId = userLoginAttribute.Id;
+
+            ReportProgress( 0, "Checking for existing people..." );
+            var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
+            var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
+
+            ImportedPeople = listHouseholdId.GroupJoin( listIndividualId, household => household.PersonId,
+                individual => individual.PersonId, ( household, individual ) => new ImportedPerson
+                {
+                    PersonId = household.PersonId,
+                    HouseholdId = household.HouseholdId.AsType<int?>(),
+                    IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
+                } ).ToList();
 
             ReportProgress( 0, "Checking for existing contributions..." );
             ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttribute.Id )
@@ -290,43 +313,6 @@ namespace Excavator.F1
         /// <param name="householdId">The household identifier.</param>
         /// <returns></returns>
         private int? GetPersonId( int? individualId = null, int? householdId = null )
-        {
-            var existingPerson = ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
-            if ( existingPerson != null )
-            {
-                return existingPerson.PersonId;
-            }
-            else
-            {
-                int lookupAttributeId = individualId.HasValue ? IndividualAttributeId : HouseholdAttributeId;
-                string lookupValueId = individualId.HasValue ? individualId.ToString() : householdId.ToString();
-                var lookup = new AttributeValueService().Queryable()
-                    .Where( av => av.AttributeId == lookupAttributeId && av.Value == lookupValueId );
-
-                var lookupPerson = lookup.FirstOrDefault();
-                if ( lookupPerson != null )
-                {
-                    ImportedPeople.Add( new ImportedPerson()
-                    {
-                        PersonId = lookupPerson.EntityId,
-                        HouseholdId = householdId,
-                        IndividualId = individualId
-                    } );
-
-                    return lookupPerson.EntityId;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Checks if this person or business has been imported and returns the Rock.Person Id
-        /// </summary>
-        /// <param name="individualId">The individual identifier.</param>
-        /// <param name="householdId">The household identifier.</param>
-        /// <returns></returns>
-        private int? GetUserId( int? individualId = null, int? householdId = null )
         {
             var existingPerson = ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
             if ( existingPerson != null )
