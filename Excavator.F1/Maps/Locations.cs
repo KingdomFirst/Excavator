@@ -235,7 +235,7 @@ namespace Excavator.F1
 
             int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
 
-            List<DefinedValue> groupLocationTypeList = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
+            List<DefinedValue> groupLocationTypeList = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
 
             List<GroupMember> groupMembershipList = new GroupMemberService().Queryable().Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
 

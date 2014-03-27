@@ -44,7 +44,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking check number import ({0:N0} found).", totalRows ) );
+            ReportProgress( 0, string.Format( "Checking check number import ({0:N0} found, {1:N0} already exist).", totalRows, importedBankAccounts.Count() ) );
 
             foreach ( var row in tableData )
             {
@@ -242,7 +242,7 @@ namespace Excavator.F1
             int currencyTypeCheck = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
             int currencyTypeCreditCard = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
 
-            List<DefinedValue> refundReasons = new DefinedValueService().Queryable().Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
+            List<DefinedValue> refundReasons = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
 
             List<FinancialPledge> pledgeList = new FinancialPledgeService().Queryable().ToList();
 
