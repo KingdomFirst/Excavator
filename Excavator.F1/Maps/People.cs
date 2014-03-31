@@ -638,7 +638,6 @@ namespace Excavator.F1
                 int? userId = row["UserID"] as int?;
                 if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !importedUsers.ContainsKey( userId ) )
                 {
-                    bool? isStaff = row["IsStaff"] as bool?;
                     int? personId = GetPersonId( individualId, null );
                     if ( personId != null )
                     {
@@ -647,7 +646,7 @@ namespace Excavator.F1
                         string userEmail = row["UserEmail"] as string;
                         string userTitle = row["UserTitle"] as string;
                         bool? isEnabled = row["IsUserEnabled"] as bool?;
-                        //bool? isStaff = row["IsStaff"] as bool?;
+                        bool? isStaff = row["IsStaff"] as bool?;
                         bool isActive = isEnabled ?? false;
 
                         var user = new UserLogin();
@@ -704,8 +703,8 @@ namespace Excavator.F1
 
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
                             {
-                                //person.Attributes = new Dictionary<string, AttributeCache>();
-                                //person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                                person.Attributes = new Dictionary<string, AttributeCache>();
+                                person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
                                 person.Attributes.Add( secondaryEmailAttribute.Key, secondaryEmailAttribute );
                                 person.AttributeValues.Add( secondaryEmailAttribute.Key, new List<AttributeValue>() );
                                 person.AttributeValues[secondaryEmailAttribute.Key].Add( new AttributeValue()
@@ -745,7 +744,7 @@ namespace Excavator.F1
                                 if ( updatedPersonList.Any() )
                                 {
                                     personService.RockContext.SaveChanges();
-                                    foreach ( var person in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                                    foreach ( var person in updatedPersonList.Where( p => p.Attributes != null ) )
                                     {
                                         var attributeValue = person.AttributeValues[secondaryEmailAttribute.Key].FirstOrDefault();
                                         if ( attributeValue != null )
@@ -758,7 +757,7 @@ namespace Excavator.F1
                                     updatedPersonList.Clear();
                                 }
 
-                                foreach ( var userLogin in newUserLogins.Where( p => p.Attributes.Any() ) )
+                                foreach ( var userLogin in newUserLogins.Where( p => p.Attributes != null ) )
                                 {
                                     var attributeValue = userLogin.AttributeValues[userLoginAttribute.Key].FirstOrDefault();
                                     if ( attributeValue != null )
@@ -791,7 +790,7 @@ namespace Excavator.F1
                     if ( updatedPersonList.Any() )
                     {
                         personService.RockContext.SaveChanges();
-                        foreach ( var person in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                        foreach ( var person in updatedPersonList.Where( p => p.Attributes != null ) )
                         {
                             var attributeValue = person.AttributeValues[secondaryEmailAttribute.Key].FirstOrDefault();
                             if ( attributeValue != null )
@@ -804,7 +803,7 @@ namespace Excavator.F1
                         updatedPersonList.Clear();
                     }
 
-                    foreach ( var userLogin in newUserLogins.Where( p => p.Attributes.Any() ) )
+                    foreach ( var userLogin in newUserLogins.Where( p => p.Attributes != null ) )
                     {
                         var attributeValue = userLogin.AttributeValues[userLoginAttribute.Key].FirstOrDefault();
                         if ( attributeValue != null )
