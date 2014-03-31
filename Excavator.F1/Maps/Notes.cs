@@ -105,9 +105,9 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var noteService = new NoteService();
-                                noteService.RockContext.Notes.AddRange( noteList );
-                                noteService.RockContext.SaveChanges();
+                                var rockContext = new RockContext();
+                                rockContext.Notes.AddRange( noteList );
+                                rockContext.SaveChanges();
                             } );
 
                             ReportPartialProgress();
@@ -120,9 +120,9 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var noteService = new NoteService();
-                    noteService.RockContext.Notes.AddRange( noteList );
-                    noteService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.Notes.AddRange( noteList );
+                    rockContext.SaveChanges();
                 } );
             }
 

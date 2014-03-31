@@ -111,9 +111,9 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var groupService = new GroupService();
-                                groupService.RockContext.Groups.AddRange( newGroups );
-                                groupService.RockContext.SaveChanges();
+                                var rockContext = new RockContext();
+                                rockContext.Groups.AddRange( newGroups );
+                                rockContext.SaveChanges();
                             } );
 
                             ReportPartialProgress();
@@ -126,9 +126,9 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var groupService = new GroupService();
-                    groupService.RockContext.Groups.AddRange( newGroups );
-                    groupService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.Groups.AddRange( newGroups );
+                    rockContext.SaveChanges();
                 } );
             }
 
@@ -314,9 +314,9 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var groupLocationService = new GroupLocationService();
-                                groupLocationService.RockContext.GroupLocations.AddRange( newGroupLocations );
-                                groupLocationService.RockContext.SaveChanges();
+                                var rockContext = new RockContext();
+                                rockContext.GroupLocations.AddRange( newGroupLocations );
+                                rockContext.SaveChanges();
                             } );
 
                             ReportPartialProgress();
@@ -329,9 +329,9 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var groupLocationService = new GroupLocationService();
-                    groupLocationService.RockContext.GroupLocations.AddRange( newGroupLocations );
-                    groupLocationService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.GroupLocations.AddRange( newGroupLocations );
+                    rockContext.SaveChanges();
                 } );
             }
 

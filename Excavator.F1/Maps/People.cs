@@ -115,11 +115,9 @@ namespace Excavator.F1
                     {
                         RockTransactionScope.WrapTransaction( () =>
                         {
-                            var groupService = new GroupService();
-                            var personService = new PersonService();
-                            var attributeValueService = new AttributeValueService();
-                            groupService.RockContext.Groups.AddRange( businessList );
-                            groupService.RockContext.SaveChanges();
+                            var rockContext = new RockContext();
+                            rockContext.Groups.AddRange( businessList );
+                            rockContext.SaveChanges();
 
                             foreach ( var newBusiness in businessList )
                             {
@@ -132,7 +130,7 @@ namespace Excavator.F1
                                         if ( newValue != null )
                                         {
                                             newValue.EntityId = person.Id;
-                                            attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                            rockContext.AttributeValues.Add( newValue );
                                         }
                                     }
 
@@ -140,8 +138,7 @@ namespace Excavator.F1
                                 }
                             }
 
-                            attributeValueService.RockContext.SaveChanges();
-                            personService.RockContext.SaveChanges();
+                            rockContext.SaveChanges();
                         } );
 
                         businessList.Clear();
@@ -154,11 +151,9 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var groupService = new GroupService();
-                    var personService = new PersonService();
-                    var attributeValueService = new AttributeValueService();
-                    groupService.RockContext.Groups.AddRange( businessList );
-                    groupService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.Groups.AddRange( businessList );
+                    rockContext.SaveChanges();
 
                     foreach ( var newBusiness in businessList )
                     {
@@ -171,7 +166,7 @@ namespace Excavator.F1
                                 if ( newValue != null )
                                 {
                                     newValue.EntityId = person.Id;
-                                    attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                    rockContext.AttributeValues.Add( newValue );
                                 }
                             }
 
@@ -179,8 +174,7 @@ namespace Excavator.F1
                         }
                     }
 
-                    attributeValueService.RockContext.SaveChanges();
-                    personService.RockContext.SaveChanges();
+                    rockContext.SaveChanges();
                 } );
             }
 
@@ -521,11 +515,9 @@ namespace Excavator.F1
                     {
                         RockTransactionScope.WrapTransaction( () =>
                         {
-                            var groupService = new GroupService();
-                            var personService = new PersonService();
-                            var attributeValueService = new AttributeValueService();
-                            groupService.RockContext.Groups.AddRange( familyList );
-                            groupService.RockContext.SaveChanges();
+                            var rockContext = new RockContext();
+                            rockContext.Groups.AddRange( familyList );
+                            rockContext.SaveChanges();
 
                             foreach ( var newFamilyGroup in familyList )
                             {
@@ -538,7 +530,7 @@ namespace Excavator.F1
                                         if ( newValue != null )
                                         {
                                             newValue.EntityId = person.Id;
-                                            attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                            rockContext.AttributeValues.Add( newValue );
                                         }
                                     }
 
@@ -554,8 +546,7 @@ namespace Excavator.F1
                                 }
                             }
 
-                            attributeValueService.RockContext.SaveChanges();
-                            personService.RockContext.SaveChanges();
+                            rockContext.SaveChanges();
                         } );
 
                         familyList.Clear();
@@ -569,11 +560,9 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var groupService = new GroupService();
-                    var personService = new PersonService();
-                    var attributeValueService = new AttributeValueService();
-                    groupService.RockContext.Groups.AddRange( familyList );
-                    groupService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.Groups.AddRange( familyList );
+                    rockContext.SaveChanges();
 
                     foreach ( var newFamilyGroup in familyList )
                     {
@@ -586,7 +575,7 @@ namespace Excavator.F1
                                 if ( newValue != null )
                                 {
                                     newValue.EntityId = person.Id;
-                                    attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                    rockContext.AttributeValues.Add( newValue );
                                 }
                             }
 
@@ -602,8 +591,7 @@ namespace Excavator.F1
                         }
                     }
 
-                    attributeValueService.RockContext.SaveChanges();
-                    personService.RockContext.SaveChanges();
+                    rockContext.SaveChanges();
                 } );
             }
 

@@ -97,9 +97,9 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var bankAccountService = new FinancialPersonBankAccountService();
-                    bankAccountService.RockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
-                    bankAccountService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
+                    rockContext.SaveChanges();
                 } );
             }
 
@@ -174,22 +174,21 @@ namespace Excavator.F1
                     {
                         RockTransactionScope.WrapTransaction( () =>
                         {
-                            var batchService = new FinancialBatchService();
-                            batchService.RockContext.FinancialBatches.AddRange( newBatches );
-                            batchService.RockContext.SaveChanges();
+                            var rockContext = new RockContext();
+                            rockContext.FinancialBatches.AddRange( newBatches );
+                            rockContext.SaveChanges();
 
-                            var attributeValueService = new AttributeValueService();
                             foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
                             {
                                 var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
                                 if ( attributeValue != null )
                                 {
                                     attributeValue.EntityId = newBatch.Id;
-                                    attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                    rockContext.AttributeValues.Add( attributeValue );
                                 }
                             }
 
-                            attributeValueService.RockContext.SaveChanges();
+                            rockContext.SaveChanges();
                         } );
 
                         newBatches.Clear();
@@ -202,22 +201,21 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var batchService = new FinancialBatchService();
-                    batchService.RockContext.FinancialBatches.AddRange( newBatches );
-                    batchService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.FinancialBatches.AddRange( newBatches );
+                    rockContext.SaveChanges();
 
-                    var attributeValueService = new AttributeValueService();
                     foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
                     {
                         var attributeValue = newBatch.AttributeValues[batchAttribute.Key].FirstOrDefault();
                         if ( attributeValue != null )
                         {
                             attributeValue.EntityId = newBatch.Id;
-                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                            rockContext.AttributeValues.Add( attributeValue );
                         }
                     }
 
-                    attributeValueService.RockContext.SaveChanges();
+                    rockContext.SaveChanges();
                 } );
             }
 
@@ -442,22 +440,21 @@ namespace Excavator.F1
                     {
                         RockTransactionScope.WrapTransaction( () =>
                         {
-                            var transactionService = new FinancialTransactionService();
-                            transactionService.RockContext.FinancialTransactions.AddRange( newTransactions );
-                            transactionService.RockContext.SaveChanges();
+                            var rockContext = new RockContext();
+                            rockContext.FinancialTransactions.AddRange( newTransactions );
+                            rockContext.SaveChanges();
 
-                            var attributeValueService = new AttributeValueService();
                             foreach ( var contribution in newTransactions.Where( c => c.Attributes.Any() ) )
                             {
                                 var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
                                 if ( attributeValue != null )
                                 {
                                     attributeValue.EntityId = contribution.Id;
-                                    attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                                    rockContext.AttributeValues.Add( attributeValue );
                                 }
                             }
 
-                            attributeValueService.RockContext.SaveChanges();
+                            rockContext.SaveChanges();
                         } );
 
                         newTransactions.Clear();
@@ -470,22 +467,21 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var transactionService = new FinancialTransactionService();
-                    transactionService.RockContext.FinancialTransactions.AddRange( newTransactions );
-                    transactionService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.FinancialTransactions.AddRange( newTransactions );
+                    rockContext.SaveChanges();
 
-                    var attributeValueService = new AttributeValueService();
                     foreach ( var contribution in newTransactions.Where( c => c.Attributes.Any() ) )
                     {
                         var attributeValue = contribution.AttributeValues[contributionAttribute.Key].FirstOrDefault();
                         if ( attributeValue != null )
                         {
                             attributeValue.EntityId = contribution.Id;
-                            attributeValueService.RockContext.AttributeValues.Add( attributeValue );
+                            rockContext.AttributeValues.Add( attributeValue );
                         }
                     }
 
-                    attributeValueService.RockContext.SaveChanges();
+                    rockContext.SaveChanges();
                 } );
             }
 
@@ -604,9 +600,9 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var pledgeService = new FinancialPledgeService();
-                                pledgeService.RockContext.FinancialPledges.AddRange( newPledges );
-                                pledgeService.RockContext.SaveChanges();
+                                var rockContext = new RockContext();
+                                rockContext.FinancialPledges.AddRange( newPledges );
+                                rockContext.SaveChanges();
                             } );
 
                             ReportPartialProgress();
@@ -619,9 +615,9 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var pledgeService = new FinancialPledgeService();
-                    pledgeService.RockContext.FinancialPledges.AddRange( newPledges );
-                    pledgeService.RockContext.SaveChanges();
+                    var rockContext = new RockContext();
+                    rockContext.FinancialPledges.AddRange( newPledges );
+                    rockContext.SaveChanges();
                 } );
             }
 
