@@ -76,14 +76,13 @@
         <Label Style="{StaticResource labelStyle}"
             Grid.Row="4" VerticalAlignment="Top" Margin="30,0"
             Grid.Column="0" HorizontalAlignment="Right">
-            <TextBlock>Connect to the Rock server:<LineBreak />
-            (Disabled, please use the config)</TextBlock>
+            <TextBlock Text="Connect to the Rock server:" />
         </Label>
         <Button Style="{StaticResource buttonStyle}"
             x:Name="btnConnect" Margin="30,0"
             Grid.Row="4" VerticalAlignment="Top"
             Grid.Column="1" HorizontalAlignment="Left"
-            Content="Connect" IsEnabled="False"
+            Content="Connect" IsEnabled="True"
             Click="btnConnect_Click" />
 
         <Label Name="lblDbConnect" Visibility="Hidden"

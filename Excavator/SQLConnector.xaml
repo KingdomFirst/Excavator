@@ -1,0 +1,93 @@
+﻿<UserControl x:Class="Excavator.SQLConnector"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Name="SqlConnector">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+    <GroupBox>
+        <GroupBox.Header>
+            <TextBlock Text="{Binding ElementName=SqlConnector, Path=Header}"
+                FontSize="14" FontWeight="Bold" />
+        </GroupBox.Header>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Server: " Margin="3"
+                VerticalAlignment="Center"
+                Grid.Column="0" Grid.Row="0" />
+            <Grid Grid.Column="1"
+                  Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox x:Name="SqlServerName" Margin="3" IsEditable="True"
+                    ItemsSource="{Binding ElementName=SqlConnector, Path=Servers}"
+                    Text="{Binding ElementName=SqlConnector, Path=ConnectionString.Server, UpdateSourceTrigger=LostFocus}">
+                </ComboBox>
+            </Grid>
+            <TextBlock Text="Database: " Margin="3"
+                VerticalAlignment="Center" Grid.Column="0" Grid.Row="1" />
+            <Grid Grid.Column="1"
+                  Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox x:Name="SqlDatabaseName" Margin="3" IsEditable="True"
+                    ItemsSource="{Binding ElementName=SqlConnector, Path=Databases}"
+                    Text="{Binding ElementName=SqlConnector, Path=ConnectionString.Database, UpdateSourceTrigger=PropertyChanged}">
+                </ComboBox>
+            </Grid>
+
+            <GroupBox Header="Authentication:" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2">
+                <StackPanel>
+                    <RadioButton x:Name="SqlAuthTypeWindows" Content="Windows Authentication" Margin="3"
+                        IsChecked="{Binding ElementName=SqlConnector, Path=ConnectionString.IntegratedSecurity, UpdateSourceTrigger=PropertyChanged}">
+                    </RadioButton>
+                    <RadioButton Content="Sql Authentication" Margin="3" x:Name="SqlAuthTypeSql">
+                        <RadioButton.Style>
+                            <Style>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ElementName=SqlConnector, Path=ConnectionString.IntegratedSecurity}" Value="False">
+                                        <Setter Property="RadioButton.IsChecked" Value="True" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </RadioButton.Style>
+                    </RadioButton>
+                    <Grid Visibility="{Binding ElementName=SqlAuthTypeSql, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Username: " Margin="3"
+                            Grid.Column="0" Grid.Row="0"
+                            VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Margin="3" Grid.Row="0"
+                            Text="{Binding ElementName=SqlConnector, Path=ConnectionString.UserName, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="Password: " Grid.Column="0" Margin="3"
+                            Grid.Row="1" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Grid.Row="1" Margin="3"
+                            Text="{Binding ElementName=SqlConnector, Path=ConnectionString.Password, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </StackPanel>
+            </GroupBox>
+            <ContentPresenter Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="3"
+                Content="{Binding ElementName=SqlConnector, Path=Connection}" />
+        </Grid>
+    </GroupBox>
+</UserControl>

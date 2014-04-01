@@ -21,6 +21,8 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
 using Microsoft.Win32;
 using OrcaMDF.Core.Engine;
 
@@ -32,6 +34,10 @@ namespace Excavator
     public partial class ConnectPage : Page
     {
         #region Fields
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private ConnectionString existingConnection;
 
         public FrontEndLoader frontEndLoader;
 
@@ -90,44 +96,46 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnConnect_Click( object sender, RoutedEventArgs e )
         {
-            //var sqlConnector = new SQLConnector();
-            //var connectWindow = new Window();
-            //var mask = new SolidColorBrush();
-            //mask.Color = Colors.White;
-            //mask.Opacity = .5;
-            //var blur = new BlurEffect();
-            //blur.Radius = 2;
-            //this.OpacityMask = mask;
-            //this.Effect = blur;
+            var sqlConnector = new SQLConnector();
+            sqlConnector.ConnectionString = ExistingConnection;
 
-            //var cancelBtn = new Button();
-            //var okBtn = new Button();
+            var connectWindow = new Window();
+            var mask = new SolidColorBrush();
+            mask.Color = Colors.White;
+            mask.Opacity = .5;
+            var blur = new BlurEffect();
+            blur.Radius = 2;
+            this.OpacityMask = mask;
+            this.Effect = blur;
 
-            //cancelBtn.Content = "Cancel";
-            //cancelBtn.IsCancel = true;
-            //cancelBtn.SetValue( Grid.RowProperty, 3 );
+            var cancelBtn = new Button();
+            var okBtn = new Button();
 
-            //okBtn.Content = "Ok";
-            //okBtn.IsDefault = true;
-            //okBtn.SetValue( Grid.RowProperty, 3 );
-            //cancelBtn.SetValue( Grid.ColumnProperty, 0 );
+            cancelBtn.Content = "Cancel";
+            cancelBtn.IsCancel = true;
+            cancelBtn.SetValue( Grid.RowProperty, 3 );
+
+            okBtn.Content = "Ok";
+            okBtn.IsDefault = true;
+            okBtn.SetValue( Grid.RowProperty, 3 );
+            cancelBtn.SetValue( Grid.ColumnProperty, 0 );
 
             //okBtn.Click += btnOk_Click;
             //cancelBtn.Click += btnCancel_Click;
             //sqlConnector.grdSQLConnect.Children.Add( okBtn );
             //sqlConnector.grdSQLConnect.Children.Add( cancelBtn );
 
-            //connectWindow.Owner = this;
-            //connectWindow.Content = sqlConnector;
-            //connectWindow.ShowInTaskbar = false;
-            //connectWindow.WindowStyle = WindowStyle.None;
-            //connectWindow.ResizeMode = ResizeMode.NoResize;
-            //connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
-            //connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            //var test = connectWindow.ShowDialog();
+            connectWindow.Owner = Window.GetWindow( this );
+            connectWindow.Content = sqlConnector;
+            connectWindow.ShowInTaskbar = false;
+            connectWindow.WindowStyle = WindowStyle.None;
+            connectWindow.ResizeMode = ResizeMode.NoResize;
+            connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
+            connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            var test = connectWindow.ShowDialog();
 
-            //this.Effect = null;
-            //this.OpacityMask = null;
+            this.Effect = null;
+            this.OpacityMask = null;
         }
 
         /// <summary>
@@ -144,6 +152,25 @@ namespace Excavator
         #endregion
 
         #region Async Tasks
+
+        /// <summary>
+        /// Gets or sets the existing connection.
+        /// </summary>
+        /// <value>
+        /// The existing connection.
+        /// </value>
+        public ConnectionString ExistingConnection
+        {
+            get { return existingConnection; }
+            set
+            {
+                existingConnection = value;
+                if ( PropertyChanged != null )
+                {
+                    PropertyChanged( this, new PropertyChangedEventArgs( "ExistingConnection" ) );
+                }
+            }
+        }
 
         /// <summary>
         /// Handles the DoWork event of the bwLoadSchema control.
