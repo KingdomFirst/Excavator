@@ -27,11 +27,11 @@ using System.Windows.Navigation;
 namespace Excavator
 {
     /// <summary>
-    /// Interaction logic for TransformPage.xaml
+    /// Interaction logic for ProgressPage.xaml
     /// </summary>
     public partial class ProgressPage : System.Windows.Controls.Page
     {
-        public ExcavatorComponent excavator;
+        private ExcavatorComponent excavator;
 
         #region Constructor
 

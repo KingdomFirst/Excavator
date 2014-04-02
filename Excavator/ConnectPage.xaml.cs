@@ -21,21 +21,45 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
 using Microsoft.Win32;
 using OrcaMDF.Core.Engine;
 
 namespace Excavator
 {
     /// <summary>
-    /// Interaction logic for ConnectWindow.xaml
+    /// Interaction logic for ConnectPage.xaml
     /// </summary>
     public partial class ConnectPage : Page
     {
         #region Fields
 
-        public FrontEndLoader frontEndLoader;
+        private FrontEndLoader frontEndLoader;
 
-        public ExcavatorComponent excavator;
+        private ExcavatorComponent excavator;
+
+        private SqlConnector sqlConnector;
+
+        private ConnectionString existingConnection;
+
+        public ConnectionString CurrentConnection
+        {
+            get
+            {
+                return existingConnection;
+            }
+            set
+            {
+                existingConnection = value;
+                if ( PropertyChanged != null )
+                {
+                    PropertyChanged( this, new PropertyChangedEventArgs( "Connection" ) );
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         #endregion
 
@@ -90,44 +114,70 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnConnect_Click( object sender, RoutedEventArgs e )
         {
-            //var sqlConnector = new SQLConnector();
-            //var connectWindow = new Window();
-            //var mask = new SolidColorBrush();
-            //mask.Color = Colors.White;
-            //mask.Opacity = .5;
-            //var blur = new BlurEffect();
-            //blur.Radius = 2;
-            //this.OpacityMask = mask;
-            //this.Effect = blur;
+            sqlConnector = new SqlConnector();
+            var modalPanel = new StackPanel();
+            var buttonPanel = new StackPanel();
+            var cancelBtn = new Button();
+            var okBtn = new Button();
 
-            //var cancelBtn = new Button();
-            //var okBtn = new Button();
+            // set background effects
+            var mask = new SolidColorBrush();
+            var blur = new BlurEffect();
+            mask.Color = Colors.White;
+            mask.Opacity = .5;
+            blur.Radius = 10;
+            this.OpacityMask = mask;
+            this.Effect = blur;
 
-            //cancelBtn.Content = "Cancel";
-            //cancelBtn.IsCancel = true;
-            //cancelBtn.SetValue( Grid.RowProperty, 3 );
+            sqlConnector.ConnectionString = existingConnection;
+            modalPanel.Children.Add( sqlConnector );
+            buttonPanel.Orientation = Orientation.Horizontal;
+            buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
 
-            //okBtn.Content = "Ok";
-            //okBtn.IsDefault = true;
-            //okBtn.SetValue( Grid.RowProperty, 3 );
-            //cancelBtn.SetValue( Grid.ColumnProperty, 0 );
+            okBtn.Content = "Ok";
+            okBtn.IsDefault = true;
+            okBtn.Margin = new Thickness( 0, 0, 5, 0 );
+            okBtn.Click += btnOk_Click;
+            okBtn.Style = (Style)FindResource( "buttonStylePrimary" );
+            cancelBtn.Content = "Cancel";
+            cancelBtn.IsCancel = true;
+            cancelBtn.Style = (Style)FindResource( "buttonStyle" );
 
-            //okBtn.Click += btnOk_Click;
-            //cancelBtn.Click += btnCancel_Click;
-            //sqlConnector.grdSQLConnect.Children.Add( okBtn );
-            //sqlConnector.grdSQLConnect.Children.Add( cancelBtn );
+            buttonPanel.Children.Add( okBtn );
+            buttonPanel.Children.Add( cancelBtn );
+            modalPanel.Children.Add( buttonPanel );
 
-            //connectWindow.Owner = this;
-            //connectWindow.Content = sqlConnector;
-            //connectWindow.ShowInTaskbar = false;
-            //connectWindow.WindowStyle = WindowStyle.None;
-            //connectWindow.ResizeMode = ResizeMode.NoResize;
-            //connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
-            //connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            //var test = connectWindow.ShowDialog();
+            var connectWindow = new Window();
+            connectWindow.Content = modalPanel;
+            connectWindow.Owner = Window.GetWindow( this );
+            connectWindow.ShowInTaskbar = false;
+            connectWindow.Background = (Brush)FindResource( "windowBackground" );
+            connectWindow.WindowStyle = WindowStyle.None;
+            connectWindow.ResizeMode = ResizeMode.NoResize;
+            connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
+            connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            var showWindow = connectWindow.ShowDialog();
+            this.OpacityMask = null;
+            this.Effect = null;
 
-            //this.Effect = null;
-            //this.OpacityMask = null;
+            if ( !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString ) )
+            {
+                lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
+                lblDbConnect.Content = "Successfully connected to the database";
+            }
+
+            lblDbConnect.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnOk control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnOk_Click( object sender, RoutedEventArgs e )
+        {
+            Window.GetWindow( (Button)sender ).DialogResult = true;
+            sqlConnector.ConnectionString.MultipleActiveResultSets = true;
         }
 
         /// <summary>
@@ -137,8 +187,44 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnNext_Click( object sender, RoutedEventArgs e )
         {
-            var selectPage = new SelectPage( excavator );
-            this.NavigationService.Navigate( selectPage );
+            var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
+            var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+
+            if ( excavator != null && ( rockContext != null || !string.IsNullOrWhiteSpace( existingConnection ) ) )
+            {
+                try
+                {
+                    if ( sqlConnector != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString ) )
+                    {
+                        if ( rockContext != null )
+                        {
+                            rockContext.ConnectionString = sqlConnector.ConnectionString;
+                        }
+                        else
+                        {
+                            appConfig.ConnectionStrings.ConnectionStrings.Add( new ConnectionStringSettings( "RockContext", sqlConnector.ConnectionString ) );
+                        }
+
+                        appConfig.Save( ConfigurationSaveMode.Modified );
+                        ConfigurationManager.RefreshSection( "connectionstrings" );
+                    }
+
+                    var selectPage = new SelectPage( excavator );
+                    this.NavigationService.Navigate( selectPage );
+                }
+                catch
+                {
+                    lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
+                    lblDbConnect.Content = "Unable to set the database connection. Please check the permissions on the current directory.";
+                    lblDbConnect.Visibility = Visibility.Visible;
+                }
+            }
+            else
+            {
+                lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
+                lblDbConnect.Content = "Please select a valid source and destination database.";
+                lblDbConnect.Visibility = Visibility.Visible;
+            }
         }
 
         #endregion

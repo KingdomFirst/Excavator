@@ -29,7 +29,7 @@ namespace Excavator
     /// </summary>
     public partial class ConfigurationPage : System.Windows.Controls.Page
     {
-        public ExcavatorComponent excavator;
+        private ExcavatorComponent excavator;
 
         #region Constructor
 
