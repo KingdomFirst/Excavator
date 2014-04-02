@@ -102,8 +102,8 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SQLConnector.xaml.cs">
-      <DependentUpon>SQLConnector.xaml</DependentUpon>
+    <Compile Include="SqlConnector.xaml.cs">
+      <DependentUpon>SqlConnector.xaml</DependentUpon>
     </Compile>
     <Page Include="App.xaml">
       <SubType>Designer</SubType>
@@ -152,7 +152,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="SQLConnector.xaml">
+    <Page Include="SqlConnector.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

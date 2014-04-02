@@ -34,63 +34,60 @@ using Microsoft.SqlServer.Management.Smo;
 namespace Excavator
 {
     /// <summary>
-    /// SQL Connector control, implemented by Jake Ginnivan (http://github.com/JakeGinnivan/SqlConnectionControl)
+    /// Modified SQL Connector control, originally by Jake Ginnivan
+    /// http://github.com/JakeGinnivan/SqlConnectionControl
     /// Licensed under the MIT open-source license, 2014
     /// </summary>
-    [ContentProperty( "Connection" )]
-    public partial class SQLConnector : INotifyPropertyChanged
+    public partial class SqlConnector : INotifyPropertyChanged
     {
-        private readonly SqlConnectorTasks sqlTasks;
-        private static ObservableCollection<string> servers;
-        private static readonly object LockServers = new object();
+        #region Fields
 
-        private readonly BackgroundWorker dbLoader = new BackgroundWorker();
-        private readonly ObservableCollection<string> databases = new ObservableCollection<string>();
+        private string _lastServer;
+        private string _header = "SQL Server Connection";
+        private readonly SqlTasks _smoTasks;
+        private static ObservableCollection<string> _servers;
+        private static readonly object ServersLock = new object();
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        private readonly BackgroundWorker _dbLoader = new BackgroundWorker();
 
-        private string lastServer;
-        private string headerText = "Sql Configuration";
-        private bool serversLoading;
+        private readonly ObservableCollection<string> _databases = new ObservableCollection<string>();
 
-        private static readonly ConnectionString DefaultValue = new ConnectionString
-        {
-            IntegratedSecurity = false,
-            MultipleActiveResultSets = true
-        };
-
-        public static readonly DependencyProperty FooterProperty = DependencyProperty.Register( "Connections",
-            typeof( FrameworkElement ),
-            typeof( SQLConnector ) );
-
-        public static readonly DependencyProperty ConnectionStringProperty = DependencyProperty.Register( "ConnectionString",
-            typeof( ConnectionString ),
-            typeof( SQLConnector ),
-            new FrameworkPropertyMetadata(
-                DefaultValue,
-                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-                ConnectionStringChanged
-            )
-        );
+        //private static readonly ConnectionString DefaultValue = new ConnectionString { IntegratedSecurity = false, MultipleActiveResultSets = true };
+        private static readonly ConnectionString DefaultValue = new ConnectionString();
 
         private static void ConnectionStringChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
         {
-            var builder = (SQLConnector)d;
+            var builder = (SqlConnector)d;
             if ( e.NewValue == null )
             {
                 builder.Dispatcher.BeginInvoke( (Action)( () => d.SetValue( ConnectionStringProperty, DefaultValue ) ) );
             }
+
             else
             {
                 builder.RegisterNewConnectionString( (ConnectionString)e.NewValue );
             }
         }
 
-        public SQLConnector()
-            : this( new SqlConnectorTasks() )
+        private void OnPropertyChanged( params string[] propertyNames )
         {
-            InitializeComponent();
+            if ( PropertyChanged == null ) return;
+
+            foreach ( var propertyName in propertyNames )
+            {
+                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
+            }
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public static readonly DependencyProperty ConnectionStringProperty = DependencyProperty.Register( "ConnectionString"
+            , typeof( ConnectionString ), typeof( SqlConnector ), new FrameworkPropertyMetadata(
+                DefaultValue,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                ConnectionStringChanged
+            )
+        );
 
         public ConnectionString ConnectionString
         {
@@ -98,25 +95,58 @@ namespace Excavator
             set { SetValue( ConnectionStringProperty, value ); }
         }
 
-        public FrameworkElement Footer
+        public ObservableCollection<string> Servers
         {
             get
             {
-                return (FrameworkElement)GetValue( FooterProperty );
+                lock ( ServersLock )
+                {
+                    if ( _servers == null )
+                    {
+                        _servers = new ObservableCollection<string>();
+                        LoadServersAsync();
+                    }
+                }
+
+                return _servers;
             }
+        }
+
+        public ObservableCollection<string> Databases
+        {
+            get { return _databases; }
+        }
+
+        public string Header
+        {
+            get { return _header; }
             set
             {
-                SetValue( FooterProperty, value );
+                _header = value;
+                OnPropertyChanged( "Header" );
             }
         }
 
-        public SQLConnector( SqlConnectorTasks smoTasks )
-        {
-            sqlTasks = smoTasks;
+        #endregion
 
-            dbLoader.DoWork += DbLoaderDoWork;
-            dbLoader.RunWorkerCompleted += DbLoaderRunWorkerCompleted;
+        #region Constructor
+
+        public SqlConnector()
+            : this( new SqlTasks() )
+        {
+            InitializeComponent();
         }
+
+        public SqlConnector( SqlTasks smoTasks )
+        {
+            _smoTasks = smoTasks;
+            _dbLoader.DoWork += DbLoaderDoWork;
+            _dbLoader.RunWorkerCompleted += DbLoaderRunWorkerCompleted;
+        }
+
+        #endregion
+
+        #region Internal Methods
 
         public static void SetConnectionString( DependencyObject dp, ConnectionString value )
         {
@@ -137,222 +167,102 @@ namespace Excavator
         private void ConnectionStringPropertyChanged( object sender, PropertyChangedEventArgs e )
         {
             //Server has changed, reload
-            if ( e.PropertyName == "Server" && !dbLoader.IsBusy )
+            if ( e.PropertyName == "Server" && !_dbLoader.IsBusy )
             {
-                dbLoader.RunWorkerAsync( ConnectionString );
+                _dbLoader.RunWorkerAsync( ConnectionString );
                 OnPropertyChanged( "DatabasesLoading" );
             }
 
-            GetBindingExpression( ConnectionStringProperty ).UpdateSource();
-        }
-
-        public ObservableCollection<string> Servers
-        {
-            get
+            var binding = GetBindingExpression( ConnectionStringProperty );
+            if ( binding != null )
             {
-                lock ( LockServers )
-                {
-                    if ( servers == null )
-                    {
-                        servers = new ObservableCollection<string>();
-                        ServersLoading = true;
-                        LoadServersAsync();
-                    }
-                }
-
-                return servers;
+                binding.UpdateSource();
             }
         }
 
-        public ObservableCollection<string> Databases
-        {
-            get { return databases; }
-        }
+        #endregion
 
-        public bool ServersLoading
-        {
-            get
-            {
-                return serversLoading;
-            }
-            private set
-            {
-                serversLoading = value;
-                OnPropertyChanged( "ServersLoading" );
-            }
-        }
-
-        public bool DatabasesLoading
-        {
-            get
-            {
-                return dbLoader.IsBusy;
-            }
-        }
-
-        public string Header
-        {
-            get { return headerText; }
-            set
-            {
-                headerText = value;
-                OnPropertyChanged( "Header" );
-            }
-        }
-
-        private void OnPropertyChanged( params string[] propertyNames )
-        {
-            if ( PropertyChanged == null ) return;
-
-            foreach ( var propertyName in propertyNames )
-            {
-                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
-            }
-        }
+        #region Async Tasks
 
         private void DbLoaderDoWork( object sender, DoWorkEventArgs e )
         {
             var connString = e.Argument as ConnectionString;
 
-            //No need to refesh databases if last server is the same as current server
-            if ( connString == null || lastServer == connString.Server )
-                return;
-
-            lastServer = connString.Server;
-
+            if ( connString == null ) return;
             if ( string.IsNullOrEmpty( connString.Server ) ) return;
 
-            e.Result = sqlTasks.GetDatabases( connString );
+            _lastServer = connString.Server;
+            e.Result = _smoTasks.GetDatabases( connString );
         }
 
         private void DbLoaderRunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
+            _databases.Clear();
             if ( e.Error == null )
             {
                 var databases = e.Result as List<string>;
                 if ( databases == null ) return;
 
-                lastServer = null;
+                _lastServer = null;
                 foreach ( var database in databases.OrderBy( d => d ) )
                 {
-                    databases.Add( database );
+                    _databases.Add( database );
                 }
             }
-            else if ( ConnectionString.Server != lastServer )
+            else if ( ConnectionString.Server != _lastServer )
             {
-                dbLoader.RunWorkerAsync( ConnectionString );
+                _dbLoader.RunWorkerAsync( ConnectionString );
                 return;
             }
 
             OnPropertyChanged( "DatabasesLoading" );
+
+            this.Dispatcher.Invoke( (Action)( () =>
+            {
+                SqlDatabaseName.SelectedItem = _databases.FirstOrDefault();
+            } ) );
         }
 
         private void LoadServersAsync()
         {
             var serverLoader = new BackgroundWorker();
-            serverLoader.DoWork += ( ( sender, e ) => e.Result = sqlTasks.SqlServers.OrderBy( r => r ).ToArray() );
+            serverLoader.DoWork += ( ( sender, e ) => e.Result = _smoTasks.SqlServers.OrderBy( r => r ).ToArray() );
 
             serverLoader.RunWorkerCompleted += ( ( sender, e ) =>
             {
                 foreach ( var server in (string[])e.Result )
                 {
-                    servers.Add( server );
+                    _servers.Add( server );
                 }
-                ServersLoading = false;
             } );
 
             serverLoader.RunWorkerAsync();
         }
+
+        #endregion
     }
 
     /// <summary>
-    /// Handles all the tasks that fire when a server or database is selected
-    /// </summary>
-    public class SqlConnectorTasks
-    {
-        public IEnumerable<string> SqlServers
-        {
-            get
-            {
-                return SmoApplication.EnumAvailableSqlServers().AsEnumerable()
-                    .Select( r => r["Name"].ToString() );
-            }
-        }
-
-        public List<string> GetDatabases( ConnectionString connectionString )
-        {
-            var databases = new List<string>();
-
-            using ( var conn = new SqlConnection( connectionString.WithDatabase( "master" ) ) )
-            {
-                conn.Open();
-                var serverConnection = new ServerConnection( conn );
-                var server = new Server( serverConnection );
-                databases.AddRange( from Database database in server.Databases select database.Name );
-            }
-
-            return databases;
-        }
-
-        public List<string> GetTables( ConnectionString connectionString )
-        {
-            using ( var conn = new SqlConnection( connectionString.WithDatabase( "master" ) ) )
-            {
-                conn.Open();
-                var serverConnection = new ServerConnection( conn );
-                var server = new Server( serverConnection );
-                return server.Databases[connectionString.Database].Tables.Cast<Table>()
-                    .Select( t => t.Name ).ToList();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Builds the connection string as soon as properties are changed on the SQLConnector
+    /// Holds the current connection string
     /// </summary>
     public class ConnectionString : INotifyPropertyChanged
     {
+        #region Fields
+
         private readonly SqlConnectionStringBuilder _builder = new SqlConnectionStringBuilder
         {
-            MultipleActiveResultSets = true,
-            IntegratedSecurity = true
+            //IntegratedSecurity = true,
+            //MultipleActiveResultSets = true
         };
 
-        public ConnectionString() { }
-
-        public ConnectionString( string connectionString )
+        private void OnPropertyChanged( string propertyName )
         {
-            _builder.ConnectionString = connectionString;
+            if ( PropertyChanged == null ) return;
+
+            PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
         }
 
-        public static implicit operator string( ConnectionString connectionString )
-        {
-            return connectionString.ToString();
-        }
-
-        public override string ToString()
-        {
-            if ( Server.EndsWith( ".sdf" ) )
-                if ( string.IsNullOrEmpty( Password ) )
-                    return new SqlConnectionStringBuilder { DataSource = Server }.ConnectionString;
-                else
-                    return new SqlConnectionStringBuilder { DataSource = Server, Password = Password }.ConnectionString;
-
-            return _builder.ConnectionString;
-        }
-
-        public ConnectionString WithDatabase( string databaseName )
-        {
-            return new ConnectionString
-            {
-                Server = Server,
-                Database = databaseName,
-                IntegratedSecurity = IntegratedSecurity,
-                UserName = UserName,
-                Password = Password,
-                MultipleActiveResultSets = MultipleActiveResultSets
-            };
-        }
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public string Server
         {
@@ -468,13 +378,96 @@ namespace Excavator
                  ( IntegratedSecurity || ( !string.IsNullOrEmpty( UserName ) && !string.IsNullOrEmpty( Password ) ) ) );
         }
 
-        private void OnPropertyChanged( string propertyName )
-        {
-            if ( PropertyChanged == null ) return;
+        #endregion
 
-            PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
+        #region Constructor
+
+        public ConnectionString()
+        { }
+
+        public ConnectionString( string connectionString )
+        {
+            _builder.ConnectionString = connectionString;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        // Create a copy of this connection string with the specified database instead of the current
+        public ConnectionString WithDatabase( string databaseName )
+        {
+            return new ConnectionString
+            {
+                Server = Server,
+                Database = databaseName,
+                IntegratedSecurity = IntegratedSecurity,
+                UserName = UserName,
+                Password = Password,
+                MultipleActiveResultSets = MultipleActiveResultSets
+            };
+        }
+
+        #endregion
+
+        #region Internal Methods
+
+        public static implicit operator string( ConnectionString connectionString )
+        {
+            return connectionString.ToString();
+        }
+
+        public override string ToString()
+        {
+            if ( Server.EndsWith( ".sdf" ) )
+            {
+                if ( string.IsNullOrEmpty( Password ) )
+                {
+                    return new SqlConnectionStringBuilder { DataSource = Server }.ConnectionString;
+                }
+
+                else
+                {
+                    return new SqlConnectionStringBuilder { DataSource = Server, Password = Password }.ConnectionString;
+                }
+            }
+
+            return _builder.ConnectionString;
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Contains background tasks that fire when the control is updated
+    /// </summary>
+    public class SqlTasks
+    {
+        public IEnumerable<string> SqlServers
+        {
+            get
+            {
+                return SmoApplication.EnumAvailableSqlServers().AsEnumerable()
+                    .Select( r => r["Name"].ToString() );
+            }
+        }
+
+        public List<string> GetDatabases( ConnectionString connectionString )
+        {
+            var databases = new List<string>();
+
+            using ( var conn = new SqlConnection( connectionString.WithDatabase( "master" ) ) )
+            {
+                try
+                {
+                    conn.Open();
+                    var serverConnection = new ServerConnection( conn );
+                    var server = new Server( serverConnection );
+                    databases.AddRange( from Database database in server.Databases select database.Name );
+                }
+                catch ( SqlException e )
+                {
+                    databases.Add( e.Errors[0].Message.Left( 50 ) );
+                }
+            }
+
+            return databases;
+        }
     }
 }
