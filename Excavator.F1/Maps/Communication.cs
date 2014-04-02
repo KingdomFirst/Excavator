@@ -135,7 +135,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking communication import ({0:N0} found, {1:N0} already exist).", totalRows, existingNumbers.Count() ) );
+            ReportProgress( 0, string.Format( "Verifying communication import ({0:N0} found, {1:N0} already exist).", totalRows, existingNumbers.Count() ) );
 
             foreach ( var row in tableData )
             {
@@ -202,9 +202,11 @@ namespace Excavator.F1
                                 secondaryEmail = person.Email;
                                 person.Email = value.Left( 75 );
                                 person.IsEmailActive = isListed;
-                                person.DoNotEmail = !isListed;
                                 person.ModifiedDateTime = lastUpdated;
                                 person.EmailNote = communicationComment;
+
+                                // this will come out in the next release
+                                person.DoNotEmail = !isListed;
                             }
                             else if ( !person.Email.Equals( value ) )
                             {

@@ -62,7 +62,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking company import ({0:N0} found).", totalRows ) );
+            ReportProgress( 0, string.Format( "Verifying company import ({0:N0} found).", totalRows ) );
 
             foreach ( var row in tableData )
             {
@@ -247,7 +247,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking person import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedPeople.Count() ) );
+            ReportProgress( 0, string.Format( "Verifying person import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedPeople.Count() ) );
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
@@ -629,7 +629,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Checking user import ({0:N0} found, {1:N0} already exist).", totalRows, importedUsers.Count() ) );
+            ReportProgress( 0, string.Format( "Verifying user import ({0:N0} found, {1:N0} already exist).", totalRows, importedUsers.Count() ) );
 
             foreach ( var row in tableData )
             {
