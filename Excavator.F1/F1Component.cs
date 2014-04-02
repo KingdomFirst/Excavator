@@ -97,6 +97,11 @@ namespace Excavator.F1
             ReportProgress( 0, "Starting import..." );
             var personService = new PersonService();
             var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
+            if ( importPerson == null )
+            {
+                importPerson = personService.Queryable().FirstOrDefault();
+            }
+
             ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
             var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
