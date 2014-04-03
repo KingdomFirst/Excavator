@@ -78,7 +78,7 @@ namespace Excavator.F1
                     {
                         businessName.Replace( "&#39;", "'" );
                         businessName.Replace( "&amp;", "&" );
-                        business.LastName = businessName.Left( 50 );
+                        business.FirstName = businessName.Left( 50 );
                         businessGroup.Name = businessName.Left( 50 );
                     }
 
