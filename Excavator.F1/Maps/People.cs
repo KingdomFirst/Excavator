@@ -693,7 +693,6 @@ namespace Excavator.F1
                                 secondaryEmail = person.Email;
                                 person.Email = userEmail.Left( 75 );
                                 person.IsEmailActive = isEnabled;
-                                person.DoNotEmail = !isEnabled ?? true;
                                 person.EmailNote = userTitle;
                             }
                             else if ( !person.Email.Equals( userEmail ) )

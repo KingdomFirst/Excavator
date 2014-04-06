@@ -204,9 +204,6 @@ namespace Excavator.F1
                                 person.IsEmailActive = isListed;
                                 person.ModifiedDateTime = lastUpdated;
                                 person.EmailNote = communicationComment;
-
-                                // this will come out in the next release
-                                person.DoNotEmail = !isListed;
                             }
                             else if ( !person.Email.Equals( value ) )
                             {
