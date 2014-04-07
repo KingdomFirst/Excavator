@@ -9,7 +9,7 @@ Files you need to start an import (Excavator\bin):
 - Excavator.exe
 - Rock.dll (whichever the latest version is)
 - Excavator.exe.config (currently holds the Rock connection string)
-- Excavator.F1.dll ( or whichever database componenet you're using)
+- Excavator.F1.dll ( or whichever database component you're using)
 
 Note: master branch contains fully-tested code; develop branch is beta/in-progress.
 
