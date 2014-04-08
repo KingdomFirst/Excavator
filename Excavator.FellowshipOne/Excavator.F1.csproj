@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{AE3F37AD-CF41-4669-A7F5-62DB7D224C9E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Excavator.F1</RootNamespace>
+    <AssemblyName>Excavator.F1</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Excavator\bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Excavator\bin\</OutputPath>
+    <DefineConstants>
+    </DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AjaxControlToolkit">
+      <HintPath>..\Excavator\Packages\AjaxControlToolkit.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AjaxMin">
+      <HintPath>..\Excavator\Packages\AjaxMin.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Antlr3.Runtime">
+      <HintPath>..\Excavator\Packages\Antlr3.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="C5">
+      <HintPath>..\Excavator\Packages\C5.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="CronExpressionDescriptor">
+      <HintPath>..\Excavator\Packages\CronExpressionDescriptor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DDay.iCal">
+      <HintPath>..\Excavator\Packages\DDay.iCal.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DotLiquid">
+      <HintPath>..\Excavator\Packages\DotLiquid.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\Excavator\Packages\EntityFramework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\Excavator\Packages\EntityFramework.SqlServer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EPPlus">
+      <HintPath>..\Excavator\Packages\EPPlus.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Facebook">
+      <HintPath>..\Excavator\Packages\Facebook.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="HtmlAgilityPack">
+      <HintPath>..\Excavator\Packages\HtmlAgilityPack.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ImageResizer">
+      <HintPath>..\Excavator\Packages\ImageResizer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Excavator\Packages\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NuGet.Core, Version=1.6.30117.9648, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Excavator\Packages\NuGet.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="OrcaMDF.Core">
+      <HintPath>..\Excavator\Packages\OrcaMDF.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="OrcaMDF.Framework">
+      <HintPath>..\Excavator\Packages\OrcaMDF.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Quartz">
+      <HintPath>..\Excavator\Packages\Quartz.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="RestSharp">
+      <HintPath>..\Excavator\Packages\RestSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Rock">
+      <HintPath>..\Excavator\Packages\Rock.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Twilio.Api">
+      <HintPath>..\Excavator\Packages\Twilio.Api.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="F1Component.cs" />
+    <Compile Include="Maps\Attendance.cs" />
+    <Compile Include="Maps\Notes.cs" />
+    <Compile Include="Maps\Communication.cs" />
+    <Compile Include="Maps\Financial.cs" />
+    <Compile Include="Maps\Locations.cs" />
+    <Compile Include="Model\Group_Attendance.cs" />
+    <Compile Include="Model\GiftednessProgram.cs" />
+    <Compile Include="Model\IndividualGiftedness.cs" />
+    <Compile Include="Model\ActivityAssignment.cs" />
+    <Compile Include="Model\ActivityMinistry.cs" />
+    <Compile Include="Model\Activity_Group.cs" />
+    <Compile Include="Model\Activity_Schedule.cs" />
+    <Compile Include="Model\Attendance.cs" />
+    <Compile Include="Model\Attribute.cs" />
+    <Compile Include="Model\Authorizations.cs" />
+    <Compile Include="Model\Batch.cs" />
+    <Compile Include="Model\Communication.cs" />
+    <Compile Include="Model\Company.cs" />
+    <Compile Include="Model\ContactFormData.cs" />
+    <Compile Include="Model\Contribution.cs" />
+    <Compile Include="Model\GroupManager.cs" />
+    <Compile Include="Model\Groups.cs" />
+    <Compile Include="Model\Household_Address.cs" />
+    <Compile Include="Model\IndividualContactNotes.cs" />
+    <Compile Include="Model\Individual_Household.cs" />
+    <Compile Include="Model\Job.cs" />
+    <Compile Include="Model\JobInformation.cs" />
+    <Compile Include="Model\Notes.cs" />
+    <Compile Include="Model\Account.cs" />
+    <Compile Include="Model\Pledge.cs" />
+    <Compile Include="Model\Requirement.cs" />
+    <Compile Include="Model\RLC.cs" />
+    <Compile Include="Model\Staffing_Assignment.cs" />
+    <Compile Include="Model\Users.cs" />
+    <Compile Include="Maps\People.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\excavator\Excavator.csproj">
+      <Project>{6c4100b7-6b6b-40d7-a150-deba50512c95}</Project>
+      <Name>Excavator</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
