@@ -38,19 +38,20 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapCommunication( IQueryable<Row> tableData )
         {
-            var categoryService = new CategoryService();
-            var personService = new PersonService();
+            var rockContext = new RockContext();
+            var categoryService = new CategoryService( rockContext );
+            var personService = new PersonService( rockContext );
 
-            List<DefinedValue> numberTypeValues = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
+            List<DefinedValue> numberTypeValues = new DefinedValueService( rockContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
 
             // Add a Social Media category if it doesn't exist
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
-            int socialMediaCategoryId = categoryService.GetByEntityTypeId( attributeEntityTypeId )
-                .Where( c => c.Name == "Social Media" ).Select( c => c.Id ).FirstOrDefault();
+            var socialMediaCategory = categoryService.GetByEntityTypeId( attributeEntityTypeId )
+                .Where( c => c.Name == "Social Media" ).FirstOrDefault();
 
-            if ( socialMediaCategoryId == 0 )
+            if ( socialMediaCategory == null )
             {
-                var socialMediaCategory = new Category();
+                socialMediaCategory = new Category();
                 socialMediaCategory.IsSystem = false;
                 socialMediaCategory.Name = "Social Media";
                 socialMediaCategory.IconCssClass = "fa fa-twitter";
@@ -59,13 +60,12 @@ namespace Excavator.F1
                 socialMediaCategory.EntityTypeQualifierValue = PersonEntityTypeId.ToString();
                 socialMediaCategory.Order = 0;
 
-                categoryService.Add( socialMediaCategory, ImportPersonAlias );
-                categoryService.Save( socialMediaCategory, ImportPersonAlias );
-                socialMediaCategoryId = socialMediaCategory.Id;
+                rockContext.Categories.Add( socialMediaCategory );
+                rockContext.SaveChanges( IsAudited );
             }
 
             // Look up additional Person attributes (existing)
-            var personAttributes = new AttributeService().GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            var personAttributes = new AttributeService( rockContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
             // Add an Attribute for Twitter
             int twitterAttributeId = personAttributes.Where( a => a.Key == "TwitterUsername" ).Select( a => a.Id ).FirstOrDefault();
@@ -84,15 +84,11 @@ namespace Excavator.F1
                 newTwitterAttribute.IsRequired = false;
                 newTwitterAttribute.Order = 0;
 
-                using ( new UnitOfWorkScope() )
-                {
-                    var attributeService = new AttributeService();
-                    attributeService.Add( newTwitterAttribute );
-                    var socialMediaCategory = new CategoryService().Get( socialMediaCategoryId );
-                    newTwitterAttribute.Categories.Add( socialMediaCategory );
-                    attributeService.Save( newTwitterAttribute );
-                    twitterAttributeId = newTwitterAttribute.Id;
-                }
+                rockContext.Attributes.Add( newTwitterAttribute );
+                newTwitterAttribute.Categories.Add( socialMediaCategory );
+                rockContext.SaveChanges( IsAudited );
+
+                twitterAttributeId = newTwitterAttribute.Id;
             }
 
             // Add an Attribute for Facebook
@@ -112,22 +108,18 @@ namespace Excavator.F1
                 newFacebookAttribute.IsRequired = false;
                 newFacebookAttribute.Order = 0;
 
-                using ( new UnitOfWorkScope() )
-                {
-                    var attributeService = new AttributeService();
-                    attributeService.Add( newFacebookAttribute );
-                    var socialMediaCategory = new CategoryService().Get( socialMediaCategoryId );
-                    newFacebookAttribute.Categories.Add( socialMediaCategory );
-                    attributeService.Save( newFacebookAttribute );
-                    facebookAttributeId = newFacebookAttribute.Id;
-                }
+                rockContext.Attributes.Add( newFacebookAttribute );
+                newFacebookAttribute.Categories.Add( socialMediaCategory );
+                rockContext.SaveChanges( IsAudited );
+
+                facebookAttributeId = newFacebookAttribute.Id;
             }
 
             var twitterUsernameAttribute = AttributeCache.Read( twitterAttributeId );
             var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
             var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
 
-            var existingNumbers = new PhoneNumberService().Queryable().ToList();
+            var existingNumbers = new PhoneNumberService( rockContext ).Queryable().ToList();
 
             var newNumberList = new List<PhoneNumber>();
             var updatedPersonList = new List<Person>();
@@ -260,14 +252,10 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var numberService = new PhoneNumberService();
-                                numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
-                                numberService.RockContext.SaveChanges();
+                                // updatedPeople already tracked with current context
+                                rockContext.PhoneNumbers.AddRange( newNumberList );
+                                rockContext.SaveChanges( IsAudited );
 
-                                // don't add updatedPeople, they're already tracked with current context
-                                personService.RockContext.SaveChanges();
-
-                                var attributeValueService = new AttributeValueService();
                                 foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                                 {
                                     foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
@@ -276,18 +264,19 @@ namespace Excavator.F1
                                         if ( newValue != null )
                                         {
                                             newValue.EntityId = updatedPerson.Id;
-                                            attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                            rockContext.AttributeValues.Add( newValue );
                                         }
                                     }
                                 }
 
-                                attributeValueService.RockContext.SaveChanges();
+                                rockContext.SaveChanges( IsAudited );
                             } );
 
                             // reset the person context so it doesn't bloat
                             if ( updatedPersonList.Any() )
                             {
-                                personService = new PersonService();
+                                rockContext = new RockContext();
+                                personService = new PersonService( rockContext );
                                 updatedPersonList.Clear();
                             }
 
@@ -302,12 +291,10 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var numberService = new PhoneNumberService();
-                    numberService.RockContext.PhoneNumbers.AddRange( newNumberList );
-                    numberService.RockContext.SaveChanges();
-                    personService.RockContext.SaveChanges();
+                    // updatedPeople already tracked with current context
+                    rockContext.PhoneNumbers.AddRange( newNumberList );
+                    rockContext.SaveChanges( IsAudited );
 
-                    var attributeValueService = new AttributeValueService();
                     foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                     {
                         foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
@@ -316,12 +303,12 @@ namespace Excavator.F1
                             if ( newValue != null )
                             {
                                 newValue.EntityId = updatedPerson.Id;
-                                attributeValueService.RockContext.AttributeValues.Add( newValue );
+                                rockContext.AttributeValues.Add( newValue );
                             }
                         }
                     }
 
-                    attributeValueService.RockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 

@@ -85,9 +85,9 @@ namespace Excavator.F1
 
                     RockTransactionScope.WrapTransaction( () =>
                     {
-                        var attendanceService = new AttendanceService();
-                        attendanceService.Add( attendance, ImportPersonAlias );
-                        attendanceService.Save( attendance, ImportPersonAlias );
+                        var rockContext = new RockContext();
+                        rockContext.Attendances.Add( attendance );
+                        rockContext.SaveChanges( IsAudited );
                     } );
                 }
             }

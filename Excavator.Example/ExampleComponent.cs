@@ -66,12 +66,16 @@ namespace Excavator.Example
         public Database Database;
 
         // Disable compiler warning: value never assigned
-#pragma warning disable 0649
+#pragma warning disable 414
+#pragma warning disable 169
 
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
         private PersonAlias ImportPersonAlias;
+
+        // Flag to set postprocessing audits on save
+        private static bool IsAudited = false;
 
 #pragma warning restore
 
@@ -126,6 +130,9 @@ namespace Excavator.Example
             // Report progress to the main thread so it can update the UI
             ReportProgress( 0, "Starting import..." );
 
+            // Instantiate the object model service
+            var rockContext = new RockContext();
+
             // Connects to the source database (already loaded in memory by the UI)
             var scanner = new DataScanner( Database );
 
@@ -152,14 +159,11 @@ namespace Excavator.Example
 
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    // Instantiate the object model service
-                    var personService = new PersonService();
-
                     // If it's a new model, add it to the database first
-                    personService.Add( person, ImportPersonAlias );
+                    rockContext.People.Add( person );
 
                     // Save the data to the database
-                    personService.Save( person, ImportPersonAlias );
+                    rockContext.SaveChanges( IsAudited );
                 } );
 
                 completed++;
@@ -186,9 +190,8 @@ namespace Excavator.Example
                 {
                     RockTransactionScope.WrapTransaction( () =>
                     {
-                        var personService = new PersonService();
-                        personService.RockContext.People.AddRange( newPersonList );
-                        personService.RockContext.SaveChanges();
+                        rockContext.People.AddRange( newPersonList );
+                        rockContext.SaveChanges( IsAudited );
                     } );
                 }
             }
@@ -198,9 +201,8 @@ namespace Excavator.Example
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var personService = new PersonService();
-                    personService.RockContext.People.AddRange( newPersonList );
-                    personService.RockContext.SaveChanges();
+                    rockContext.People.AddRange( newPersonList );
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 

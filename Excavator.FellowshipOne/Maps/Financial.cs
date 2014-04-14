@@ -38,7 +38,8 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapBankAccount( IQueryable<Row> tableData )
         {
-            var importedBankAccounts = new FinancialPersonBankAccountService().Queryable().ToList();
+            var rockContext = new RockContext();
+            var importedBankAccounts = new FinancialPersonBankAccountService( rockContext ).Queryable().ToList();
             var newBankAccounts = new List<FinancialPersonBankAccount>();
 
             int completed = 0;
@@ -80,13 +81,13 @@ namespace Excavator.F1
                             {
                                 RockTransactionScope.WrapTransaction( () =>
                                 {
-                                    var bankAccountService = new FinancialPersonBankAccountService();
-                                    bankAccountService.RockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
-                                    bankAccountService.RockContext.SaveChanges();
+                                    rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
+                                    rockContext.SaveChanges( IsAudited );
                                 } );
 
                                 newBankAccounts.Clear();
                                 ReportPartialProgress();
+                                rockContext = new RockContext();
                             }
                         }
                     }
@@ -97,9 +98,8 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 
@@ -176,7 +176,7 @@ namespace Excavator.F1
                         {
                             var rockContext = new RockContext();
                             rockContext.FinancialBatches.AddRange( newBatches );
-                            rockContext.SaveChanges();
+                            rockContext.SaveChanges( IsAudited );
 
                             foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
                             {
@@ -188,7 +188,7 @@ namespace Excavator.F1
                                 }
                             }
 
-                            rockContext.SaveChanges();
+                            rockContext.SaveChanges( IsAudited );
                         } );
 
                         newBatches.Clear();
@@ -203,7 +203,7 @@ namespace Excavator.F1
                 {
                     var rockContext = new RockContext();
                     rockContext.FinancialBatches.AddRange( newBatches );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
 
                     foreach ( var newBatch in newBatches.Where( b => b.Attributes.Any() ) )
                     {
@@ -215,7 +215,7 @@ namespace Excavator.F1
                         }
                     }
 
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 
@@ -229,9 +229,11 @@ namespace Excavator.F1
         /// <param name="selectedColumns">The selected columns.</param>
         private void MapContribution( IQueryable<Row> tableData, List<string> selectedColumns = null )
         {
+            var rockContext = new RockContext();
+            var accountService = new FinancialAccountService( rockContext );
+            var attributeService = new AttributeService( rockContext );
+
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
-            var accountService = new FinancialAccountService();
-            var attributeService = new AttributeService();
 
             var transactionTypeContributionId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ) ).Id;
 
@@ -240,9 +242,9 @@ namespace Excavator.F1
             int currencyTypeCheck = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ).Id;
             int currencyTypeCreditCard = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ).Id;
 
-            List<DefinedValue> refundReasons = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
+            List<DefinedValue> refundReasons = new DefinedValueService( rockContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ) ).ToList();
 
-            List<FinancialPledge> pledgeList = new FinancialPledgeService().Queryable().ToList();
+            List<FinancialPledge> pledgeList = new FinancialPledgeService( rockContext ).Queryable().ToList();
 
             List<FinancialAccount> accountList = accountService.Queryable().ToList();
 
@@ -264,15 +266,15 @@ namespace Excavator.F1
                 newContributionAttribute.IsRequired = false;
                 newContributionAttribute.Order = 0;
 
-                attributeService.Add( newContributionAttribute, ImportPersonAlias );
-                attributeService.Save( newContributionAttribute, ImportPersonAlias );
+                rockContext.Attributes.Add( newContributionAttribute );
+                rockContext.SaveChanges( IsAudited );
                 contributionAttributeId = newContributionAttribute.Id;
             }
 
             var contributionAttribute = AttributeCache.Read( contributionAttributeId );
 
             // Get all imported contributions
-            var importedContributions = new AttributeValueService().GetByAttributeId( contributionAttributeId )
+            var importedContributions = new AttributeValueService( rockContext ).GetByAttributeId( contributionAttributeId )
                .Select( av => new { ContributionId = av.Value.AsType<int?>(), TransactionId = av.EntityId } )
                .ToDictionary( t => t.ContributionId, t => t.TransactionId );
 
@@ -389,8 +391,8 @@ namespace Excavator.F1
                             matchingAccount.CampusId = fundCampusId;
                             matchingAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
-                            accountService.Add( matchingAccount );
-                            accountService.Save( matchingAccount );
+                            rockContext.FinancialAccounts.Add( matchingAccount );
+                            rockContext.SaveChanges( IsAudited );
                             accountList.Add( matchingAccount );
                         }
 
@@ -440,9 +442,8 @@ namespace Excavator.F1
                     {
                         RockTransactionScope.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.FinancialTransactions.AddRange( newTransactions );
-                            rockContext.SaveChanges();
+                            rockContext.SaveChanges( IsAudited );
 
                             foreach ( var contribution in newTransactions.Where( c => c.Attributes.Any() ) )
                             {
@@ -454,11 +455,12 @@ namespace Excavator.F1
                                 }
                             }
 
-                            rockContext.SaveChanges();
+                            rockContext.SaveChanges( IsAudited );
                         } );
 
                         newTransactions.Clear();
                         ReportPartialProgress();
+                        rockContext = new RockContext();
                     }
                 }
             }
@@ -467,9 +469,8 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.FinancialTransactions.AddRange( newTransactions );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
 
                     foreach ( var contribution in newTransactions.Where( c => c.Attributes.Any() ) )
                     {
@@ -481,7 +482,7 @@ namespace Excavator.F1
                         }
                     }
 
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 
@@ -495,13 +496,14 @@ namespace Excavator.F1
         /// <exception cref="System.NotImplementedException"></exception>
         private void MapPledge( IQueryable<Row> tableData )
         {
-            var accountService = new FinancialAccountService();
+            var rockContext = new RockContext();
+            var accountService = new FinancialAccountService( rockContext );
 
-            List<FinancialAccount> importedAccounts = accountService.Queryable().ToList();
+            List<FinancialAccount> accountList = accountService.Queryable().ToList();
 
-            List<DefinedValue> pledgeFrequencies = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
+            List<DefinedValue> pledgeFrequencies = new DefinedValueService( rockContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ) ).ToList();
 
-            List<FinancialPledge> importedPledges = new FinancialPledgeService().Queryable().ToList();
+            List<FinancialPledge> importedPledges = new FinancialPledgeService( rockContext ).Queryable().ToList();
 
             var newPledges = new List<FinancialPledge>();
 
@@ -557,16 +559,16 @@ namespace Excavator.F1
 
                                 if ( fundCampusId != null )
                                 {
-                                    matchingAccount = importedAccounts.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
+                                    matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
                                 }
                                 else
                                 {
-                                    matchingAccount = importedAccounts.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) );
+                                    matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) );
                                 }
                             }
                             else
                             {
-                                matchingAccount = importedAccounts.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
+                                matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
                             }
 
                             if ( matchingAccount == null )
@@ -579,9 +581,9 @@ namespace Excavator.F1
                                 matchingAccount.CampusId = fundCampusId;
                                 matchingAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
-                                accountService.Add( matchingAccount );
-                                accountService.Save( matchingAccount );
-                                importedAccounts.Add( matchingAccount );
+                                rockContext.FinancialAccounts.Add( matchingAccount );
+                                rockContext.SaveChanges( IsAudited );
+                                accountList.Add( matchingAccount );
                                 pledge.AccountId = matchingAccount.Id;
                             }
                         }
@@ -600,12 +602,12 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.FinancialPledges.AddRange( newPledges );
-                                rockContext.SaveChanges();
+                                rockContext.SaveChanges( IsAudited );
                             } );
 
                             ReportPartialProgress();
+                            rockContext = new RockContext();
                         }
                     }
                 }
@@ -615,9 +617,8 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.FinancialPledges.AddRange( newPledges );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 

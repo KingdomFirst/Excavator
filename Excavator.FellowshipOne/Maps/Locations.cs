@@ -39,11 +39,11 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapActivityMinistry( IQueryable<Row> tableData )
         {
-            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
-            var attributeService = new AttributeService();
+            var rockContext = new RockContext();
 
             // Add an Attribute for the unique F1 Ministry Id
-            var ministryAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == groupEntityTypeId
+            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
+            var ministryAttributeId = new AttributeService( rockContext ).Queryable().Where( a => a.EntityTypeId == groupEntityTypeId
                 && a.Key == "F1MinistryId" ).Select( a => a.Id ).FirstOrDefault();
             if ( ministryAttributeId == 0 )
             {
@@ -60,13 +60,13 @@ namespace Excavator.F1
                 newMinistryAttribute.IsRequired = false;
                 newMinistryAttribute.Order = 0;
 
-                attributeService.Add( newMinistryAttribute, ImportPersonAlias );
-                attributeService.Save( newMinistryAttribute, ImportPersonAlias );
+                rockContext.Attributes.Add( newMinistryAttribute );
+                rockContext.SaveChanges( IsAudited );
                 ministryAttributeId = newMinistryAttribute.Id;
             }
 
             // Get previously imported Ministries
-            var importedMinistries = new AttributeValueService().GetByAttributeId( ministryAttributeId )
+            var importedMinistries = new AttributeValueService( rockContext ).GetByAttributeId( ministryAttributeId )
                 .Select( av => new { RLCId = av.Value.AsType<int?>(), LocationId = av.EntityId } )
                 .ToDictionary( t => t.RLCId, t => t.LocationId );
 
@@ -111,12 +111,12 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.Groups.AddRange( newGroups );
-                                rockContext.SaveChanges();
+                                rockContext.SaveChanges( IsAudited );
                             } );
 
                             ReportPartialProgress();
+                            rockContext = new RockContext();
                         }
                     }
                 }
@@ -126,9 +126,8 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Groups.AddRange( newGroups );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 
@@ -142,11 +141,13 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapRLC( IQueryable<Row> tableData )
         {
-            int locationEntityTypeId = EntityTypeCache.Read( "Rock.Model.Location" ).Id;
-            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
-            var attributeService = new AttributeService();
+            var rockContext = new RockContext();
+            var attributeValueService = new AttributeValueService( rockContext );
+            var attributeService = new AttributeService( rockContext );
 
             // Add an Attribute for the unique F1 RLC Id
+            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
+            int locationEntityTypeId = EntityTypeCache.Read( "Rock.Model.Location" ).Id;
             var rlcAttributeId = attributeService.Queryable().Where( a => a.EntityTypeId == locationEntityTypeId
                 && a.Key == "F1RLCId" ).Select( a => a.Id ).FirstOrDefault();
             if ( rlcAttributeId == 0 )
@@ -164,8 +165,8 @@ namespace Excavator.F1
                 newRLCAttribute.IsRequired = false;
                 newRLCAttribute.Order = 0;
 
-                attributeService.Add( newRLCAttribute, ImportPersonAlias );
-                attributeService.Save( newRLCAttribute, ImportPersonAlias );
+                rockContext.Attributes.Add( newRLCAttribute );
+                rockContext.SaveChanges( IsAudited );
                 rlcAttributeId = newRLCAttribute.Id;
             }
 
@@ -187,8 +188,8 @@ namespace Excavator.F1
                 newActivityAttribute.IsRequired = false;
                 newActivityAttribute.Order = 0;
 
-                attributeService.Add( newActivityAttribute, ImportPersonAlias );
-                attributeService.Save( newActivityAttribute, ImportPersonAlias );
+                rockContext.Attributes.Add( newActivityAttribute );
+                rockContext.SaveChanges( IsAudited );
                 activityAttributeId = newActivityAttribute.Id;
             }
 
@@ -196,11 +197,11 @@ namespace Excavator.F1
             var activityAttribute = AttributeCache.Read( activityAttributeId );
 
             // Get any previously imported RLCs
-            var importedRLC = new AttributeValueService().GetByAttributeId( rlcAttributeId )
+            var importedRLC = attributeValueService.GetByAttributeId( rlcAttributeId )
                 .Select( av => new { RLCId = av.Value.AsType<int?>(), LocationId = av.EntityId } )
                 .ToDictionary( t => t.RLCId, t => t.LocationId );
 
-            ImportedActivities = new AttributeValueService().GetByAttributeId( activityAttributeId )
+            ImportedActivities = attributeValueService.GetByAttributeId( activityAttributeId )
                 .Select( av => new { ActivityId = av.Value.AsType<int?>(), GroupId = av.EntityId } )
                 .ToDictionary( t => t.ActivityId, t => t.GroupId );
 
@@ -231,13 +232,12 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapFamilyAddress( IQueryable<Row> tableData )
         {
-            var locationService = new LocationService();
+            var rockContext = new RockContext();
+            var locationService = new LocationService( rockContext );
 
-            int groupEntityTypeId = EntityTypeCache.Read( "Rock.Model.Group" ).Id;
+            List<DefinedValue> groupLocationTypeList = new DefinedValueService( rockContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
 
-            List<DefinedValue> groupLocationTypeList = new DefinedValueService().GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
-
-            List<GroupMember> groupMembershipList = new GroupMemberService().Queryable().Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
+            List<GroupMember> groupMembershipList = new GroupMemberService( rockContext ).Queryable().Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
 
             int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
@@ -314,12 +314,12 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.GroupLocations.AddRange( newGroupLocations );
-                                rockContext.SaveChanges();
+                                rockContext.SaveChanges( IsAudited );
                             } );
 
                             ReportPartialProgress();
+                            rockContext = new RockContext();
                         }
                     }
                 }
@@ -329,9 +329,8 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.GroupLocations.AddRange( newGroupLocations );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 

@@ -37,14 +37,15 @@ namespace Excavator.F1
         /// <param name="tableData">The table data.</param>
         private void MapNotes( IQueryable<Row> tableData )
         {
-            var categoryService = new CategoryService();
-            var personService = new PersonService();
+            var rockContext = new RockContext();
+            var categoryService = new CategoryService( rockContext );
+            var personService = new PersonService( rockContext );
 
-            var noteTypes = new NoteTypeService().Queryable().ToList();
+            var noteTypes = new NoteTypeService( rockContext ).Queryable().ToList();
             int noteTimelineTypeId = noteTypes.Where( nt => nt.Guid == new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) )
                 .Select( nt => nt.Id ).FirstOrDefault();
 
-            var importedUsers = new AttributeValueService().GetByAttributeId( UserLoginAttributeId )
+            var importedUsers = new AttributeValueService( rockContext ).GetByAttributeId( UserLoginAttributeId )
                .Select( av => new { UserId = av.Value.AsType<int?>(), PersonId = av.EntityId } )
                .ToDictionary( t => t.UserId, t => t.PersonId );
 
@@ -105,12 +106,12 @@ namespace Excavator.F1
                         {
                             RockTransactionScope.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.Notes.AddRange( noteList );
-                                rockContext.SaveChanges();
+                                rockContext.SaveChanges( IsAudited );
                             } );
 
                             ReportPartialProgress();
+                            rockContext = new RockContext();
                         }
                     }
                 }
@@ -120,9 +121,8 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Notes.AddRange( noteList );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( IsAudited );
                 } );
             }
 
