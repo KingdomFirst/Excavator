@@ -24,7 +24,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using Microsoft.Win32;
-using OrcaMDF.Core.Engine;
 
 namespace Excavator
 {
@@ -222,7 +221,7 @@ namespace Excavator
             else
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                lblDbConnect.Content = "Please select a valid source and destination database.";
+                lblDbConnect.Content = "Please select a valid source and destination.";
                 lblDbConnect.Visibility = Visibility.Visible;
             }
         }
@@ -238,22 +237,20 @@ namespace Excavator
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
         private void bwPreview_DoWork( object sender, DoWorkEventArgs e )
         {
-            var mdfPicker = new OpenFileDialog();
-            mdfPicker.Filter = "SQL Database files|*.mdf";
-            mdfPicker.AddExtension = false;
+            var selectedExcavator = (string)e.Argument;
+            var filePicker = new OpenFileDialog();
 
-            if ( mdfPicker.ShowDialog() == true )
+            var supportedExtensions = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
+                .Select( t => t.FullName + " |*" + t.ExtensionType ).ToList();
+            filePicker.Filter = string.Join( "|", supportedExtensions );
+
+            if ( filePicker.ShowDialog() == true )
             {
-                var database = new Database( mdfPicker.FileName );
-                if ( database != null )
+                excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
+                if ( excavator != null )
                 {
-                    var dbType = (string)e.Argument;
-                    excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( dbType ) ).FirstOrDefault();
-                    if ( excavator != null )
-                    {
-                        bool loadedSuccessfully = excavator.LoadSchema( database );
-                        e.Cancel = !loadedSuccessfully;
-                    }
+                    bool loadedSuccessfully = excavator.LoadSchema( filePicker.FileName );
+                    e.Cancel = !loadedSuccessfully;
                 }
             }
             else
@@ -273,7 +270,7 @@ namespace Excavator
             if ( e.Cancelled != true )
             {
                 lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDbUpload.Content = "Successfully read the database file";
+                lblDbUpload.Content = "Successfully read the import file";
             }
 
             lblDbUpload.Visibility = Visibility.Visible;

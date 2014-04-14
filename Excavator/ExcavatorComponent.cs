@@ -24,8 +24,6 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using OrcaMDF.Core.Engine;
-using OrcaMDF.Core.MetaData;
 
 namespace Excavator
 {
@@ -44,17 +42,23 @@ namespace Excavator
         #region Fields
 
         /// <summary>
-        /// The local database
-        /// </summary>
-        public Database database;
-
-        /// <summary>
         /// Gets the full name of the excavator type.
         /// </summary>
         /// <value>
         /// The name of the database being imported.
         /// </value>
         public abstract string FullName
+        {
+            get;
+        }
+
+        /// <summary>
+        /// Gets the supported file extension type.
+        /// </summary>
+        /// <value>
+        /// The supported extension type.
+        /// </value>
+        public abstract string ExtensionType
         {
             get;
         }
@@ -80,42 +84,10 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Loads the database for this instance.
+        /// Loads the database into memory and fills a TableNode instance.
         /// </summary>
         /// <returns></returns>
-        public bool LoadSchema( object db )
-        {
-            // Currently only imports MDF's (using OrcaMDF framework)
-            database = (Database)db;
-            TableNodes = new List<DatabaseNode>();
-            var scanner = new DataScanner( database );
-            var tables = database.Dmvs.Tables;
-
-            foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
-            {
-                var rows = scanner.ScanTable( table.Name );
-                var tableItem = new DatabaseNode();
-                tableItem.Name = table.Name;
-                tableItem.NodeType = typeof( object );
-
-                var rowSchema = rows.FirstOrDefault();
-                if ( rowSchema != null )
-                {
-                    foreach ( var column in rowSchema.Columns )
-                    {
-                        var childItem = new DatabaseNode();
-                        childItem.Name = column.Name;
-                        childItem.NodeType = Extensions.GetSQLType( column.Type );
-                        childItem.Table.Add( tableItem );
-                        tableItem.Columns.Add( childItem );
-                    }
-                }
-
-                TableNodes.Add( tableItem );
-            }
-
-            return TableNodes.Count() > 0 ? true : false;
-        }
+        public abstract bool LoadSchema( string fileName );
 
         /// <summary>
         /// Previews the data.
@@ -125,29 +97,22 @@ namespace Excavator
         public DataTable PreviewData( string nodeId )
         {
             var node = TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-
-            if ( node != null )
+            if ( node != null && node.Columns.Any() )
             {
-                var scanner = new DataScanner( database );
-                var rows = scanner.ScanTable( node.Name );
                 var dataTable = new DataTable();
                 foreach ( var column in node.Columns )
                 {
                     dataTable.Columns.Add( column.Name, column.NodeType );
                 }
 
-                var rowData = rows.FirstOrDefault();
-                if ( rowData != null )
+                var rowPreview = dataTable.NewRow();
+                foreach ( var column in node.Columns )
                 {
-                    var rowPreview = dataTable.NewRow();
-                    foreach ( var column in rowData.Columns )
-                    {
-                        rowPreview[column.Name] = rowData[column] ?? DBNull.Value;
-                    }
-
-                    dataTable.Rows.Add( rowPreview );
-                    return dataTable;
+                    rowPreview[column.Name] = column.Value ?? DBNull.Value;
                 }
+
+                dataTable.Rows.Add( rowPreview );
+                return dataTable;
             }
 
             return null;

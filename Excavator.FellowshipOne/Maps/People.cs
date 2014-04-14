@@ -206,9 +206,9 @@ namespace Excavator.F1
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS_REASON ) ).ToList();
 
             // Record statuses: Active, Inactive, Pending
-            int? statusActiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
-            int? statusInactiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
-            int? statusPendingId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
+            int? recordStatusActiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
+            int? recordStatusInactiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
+            int? recordStatusPendingId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
 
             // Record type: Person
             int? personRecordTypeId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON ) ).Id;
@@ -321,17 +321,17 @@ namespace Excavator.F1
                         if ( memberStatus == "Member" )
                         {
                             person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
-                            person.RecordStatusValueId = statusActiveId;
+                            person.RecordStatusValueId = recordStatusActiveId;
                         }
                         else if ( memberStatus == "Visitor" )
                         {
                             person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
-                            person.RecordStatusValueId = statusActiveId;
+                            person.RecordStatusValueId = recordStatusActiveId;
                         }
                         else if ( memberStatus == "Deceased" )
                         {
                             person.IsDeceased = true;
-                            person.RecordStatusValueId = statusInactiveId;
+                            person.RecordStatusValueId = recordStatusInactiveId;
                             person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Name == "Deceased" )
                                 .Select( dv => dv.Id ).FirstOrDefault();
                         }
@@ -343,7 +343,7 @@ namespace Excavator.F1
 
                             int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
                             person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
-                            person.RecordStatusValueId = statusActiveId;
+                            person.RecordStatusValueId = recordStatusActiveId;
                         }
 
                         string campus = row["SubStatus_Name"] as string;
@@ -501,7 +501,7 @@ namespace Excavator.F1
                     if ( primaryHouseholdCampus != null )
                     {
                         familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( primaryHouseholdCampus ) || c.ShortCode == primaryHouseholdCampus )
-                            .Select( c => (int?)c.Id ).FirstOrDefault();
+                             .Select( c => (int?)c.Id ).FirstOrDefault();
                     }
 
                     familyList.Add( familyGroup );

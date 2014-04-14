@@ -18,7 +18,6 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page Header -->
-        <!-- Page Header -->
         <Border Name="clrBorder"
             Grid.Row="0" Grid.ColumnSpan="2"
             Background="{StaticResource headerBackground}">

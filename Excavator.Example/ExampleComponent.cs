@@ -49,6 +49,22 @@ namespace Excavator.Example
             get { return "Example"; }
         }
 
+        /// <summary>
+        /// Gets the supported file extension type(s).
+        /// </summary>
+        /// <value>
+        /// The supported extension type(s).
+        /// </value>
+        public override string ExtensionType
+        {
+            get { return ".mdf"; }
+        }
+
+        /// <summary>
+        /// The local database
+        /// </summary>
+        public Database Database;
+
         // Disable compiler warning: value never assigned
 #pragma warning disable 0649
 
@@ -64,6 +80,45 @@ namespace Excavator.Example
         #region Methods
 
         /// <summary>
+        /// Loads the database for this instance.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public override bool LoadSchema( string fileName )
+        {
+            Database = new Database( fileName );
+            TableNodes = new List<DatabaseNode>();
+            var scanner = new DataScanner( Database );
+            var tables = Database.Dmvs.Tables;
+
+            foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
+            {
+                var rows = scanner.ScanTable( table.Name );
+                var tableItem = new DatabaseNode();
+                tableItem.Name = table.Name;
+                tableItem.NodeType = typeof( object );
+
+                var rowData = rows.FirstOrDefault();
+                if ( rowData != null )
+                {
+                    foreach ( var column in rowData.Columns )
+                    {
+                        var childItem = new DatabaseNode();
+                        childItem.Name = column.Name;
+                        childItem.NodeType = Extensions.GetSQLType( column.Type );
+                        childItem.Table.Add( tableItem );
+                        tableItem.Columns.Add( childItem );
+                        tableItem.Value = rowData[column] ?? DBNull.Value;
+                    }
+                }
+
+                TableNodes.Add( tableItem );
+            }
+
+            return TableNodes.Count() > 0 ? true : false;
+        }
+
+        /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
         public override int TransformData( string importUser = null )
@@ -72,7 +127,7 @@ namespace Excavator.Example
             ReportProgress( 0, "Starting import..." );
 
             // Connects to the source database (already loaded in memory by the UI)
-            var scanner = new DataScanner( database );
+            var scanner = new DataScanner( Database );
 
             // List of tables the user would like to import
             var tableList = TableNodes.Where( n => n.Checked != false ).Select( n => n.Name ).ToList();
