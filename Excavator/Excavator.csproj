@@ -221,7 +221,6 @@
     <EmbeddedResource Include="Packages\Rock.Wpf.dll" />
     <EmbeddedResource Include="Packages\AjaxControlToolkit.dll" />
     <EmbeddedResource Include="Packages\AjaxMin.dll" />
-    <EmbeddedResource Include="Packages\Antlr3.Runtime.dll" />
     <EmbeddedResource Include="Packages\C5.dll" />
     <EmbeddedResource Include="Packages\CronExpressionDescriptor.dll" />
     <EmbeddedResource Include="Packages\DDay.iCal.dll" />
