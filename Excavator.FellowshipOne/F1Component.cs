@@ -397,8 +397,8 @@ namespace Excavator.F1
 
             ReportProgress( 0, "Checking for existing contributions..." );
             ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttribute.Id )
-                .Select( av => new { F1BatchId = av.Value.AsType<int?>(), RockBatchId = av.EntityId } )
-                .ToDictionary( t => t.F1BatchId, t => t.RockBatchId );
+                .Select( av => new { F1BatchId = av.Value, RockBatchId = av.EntityId } )
+                .ToDictionary( t => t.F1BatchId.AsType<int?>(), t => t.RockBatchId );
 
             CampusList = new CampusService().Queryable().ToList();
         }
