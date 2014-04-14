@@ -30,7 +30,7 @@ namespace Excavator
     /// </summary>
     public partial class SelectPage : Page
     {
-        public ExcavatorComponent excavator;
+        private ExcavatorComponent excavator;
 
         #region Constructor
 

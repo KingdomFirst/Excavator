@@ -42,6 +42,7 @@ namespace Excavator
         private Type _nodeType;
         private string _name;
         private string _id;
+        private object _value;
 
         /// <summary>
         /// Gets or sets if the node is checked.
@@ -114,6 +115,24 @@ namespace Excavator
             set
             {
                 _nodeType = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the value of the node.
+        /// </summary>
+        /// <value>
+        /// The value of the node.
+        /// </value>
+        public object Value
+        {
+            get
+            {
+                return _value;
+            }
+            set
+            {
+                _value = value;
             }
         }
 
