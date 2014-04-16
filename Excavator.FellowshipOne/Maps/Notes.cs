@@ -45,9 +45,9 @@ namespace Excavator.F1
             int noteTimelineTypeId = noteTypes.Where( nt => nt.Guid == new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) )
                 .Select( nt => nt.Id ).FirstOrDefault();
 
-            var importedUsers = new AttributeValueService( rockContext ).GetByAttributeId( UserLoginAttributeId )
-               .Select( av => new { UserId = av.Value.AsType<int?>(), PersonId = av.EntityId } )
-               .ToDictionary( t => t.UserId, t => t.PersonId );
+            var importedUsers = new UserLoginService( rockContext ).Queryable()
+                .Select( u => new { UserId = u.ForeignId, PersonId = u.PersonId } )
+                .ToDictionary( t => t.UserId.AsType<int?>(), t => t.PersonId );
 
             var noteList = new List<Note>();
 
@@ -86,14 +86,6 @@ namespace Excavator.F1
                             note.NoteTypeId = noteTimelineTypeId;
                         }
 
-                        // other attributes
-                        // NoteTypeActive
-                        // NoteArchived
-                        // NoteCreated
-                        // NoteLastUpdated
-                        // NoteTextArchived
-                        // NoteLastUpdatedByUserID
-
                         noteList.Add( note );
                         completed++;
 
@@ -111,7 +103,7 @@ namespace Excavator.F1
                             } );
 
                             ReportPartialProgress();
-                            rockContext = new RockContext();
+                            //rockContext = new RockContext();
                         }
                     }
                 }
