@@ -22,3 +22,4 @@ StyleCop.Cache
 [Dd]ebug*/
 [Rr]elease*/
 /scaffolding.config
+*.mdf
