@@ -131,13 +131,21 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Returns true if the given string is a valid email address.
+        /// Strips the whitespace.
         /// </summary>
-        /// <param name="email">The string to validate</param>
-        /// <returns>true if valid email, false otherwise</returns>
-        public static bool IsValidEmail( this string email )
+        /// <param name="str">The string.</param>
+        /// <returns></returns>
+        public static string RemoveWhitespace( this string str )
         {
-            return Regex.IsMatch( email, @"\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*" );
+            StringBuilder sb = new StringBuilder();
+            foreach ( char c in str )
+            {
+                if ( !char.IsWhiteSpace( c ) )
+                {
+                    sb.Append( c );
+                }
+            }
+            return sb.ToString();
         }
 
         /// <summary>
@@ -156,6 +164,16 @@ namespace Excavator
                 }
             }
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Returns true if the given string is a valid email address.
+        /// </summary>
+        /// <param name="email">The string to validate</param>
+        /// <returns>true if valid email, false otherwise</returns>
+        public static bool IsValidEmail( this string email )
+        {
+            return Regex.IsMatch( email, @"\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*" );
         }
     }
 }
