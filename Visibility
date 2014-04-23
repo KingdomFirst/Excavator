@@ -1,0 +1,11 @@
+// goes in the constructor of ProgressPage.xaml.cs
+
+if (excavator.TableNodes.Count <= 0)
+      selectUnselectall.Visibility = Visibility.Hidden;
+      
+// the name of the text block needs to be added in ProgressPage.xaml
+
+<TextBlock Name="selectUnselectall" VerticalAlignment="Bottom" Padding="20,5,5,5" >
+     <Hyperlink Click="Select_All_Hyperlink_Click">select all</Hyperlink>
+     <Hyperlink Click="Unselect_All_Hyperlink_Click">unselect all</Hyperlink>
+</TextBlock>
