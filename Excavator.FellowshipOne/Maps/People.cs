@@ -682,7 +682,7 @@ namespace Excavator.F1
                         // set user login email to primary email
                         if ( userEmail.IsValidEmail() )
                         {
-                            var person = personService.Get( (int)personId );
+                            var person = personService.Queryable( includeDeceased: true ).Where( p => p.Id == personId ).FirstOrDefault();
                             string secondaryEmail = string.Empty;
                             userEmail = userEmail.Trim();
                             if ( string.IsNullOrWhiteSpace( person.Email ) )
@@ -691,6 +691,7 @@ namespace Excavator.F1
                                 person.Email = userEmail.Left( 75 );
                                 person.IsEmailActive = isEnabled;
                                 person.EmailNote = userTitle;
+                                lookupContext.SaveChanges();
                             }
                             else if ( !person.Email.Equals( userEmail ) )
                             {
@@ -711,7 +712,6 @@ namespace Excavator.F1
                                 } );
                             }
 
-                            lookupContext.SaveChanges();
                             updatedPersonList.Add( person );
                         }
 

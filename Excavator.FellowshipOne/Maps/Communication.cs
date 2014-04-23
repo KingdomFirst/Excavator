@@ -199,7 +199,7 @@ namespace Excavator.F1
                     }
                     else
                     {
-                        var person = personService.Get( (int)personId );
+                        var person = personService.Queryable( includeDeceased: true ).Where( p => p.Id == personId ).FirstOrDefault();
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
 
