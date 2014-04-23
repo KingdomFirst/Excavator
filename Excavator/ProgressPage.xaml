@@ -55,7 +55,7 @@
                 Style="{StaticResource labelStyle}">
                 <TextBlock>Found a bug?  Submit an issue
                     <Hyperlink NavigateUri="http://github.com/NewSpring/Excavator/issues"
-                               RequestNavigate="Issue_RequestNavigate">
+                               RequestNavigate="btnIssue_RequestNavigate">
                         here.
                     </Hyperlink>
                 </TextBlock>
