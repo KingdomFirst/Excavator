@@ -134,12 +134,11 @@ namespace Excavator.F1
                 string value = row["Communication_Value"] as string;
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? personId = GetPersonId( individualId, householdId );
                 var personList = new List<int?>();
 
                 if ( individualId != null )
                 {
-                    personList.Add( personId );
+                    personList.Add( GetPersonId( individualId, householdId ) );
                 }
                 else
                 {
@@ -199,14 +198,14 @@ namespace Excavator.F1
                     }
                     else
                     {
-                        var person = personService.Queryable( includeDeceased: true ).Where( p => p.Id == personId ).FirstOrDefault();
+                        var person = personService.Queryable( includeDeceased: true ).FirstOrDefault( p => p.Id == personList.FirstOrDefault() );
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
 
                         if ( value.IsValidEmail() )
                         {
                             string secondaryEmail = string.Empty;
-                            if ( string.IsNullOrWhiteSpace( person.Email ) || ( isListed && person.IsEmailActive == false ) )
+                            if ( string.IsNullOrWhiteSpace( person.Email ) )
                             {
                                 secondaryEmail = person.Email;
                                 person.Email = value.Left( 75 );
