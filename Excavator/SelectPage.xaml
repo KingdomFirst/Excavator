@@ -18,6 +18,9 @@
                     KeyDown="TextBlock_KeyDown" />
             </StackPanel>
         </HierarchicalDataTemplate>
+        <Style x:Key="linkStyle" TargetType="Hyperlink" BasedOn="{StaticResource {x:Type Hyperlink}}">
+            <Setter Property="Foreground" Value="SlateGray" />
+        </Style>
     </Page.Resources>
 
     <Grid>
@@ -35,6 +38,14 @@
         <Border Name="clrBorder"
             Grid.Row="0" Grid.ColumnSpan="2"
             Background="{StaticResource headerBackground}">
+            <TextBlock VerticalAlignment="Bottom" Padding="5,0">
+                 <Hyperlink Style="{StaticResource linkStyle}" Click="btnSelectAll_Click">
+                     Select All
+                 </Hyperlink>
+                 <Hyperlink Style="{StaticResource linkStyle}" Click="btnUnselectAll_Click">
+                     Unselect All
+                 </Hyperlink>
+            </TextBlock>
         </Border>
         <Label Name="lblHeader"
             Foreground="White" FontSize="16"

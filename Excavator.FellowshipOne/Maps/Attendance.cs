@@ -35,6 +35,8 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapAttendance( IQueryable<Row> tableData )
         {
+            var lookupContext = new RockContext();
+
             foreach ( var row in tableData )
             {
                 DateTime? startTime = row["Start_Date_time"] as DateTime?;
@@ -85,9 +87,10 @@ namespace Excavator.F1
 
                     RockTransactionScope.WrapTransaction( () =>
                     {
-                        var attendanceService = new AttendanceService();
-                        attendanceService.Add( attendance, ImportPersonAlias );
-                        attendanceService.Save( attendance, ImportPersonAlias );
+                        var rockContext = new RockContext();
+                        rockContext.Configuration.AutoDetectChangesEnabled = false;
+                        rockContext.Attendances.Add( attendance );
+                        rockContext.SaveChanges( DisableAudit );
                     } );
                 }
             }

@@ -76,7 +76,7 @@ namespace Excavator.F1
         /// <summary>
         /// All imported batches. Used in Batches & Contributions
         /// </summary>
-        private Dictionary<int?, int?> ImportedBatches;
+        private Dictionary<int, int?> ImportedBatches;
 
         /// <summary>
         /// The list of current campuses
@@ -94,11 +94,15 @@ namespace Excavator.F1
         private int IndividualAttributeId;
         private int HouseholdAttributeId;
         private int SecondaryEmailAttributeId;
-        private int BatchAttributeId;
-        private int UserLoginAttributeId;
 
         // Report progress when a multiple of this number has been imported
-        private static int ReportingNumber = 50;
+        private static int ReportingNumber = 100;
+
+        // Flag to set postprocessing audits on save
+        private static bool DisableAudit = true;
+
+        // Flag to show debugging output
+        //private static bool DebugOutput = false;
 
         #endregion
 
@@ -121,7 +125,7 @@ namespace Excavator.F1
                 var rows = scanner.ScanTable( table.Name );
                 var tableItem = new DatabaseNode();
                 tableItem.Name = table.Name;
-                
+
                 var rowData = rows.FirstOrDefault();
                 if ( rowData != null )
                 {
@@ -149,14 +153,15 @@ namespace Excavator.F1
         public override int TransformData( string importUser = null )
         {
             ReportProgress( 0, "Starting import..." );
-            var personService = new PersonService();
+            var rockContext = new RockContext();
+            var personService = new PersonService( rockContext );
             var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
             if ( importPerson == null )
             {
                 importPerson = personService.Queryable().FirstOrDefault();
             }
 
-            ImportPersonAlias = new PersonAliasService().Get( importPerson.Id );
+            ImportPersonAlias = new PersonAliasService( rockContext ).Get( importPerson.Id );
             var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
             ReportProgress( 0, "Checking for existing attributes..." );
@@ -167,8 +172,8 @@ namespace Excavator.F1
 
             var tableDependencies = new List<string>();
             tableDependencies.Add( "Batch" );                // needed to attribute contributions properly
-            tableDependencies.Add( "Company" );              // needed to attribute any company items
             tableDependencies.Add( "Users" );                // needed for notes, user logins
+            tableDependencies.Add( "Company" );              // needed to attribute any business items
             tableDependencies.Add( "Individual_Household" ); // needed for just about everything
 
             if ( isValidImport )
@@ -250,8 +255,9 @@ namespace Excavator.F1
         /// </summary>
         private void LoadExistingRockData()
         {
-            var attributeValueService = new AttributeValueService();
-            var attributeService = new AttributeService();
+            var rockContext = new RockContext();
+            var attributeValueService = new AttributeValueService( rockContext );
+            var attributeService = new AttributeService( rockContext );
 
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
@@ -261,8 +267,10 @@ namespace Excavator.F1
             int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
             int userLoginTypeId = EntityTypeCache.Read( "Rock.Model.UserLogin" ).Id;
 
-            int visitInfoCategoryId = new CategoryService().GetByEntityTypeId( attributeEntityTypeId )
+            int visitInfoCategoryId = new CategoryService( rockContext ).GetByEntityTypeId( attributeEntityTypeId )
                 .Where( c => c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
+
+            CampusList = new CampusService( rockContext ).Queryable().ToList();
 
             // Look up and create attributes for F1 unique identifiers if they don't exist
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
@@ -283,8 +291,8 @@ namespace Excavator.F1
                 householdAttribute.IsRequired = false;
                 householdAttribute.Order = 0;
 
-                attributeService.Add( householdAttribute, ImportPersonAlias );
-                attributeService.Save( householdAttribute, ImportPersonAlias );
+                rockContext.Attributes.Add( householdAttribute );
+                rockContext.SaveChanges( DisableAudit );
                 personAttributes.Add( householdAttribute );
             }
 
@@ -304,8 +312,8 @@ namespace Excavator.F1
                 individualAttribute.IsRequired = false;
                 individualAttribute.Order = 0;
 
-                attributeService.Add( individualAttribute, ImportPersonAlias );
-                attributeService.Save( individualAttribute, ImportPersonAlias );
+                rockContext.Attributes.Add( individualAttribute );
+                rockContext.SaveChanges( DisableAudit );
                 personAttributes.Add( individualAttribute );
             }
 
@@ -325,69 +333,22 @@ namespace Excavator.F1
                 secondaryEmailAttribute.IsRequired = false;
                 secondaryEmailAttribute.Order = 0;
 
-                using ( new UnitOfWorkScope() )
-                {
-                    var attrService = new AttributeService();
-                    attrService.Add( secondaryEmailAttribute );
-                    var visitInfoCategory = new CategoryService().Get( visitInfoCategoryId );
-                    secondaryEmailAttribute.Categories.Add( visitInfoCategory );
-                    attrService.Save( secondaryEmailAttribute );
-                }
-            }
-
-            var batchAttribute = attributeService.Queryable().FirstOrDefault( a => a.EntityTypeId == batchEntityTypeId
-                && a.Key == "F1BatchId" );
-            if ( batchAttribute == null )
-            {
-                batchAttribute = new Rock.Model.Attribute();
-                batchAttribute.Key = "F1BatchId";
-                batchAttribute.Name = "F1 Batch Id";
-                batchAttribute.FieldTypeId = IntegerFieldTypeId;
-                batchAttribute.EntityTypeId = batchEntityTypeId;
-                batchAttribute.EntityTypeQualifierValue = string.Empty;
-                batchAttribute.EntityTypeQualifierColumn = string.Empty;
-                batchAttribute.Description = "The FellowshipOne identifier for the batch that was imported";
-                batchAttribute.DefaultValue = string.Empty;
-                batchAttribute.IsMultiValue = false;
-                batchAttribute.IsRequired = false;
-                batchAttribute.Order = 0;
-
-                attributeService.Add( batchAttribute, ImportPersonAlias );
-                attributeService.Save( batchAttribute, ImportPersonAlias );
-            }
-
-            var userLoginAttribute = attributeService.Queryable().FirstOrDefault( a => a.EntityTypeId == userLoginTypeId
-                && a.Key == "F1UserId" );
-            if ( userLoginAttribute == null )
-            {
-                userLoginAttribute = new Rock.Model.Attribute();
-                userLoginAttribute.Key = "F1UserId";
-                userLoginAttribute.Name = "F1 User Id";
-                userLoginAttribute.FieldTypeId = IntegerFieldTypeId;
-                userLoginAttribute.EntityTypeId = userLoginTypeId;
-                userLoginAttribute.EntityTypeQualifierValue = string.Empty;
-                userLoginAttribute.EntityTypeQualifierColumn = string.Empty;
-                userLoginAttribute.Description = "The FellowshipOne user identifier for the login that was imported";
-                userLoginAttribute.DefaultValue = string.Empty;
-                userLoginAttribute.IsMultiValue = false;
-                userLoginAttribute.IsRequired = false;
-                userLoginAttribute.Order = 0;
-
-                attributeService.Add( userLoginAttribute );
-                attributeService.Save( userLoginAttribute );
+                rockContext.Attributes.Add( secondaryEmailAttribute );
+                var visitInfoCategory = new CategoryService( rockContext ).Get( visitInfoCategoryId );
+                secondaryEmailAttribute.Categories.Add( visitInfoCategory );
+                rockContext.SaveChanges( DisableAudit );
             }
 
             IndividualAttributeId = individualAttribute.Id;
             HouseholdAttributeId = householdAttribute.Id;
             SecondaryEmailAttributeId = secondaryEmailAttribute.Id;
-            BatchAttributeId = batchAttribute.Id;
-            UserLoginAttributeId = userLoginAttribute.Id;
 
-            ReportProgress( 0, "Checking for existing people..." );
+            ReportProgress( 0, "Checking for existing data..." );
             var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
             var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
 
-            ImportedPeople = listHouseholdId.GroupJoin( listIndividualId, household => household.PersonId,
+            ImportedPeople = listHouseholdId.GroupJoin( listIndividualId,
+                household => household.PersonId,
                 individual => individual.PersonId, ( household, individual ) => new ImportedPerson
                 {
                     PersonId = household.PersonId,
@@ -395,12 +356,10 @@ namespace Excavator.F1
                     IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
                 } ).ToList();
 
-            ReportProgress( 0, "Checking for existing contributions..." );
-            ImportedBatches = new AttributeValueService().GetByAttributeId( batchAttribute.Id )
-                .Select( av => new { F1BatchId = av.Value, RockBatchId = av.EntityId } )
-                .ToDictionary( t => t.F1BatchId.AsType<int?>(), t => t.RockBatchId );
-
-            CampusList = new CampusService().Queryable().ToList();
+            ImportedBatches = new FinancialBatchService( rockContext ).Queryable()
+                .Where( b => b.ForeignId != null )
+                .Select( b => new { F1Id = b.ForeignId, BatchId = b.Id } )
+                .ToDictionary( t => t.F1Id.AsType<int>(), t => (int?)t.BatchId );
         }
 
         /// <summary>
@@ -418,9 +377,10 @@ namespace Excavator.F1
             }
             else
             {
+                var rockContext = new RockContext();
                 int lookupAttributeId = individualId.HasValue ? IndividualAttributeId : HouseholdAttributeId;
                 string lookupValueId = individualId.HasValue ? individualId.ToString() : householdId.ToString();
-                var lookup = new AttributeValueService().Queryable()
+                var lookup = new AttributeValueService( rockContext ).Queryable()
                     .Where( av => av.AttributeId == lookupAttributeId && av.Value == lookupValueId );
 
                 var lookupPerson = lookup.FirstOrDefault();
@@ -438,6 +398,18 @@ namespace Excavator.F1
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets the family by household identifier.
+        /// </summary>
+        /// <param name="individualId">The individual identifier.</param>
+        /// <param name="householdId">The household identifier.</param>
+        /// <returns></returns>
+        private List<int?> GetFamilyByHouseholdId( int? householdId )
+        {
+            var familyList = ImportedPeople.Where( p => p.HouseholdId == householdId && p.PersonId != null ).Select( p => p.PersonId ).ToList();
+            return familyList;
         }
 
         #endregion

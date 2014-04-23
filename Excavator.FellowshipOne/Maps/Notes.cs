@@ -37,16 +37,17 @@ namespace Excavator.F1
         /// <param name="tableData">The table data.</param>
         private void MapNotes( IQueryable<Row> tableData )
         {
-            var categoryService = new CategoryService();
-            var personService = new PersonService();
+            var lookupContext = new RockContext();
+            var categoryService = new CategoryService( lookupContext );
+            var personService = new PersonService( lookupContext );
 
-            var noteTypes = new NoteTypeService().Queryable().ToList();
+            var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
             int noteTimelineTypeId = noteTypes.Where( nt => nt.Guid == new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) )
                 .Select( nt => nt.Id ).FirstOrDefault();
 
-            var importedUsers = new AttributeValueService().GetByAttributeId( UserLoginAttributeId )
-               .Select( av => new { UserId = av.Value.AsType<int?>(), PersonId = av.EntityId } )
-               .ToDictionary( t => t.UserId, t => t.PersonId );
+            var importedUsers = new UserLoginService( lookupContext ).Queryable()
+                .Select( u => new { UserId = u.ForeignId, PersonId = u.PersonId } )
+                .ToDictionary( t => t.UserId.AsType<int?>(), t => t.PersonId );
 
             var noteList = new List<Note>();
 
@@ -85,14 +86,6 @@ namespace Excavator.F1
                             note.NoteTypeId = noteTimelineTypeId;
                         }
 
-                        // other attributes
-                        // NoteTypeActive
-                        // NoteArchived
-                        // NoteCreated
-                        // NoteLastUpdated
-                        // NoteTextArchived
-                        // NoteLastUpdatedByUserID
-
                         noteList.Add( note );
                         completed++;
 
@@ -106,8 +99,9 @@ namespace Excavator.F1
                             RockTransactionScope.WrapTransaction( () =>
                             {
                                 var rockContext = new RockContext();
+                                rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.Notes.AddRange( noteList );
-                                rockContext.SaveChanges();
+                                rockContext.SaveChanges( DisableAudit );
                             } );
 
                             ReportPartialProgress();
@@ -121,8 +115,9 @@ namespace Excavator.F1
                 RockTransactionScope.WrapTransaction( () =>
                 {
                     var rockContext = new RockContext();
+                    rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.Notes.AddRange( noteList );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( DisableAudit );
                 } );
             }
 
