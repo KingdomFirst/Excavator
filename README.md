@@ -46,10 +46,11 @@ Completed:
 * Families (excluding visitors)
 * Individuals 
 * Pledges
-
-Coming Soon:
 * Notes
 * Users
+
+Coming Soon:
+* Requirements
 
 Inconsistent/Not Supported**:
 * Assignments
