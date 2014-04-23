@@ -172,8 +172,8 @@ namespace Excavator.F1
 
             var tableDependencies = new List<string>();
             tableDependencies.Add( "Batch" );                // needed to attribute contributions properly
-            tableDependencies.Add( "Company" );              // needed to attribute any company items
             tableDependencies.Add( "Users" );                // needed for notes, user logins
+            tableDependencies.Add( "Company" );              // needed to attribute any business items
             tableDependencies.Add( "Individual_Household" ); // needed for just about everything
 
             if ( isValidImport )
