@@ -69,11 +69,11 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Handles the RequestNavigate event of the Hyperlink control.
+        /// Handles the RequestNavigate event of the btnIssue control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RequestNavigateEventArgs"/> instance containing the event data.</param>
-        private void Issue_RequestNavigate( object sender, RequestNavigateEventArgs e )
+        private void btnIssue_RequestNavigate( object sender, RequestNavigateEventArgs e )
         {
             Process.Start( new ProcessStartInfo( e.Uri.AbsoluteUri ) );
             e.Handled = true;
