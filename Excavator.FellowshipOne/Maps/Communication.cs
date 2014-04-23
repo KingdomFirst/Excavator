@@ -38,11 +38,11 @@ namespace Excavator.F1
         /// <returns></returns>
         private void MapCommunication( IQueryable<Row> tableData )
         {
-            var rockContext = new RockContext();
-            var categoryService = new CategoryService( rockContext );
-            var personService = new PersonService( rockContext );
+            var lookupContext = new RockContext();
+            var categoryService = new CategoryService( lookupContext );
+            var personService = new PersonService( lookupContext );
 
-            List<DefinedValue> numberTypeValues = new DefinedValueService( rockContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
+            List<DefinedValue> numberTypeValues = new DefinedValueService( lookupContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
 
             // Add a Social Media category if it doesn't exist
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
@@ -60,12 +60,12 @@ namespace Excavator.F1
                 socialMediaCategory.EntityTypeQualifierValue = PersonEntityTypeId.ToString();
                 socialMediaCategory.Order = 0;
 
-                rockContext.Categories.Add( socialMediaCategory );
-                rockContext.SaveChanges( IsAudited );
+                lookupContext.Categories.Add( socialMediaCategory );
+                lookupContext.SaveChanges( DisableAudit );
             }
 
             // Look up additional Person attributes (existing)
-            var personAttributes = new AttributeService( rockContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
             // Add an Attribute for Twitter
             int twitterAttributeId = personAttributes.Where( a => a.Key == "TwitterUsername" ).Select( a => a.Id ).FirstOrDefault();
@@ -84,9 +84,9 @@ namespace Excavator.F1
                 newTwitterAttribute.IsRequired = false;
                 newTwitterAttribute.Order = 0;
 
-                rockContext.Attributes.Add( newTwitterAttribute );
+                lookupContext.Attributes.Add( newTwitterAttribute );
                 newTwitterAttribute.Categories.Add( socialMediaCategory );
-                rockContext.SaveChanges( IsAudited );
+                lookupContext.SaveChanges( DisableAudit );
 
                 twitterAttributeId = newTwitterAttribute.Id;
             }
@@ -108,9 +108,9 @@ namespace Excavator.F1
                 newFacebookAttribute.IsRequired = false;
                 newFacebookAttribute.Order = 0;
 
-                rockContext.Attributes.Add( newFacebookAttribute );
+                lookupContext.Attributes.Add( newFacebookAttribute );
                 newFacebookAttribute.Categories.Add( socialMediaCategory );
-                rockContext.SaveChanges( IsAudited );
+                lookupContext.SaveChanges( DisableAudit );
 
                 facebookAttributeId = newFacebookAttribute.Id;
             }
@@ -119,7 +119,7 @@ namespace Excavator.F1
             var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
             var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
 
-            var existingNumbers = new PhoneNumberService( rockContext ).Queryable().ToList();
+            var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
 
             var newNumberList = new List<PhoneNumber>();
             var updatedPersonList = new List<Person>();
@@ -135,14 +135,26 @@ namespace Excavator.F1
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
                 int? personId = GetPersonId( individualId, householdId );
-                if ( personId != null && !string.IsNullOrWhiteSpace( value ) )
+                var personList = new List<int?>();
+
+                if ( individualId != null )
+                {
+                    personList.Add( personId );
+                }
+                else
+                {
+                    personList.AddRange( GetFamilyByHouseholdId( householdId ) );
+                }
+
+                if ( personList.Any() && !string.IsNullOrWhiteSpace( value ) )
                 {
                     DateTime? lastUpdated = row["LastUpdatedDate"] as DateTime?;
                     string communicationComment = row["Communication_Comment"] as string;
                     string type = row["Communication_Type"] as string;
                     bool isListed = (bool)row["Listed"];
-                    value = value.Trim();
+                    value = value.RemoveWhitespace();
 
+                    // Communication value is a number
                     if ( type.Contains( "Phone" ) || type.Contains( "Mobile" ) )
                     {
                         var extension = string.Empty;
@@ -159,25 +171,30 @@ namespace Excavator.F1
 
                         if ( !string.IsNullOrWhiteSpace( value ) )
                         {
-                            bool numberExists = existingNumbers.Any( n => n.PersonId == (int)personId && n.Number.Equals( value ) );
-                            if ( !numberExists )
+                            foreach ( var familyPersonId in personList )
                             {
-                                var newNumber = new PhoneNumber();
-                                newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                                newNumber.ModifiedDateTime = lastUpdated;
-                                newNumber.PersonId = (int)personId;
-                                newNumber.IsMessagingEnabled = false;
-                                newNumber.IsUnlisted = !isListed;
-                                newNumber.Extension = extension.Left( 20 );
-                                newNumber.Number = value.Left( 20 );
-                                newNumber.Description = communicationComment;
+                                bool numberExists = existingNumbers.Any( n => n.PersonId == familyPersonId && n.Number.Equals( value ) );
+                                if ( !numberExists )
+                                {
+                                    var newNumber = new PhoneNumber();
+                                    newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                                    newNumber.ModifiedDateTime = lastUpdated;
+                                    newNumber.PersonId = (int)familyPersonId;
+                                    newNumber.IsMessagingEnabled = false;
+                                    newNumber.IsUnlisted = !isListed;
+                                    newNumber.Extension = extension.Left( 20 );
+                                    newNumber.Number = value.Left( 20 );
+                                    newNumber.Description = communicationComment;
 
-                                newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
-                                    .Select( v => (int?)v.Id ).FirstOrDefault();
+                                    newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
+                                        .Select( v => (int?)v.Id ).FirstOrDefault();
 
-                                newNumberList.Add( newNumber );
-                                completed++;
+                                    newNumberList.Add( newNumber );
+                                    existingNumbers.Add( newNumber );
+                                }
                             }
+
+                            completed++;
                         }
                     }
                     else
@@ -196,6 +213,7 @@ namespace Excavator.F1
                                 person.IsEmailActive = isListed;
                                 person.ModifiedDateTime = lastUpdated;
                                 person.EmailNote = communicationComment;
+                                lookupContext.SaveChanges();
                             }
                             else if ( !person.Email.Equals( value ) )
                             {
@@ -241,48 +259,44 @@ namespace Excavator.F1
                         completed++;
                     }
 
-                    if ( newNumberList.Any() || updatedPersonList.Any() )
+                    if ( completed % percentage < 1 )
                     {
-                        if ( completed % percentage < 1 )
+                        int percentComplete = completed / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        RockTransactionScope.WrapTransaction( () =>
                         {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else if ( completed % ReportingNumber < 1 )
-                        {
-                            RockTransactionScope.WrapTransaction( () =>
-                            {
-                                // updatedPeople already tracked with current context
-                                rockContext.PhoneNumbers.AddRange( newNumberList );
-                                rockContext.SaveChanges( IsAudited );
+                            var rockContext = new RockContext();
+                            rockContext.Configuration.AutoDetectChangesEnabled = false;
+                            rockContext.PhoneNumbers.AddRange( newNumberList );
+                            rockContext.SaveChanges( DisableAudit );
 
-                                foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                            var newAttributeValues = new List<AttributeValue>();
+                            foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
+                            {
+                                foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                                 {
-                                    foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
+                                    var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                    if ( newValue != null )
                                     {
-                                        var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                        if ( newValue != null )
-                                        {
-                                            newValue.EntityId = updatedPerson.Id;
-                                            rockContext.AttributeValues.Add( newValue );
-                                        }
+                                        newValue.EntityId = updatedPerson.Id;
+                                        newAttributeValues.Add( newValue );
                                     }
                                 }
-
-                                rockContext.SaveChanges( IsAudited );
-                            } );
-
-                            // reset the person context so it doesn't bloat
-                            if ( updatedPersonList.Any() )
-                            {
-                                rockContext = new RockContext();
-                                personService = new PersonService( rockContext );
-                                updatedPersonList.Clear();
                             }
 
-                            newNumberList.Clear();
-                            ReportPartialProgress();
-                        }
+                            rockContext.AttributeValues.AddRange( newAttributeValues );
+                            rockContext.SaveChanges( DisableAudit );
+                        } );
+
+                        // reset so context doesn't bloat
+                        //lookupContext = new RockContext();
+                        //personService = new PersonService( lookupContext );
+                        updatedPersonList.Clear();
+                        newNumberList.Clear();
+                        ReportPartialProgress();
                     }
                 }
             }
@@ -291,10 +305,12 @@ namespace Excavator.F1
             {
                 RockTransactionScope.WrapTransaction( () =>
                 {
-                    // updatedPeople already tracked with current context
+                    var rockContext = new RockContext();
+                    rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.PhoneNumbers.AddRange( newNumberList );
-                    rockContext.SaveChanges( IsAudited );
+                    rockContext.SaveChanges( DisableAudit );
 
+                    var newAttributeValues = new List<AttributeValue>();
                     foreach ( var updatedPerson in updatedPersonList.Where( p => p.Attributes.Any() ) )
                     {
                         foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
@@ -303,12 +319,13 @@ namespace Excavator.F1
                             if ( newValue != null )
                             {
                                 newValue.EntityId = updatedPerson.Id;
-                                rockContext.AttributeValues.Add( newValue );
+                                newAttributeValues.Add( newValue );
                             }
                         }
                     }
 
-                    rockContext.SaveChanges( IsAudited );
+                    rockContext.AttributeValues.AddRange( newAttributeValues );
+                    rockContext.SaveChanges( DisableAudit );
                 } );
             }
 
