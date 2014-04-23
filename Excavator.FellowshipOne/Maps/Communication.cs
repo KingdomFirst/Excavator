@@ -262,10 +262,6 @@ namespace Excavator.F1
                     {
                         int percentComplete = completed / percentage;
                         ReportProgress( percentComplete, string.Format( "{0:N0} records imported ({1}% complete).", completed, percentComplete ) );
-
-                        // reset so context doesn't bloat
-                        lookupContext = new RockContext();
-                        personService = new PersonService( lookupContext );
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
@@ -294,6 +290,9 @@ namespace Excavator.F1
                             rockContext.SaveChanges( DisableAudit );
                         } );
 
+                        // reset so context doesn't bloat
+                        lookupContext = new RockContext();
+                        personService = new PersonService( lookupContext );
                         updatedPersonList.Clear();
                         newNumberList.Clear();
                         ReportPartialProgress();
