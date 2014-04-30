@@ -173,7 +173,7 @@ namespace Excavator
         /// <returns>true if valid email, false otherwise</returns>
         public static bool IsValidEmail( this string email )
         {
-            return Regex.IsMatch( email, @"\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*" );
+            return Regex.IsMatch( email, @"^(?!((http|https)://|www.))[\w\.\'_%-]+(\+[\w-]*)?@([\w-]+\.)+[\w-]+" );
         }
     }
 }
