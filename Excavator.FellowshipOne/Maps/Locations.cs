@@ -264,6 +264,9 @@ namespace Excavator.F1
                                 rockContext.SaveChanges( DisableAudit );
                             } );
 
+                            newGroupLocations.Clear();
+                            lookupContext = new RockContext();
+                            locationService = new LocationService( lookupContext );
                             ReportPartialProgress();
                         }
                     }
