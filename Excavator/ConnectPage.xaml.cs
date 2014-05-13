@@ -42,6 +42,22 @@ namespace Excavator
 
         private ConnectionString existingConnection;
 
+        public ConnectionString CurrentConnection
+        {
+            get
+            {
+                return existingConnection;
+            }
+            set
+            {
+                existingConnection = value;
+                if ( PropertyChanged != null )
+                {
+                    PropertyChanged( this, new PropertyChangedEventArgs( "Connection" ) );
+                }
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         #endregion
@@ -54,13 +70,6 @@ namespace Excavator
         public ConnectPage()
         {
             InitializeComponent();
-
-            System.AppDomain.CurrentDomain.UnhandledException += ( s, e ) =>
-            {
-                var appLog = new System.Diagnostics.EventLog();
-                appLog.Source = "Excavator";
-                appLog.WriteEntry( e.ToString(), System.Diagnostics.EventLogEntryType.Error );
-            };
 
             frontEndLoader = new FrontEndLoader();
             if ( frontEndLoader.excavatorTypes.Any() )

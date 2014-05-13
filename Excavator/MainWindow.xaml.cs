@@ -33,13 +33,6 @@ namespace Excavator
         public MainWindow()
         {
             InitializeComponent();
-
-            System.AppDomain.CurrentDomain.UnhandledException += ( s, e ) =>
-            {
-                var appLog = new System.Diagnostics.EventLog();
-                appLog.Source = "Excavator";
-                appLog.WriteEntry( e.ToString(), System.Diagnostics.EventLogEntryType.Error );
-            };
         }
     }
 }

@@ -49,6 +49,21 @@ namespace Excavator
                 }
             };
 
+            app.Dispatcher.UnhandledException += ( sender, ex ) =>
+            {
+                var appLog = new System.Diagnostics.EventLog();
+                appLog.Source = "Excavator";
+                appLog.WriteEntry( ex.ToString(), System.Diagnostics.EventLogEntryType.Error );
+                ex.Handled = true;
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += ( s, ex ) =>
+            {
+                var appLog = new System.Diagnostics.EventLog();
+                appLog.Source = "Excavator";
+                appLog.WriteEntry( ex.ToString(), System.Diagnostics.EventLogEntryType.Error );
+            };
+
             app.InitializeComponent();
 
             app.Run();
