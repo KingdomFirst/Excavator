@@ -182,15 +182,15 @@ namespace Excavator
             var catalog = new AggregateCatalog();
             if ( Directory.Exists( extensionFolder ) )
             {
-                catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder ) );
+                catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder, "Excavator.*.dll" ) );
             }
 
             var currentDirectory = Path.GetDirectoryName( Application.ExecutablePath );
-            catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory ) );
+            catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory, "Excavator.*.dll" ) );
 
             try
             {
-                var container = new CompositionContainer( catalog );
+                var container = new CompositionContainer( catalog, true );
                 container.ComposeParts( this );
             }
             catch
