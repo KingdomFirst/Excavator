@@ -6,14 +6,15 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </UserControl.Resources>
+
     <GroupBox MinHeight="200" MinWidth="250"
-        BorderBrush="{StaticResource windowBackground}"
-        Background="{StaticResource windowBackground}"
-        Foreground="{StaticResource headerBackground}">
+    BorderBrush="{StaticResource windowBackground}"
+    Background="{StaticResource windowBackground}"
+    Foreground="{StaticResource headerBackground}">
         <GroupBox.Header>
             <TextBlock Text="{Binding ElementName=_this, Path=Header}"
-                FontSize="14"
-                FontWeight="Bold" />
+            FontSize="14"
+            FontWeight="Bold" />
         </GroupBox.Header>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -27,60 +28,60 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <TextBlock Text="Server: "
-                VerticalAlignment="Center"
-                Margin="3"
-                Grid.Column="0"
-                Grid.Row="0" />
+            VerticalAlignment="Center"
+            Margin="3"
+            Grid.Column="0"
+            Grid.Row="0" />
             <Grid Grid.Column="1"
-                  Grid.Row="0">
+                Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ComboBox x:Name="SqlServerName"
-                    Margin="3"
-                    IsEditable="True"
-                    ItemsSource="{Binding ElementName=_this, Path=Servers}"
-                    Text="{Binding ElementName=_this, Path=ConnectionString.Server, UpdateSourceTrigger=LostFocus}" />
+                Margin="3"
+                IsEditable="True"
+                ItemsSource="{Binding ElementName=_this, Path=Servers}"
+                Text="{Binding ElementName=_this, Path=ConnectionString.Server, UpdateSourceTrigger=LostFocus}" />
             </Grid>
             <TextBlock Text="Database: "
-                VerticalAlignment="Center"
-                Margin="3"
-                Grid.Column="0"
-                Grid.Row="1" />
+            VerticalAlignment="Center"
+            Margin="3"
+            Grid.Column="0"
+            Grid.Row="1" />
             <Grid Grid.Column="1"
-                  Grid.Row="1">
+                Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ComboBox x:Name="SqlDatabaseName"
-                    Margin="3"
-                    IsEditable="True"
-                    ItemsSource="{Binding ElementName=_this, Path=Databases}"
-                    Text="{Binding ElementName=_this, Path=ConnectionString.Database, UpdateSourceTrigger=PropertyChanged}" />
+                Margin="3"
+                IsEditable="True"
+                ItemsSource="{Binding ElementName=_this, Path=Databases}"
+                Text="{Binding ElementName=_this, Path=ConnectionString.Database, UpdateSourceTrigger=PropertyChanged}" />
             </Grid>
 
             <GroupBox Header="Authentication:"
-                      Grid.Column="0"
-                      Grid.Row="2"
-                      Grid.ColumnSpan="2">
+                    Grid.Column="0"
+                    Grid.Row="2"
+                    Grid.ColumnSpan="2">
                 <StackPanel>
                     <RadioButton Content="Windows Authentication"
-                        Margin="3"
-                        x:Name="SqlAuthTypeWindows"
-                        IsChecked="{Binding ElementName=_this, Path=ConnectionString.IntegratedSecurity, UpdateSourceTrigger=PropertyChanged}">
+                    Margin="3"
+                    x:Name="SqlAuthTypeWindows"
+                    IsChecked="{Binding ElementName=_this, Path=ConnectionString.IntegratedSecurity, UpdateSourceTrigger=PropertyChanged}">
                     </RadioButton>
                     <RadioButton Content="Sql Authentication"
-                        Margin="3"
-                        x:Name="SqlAuthTypeSql">
+                    Margin="3"
+                    x:Name="SqlAuthTypeSql">
                         <RadioButton.Style>
                             <Style>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ElementName=_this, Path=ConnectionString.IntegratedSecurity}"
-                                         Value="False">
+                                        Value="False">
                                         <Setter Property="RadioButton.IsChecked"
-                                            Value="True" />
+                                        Value="True" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -96,23 +97,23 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <TextBlock Text="Username: "
-                            Grid.Column="0"
-                            Grid.Row="0"
-                            Margin="3"
-                            VerticalAlignment="Center" />
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Margin="3"
+                        VerticalAlignment="Center" />
                         <TextBox Grid.Column="1"
-                            Grid.Row="0"
-                            Margin="3"
-                            Text="{Binding ElementName=_this, Path=ConnectionString.UserName, UpdateSourceTrigger=PropertyChanged}" />
+                        Grid.Row="0"
+                        Margin="3"
+                        Text="{Binding ElementName=_this, Path=ConnectionString.UserName, UpdateSourceTrigger=PropertyChanged}" />
                         <TextBlock Text="Password: "
-                            Grid.Column="0"
-                            Grid.Row="1"
-                            Margin="3"
-                            VerticalAlignment="Center" />
+                        Grid.Column="0"
+                        Grid.Row="1"
+                        Margin="3"
+                        VerticalAlignment="Center" />
                         <TextBox Grid.Column="1"
-                            Grid.Row="1"
-                            Margin="3"
-                            Text="{Binding ElementName=_this, Path=ConnectionString.Password, UpdateSourceTrigger=PropertyChanged}" />
+                        Grid.Row="1"
+                        Margin="3"
+                        Text="{Binding ElementName=_this, Path=ConnectionString.Password, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                 </StackPanel>
             </GroupBox>
