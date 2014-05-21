@@ -193,7 +193,7 @@ namespace Excavator
                 var container = new CompositionContainer( catalog, true );
                 container.ComposeParts( this );
             }
-            catch ( Exception ex )
+            catch
             {
                 // no extensions in this folder
             }
