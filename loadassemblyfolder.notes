@@ -1,0 +1,56 @@
+﻿/// <summary>
+/// Loads the assemblies from the embedded folder.
+/// </summary>
+/// <param name="sender">The sender.</param>
+/// <param name="args">The <see cref="ResolveEventArgs"/> instance containing the event data.</param>
+/// <returns></returns>
+private static Assembly LoadAssemblyFolder( object sender, ResolveEventArgs args )
+{
+    string embedPath = ConfigurationManager.AppSettings["EmbeddedResources"];
+    string test = Path.GetPathRoot( Assembly.GetExecutingAssembly().Location );
+    string folderPath = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location );
+    string assemblyPath = Path.Combine( embedPath, args.Name + ".dll" );
+    //if ( File.Exists( assemblyPath ) == false ) return null;
+    var assembly = Assembly.LoadFrom( assemblyPath );
+    return assembly;
+}
+
+/// <summary>
+/// Handles the AssemblyResolve event of the currentDomain control.
+/// </summary>
+/// <param name="sender">The source of the event.</param>
+/// <param name="args">The <see cref="ResolveEventArgs"/> instance containing the event data.</param>
+/// <returns></returns>
+private static Assembly currentDomainAssemblyResolve( object sender, ResolveEventArgs args )
+{
+    Assembly executingAssembly = Assembly.GetExecutingAssembly();
+
+    string applicationDirectory = Path.GetDirectoryName( executingAssembly.Location );
+
+    string[] fields = args.Name.Split( ',' );
+    string assemblyName = fields[0];
+    string assemblyCulture = fields[2].Substring( fields[2].IndexOf( '=' ) + 1 );
+
+    string assemblyFileName = assemblyName + ".dll";
+    string assemblyPath;
+
+    if ( assemblyName.EndsWith( ".resources" ) )
+    {
+        string resourceDirectory = Path.Combine( applicationDirectory, assemblyCulture );
+        assemblyPath = Path.Combine( resourceDirectory, assemblyFileName );
+    }
+    else
+    {
+        assemblyPath = Path.Combine( applicationDirectory, assemblyFileName );
+    }
+
+    if ( File.Exists( assemblyPath ) )
+    {
+        Assembly loadingAssembly = Assembly.LoadFrom( assemblyPath );
+        return loadingAssembly;
+    }
+    else
+    {
+        return null;
+    }
+}
