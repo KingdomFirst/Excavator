@@ -43,11 +43,6 @@
       <HintPath>..\Excavator\Packages\EntityFramework.SqlServer.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="NuGet.Core, Version=1.6.30117.9648, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Excavator\Packages\NuGet.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="OrcaMDF.Core">
       <HintPath>..\Excavator\Packages\OrcaMDF.Core.dll</HintPath>
       <Private>False</Private>
