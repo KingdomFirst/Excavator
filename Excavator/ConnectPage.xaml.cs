@@ -116,17 +116,16 @@ namespace Excavator
             sqlConnector = new SqlConnector();
             var modalPanel = new StackPanel();
             var buttonPanel = new StackPanel();
+            var border = new Border();
             var cancelBtn = new Button();
             var okBtn = new Button();
 
             // set background effects
-            var mask = new SolidColorBrush();
-            var blur = new BlurEffect();
-            mask.Color = Colors.White;
-            mask.Opacity = .5;
-            blur.Radius = 10;
-            this.OpacityMask = mask;
-            this.Effect = blur;
+            this.OpacityMask = new SolidColorBrush( Colors.White );
+            this.Effect = new BlurEffect();
+            border.BorderBrush = (Brush)FindResource( "headerBackground" );
+            border.BorderThickness = new Thickness( 5 );
+            border.Padding = new Thickness( 5 );
 
             sqlConnector.ConnectionString = existingConnection;
             modalPanel.Children.Add( sqlConnector );
@@ -146,8 +145,12 @@ namespace Excavator
             buttonPanel.Children.Add( cancelBtn );
             modalPanel.Children.Add( buttonPanel );
 
+            border.Child = modalPanel;
+            var contentPanel = new StackPanel();
+            contentPanel.Children.Add( border );
+
             var connectWindow = new Window();
-            connectWindow.Content = modalPanel;
+            connectWindow.Content = contentPanel;
             connectWindow.Owner = Window.GetWindow( this );
             connectWindow.ShowInTaskbar = false;
             connectWindow.Background = (Brush)FindResource( "windowBackground" );
