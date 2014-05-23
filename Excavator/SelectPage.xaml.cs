@@ -22,6 +22,7 @@ using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Linq;
 
 namespace Excavator
 {
@@ -43,6 +44,11 @@ namespace Excavator
             if ( parameter != null )
             {
                 excavator = parameter;
+                if (excavator.TableNodes.Count > 0)
+                {
+                    excavator.TableNodes[0].Checked = true; //preview on load
+                    PreviewData(excavator.TableNodes[0].Id);
+                }
                 treeView.ItemsSource = new ObservableCollection<DatabaseNode>( excavator.TableNodes );
             }
             else
@@ -199,5 +205,6 @@ namespace Excavator
         }
 
         #endregion
+
     }
 }

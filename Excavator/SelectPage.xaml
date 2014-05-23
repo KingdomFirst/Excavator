@@ -11,7 +11,7 @@
         <!-- DatabaseNode TreeView -->
         <HierarchicalDataTemplate DataType="{x:Type local:DatabaseNode}" ItemsSource="{Binding Columns}">
             <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding Checked}" Uid="{Binding Id}"
+                <CheckBox IsChecked="{Binding Checked}" Uid="{Binding Id}" 
                     PreviewMouseLeftButtonDown="Checkbox_OnClick" />
                 <TextBlock Text="{Binding Name}"  Tag="{Binding Id}"
                     MouseDown="TextBlock_MouseDown"
@@ -30,7 +30,7 @@
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -62,10 +62,11 @@
             Please select the source and destination from the previous page.
         </Label>
 
-        <TreeView Name="treeView"
+        <TreeView Name="treeView" Margin="15,0,15,0"
                 Grid.Row="1" Grid.Column="0"
                 Background="{x:Null}"
-                BorderBrush="{x:Null}">
+                BorderBrush="{x:Null}"
+                  >
             <!-- Content will be filled here -->
         </TreeView>
 

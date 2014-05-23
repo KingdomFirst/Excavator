@@ -31,26 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AjaxControlToolkit">
-      <HintPath>..\Excavator\Packages\AjaxControlToolkit.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="AjaxMin">
-      <HintPath>..\Excavator\Packages\AjaxMin.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="C5">
-      <HintPath>..\Excavator\Packages\C5.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="CronExpressionDescriptor">
-      <HintPath>..\Excavator\Packages\CronExpressionDescriptor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="DDay.iCal">
-      <HintPath>..\Excavator\Packages\DDay.iCal.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="DotLiquid">
       <HintPath>..\Excavator\Packages\DotLiquid.dll</HintPath>
       <Private>False</Private>
@@ -63,25 +43,8 @@
       <HintPath>..\Excavator\Packages\EntityFramework.SqlServer.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="EPPlus">
-      <HintPath>..\Excavator\Packages\EPPlus.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Facebook">
-      <HintPath>..\Excavator\Packages\Facebook.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="HtmlAgilityPack">
-      <HintPath>..\Excavator\Packages\HtmlAgilityPack.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ImageResizer">
-      <HintPath>..\Excavator\Packages\ImageResizer.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="LumenWorks.Framework.IO">
       <HintPath>..\Excavator\Packages\LumenWorks.Framework.IO.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Excavator\Packages\Newtonsoft.Json.dll</HintPath>
@@ -90,14 +53,6 @@
     <Reference Include="NuGet.Core, Version=1.6.30117.9648, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Excavator\Packages\NuGet.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Quartz">
-      <HintPath>..\Excavator\Packages\Quartz.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="RestSharp">
-      <HintPath>..\Excavator\Packages\RestSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Rock">

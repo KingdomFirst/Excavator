@@ -117,6 +117,8 @@ namespace Excavator
         private void bwImportData_DoWork( object sender, DoWorkEventArgs e )
         {
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
+            if (String.IsNullOrEmpty(importUser))
+                importUser = "Admin";
             e.Result = excavator.TransformData( importUser );
         }
 
@@ -128,6 +130,11 @@ namespace Excavator
         private void bwImportData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
             var rowsImported = (int)e.Result;
+            if (rowsImported < 0)
+            {
+                App.LogException("Import Data", "An error occurred importing data");
+                return;
+            }
             this.Dispatcher.Invoke( (Action)( () =>
             {
                 lblHeader.Content = "Import Complete";

@@ -24,6 +24,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
 
 namespace Excavator
 {
@@ -51,15 +53,85 @@ namespace Excavator
             set
             {
                 existingConnection = value;
-                if ( PropertyChanged != null )
+                App.ExistingConnection = value; //for back and forth, restore from session
+                RaisePropertyChanged("Connection");
+                RaisePropertyChanged("ConnectionDescribed");
+            }
+        }
+        string _ConnectionDescribed = string.Empty;
+
+        public string ConnectionDescribed
+        {
+            get {
+                if (existingConnection != null)
                 {
-                    PropertyChanged( this, new PropertyChangedEventArgs( "Connection" ) );
+                    _ConnectionDescribed = "Destination: " + existingConnection.Server + ":" + existingConnection.Database;
+                }
+                return _ConnectionDescribed; }
+           
+        }
+
+        IEnumerable<ExcavatorComponent> _ExcavatorImportDlls = null;
+        public  IEnumerable<ExcavatorComponent> ExcavatorImportDlls
+        {
+            get {
+                return _ExcavatorImportDlls;
+            }
+            set
+            {
+                if (_ExcavatorImportDlls == value)
+                    return;
+                _ExcavatorImportDlls = value;
+                RaisePropertyChanged("ExcavatorImportDlls");
+            }
+        }
+        ExcavatorComponent _SelectedImportType = null;
+        public ExcavatorComponent SelectedImportType
+        {
+            get{
+                return _SelectedImportType;
+            }
+            set{
+                 if (_SelectedImportType == value)
+                    return;
+                _SelectedImportType = value;
+                RaisePropertyChanged("SelectedImportType");
+                
+                //helptext?
+                var helptext = GetPropValue(_SelectedImportType, "HelpText");
+                if (helptext != null)
+                {
+                    HelpText = helptext.ToString();
                 }
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public static object GetPropValue(object src, string propName)
+        {
+            if (src.GetType().GetProperty(propName) != null)
+            {
+                return src.GetType().GetProperty(propName).GetValue(src, null);
+            }
+            return string.Empty;
+        }
 
+        private string _helptext = string.Empty;
+        public string HelpText
+        {
+            get { return _helptext; }
+            set { _helptext = value;
+            RaisePropertyChanged("HelpText");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void RaisePropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
         #endregion
 
         #region Initializer Methods
@@ -74,8 +146,9 @@ namespace Excavator
             frontEndLoader = new FrontEndLoader();
             if ( frontEndLoader.excavatorTypes.Any() )
             {
-                lstDatabaseTypes.ItemsSource = frontEndLoader.excavatorTypes.GroupBy( t => t.FullName ).Select( g => g.FirstOrDefault() );
-                lstDatabaseTypes.SelectedItem = frontEndLoader.excavatorTypes.FirstOrDefault();
+                ExcavatorImportDlls = frontEndLoader.excavatorTypes.GroupBy(t => t.FullName).Select(g => g.FirstOrDefault());
+                SelectedImportType = frontEndLoader.excavatorTypes.FirstOrDefault();
+                initializeDBConnection();
             }
             else
             {
@@ -85,8 +158,30 @@ namespace Excavator
                 lstDatabaseTypes.Visibility = Visibility.Hidden;
                 lblNoData.Content += string.Format( " ({0})", ConfigurationManager.AppSettings["ExtensionPath"] );
             }
+
+            DataContext = this;
+
         }
 
+
+        void initializeDBConnection()
+        {
+
+            if (App.ExistingConnection != null)
+            {
+                CurrentConnection = App.ExistingConnection;
+            }
+            else
+            {
+                //initialize from app.config
+                var appConfig = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+                if (rockContext != null)
+                {
+                    CurrentConnection = new ConnectionString( rockContext.ConnectionString);
+                }
+            }
+        }
         #endregion
 
         #region Events
@@ -114,45 +209,40 @@ namespace Excavator
         private void btnConnect_Click( object sender, RoutedEventArgs e )
         {
             sqlConnector = new SqlConnector();
-            var modalBorder = new Border();
-            var connectPanel = new StackPanel();
+            var modalPanel = new StackPanel();
             var buttonPanel = new StackPanel();
+            var cancelBtn = new Button();
+            var okBtn = new Button();
 
-            // set UI effects
-            modalBorder.BorderBrush = (Brush)FindResource( "headerBackground" );
-            modalBorder.CornerRadius = new CornerRadius( 5 );
-            modalBorder.BorderThickness = new Thickness( 5 );
-            modalBorder.Padding = new Thickness( 5 );
-            buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
-            buttonPanel.Orientation = Orientation.Horizontal;
-            this.OpacityMask = new SolidColorBrush( Colors.White );
-            this.Effect = new BlurEffect();
+            // set background effects
+            var mask = new SolidColorBrush();
+            var blur = new BlurEffect();
+            mask.Color = Colors.White;
+            mask.Opacity = .5;
+            blur.Radius = 10;
+            this.OpacityMask = mask;
+            this.Effect = blur;
 
             sqlConnector.ConnectionString = existingConnection;
-            connectPanel.Children.Add( sqlConnector );
+            modalPanel.Children.Add( sqlConnector );
+            buttonPanel.Orientation = Orientation.Horizontal;
+            buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
 
-            var okBtn = new Button();
             okBtn.Content = "Ok";
             okBtn.IsDefault = true;
             okBtn.Margin = new Thickness( 0, 0, 5, 0 );
             okBtn.Click += btnOk_Click;
             okBtn.Style = (Style)FindResource( "buttonStylePrimary" );
-
-            var cancelBtn = new Button();
             cancelBtn.Content = "Cancel";
             cancelBtn.IsCancel = true;
             cancelBtn.Style = (Style)FindResource( "buttonStyle" );
 
             buttonPanel.Children.Add( okBtn );
             buttonPanel.Children.Add( cancelBtn );
-            connectPanel.Children.Add( buttonPanel );
-            modalBorder.Child = connectPanel;
-
-            var contentPanel = new StackPanel();
-            contentPanel.Children.Add( modalBorder );
+            modalPanel.Children.Add( buttonPanel );
 
             var connectWindow = new Window();
-            connectWindow.Content = contentPanel;
+            connectWindow.Content = modalPanel;
             connectWindow.Owner = Window.GetWindow( this );
             connectWindow.ShowInTaskbar = false;
             connectWindow.Background = (Brush)FindResource( "windowBackground" );
@@ -164,10 +254,11 @@ namespace Excavator
             this.OpacityMask = null;
             this.Effect = null;
 
-            if ( sqlConnector.ConnectionString != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString.Database ) )
+            if ( !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString ) )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDbConnect.Content = "Successfully connected to the Rock database.";
+                lblDbConnect.Content = "Successfully connected to the database";
+                CurrentConnection = sqlConnector.ConnectionString;
             }
 
             lblDbConnect.Visibility = Visibility.Visible;
@@ -242,25 +333,42 @@ namespace Excavator
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
         private void bwPreview_DoWork( object sender, DoWorkEventArgs e )
         {
-            var selectedExcavator = (string)e.Argument;
-            var filePicker = new OpenFileDialog();
-
-            var supportedExtensions = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
-                .Select( t => t.FullName + " |*" + t.ExtensionType ).ToList();
-            filePicker.Filter = string.Join( "|", supportedExtensions );
-
-            if ( filePicker.ShowDialog() == true )
+            try
             {
-                excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
-                if ( excavator != null )
+                var selectedExcavator = (string)e.Argument;
+                var filePicker = new OpenFileDialog();
+                filePicker.Multiselect = true;
+
+                var supportedExtensions = frontEndLoader.excavatorTypes.Where(t => t.FullName.Equals(selectedExcavator))
+                    .Select(t => t.FullName + " |*" + t.ExtensionType).ToList();
+                filePicker.Filter = string.Join("|", supportedExtensions);
+
+                if (filePicker.ShowDialog() == true)
                 {
-                    bool loadedSuccessfully = excavator.LoadSchema( filePicker.FileName );
-                    e.Cancel = !loadedSuccessfully;
+                    excavator = frontEndLoader.excavatorTypes.Where(t => t.FullName.Equals(selectedExcavator)).FirstOrDefault();
+                    if (excavator != null)
+                    {
+                        bool loadedSuccessfully = false;
+                        foreach (var file in filePicker.FileNames)
+                        {
+                            loadedSuccessfully = excavator.LoadSchema(file);
+                            e.Cancel = !loadedSuccessfully;
+                            if (e.Cancel)
+                                break;
+                            Dispatcher.BeginInvoke( (Action)( () =>
+                                FilesUploaded.Children.Add(new TextBlock { Text=file})
+                                ));
+                        }
+                    }
+                }
+                else
+                {
+                    e.Cancel = true;
                 }
             }
-            else
+            catch (Exception exp)
             {
-                e.Cancel = true;
+                App.LogException("upload file", exp.ToString());
             }
         }
 

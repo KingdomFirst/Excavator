@@ -160,6 +160,11 @@ namespace Excavator
         }
 
         #endregion
+
+        protected void LogException(string category, string message)
+        {
+            App.LogException(category, message);
+        }
     }
 
     /// <summary>
