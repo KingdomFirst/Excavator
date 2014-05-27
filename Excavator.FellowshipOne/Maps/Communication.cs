@@ -138,11 +138,19 @@ namespace Excavator.F1
 
                 if ( individualId != null )
                 {
-                    personList.Add( GetPersonId( individualId, householdId ) );
+                    int? personId = GetPersonId( individualId, householdId );
+                    if ( personId != null )
+                    {
+                        personList.Add( personId );
+                    }
                 }
                 else
                 {
-                    personList.AddRange( GetFamilyByHouseholdId( householdId ) );
+                    List<int?> personIds = GetFamilyByHouseholdId( householdId );
+                    if ( personIds.Any() )
+                    {
+                        personList.AddRange( personIds );
+                    }
                 }
 
                 if ( personList.Any() && !string.IsNullOrWhiteSpace( value ) )
