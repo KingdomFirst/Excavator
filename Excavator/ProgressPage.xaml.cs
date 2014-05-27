@@ -128,13 +128,17 @@ namespace Excavator
         private void bwImportData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
             var rowsImported = (int)e.Result;
-            this.Dispatcher.Invoke( (Action)( () =>
+            if ( rowsImported > 0 )
             {
-                lblHeader.Content = "Import Complete";
-                txtProgress.AppendText( "Uploaded all the data!" );
-                txtProgress.ScrollToEnd();
-                btnClose.Visibility = Visibility.Visible;
-            } ) );
+                this.Dispatcher.Invoke( (Action)( () =>
+                {
+                    lblHeader.Content = "Import Complete";
+                    txtProgress.AppendText( Environment.NewLine + DateTime.Now.ToLongTimeString() + "  Finished upload." );
+                    txtProgress.ScrollToEnd();
+                } ) );
+            }
+
+            btnClose.Visibility = Visibility.Visible;
 
             BackgroundWorker bwTransformData = sender as BackgroundWorker;
             bwTransformData.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwImportData_RunWorkerCompleted );
