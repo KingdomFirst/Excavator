@@ -17,9 +17,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
-using System.Configuration;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -58,17 +56,6 @@ namespace Excavator.CSV
         public override string FullName
         {
             get { return "CSV File"; }
-        }
-
-        /// <summary>
-        /// User Help Text
-        /// </summary>
-        /// <value>
-        /// Any custom information specific to this import method
-        /// </value>
-        public string HelpText
-        {
-            get { return "To upload multiple files, hold the ctrl key down while clicking in the file upload dialog."; }
         }
 
         /// <summary>
