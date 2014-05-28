@@ -4,11 +4,11 @@
         Title="LogDialog">
     <Grid Margin="20"  MaxHeight="300" MaxWidth="450">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Border 
+        <Border
             Grid.Row="0" Grid.RowSpan="3"
             Background="{StaticResource headerBackground}">
         </Border>
@@ -20,9 +20,10 @@
         </Label>
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <Grid Background="White">
-        <TextBlock x:Name="messageblock" Text="{Binding Message}"  Margin="5,5,20,5" TextWrapping="Wrap" />
+                <TextBlock x:Name="messageblock" Text="{Binding Message}"  Margin="5,5,20,5" TextWrapping="Wrap" />
             </Grid>
         </ScrollViewer>
-        <Button Content="Close" Click="Button_Click" Style="{StaticResource buttonStyle}" HorizontalAlignment="Center" Grid.Row="2" VerticalAlignment="Bottom"/>
+        <Button x:Name="btnClose" Content="Close" Click="btnClose_Click" Style="{StaticResource buttonStyle}"
+                HorizontalAlignment="Center" Grid.Row="2" VerticalAlignment="Bottom" />
     </Grid>
 </Window>

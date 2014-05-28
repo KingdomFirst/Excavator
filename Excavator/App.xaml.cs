@@ -17,11 +17,11 @@
 
 using System;
 using System.Configuration;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.IO;
 
 namespace Excavator
 {
@@ -52,51 +52,48 @@ namespace Excavator
                 }
             };
 
-            app.Dispatcher.UnhandledException += ( sender, ex ) =>
-            {
-                var appLog = new System.Diagnostics.EventLog();
-                appLog.Source = "Excavator";
-                appLog.WriteEntry( ex.ToString(), System.Diagnostics.EventLogEntryType.Error );
-                ex.Handled = true;
-            };
-
-            AppDomain.CurrentDomain.UnhandledException += ( s, ex ) =>
-            {
-                var appLog = new System.Diagnostics.EventLog();
-                appLog.Source = "Excavator";
-                appLog.WriteEntry( ex.ToString(), System.Diagnostics.EventLogEntryType.Error );
-            };
-
             app.InitializeComponent();
 
             app.Run();
         }
- private static ConnectionString existingConnection;
+
+        private static ConnectionString existingConnection;
+
+        /// <summary>
+        /// Gets or sets the existing connection.
+        /// </summary>
+        /// <value>
+        /// The existing connection.
+        /// </value>
         public static ConnectionString ExistingConnection
         {
             get { return existingConnection; }
             set { existingConnection = value; }
         }
 
-
-        public static void LogException(string category, string message)
+        /// <summary>
+        /// Logs the exception.
+        /// </summary>
+        /// <param name="category">The category.</param>
+        /// <param name="message">The message.</param>
+        public static void LogException( string category, string message )
         {
             // Rock ExceptionService logger depends on HttpContext.... so write the message to a file
             try
             {
                 string directory = AppDomain.CurrentDomain.BaseDirectory;
-                directory = Path.Combine(directory, "Logs");
+                directory = Path.Combine( directory, "Logs" );
 
-                if (!Directory.Exists(directory))
+                if ( !Directory.Exists( directory ) )
                 {
-                    Directory.CreateDirectory(directory);
+                    Directory.CreateDirectory( directory );
                 }
 
-                string filePath = Path.Combine(directory, "ExcavatorExceptions.csv");
-                var errmsg = string.Format("{0},{1},\"{2}\"\r\n", DateTime.Now.ToString(), category, message);
-                File.AppendAllText(filePath, errmsg );
+                string filePath = Path.Combine( directory, "ExcavatorExceptions.csv" );
+                var errmsg = string.Format( "{0},{1},\"{2}\"\r\n", DateTime.Now.ToString(), category, message );
+                File.AppendAllText( filePath, errmsg );
 
-                App.Current.Dispatcher.BeginInvoke( (Action)( () => ShowErrorMessage(errmsg)));
+                App.Current.Dispatcher.BeginInvoke( (Action)( () => ShowErrorMessage( errmsg ) ) );
             }
             catch
             {
@@ -104,14 +101,22 @@ namespace Excavator
             }
         }
 
-     static bool showingError = false;
-        static void ShowErrorMessage(string errmsg)
+        /// <summary>
+        /// The showing error
+        /// </summary>
+        private static bool ShowingError = false;
+
+        /// <summary>
+        /// Shows the error message.
+        /// </summary>
+        /// <param name="errmsg">The errmsg.</param>
+        private static void ShowErrorMessage( string errmsg )
         {
-            if (showingError)
+            if ( ShowingError )
                 return;
-            showingError = true;
+            ShowingError = true;
             var connectWindow = new LogDialog();
-            var LogViewModel = new LogViewModel() { Message = errmsg};
+            var LogViewModel = new LogViewModel() { Message = errmsg };
             connectWindow.DataContext = LogViewModel;
 
             connectWindow.Owner = App.Current.MainWindow;
@@ -121,7 +126,7 @@ namespace Excavator
             connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
             connectWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             var showWindow = connectWindow.ShowDialog();
-            showingError = false;
+            ShowingError = false;
         }
     }
 }
