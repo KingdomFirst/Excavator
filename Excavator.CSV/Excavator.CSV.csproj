@@ -46,15 +46,6 @@
     <Reference Include="LumenWorks.Framework.IO">
       <HintPath>..\Excavator\Packages\LumenWorks.Framework.IO.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\Excavator\Packages\Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="NuGet.Core, Version=1.6.30117.9648, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Excavator\Packages\NuGet.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Rock">
       <HintPath>..\Excavator\Packages\Rock.dll</HintPath>
       <Private>False</Private>
@@ -67,15 +58,11 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Twilio.Api">
-      <HintPath>..\Excavator\Packages\Twilio.Api.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CSVComponent.cs" />
     <Compile Include="CsvDataModel.cs" />
-    <Compile Include="Enums.cs" />
+    <Compile Include="Maps\People.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
