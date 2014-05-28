@@ -15,6 +15,8 @@
 // </copyright>
 //
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Linq;
@@ -24,8 +26,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
 
 namespace Excavator
 {
@@ -44,6 +44,12 @@ namespace Excavator
 
         private ConnectionString existingConnection;
 
+        /// <summary>
+        /// Gets or sets the current connection.
+        /// </summary>
+        /// <value>
+        /// The current connection.
+        /// </value>
         public ConnectionString CurrentConnection
         {
             get
@@ -54,84 +60,106 @@ namespace Excavator
             {
                 existingConnection = value;
                 App.ExistingConnection = value; //for back and forth, restore from session
-                RaisePropertyChanged("Connection");
-                RaisePropertyChanged("ConnectionDescribed");
+                RaisePropertyChanged( "Connection" );
+                RaisePropertyChanged( "ConnectionDescribed" );
             }
         }
-        string _ConnectionDescribed = string.Empty;
 
+        private string _ConnectionDescribed = string.Empty;
+
+        /// <summary>
+        /// Highlights the current connection on the connect page.
+        /// </summary>
+        /// <value>
+        /// The connection described.
+        /// </value>
         public string ConnectionDescribed
         {
-            get {
-                if (existingConnection != null)
+            get
+            {
+                if ( existingConnection != null )
                 {
-                    _ConnectionDescribed = "Destination: " + existingConnection.Server + ":" + existingConnection.Database;
+                    _ConnectionDescribed = "(Current Destination: " + existingConnection.Server + ":" + existingConnection.Database + ")";
                 }
-                return _ConnectionDescribed; }
-           
+                return _ConnectionDescribed;
+            }
         }
 
-        IEnumerable<ExcavatorComponent> _ExcavatorImportDlls = null;
-        public  IEnumerable<ExcavatorComponent> ExcavatorImportDlls
+        private IEnumerable<ExcavatorComponent> _ExcavatorImportDlls = null;
+
+        /// <summary>
+        /// Gets or sets the excavator import DLLS.
+        /// </summary>
+        /// <value>
+        /// The excavator import DLLS.
+        /// </value>
+        public IEnumerable<ExcavatorComponent> ExcavatorImportDlls
         {
-            get {
+            get
+            {
                 return _ExcavatorImportDlls;
             }
             set
             {
-                if (_ExcavatorImportDlls == value)
+                if ( _ExcavatorImportDlls == value )
                     return;
                 _ExcavatorImportDlls = value;
-                RaisePropertyChanged("ExcavatorImportDlls");
-            }
-        }
-        ExcavatorComponent _SelectedImportType = null;
-        public ExcavatorComponent SelectedImportType
-        {
-            get{
-                return _SelectedImportType;
-            }
-            set{
-                 if (_SelectedImportType == value)
-                    return;
-                _SelectedImportType = value;
-                RaisePropertyChanged("SelectedImportType");
-                
-                //helptext?
-                var helptext = GetPropValue(_SelectedImportType, "HelpText");
-                if (helptext != null)
-                {
-                    HelpText = helptext.ToString();
-                }
+                RaisePropertyChanged( "ExcavatorImportDlls" );
             }
         }
 
-        public static object GetPropValue(object src, string propName)
+        private ExcavatorComponent _SelectedImportType = null;
+
+        /// <summary>
+        /// Gets or sets the type of the selected import.
+        /// </summary>
+        /// <value>
+        /// The type of the selected import.
+        /// </value>
+        public ExcavatorComponent SelectedImportType
         {
-            if (src.GetType().GetProperty(propName) != null)
+            get
             {
-                return src.GetType().GetProperty(propName).GetValue(src, null);
+                return _SelectedImportType;
+            }
+            set
+            {
+                if ( _SelectedImportType == value )
+                    return;
+                _SelectedImportType = value;
+                RaisePropertyChanged( "SelectedImportType" );
+            }
+        }
+
+        /// <summary>
+        /// Gets the name of the selected type.
+        /// </summary>
+        /// <param name="src">The source.</param>
+        /// <param name="propName">Name of the property.</param>
+        /// <returns></returns>
+        public static object GetPropValue( object src, string propName )
+        {
+            if ( src.GetType().GetProperty( propName ) != null )
+            {
+                return src.GetType().GetProperty( propName ).GetValue( src, null );
             }
             return string.Empty;
         }
 
-        private string _helptext = string.Empty;
-        public string HelpText
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Raises the property changed.
+        /// </summary>
+        /// <param name="propertyName">Name of the property.</param>
+        private void RaisePropertyChanged( string propertyName )
         {
-            get { return _helptext; }
-            set { _helptext = value;
-            RaisePropertyChanged("HelpText");
+            if ( PropertyChanged != null )
+            {
+                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void RaisePropertyChanged(string propertyName)
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
         #endregion
 
         #region Initializer Methods
@@ -146,9 +174,9 @@ namespace Excavator
             frontEndLoader = new FrontEndLoader();
             if ( frontEndLoader.excavatorTypes.Any() )
             {
-                ExcavatorImportDlls = frontEndLoader.excavatorTypes.GroupBy(t => t.FullName).Select(g => g.FirstOrDefault());
+                ExcavatorImportDlls = frontEndLoader.excavatorTypes.GroupBy( t => t.FullName ).Select( g => g.FirstOrDefault() );
                 SelectedImportType = frontEndLoader.excavatorTypes.FirstOrDefault();
-                initializeDBConnection();
+                InitializeDBConnection();
             }
             else
             {
@@ -160,28 +188,29 @@ namespace Excavator
             }
 
             DataContext = this;
-
         }
 
-
-        void initializeDBConnection()
+        /// <summary>
+        /// Initializes the database connection.
+        /// </summary>
+        private void InitializeDBConnection()
         {
-
-            if (App.ExistingConnection != null)
+            if ( App.ExistingConnection != null )
             {
                 CurrentConnection = App.ExistingConnection;
             }
             else
             {
                 //initialize from app.config
-                var appConfig = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
                 var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
-                if (rockContext != null)
+                if ( rockContext != null )
                 {
-                    CurrentConnection = new ConnectionString( rockContext.ConnectionString);
+                    CurrentConnection = new ConnectionString( rockContext.ConnectionString );
                 }
             }
         }
+
         #endregion
 
         #region Events
@@ -339,25 +368,25 @@ namespace Excavator
                 var filePicker = new OpenFileDialog();
                 filePicker.Multiselect = true;
 
-                var supportedExtensions = frontEndLoader.excavatorTypes.Where(t => t.FullName.Equals(selectedExcavator))
-                    .Select(t => t.FullName + " |*" + t.ExtensionType).ToList();
-                filePicker.Filter = string.Join("|", supportedExtensions);
+                var supportedExtensions = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
+                    .Select( t => t.FullName + " |*" + t.ExtensionType ).ToList();
+                filePicker.Filter = string.Join( "|", supportedExtensions );
 
-                if (filePicker.ShowDialog() == true)
+                if ( filePicker.ShowDialog() == true )
                 {
-                    excavator = frontEndLoader.excavatorTypes.Where(t => t.FullName.Equals(selectedExcavator)).FirstOrDefault();
-                    if (excavator != null)
+                    excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
+                    if ( excavator != null )
                     {
                         bool loadedSuccessfully = false;
-                        foreach (var file in filePicker.FileNames)
+                        foreach ( var file in filePicker.FileNames )
                         {
-                            loadedSuccessfully = excavator.LoadSchema(file);
+                            loadedSuccessfully = excavator.LoadSchema( file );
                             e.Cancel = !loadedSuccessfully;
-                            if (e.Cancel)
+                            if ( e.Cancel )
                                 break;
                             Dispatcher.BeginInvoke( (Action)( () =>
-                                FilesUploaded.Children.Add(new TextBlock { Text=file})
-                                ));
+                                FilesUploaded.Children.Add( new TextBlock { Text = file } )
+                                ) );
                         }
                     }
                 }
@@ -366,9 +395,9 @@ namespace Excavator
                     e.Cancel = true;
                 }
             }
-            catch (Exception exp)
+            catch ( Exception exp )
             {
-                App.LogException("upload file", exp.ToString());
+                App.LogException( "upload file", exp.ToString() );
             }
         }
 

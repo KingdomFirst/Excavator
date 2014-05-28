@@ -47,24 +47,27 @@
             Grid.Column="0" HorizontalAlignment="Right">
             Select the database type:
         </Label>
-        <StackPanel Grid.Row="2" Grid.Column="2" >
-            <ComboBox x:Name="lstDatabaseTypes" Margin="30,0" 
+        <StackPanel Grid.Row="2" Grid.Column="2">
+            <ComboBox x:Name="lstDatabaseTypes" Margin="30,0"
                   ItemsSource="{Binding ExcavatorImportDlls, Mode=TwoWay}"
                   SelectedItem="{Binding SelectedImportType, Mode=TwoWay}"
                 VerticalAlignment="Top"
                 HorizontalAlignment="Left"
                 IsEditable="False">
             </ComboBox>
-            <TextBlock  Text="{Binding HelpText}" Margin="30,0" MaxWidth="400" />
         </StackPanel>
+
         <!-- Connect to Source -->
-       <Label Grid.Row="3" Style="{StaticResource labelStyle}"
+        <Label Grid.Row="3" Style="{StaticResource labelStyle}"
             VerticalAlignment="Top" Margin="30,0"
             Grid.Column="0" HorizontalAlignment="Right">
-                Upload the source database file:
-            </Label>
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Grid.Column="1">
+            <StackPanel>
+                <TextBlock Text="Upload the source database file:" />
+                <TextBlock Text="(Hold Ctrl while clicking to select multiple files)" FontSize="12" />
+            </StackPanel>
+        </Label>
 
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Grid.Column="1">
             <Button Style="{StaticResource buttonStyle}"
             x:Name="btnUpload" Margin="30,0"
             VerticalAlignment="Top"  HorizontalAlignment="Left"
@@ -74,20 +77,21 @@
             <StackPanel x:Name="FilesUploaded"></StackPanel>
         </StackPanel>
 
-        <Label Name="lblDbUpload" Visibility="Hidden" Grid.Row="3" 
+        <Label Name="lblDbUpload" Visibility="Hidden" Grid.Row="3"
             HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom"
                Margin="0 0 0 20"
             Style="{StaticResource labelStyleAlert}">
             Could not open source file. Please make sure the file is not in use.
         </Label>
+
         <!-- Connect to Destination -->
         <Label Style="{StaticResource labelStyle}"
             Grid.Row="4" VerticalAlignment="Top" Margin="30,0"
             Grid.Column="0" HorizontalAlignment="Right">
             <StackPanel>
                 <TextBlock Text="Connect to the Rock server:" />
-                <TextBlock Text="{Binding ConnectionDescribed}" Margin="8,0,0,0" FontSize="8" />
+                <TextBlock Text="{Binding ConnectionDescribed}" FontSize="12" />
             </StackPanel>
         </Label>
         <Button Style="{StaticResource buttonStyle}"
