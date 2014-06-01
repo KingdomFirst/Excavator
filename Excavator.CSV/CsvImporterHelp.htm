@@ -13,12 +13,87 @@
 
         <dt>Format of import files</dt>
         <dd><label>family.csv</label>
-        
+        <ul>
+            <li>FamilyId	int</li>
+            <li>FamilyName	string</li>
+            
+            
+        </ul>
         
         </dd>
         <dd>
             <label>individual.csv</label>
+            <i> * (before import, be sure to enter matching Prefix, Suffix, MaritalStatus, FamilyRole,ConnectionStatus values so they match up on import)</i>
+            <ul>
+               
+                <li>PersonId	int</li>
+                <li>
+                    FamilyId	int
+                </li>
+                <li>
+                    FamilyName	string --for when there is no separate family
+                </li>
+                <li>
+                    FirstName	string
+                </li>
+                <li>
+                    NickName     string
+                </li>
+                <li>
+                    LastName     string
+                </li>
+                <li>
+                    Email     string
+                </li>
+                <li>
+                    IsEmailActive	string (true/false)
+                </li>
+                <li>
+                    DateOfBirth	string (parses to date)
+                </li>
+                <li>
+                    Gender	string (m/male f/female)
+                </li>
+                <li>
+                    Prefix		string  See Note *
+                </li>
+                <li>
+                    Suffix		string  See Note *
+                </li>
+                <li>
+                    MaritalStatus	string  See Note *
+                </li>
+                <li>
+                    FamilyRole	string  See Note *
+                </li>
+                <li>
+                    ConnectionStatus	string  See Note *
+                </li>
+                <li>
+                    RecordStatus     string
+                </li>
+                <li>
+                    Campus     string
+                </li>
+                <li>
+                    MembershipDate     string
+                </li>
+                <li>
+                    BaptismDate     string
+                </li>
+                <li>
+                    FirstVisit     string
+                </li>
+                <li>
+                    PreviousChurch     string
+                </li>
+                <li>
+                    Employer     string
+                </li>                
+                <li>Position     string</li>
+                <li>School     string</li>
 
+</ul>
 
         </dd>
     </dl>
