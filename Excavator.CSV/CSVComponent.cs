@@ -339,8 +339,6 @@ namespace Excavator.CSV
         private const int State = 26;
         private const int Zip = 27;
         private const int Country = 28;
-        private const int Latitude = 29;
-        private const int Longitude = 30;
         private const int MembershipDate = 31;
         private const int BaptismDate = 32;
         private const int FirstVisit = 33;

@@ -1,0 +1,25 @@
+﻿Course delete failed (take no action, system will retry): 49452 The error message was: System.Data.SqlClient.SqlException (0x80131904): The DELETE statement conflicted with the REFERENCE constraint "FK_ScorecardExtra_Round". The conflict occurred in database "SwingBySwing", table "dbo.ScorecardExtra", column 'fkRound'.
+-------------------------
+bperreault [4:08 PM] ADDROUND
+I think just a note.  I'll add that.  Also I found that if I didn't enter all the info and the page gave me an error message, it reset back to US course search.  So I'll try to fix that
+-----------------
+error.Message = "A public action method 'CoursesByCountry' was not found on controller 'SwingBySwing.Web.Controllers.CoursesController'."
+--------------------------------
+@specialk: I'm struggling trying to find a way to help us keep track of soft bounce statistics.   I think current job soft bounce counts need added to the dashboard. (these are not unsubscribed yet)  and then - how to show those registrations/subscriptions that are moved to unsubscribed from soft bounces - these aren't attached to any one job, and yet we need to account for them somehow.   cc @brandonmolina
+
+specialk [10:36 AM] 
+bperreault: I think soft bounces are good to put in the main dashboard.
+
+specialk [10:37 AM]
+In terms of registration / subscriptions, we should probably create a new page in GW for that
+
+specialk [10:38 AM]
+it can be very simple, but we just want to see what the total current subscribers are, and then total Hard bounces / unsubscribes / opt-outs
+
+bperreault [10:42 AM] 
+I think we have that total page, let me see if it got removed.
+
+bperreault [10:47 AM]
+ok, I'll get you access to these numbers
+
+-------------
