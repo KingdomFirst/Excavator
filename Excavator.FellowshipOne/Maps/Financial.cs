@@ -298,7 +298,6 @@ namespace Excavator.F1
                     }
 
                     string fundName = row["Fund_Name"] as string;
-                    string subFund = row["Sub_Fund_Name"] as string;
                     decimal? amount = row["Amount"] as decimal?;
                     if ( fundName != null & amount != null )
                     {
@@ -306,20 +305,61 @@ namespace Excavator.F1
                         fundName = fundName.Trim();
 
                         int? fundCampusId = null;
+                        string subFund = row["Sub_Fund_Name"] as string;
                         if ( subFund != null )
                         {
                             subFund = subFund.Trim();
-                            fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
+
+                            // Check if subfund was used to mark a multi-site campus
+                            fundCampusId = CampusList.Where( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
 
-                            if ( fundCampusId != null )
+                            // No campus match, look for an account that matches parent name and subfund name
+                            if ( fundCampusId == null )
                             {
-                                matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName )
-                                    && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
+                                matchingAccount = accountList.Where( a => a.ParentAccountId != null && a.ParentAccount.Name.Equals( fundName ) && a.Name.Equals( subFund ) )
+                                    .FirstOrDefault();
+
+                                if ( matchingAccount == null )
+                                {
+                                    // Check if a parent account exists already
+                                    FinancialAccount parentAccount = null;
+                                    parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) );
+                                    if ( parentAccount == null )
+                                    {
+                                        parentAccount = new FinancialAccount();
+                                        parentAccount.Name = fundName;
+                                        parentAccount.PublicName = fundName;
+                                        parentAccount.IsTaxDeductible = true;
+                                        parentAccount.IsActive = true;
+                                        parentAccount.CampusId = fundCampusId;
+                                        parentAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
+
+                                        lookupContext.FinancialAccounts.Add( parentAccount );
+                                        lookupContext.SaveChanges( DisableAudit );
+                                        accountList.Add( parentAccount );
+                                    }
+
+                                    // Create the child account
+                                    matchingAccount = new FinancialAccount();
+                                    matchingAccount.Name = subFund;
+                                    matchingAccount.PublicName = subFund;
+                                    matchingAccount.ParentAccountId = parentAccount.Id;
+                                    matchingAccount.IsTaxDeductible = true;
+                                    matchingAccount.IsActive = true;
+                                    matchingAccount.CampusId = fundCampusId;
+                                    matchingAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
+
+                                    lookupContext.FinancialAccounts.Add( matchingAccount );
+                                    lookupContext.SaveChanges( DisableAudit );
+                                    accountList.Add( matchingAccount );
+                                }
                             }
                             else
                             {
-                                matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.Name.Equals( subFund ) );
+                                // Matched a campus, check to see if an account exists for that campus already
+                                matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName )
+                                    && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
                             }
                         }
                         else
@@ -327,14 +367,15 @@ namespace Excavator.F1
                             matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
                         }
 
+                        // No account matches, create the new account with a campus Id if it was set
                         if ( matchingAccount == null )
                         {
                             matchingAccount = new FinancialAccount();
                             matchingAccount.Name = fundName;
                             matchingAccount.PublicName = fundName;
                             matchingAccount.IsTaxDeductible = true;
-                            matchingAccount.IsActive = true;
                             matchingAccount.CampusId = fundCampusId;
+                            matchingAccount.IsActive = true;
                             matchingAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
                             lookupContext.FinancialAccounts.Add( matchingAccount );
