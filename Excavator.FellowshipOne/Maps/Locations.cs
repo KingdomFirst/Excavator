@@ -177,7 +177,7 @@ namespace Excavator.F1
         private void MapFamilyAddress( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
-            var locationService = new LocationService( lookupContext );
+            var lookupService = new LocationService( lookupContext );
 
             List<DefinedValue> groupLocationTypeList = new DefinedValueService( lookupContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ) ).ToList();
 
@@ -208,15 +208,16 @@ namespace Excavator.F1
                     {
                         var groupLocation = new GroupLocation();
 
-                        string address = row["Address_1"] as string;
-                        string supplemental = row["Address_2"] as string;
+                        string street1 = row["Address_1"] as string;
+                        string street2 = row["Address_2"] as string;
                         string city = row["City"] as string;
                         string state = row["State"] as string;
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
-                        // Get new or existing location and associate it with group
-                        var familyAddress = locationService.Get( address, supplemental, city, state, zip );
+                        /* Use CheckAddress.Get instead of Rock.Model.LocationService.Get (more details below) */
+                        Location familyAddress = CheckAddress.Get( street1, street2, city, state, zip, DisableAudit );
+
                         familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         familyAddress.Name = familyGroup.Name;
                         familyAddress.IsActive = true;
@@ -266,7 +267,7 @@ namespace Excavator.F1
 
                             newGroupLocations.Clear();
                             lookupContext = new RockContext();
-                            locationService = new LocationService( lookupContext );
+                            lookupService = new LocationService( lookupContext );
                             ReportPartialProgress();
                         }
                     }
@@ -285,6 +286,81 @@ namespace Excavator.F1
             }
 
             ReportProgress( 100, string.Format( "Finished address import: {0:N0} addresses imported.", completed ) );
+        }
+    }
+
+    internal struct CheckAddress
+    {
+        /// <summary>
+        /// Modified version of Rock.Model.LocationService.Get()
+        /// to get or set the specified location in the database
+        /// (minus the call for address verification)
+        /// </summary>
+        /// <param name="street1">The street1.</param>
+        /// <param name="street2">The street2.</param>
+        /// <param name="city">The city.</param>
+        /// <param name="state">The state.</param>
+        /// <param name="zip">The zip.</param>
+        /// <returns></returns>
+        public static Location Get( string street1, string street2, string city, string state, string zip, bool DisableAudit = false )
+        {
+            // Create a new context/service so that save does not affect calling method's context
+            var rockContext = new RockContext();
+            var locationService = new LocationService( rockContext );
+
+            // Make sure it's not an empty address
+            if ( string.IsNullOrWhiteSpace( street1 ) &&
+                string.IsNullOrWhiteSpace( street2 ) &&
+                string.IsNullOrWhiteSpace( city ) &&
+                string.IsNullOrWhiteSpace( state ) &&
+                string.IsNullOrWhiteSpace( zip ) )
+            {
+                return null;
+            }
+
+            // First check if a location exists with the entered values
+            Location existingLocation = locationService.Queryable().FirstOrDefault( t =>
+                ( t.Street1 == street1 || ( street1 == null && t.Street1 == null ) ) &&
+                ( t.Street2 == street2 || ( street2 == null && t.Street2 == null ) ) &&
+                ( t.City == city || ( city == null && t.City == null ) ) &&
+                ( t.State == state || ( state == null && t.State == null ) ) &&
+                ( t.Zip == zip || ( zip == null && t.Zip == null ) ) );
+            if ( existingLocation != null )
+            {
+                return existingLocation;
+            }
+
+            // If existing location wasn't found with entered values, try standardizing the values, and
+            // search for an existing value again
+            var newLocation = new Location
+            {
+                Street1 = street1,
+                Street2 = street2,
+                City = city,
+                State = state,
+                Zip = zip
+            };
+
+            // uses MEF to look for verification providers (which Excavator doesn't have)
+            // Verify( newLocation, false );
+
+            existingLocation = locationService.Queryable().FirstOrDefault( t =>
+                ( t.Street1 == newLocation.Street1 || ( newLocation.Street1 == null && t.Street1 == null ) ) &&
+                ( t.Street2 == newLocation.Street2 || ( newLocation.Street2 == null && t.Street2 == null ) ) &&
+                ( t.City == newLocation.City || ( newLocation.City == null && t.City == null ) ) &&
+                ( t.State == newLocation.State || ( newLocation.State == null && t.State == null ) ) &&
+                ( t.Zip == newLocation.Zip || ( newLocation.Zip == null && t.Zip == null ) ) );
+
+            if ( existingLocation != null )
+            {
+                return existingLocation;
+            }
+
+            locationService.Add( newLocation );
+            rockContext.SaveChanges( DisableAudit );
+
+            // refetch it from the database to make sure we get a valid .Id
+            return locationService.Get( newLocation.Guid );
         }
     }
 }

@@ -504,7 +504,7 @@ namespace Excavator.F1
                     }
 
                     familyList.Add( familyGroup );
-                    completed++;
+                    completed += familyGroup.Members.Count;
                     if ( completed % percentage < 1 )
                     {
                         int percentComplete = completed / percentage;
