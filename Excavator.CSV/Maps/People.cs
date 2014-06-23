@@ -67,9 +67,13 @@ namespace Excavator.CSV
             foreach ( var csvData in CsvDataToImport )
             {
                 if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
+                {
                     LoadFamily( csvData );
+                }
                 else
+                {
                     LoadIndividuals( csvData );
+                }
             } //read all files
 
             ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
@@ -81,20 +85,30 @@ namespace Excavator.CSV
         /// <param name="csvData">The CSV data.</param>
         private void LoadFamily( CsvDataModel csvData )
         {
-            int currentFamilyId = 0;
+            string currentFamilyId = string.Empty;
             int completed = 0;
             do
             {
                 var row = csvData.Database.First();
                 if ( row != null )
                 {
-                    int rowFamilyId = row[FamilyId].AsType<int>();
-                    var rowFamilyName = row[FamilyName];
-                    if ( rowFamilyId > 1 && rowFamilyId != currentFamilyId )
+                    string rowFamilyId = row[FamilyId];
+                    var rowFamilyName = row[FamilyName] ?? row[FamilyLastName] + " Family";
+                    if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyId )
                     {
                         familyList.Add( familyGroup );
                         familyGroup = new Group();
                         currentFamilyId = rowFamilyId;
+
+                        // TODO: ADD FAMILY ADDRESS
+                        // for example, see F1/Maps/Locations
+
+                        var campus = row[Campus] as string;
+                        if ( campus != null )
+                        {
+                            familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
+                                .Select( c => (int?)c.Id ).FirstOrDefault();
+                        }
                     }
                     completed++;
                     if ( completed % ReportingNumber < 1 )
@@ -240,10 +254,16 @@ namespace Excavator.CSV
                         person.IsEmailActive = bool.Parse( activeEmail );
                     }
 
-                    var birthDate = row[DateOfBirth] as string;
-                    if ( birthDate != null )
+                    DateTime birthDate;
+                    if ( DateTime.TryParse( row[DateOfBirth], out birthDate ) )
                     {
-                        person.BirthDate = DateTime.Parse( birthDate );
+                        person.BirthDate = birthDate;
+                    }
+
+                    DateTime anniversary;
+                    if ( DateTime.TryParse( row[Anniversary], out anniversary ) )
+                    {
+                        person.AnniversaryDate = anniversary;
                     }
 
                     var gender = row[Gender] as string;
@@ -349,13 +369,6 @@ namespace Excavator.CSV
                             break;
                     }
 
-                    var campus = row[Campus] as string;
-                    if ( campus != null )
-                    {
-                        familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
-                            .Select( c => (int?)c.Id ).FirstOrDefault();
-                    }
-
                     // Map Person attributes
                     person.Attributes = new Dictionary<string, AttributeCache>();
                     person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
@@ -412,6 +425,19 @@ namespace Excavator.CSV
                         } );
                     }
 
+                    var position = row[Occupation] as string;
+                    if ( position != null )
+                    {
+                        person.Attributes.Add( positionAttribute.Key, positionAttribute );
+                        person.AttributeValues.Add( positionAttribute.Key, new List<AttributeValue>() );
+                        person.AttributeValues[positionAttribute.Key].Add( new AttributeValue()
+                        {
+                            AttributeId = positionAttribute.Id,
+                            Value = position,
+                            Order = 0
+                        } );
+                    }
+
                     var employerValue = row[Employer] as string;
                     if ( employerValue != null )
                     {
@@ -425,21 +451,8 @@ namespace Excavator.CSV
                         } );
                     }
 
-                    var positionValue = row[Position] as string;
-                    if ( positionValue != null )
-                    {
-                        person.Attributes.Add( positionAttribute.Key, positionAttribute );
-                        person.AttributeValues.Add( positionAttribute.Key, new List<AttributeValue>() );
-                        person.AttributeValues[positionAttribute.Key].Add( new AttributeValue()
-                        {
-                            AttributeId = positionAttribute.Id,
-                            Value = positionValue,
-                            Order = 0
-                        } );
-                    }
-
                     var schoolValue = row[School] as string;
-                    if ( positionValue != null )
+                    if ( schoolValue != null )
                     {
                         person.Attributes.Add( schoolAttribute.Key, schoolAttribute );
                         person.AttributeValues.Add( schoolAttribute.Key, new List<AttributeValue>() );
