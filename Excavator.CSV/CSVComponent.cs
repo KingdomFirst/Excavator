@@ -309,44 +309,65 @@ namespace Excavator.CSV
 
         #endregion
 
-        #region Field Reference Constants
+        #region Family Constants
 
         private const int FamilyId = 1;
         private const int FamilyName = 2;
-        private const int PersonId = 3;
-        private const int RecordType = 4;
-        private const int RecordStatus = 5;
-        private const int Prefix = 6;
-        private const int FirstName = 7;
-        private const int NickName = 8;
-        private const int LastName = 9;
-        private const int Suffix = 10;
-        private const int DateOfBirth = 11;
-        private const int Gender = 12;
-        private const int Email = 13;
-        private const int IsEmailActive = 14;
-        private const int ConnectionStatus = 15;
-        private const int MaritalStatus = 16;
-        private const int FamilyRole = 17;
-        private const int HomePhone = 18;
-        private const int MobilePhone = 19;
-        private const int WorkPhone = 20;
-        private const int Campus = 21;
-        private const int AddressType = 22;
-        private const int Street1 = 23;
-        private const int Street2 = 24;
-        private const int City = 25;
-        private const int State = 26;
-        private const int Zip = 27;
-        private const int Country = 28;
-        private const int MembershipDate = 31;
-        private const int BaptismDate = 32;
-        private const int FirstVisit = 33;
-        private const int PreviousChurch = 34;
-        private const int Employer = 35;
-        private const int Position = 36;
-        private const int School = 37;
-        // Custom attributes added at 38, 39, ...
+        private const int FamilyLastName = 3;
+        private const int Campus = 4;
+        private const int Address = 5;
+        private const int Address2 = 6;
+        private const int City = 7;
+        private const int State = 8;
+        private const int Zip = 9;
+        private const int Country = 10;
+        private const int SecondaryAddress = 11;
+        private const int SecondaryAddress2 = 12;
+        private const int SecondaryCity = 13;
+        private const int SecondaryState = 14;
+        private const int SecondaryZip = 15;
+        private const int SecondaryCountry = 16;
+
+        #endregion
+
+        #region Individual Constants
+
+        private const int PersonId = 2;
+        private const int Prefix = 3;
+        private const int FirstName = 4;
+        private const int NickName = 5;
+        private const int MiddleName = 6;
+        private const int LastName = 7;
+        private const int Suffix = 8;
+        private const int FormerName = 9;
+        private const int FamilyRole = 10;
+        private const int MaritalStatus = 11;
+        private const int ConnectionStatus = 12;
+        private const int RecordStatus = 13;
+        private const int HomePhone = 14;
+        private const int MobilePhone = 15;
+        private const int WorkPhone = 16;
+        private const int Email = 17;
+        private const int SecondaryEmail = 18;
+        private const int IsEmailActive = 19;
+        private const int AllowSMS = 20;
+        private const int AllowBulkEmail = 21;
+        private const int Gender = 22;
+        private const int Age = 23;
+        private const int DateOfBirth = 24;
+        private const int MembershipDate = 25;
+        private const int SalvationDate = 26;
+        private const int BaptismDate = 27;
+        private const int Anniversary = 28;
+        private const int FirstVisit = 29;
+        private const int LastUpdated = 30;
+        private const int PreviousChurch = 31;
+        private const int Occupation = 32;
+        private const int Employer = 33;
+        private const int School = 34;
+        private const int GeneralNote = 35;
+        private const int MedicalNote = 36;
+        private const int SecurityNote = 37;
 
         #endregion
     }
