@@ -385,7 +385,7 @@ namespace Excavator
                             if ( e.Cancel )
                                 break;
                             Dispatcher.BeginInvoke( (Action)( () =>
-                                FilesUploaded.Children.Add( new TextBlock { Text = file } )
+                                FilesUploaded.Children.Add( new TextBlock { Text = System.IO.Path.GetFileName( file ) } )
                                 ) );
                         }
                     }
