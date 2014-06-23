@@ -303,9 +303,9 @@ namespace Excavator.F1
                     {
                         FinancialAccount matchingAccount = null;
                         int? parentAccountId = null;
+                        int? fundCampusId = null;
                         fundName = fundName.Trim();
 
-                        int? fundCampusId = null;
                         string subFund = row["Sub_Fund_Name"] as string;
                         if ( subFund != null )
                         {
