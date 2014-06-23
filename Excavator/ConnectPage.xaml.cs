@@ -381,12 +381,15 @@ namespace Excavator
                         foreach ( var file in filePicker.FileNames )
                         {
                             loadedSuccessfully = excavator.LoadSchema( file );
-                            e.Cancel = !loadedSuccessfully;
-                            if ( e.Cancel )
+                            if ( !loadedSuccessfully )
+                            {
+                                e.Cancel = true;
                                 break;
+                            }
+
                             Dispatcher.BeginInvoke( (Action)( () =>
                                 FilesUploaded.Children.Add( new TextBlock { Text = System.IO.Path.GetFileName( file ) } )
-                                ) );
+                            ) );
                         }
                     }
                 }

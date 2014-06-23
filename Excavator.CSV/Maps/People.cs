@@ -18,7 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Linq; 
+using System.Linq;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -76,7 +76,7 @@ namespace Excavator.CSV
         }
 
         /// <summary>
-        /// Loads the family.
+        /// Loads the family data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
         private void LoadFamily( CsvDataModel csvData )
@@ -141,6 +141,10 @@ namespace Excavator.CSV
             } while ( csvData.Database.ReadNextRecord() );
         }
 
+        /// <summary>
+        /// Loads the individual data.
+        /// </summary>
+        /// <param name="csvData">The CSV data.</param>
         private void LoadIndividuals( CsvDataModel csvData )
         {
             var lookupContext = new RockContext();
