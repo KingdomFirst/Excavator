@@ -3,7 +3,7 @@
 
 Excavator converts data into [Rock RMS](http://www.rockrms.com/) from other church management systems.  You will need the SQL file (.mdf) from your previous database and an active Rock connection.
 
-A FellowshipOne database model is provided (in-progress).
+Imports from FellowshipOne and Arena ChMS are in active development, as well as an option to import from Excel/CSV.  Currently only the FellowshipOne model has been released.
 
 Files you need to start an import (Excavator\bin):
 - Excavator.exe
