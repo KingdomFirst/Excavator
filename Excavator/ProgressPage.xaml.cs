@@ -118,7 +118,10 @@ namespace Excavator
         {
             var importUser = ConfigurationManager.AppSettings["ImportUser"];
             if ( String.IsNullOrEmpty( importUser ) )
+            {
                 importUser = "Admin";
+            }
+
             e.Result = excavator.TransformData( importUser );
         }
 
