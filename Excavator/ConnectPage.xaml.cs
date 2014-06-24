@@ -238,40 +238,45 @@ namespace Excavator
         private void btnConnect_Click( object sender, RoutedEventArgs e )
         {
             sqlConnector = new SqlConnector();
-            var modalPanel = new StackPanel();
+            var modalBorder = new Border();
+            var connectPanel = new StackPanel();
             var buttonPanel = new StackPanel();
-            var cancelBtn = new Button();
-            var okBtn = new Button();
 
-            // set background effects
-            var mask = new SolidColorBrush();
-            var blur = new BlurEffect();
-            mask.Color = Colors.White;
-            mask.Opacity = .5;
-            blur.Radius = 10;
-            this.OpacityMask = mask;
-            this.Effect = blur;
+            // set UI effects
+            modalBorder.BorderBrush = (Brush)FindResource( "headerBackground" );
+            modalBorder.CornerRadius = new CornerRadius( 5 );
+            modalBorder.BorderThickness = new Thickness( 5 );
+            modalBorder.Padding = new Thickness( 5 );
+            buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
+            buttonPanel.Orientation = Orientation.Horizontal;
+            this.OpacityMask = new SolidColorBrush( Colors.White );
+            this.Effect = new BlurEffect();
 
             sqlConnector.ConnectionString = existingConnection;
-            modalPanel.Children.Add( sqlConnector );
-            buttonPanel.Orientation = Orientation.Horizontal;
-            buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
+            connectPanel.Children.Add( sqlConnector );
 
+            var okBtn = new Button();
             okBtn.Content = "Ok";
             okBtn.IsDefault = true;
             okBtn.Margin = new Thickness( 0, 0, 5, 0 );
             okBtn.Click += btnOk_Click;
             okBtn.Style = (Style)FindResource( "buttonStylePrimary" );
+
+            var cancelBtn = new Button();
             cancelBtn.Content = "Cancel";
             cancelBtn.IsCancel = true;
             cancelBtn.Style = (Style)FindResource( "buttonStyle" );
 
             buttonPanel.Children.Add( okBtn );
             buttonPanel.Children.Add( cancelBtn );
-            modalPanel.Children.Add( buttonPanel );
+            connectPanel.Children.Add( buttonPanel );
+            modalBorder.Child = connectPanel;
+
+            var contentPanel = new StackPanel();
+            contentPanel.Children.Add( modalBorder );
 
             var connectWindow = new Window();
-            connectWindow.Content = modalPanel;
+            connectWindow.Content = contentPanel;
             connectWindow.Owner = Window.GetWindow( this );
             connectWindow.ShowInTaskbar = false;
             connectWindow.Background = (Brush)FindResource( "windowBackground" );
@@ -283,11 +288,10 @@ namespace Excavator
             this.OpacityMask = null;
             this.Effect = null;
 
-            if ( !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString ) )
+            if ( sqlConnector.ConnectionString != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString.Database ) )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDbConnect.Content = "Successfully connected to the database";
-                CurrentConnection = sqlConnector.ConnectionString;
+                lblDbConnect.Content = "Successfully connected to the Rock database.";
             }
 
             lblDbConnect.Visibility = Visibility.Visible;
