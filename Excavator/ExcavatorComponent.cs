@@ -159,8 +159,6 @@ namespace Excavator
             }
         }
 
-        #endregion
-
         /// <summary>
         /// Logs the exception.
         /// </summary>
@@ -170,6 +168,9 @@ namespace Excavator
         {
             App.LogException( category, message );
         }
+        
+        #endregion
+        
     }
 
     /// <summary>
