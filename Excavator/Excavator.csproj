@@ -232,7 +232,7 @@
     <EmbeddedResource Include="Packages\EntityFramework.SqlServer.dll" />
     <EmbeddedResource Include="Packages\OrcaMDF.Core.dll" />
     <EmbeddedResource Include="Packages\OrcaMDF.Framework.dll" />
-    <Content Include="Packages\LumenWorks.Framework.IO.dll" />
+    <EmbeddedResource Include="Packages\LumenWorks.Framework.IO.dll" />
     <Content Include="Packages\Rock.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
