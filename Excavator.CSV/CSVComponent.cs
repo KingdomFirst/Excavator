@@ -196,8 +196,19 @@ namespace Excavator.CSV
 
             // TODO: only import things that the user checked
             // var columnList = TableNodes.Where( n => n.Checked != false ).ToList();
+            var test = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) );
 
-            MapFamilyData();
+            foreach ( var csvData in CsvDataToImport )
+            {
+                if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
+                {
+                    LoadFamily( csvData );
+                }
+                else
+                {
+                    LoadIndividuals( csvData );
+                }
+            } //read all files
 
             return 0;
         }
@@ -334,42 +345,42 @@ namespace Excavator.CSV
 
         #region Individual Constants
 
-        private const int PersonId = 2;
-        private const int Prefix = 3;
-        private const int FirstName = 4;
-        private const int NickName = 5;
-        private const int MiddleName = 6;
-        private const int LastName = 7;
-        private const int Suffix = 8;
-        private const int FormerName = 9;
-        private const int FamilyRole = 10;
-        private const int MaritalStatus = 11;
-        private const int ConnectionStatus = 12;
-        private const int RecordStatus = 13;
-        private const int HomePhone = 14;
-        private const int MobilePhone = 15;
-        private const int WorkPhone = 16;
-        private const int Email = 17;
-        private const int SecondaryEmail = 18;
-        private const int IsEmailActive = 19;
-        private const int AllowSMS = 20;
-        private const int AllowBulkEmail = 21;
-        private const int Gender = 22;
-        private const int Age = 23;
-        private const int DateOfBirth = 24;
-        private const int MembershipDate = 25;
-        private const int SalvationDate = 26;
-        private const int BaptismDate = 27;
-        private const int Anniversary = 28;
-        private const int FirstVisit = 29;
-        private const int LastUpdated = 30;
-        private const int PreviousChurch = 31;
-        private const int Occupation = 32;
-        private const int Employer = 33;
-        private const int School = 34;
-        private const int GeneralNote = 35;
-        private const int MedicalNote = 36;
-        private const int SecurityNote = 37;
+        private const int PersonId = 1;
+        private const int Prefix = 2;
+        private const int FirstName = 3;
+        private const int NickName = 4;
+        private const int MiddleName = 5;
+        private const int LastName = 6;
+        private const int Suffix = 7;
+        private const int FormerName = 8;
+        private const int FamilyRole = 9;
+        private const int MaritalStatus = 10;
+        private const int ConnectionStatus = 11;
+        private const int RecordStatus = 12;
+        private const int HomePhone = 13;
+        private const int MobilePhone = 14;
+        private const int WorkPhone = 15;
+        private const int Email = 16;
+        private const int SecondaryEmail = 17;
+        private const int IsEmailActive = 18;
+        private const int AllowSMS = 19;
+        private const int AllowBulkEmail = 20;
+        private const int Gender = 21;
+        private const int Age = 22;
+        private const int DateOfBirth = 23;
+        private const int MembershipDate = 24;
+        private const int SalvationDate = 25;
+        private const int BaptismDate = 26;
+        private const int Anniversary = 27;
+        private const int FirstVisit = 28;
+        private const int LastUpdated = 29;
+        private const int PreviousChurch = 30;
+        private const int Occupation = 31;
+        private const int Employer = 32;
+        private const int School = 33;
+        private const int GeneralNote = 34;
+        private const int MedicalNote = 35;
+        private const int SecurityNote = 36;
 
         #endregion
     }
