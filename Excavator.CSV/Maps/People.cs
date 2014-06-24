@@ -60,7 +60,7 @@ namespace Excavator.CSV
             familyGroup = new Group();
 
             int completed = 0;
-            ReportProgress( 0, string.Format( "Adding family data ({1:N0} people already exist).", ImportedPeople.Count() ) );
+            ReportProgress( 0, string.Format( "Adding family data ({0:N0} people already exist).", ImportedPeople.Count() ) );
 
             FamilyFileIsIncluded = CsvDataToImport.FirstOrDefault( n => n.RecordType.Equals( CsvDataModel.RockDataType.FAMILY ) ) == null ? true : false;
 
@@ -96,6 +96,7 @@ namespace Excavator.CSV
                     var rowFamilyName = row[FamilyName] ?? row[FamilyLastName] + " Family";
                     if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyId )
                     {
+                        // This line adds a null group when first run
                         familyList.Add( familyGroup );
                         familyGroup = new Group();
                         currentFamilyId = rowFamilyId;
@@ -104,7 +105,7 @@ namespace Excavator.CSV
                         // for example, see F1/Maps/Locations
 
                         var campus = row[Campus] as string;
-                        if ( campus != null )
+                        if ( !string.IsNullOrWhiteSpace( campus ) )
                         {
                             familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
