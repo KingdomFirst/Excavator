@@ -190,7 +190,9 @@ namespace Excavator.CSV
         {
             ReportProgress( 0, "Starting import..." );
             if ( !CheckExistingImport( importUser ) )
+            {
                 return -1;
+            }
 
             // TODO: only import things that the user checked
             // var columnList = TableNodes.Where( n => n.Checked != false ).ToList();
@@ -206,38 +208,38 @@ namespace Excavator.CSV
         /// </summary>
         private bool CheckExistingImport( string importUser )
         {
-            try
+            //try
+            //{
+            var lookupContext = new RockContext();
+            var personService = new PersonService( lookupContext );
+            var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
+            if ( importPerson == null )
             {
-                var lookupContext = new RockContext();
-                var personService = new PersonService( lookupContext );
-                var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
-                if ( importPerson == null )
-                {
-                    importPerson = personService.Queryable().FirstOrDefault();
-                }
-                if ( importPerson == null )
-                {
-                    LogException( "CheckExistingImport", "The named import user was not found, and none could be created." );
-                    return false;
-                }
-
-                ImportPersonAlias = new PersonAliasService( lookupContext ).Get( importPerson.Id );
-
-                PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-                var textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
-
-                ReportProgress( 0, "Checking for existing people..." );
-                ImportedPeople = personService.Queryable().Where( p => p.ForeignId != null )
-                    .ToDictionary( p => p.Id, p => p.ForeignId );
-
-                CampusList = new CampusService( lookupContext ).Queryable().ToList();
-                return true;
+                importPerson = personService.Queryable().FirstOrDefault();
             }
-            catch ( Exception ex )
+            if ( importPerson == null )
             {
-                LogException( "CheckExistingImport", ex.ToString() );
+                LogException( "CheckExistingImport", "The named import user was not found, and none could be created." );
                 return false;
             }
+
+            ImportPersonAlias = new PersonAliasService( lookupContext ).Get( importPerson.Id );
+
+            PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
+            var textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
+
+            ReportProgress( 0, "Checking for existing people..." );
+            ImportedPeople = personService.Queryable().Where( p => p.ForeignId != null )
+                .ToDictionary( p => p.Id, p => p.ForeignId );
+
+            CampusList = new CampusService( lookupContext ).Queryable().ToList();
+            return true;
+            //}
+            //catch ( Exception ex )
+            //{
+            //    LogException( "CheckExistingImport", ex.ToString() );
+            //    return false;
+            //}
         }
 
         #endregion
@@ -311,22 +313,22 @@ namespace Excavator.CSV
 
         #region Family Constants
 
-        private const int FamilyId = 1;
-        private const int FamilyName = 2;
-        private const int FamilyLastName = 3;
-        private const int Campus = 4;
-        private const int Address = 5;
-        private const int Address2 = 6;
-        private const int City = 7;
-        private const int State = 8;
-        private const int Zip = 9;
-        private const int Country = 10;
-        private const int SecondaryAddress = 11;
-        private const int SecondaryAddress2 = 12;
-        private const int SecondaryCity = 13;
-        private const int SecondaryState = 14;
-        private const int SecondaryZip = 15;
-        private const int SecondaryCountry = 16;
+        private const int FamilyId = 0;
+        private const int FamilyName = 1;
+        private const int FamilyLastName = 2;
+        private const int Campus = 3;
+        private const int Address = 4;
+        private const int Address2 = 5;
+        private const int City = 6;
+        private const int State = 7;
+        private const int Zip = 8;
+        private const int Country = 9;
+        private const int SecondaryAddress = 10;
+        private const int SecondaryAddress2 = 11;
+        private const int SecondaryCity = 12;
+        private const int SecondaryState = 13;
+        private const int SecondaryZip = 14;
+        private const int SecondaryCountry = 15;
 
         #endregion
 
