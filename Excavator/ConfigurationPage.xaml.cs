@@ -92,13 +92,13 @@ namespace Excavator
                     appConfig.Save( ConfigurationSaveMode.Modified );
                     ConfigurationManager.RefreshSection( "appSettings" );
 
-                    nextPage(sender, e);
+                    var progressPage = new ProgressPage( excavator );
+                    this.NavigationService.Navigate( progressPage );
                 }
                 catch
                 {
                     lblNoData.Content = "Unable to save the configuration keys. Please check the permissions on the current directory.";
                     lblNoData.Visibility = Visibility.Visible;
-                    btnContinueAnyway.Visibility = System.Windows.Visibility.Visible;
                 }
             }
             else
@@ -109,11 +109,5 @@ namespace Excavator
         }
 
         #endregion
-
-        public void nextPage(object sender, EventArgs e)
-        {
-            var progressPage = new ProgressPage(excavator);
-            this.NavigationService.Navigate(progressPage);
-        }
     }
 }
