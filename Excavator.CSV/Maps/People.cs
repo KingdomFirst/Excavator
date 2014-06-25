@@ -57,14 +57,16 @@ namespace Excavator.CSV
         private void MapFamilyData()
         {
             familyList = new List<Group>();
-            familyGroup = new Group();
 
             int completed = 0;
             ReportProgress( 0, string.Format( "Adding family data ({0:N0} people already exist).", ImportedPeople.Count() ) );
 
             FamilyFileIsIncluded = CsvDataToImport.FirstOrDefault( n => n.RecordType.Equals( CsvDataModel.RockDataType.FAMILY ) ) == null ? true : false;
 
-            foreach ( var csvData in CsvDataToImport )
+            // only import things that the user checked
+            List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
+
+            foreach ( var csvData in selectedCsvData )
             {
                 if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
                 {
@@ -85,24 +87,29 @@ namespace Excavator.CSV
         /// <param name="csvData">The CSV data.</param>
         private void LoadFamily( CsvDataModel csvData )
         {
+            // Family group type id (required)
+            int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+
             string currentFamilyId = string.Empty;
             int completed = 0;
+
             do
             {
                 var row = csvData.Database.First();
                 if ( row != null )
                 {
                     string rowFamilyId = row[FamilyId];
-                    var rowFamilyName = row[FamilyName] ?? row[FamilyLastName] + " Family";
                     if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyId )
                     {
-                        // This line adds a null group when first run
-                        familyList.Add( familyGroup );
                         familyGroup = new Group();
-                        currentFamilyId = rowFamilyId;
+                        familyGroup.ForeignId = rowFamilyId;
+                        familyGroup.Name = row[FamilyName] ?? row[FamilyLastName] + " Family";
+                        familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        familyGroup.GroupTypeId = familyGroupTypeId;
 
-                        // TODO: ADD FAMILY ADDRESS
-                        // for example, see F1/Maps/Locations
+                        // Bobbi - campus could be a column in the individual or family file.
+                        // Since Rock doesn't support campuses by individual we'll just put it on family;
+                        // there's an example in FellowshipOne if you want to put it on individual.
 
                         var campus = row[Campus] as string;
                         if ( !string.IsNullOrWhiteSpace( campus ) )
@@ -110,6 +117,13 @@ namespace Excavator.CSV
                             familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
                         }
+
+                        familyList.Add( familyGroup );
+
+                        // TODO: Add the family addresses since they exist in this file
+
+                        // Set current family id
+                        currentFamilyId = rowFamilyId;
                     }
                     completed++;
                     if ( completed % ReportingNumber < 1 )
@@ -119,34 +133,6 @@ namespace Excavator.CSV
                             var rockContext = new RockContext();
                             rockContext.Groups.AddRange( familyList );
                             rockContext.SaveChanges();
-
-                            foreach ( var newFamilyGroup in familyList )
-                            {
-                                foreach ( var newFamilyMember in newFamilyGroup.Members )
-                                {
-                                    var newPerson = newFamilyMember.Person;
-                                    foreach ( var attributeCache in newPerson.Attributes.Select( a => a.Value ) )
-                                    {
-                                        var newValue = newPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                        if ( newValue != null )
-                                        {
-                                            newValue.EntityId = newPerson.Id;
-                                            rockContext.AttributeValues.Add( newValue );
-                                        }
-                                    }
-
-                                    if ( !newPerson.Aliases.Any( a => a.AliasPersonId == newPerson.Id ) )
-                                    {
-                                        newPerson.Aliases.Add( new PersonAlias
-                                        {
-                                            AliasPersonId = newPerson.Id,
-                                            AliasPersonGuid = newPerson.Guid
-                                        } );
-                                    }
-                                }
-                            }
-
-                            rockContext.SaveChanges();
                         } );
 
                         familyList.Clear();
@@ -154,6 +140,17 @@ namespace Excavator.CSV
                     }
                 }
             } while ( csvData.Database.ReadNextRecord() );
+
+            // Check to see if any rows didn't get saved to the database
+            if ( familyList.Any() )
+            {
+                RockTransactionScope.WrapTransaction( () =>
+                {
+                    var rockContext = new RockContext();
+                    rockContext.Groups.AddRange( familyList );
+                    rockContext.SaveChanges();
+                } );
+            }
         }
 
         /// <summary>
