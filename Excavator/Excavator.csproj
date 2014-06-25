@@ -102,6 +102,10 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LogDialog.xaml.cs">
+      <DependentUpon>LogDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="LogViewModel.cs" />
     <Compile Include="SqlConnector.xaml.cs">
       <DependentUpon>SqlConnector.xaml</DependentUpon>
     </Compile>
@@ -126,6 +130,10 @@
     <Page Include="ConnectPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LogDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -224,6 +232,7 @@
     <EmbeddedResource Include="Packages\EntityFramework.SqlServer.dll" />
     <EmbeddedResource Include="Packages\OrcaMDF.Core.dll" />
     <EmbeddedResource Include="Packages\OrcaMDF.Framework.dll" />
+    <EmbeddedResource Include="Packages\LumenWorks.Framework.IO.dll" />
     <Content Include="Packages\Rock.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

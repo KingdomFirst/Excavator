@@ -159,7 +159,18 @@ namespace Excavator
             }
         }
 
+        /// <summary>
+        /// Logs the exception.
+        /// </summary>
+        /// <param name="category">The category.</param>
+        /// <param name="message">The message.</param>
+        protected void LogException( string category, string message )
+        {
+            App.LogException( category, message );
+        }
+        
         #endregion
+        
     }
 
     /// <summary>

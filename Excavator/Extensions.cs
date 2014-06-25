@@ -16,7 +16,9 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
@@ -86,6 +88,17 @@ namespace Excavator
                 default:
                     throw new ArgumentOutOfRangeException( "Conversion failed: type not recognized " + type );
             }
+        }
+
+        /// <summary>
+        /// Gets the enumerable values.
+        /// http://damieng.com/blog/2008/04/10/using-linq-to-foreach-over-an-enum-in-c
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IEnumerable<T> Get<T>()
+        {
+            return Enum.GetValues( typeof( T ) ).Cast<T>();
         }
 
         /// <summary>
