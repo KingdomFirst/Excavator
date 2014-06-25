@@ -366,45 +366,38 @@ namespace Excavator
         /// <param name="e">The <see cref="DoWorkEventArgs"/> instance containing the event data.</param>
         private void bwPreview_DoWork( object sender, DoWorkEventArgs e )
         {
-            try
+            var selectedExcavator = (string)e.Argument;
+            var filePicker = new OpenFileDialog();
+            filePicker.Multiselect = true;
+
+            var supportedExtensions = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
+                .Select( t => t.FullName + " |*" + t.ExtensionType ).ToList();
+            filePicker.Filter = string.Join( "|", supportedExtensions );
+
+            if ( filePicker.ShowDialog() == true )
             {
-                var selectedExcavator = (string)e.Argument;
-                var filePicker = new OpenFileDialog();
-                filePicker.Multiselect = true;
-
-                var supportedExtensions = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
-                    .Select( t => t.FullName + " |*" + t.ExtensionType ).ToList();
-                filePicker.Filter = string.Join( "|", supportedExtensions );
-
-                if ( filePicker.ShowDialog() == true )
+                excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
+                if ( excavator != null )
                 {
-                    excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
-                    if ( excavator != null )
+                    bool loadedSuccessfully = false;
+                    foreach ( var file in filePicker.FileNames )
                     {
-                        bool loadedSuccessfully = false;
-                        foreach ( var file in filePicker.FileNames )
+                        loadedSuccessfully = excavator.LoadSchema( file );
+                        if ( !loadedSuccessfully )
                         {
-                            loadedSuccessfully = excavator.LoadSchema( file );
-                            if ( !loadedSuccessfully )
-                            {
-                                e.Cancel = true;
-                                break;
-                            }
-
-                            Dispatcher.BeginInvoke( (Action)( () =>
-                                FilesUploaded.Children.Add( new TextBlock { Text = System.IO.Path.GetFileName( file ) } )
-                            ) );
+                            e.Cancel = true;
+                            break;
                         }
+
+                        Dispatcher.BeginInvoke( (Action)( () =>
+                            FilesUploaded.Children.Add( new TextBlock { Text = System.IO.Path.GetFileName( file ) } )
+                        ) );
                     }
                 }
-                else
-                {
-                    e.Cancel = true;
-                }
             }
-            catch ( Exception exp )
+            else
             {
-                App.LogException( "upload file", exp.ToString() );
+                e.Cancel = true;
             }
         }
 
