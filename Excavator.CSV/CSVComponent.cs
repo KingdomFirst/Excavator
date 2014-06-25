@@ -194,22 +194,7 @@ namespace Excavator.CSV
                 return -1;
             }
 
-            // TODO: only import things that the user checked
-            // var columnList = TableNodes.Where( n => n.Checked != false ).ToList();
-            var test = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) );
-
-            foreach ( var csvData in CsvDataToImport )
-            {
-                if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
-                {
-                    LoadFamily( csvData );
-                }
-                else
-                {
-                    LoadIndividuals( csvData );
-                }
-            } //read all files
-
+            MapFamilyData();
             return 0;
         }
 
