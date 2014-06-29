@@ -262,6 +262,8 @@ namespace Excavator.F1
 
                 foreach ( var row in groupedRows )
                 {
+                    bool isFamilyRelationship = true;
+                    string currentCampus = string.Empty;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
                     if ( GetPersonId( individualId, householdId ) == null )
@@ -313,13 +315,14 @@ namespace Excavator.F1
                         string familyRole = row["Household_Position"] as string;
                         if ( familyRole != null )
                         {
+                            if ( familyRole == "Visitor" )
+                            {
+                                isFamilyRelationship = false;
+                            }
+
                             if ( familyRole == "Child" || person.Age < 18 )
                             {
                                 groupRoleId = childRoleId;
-                            }
-                            else if ( familyRole == "Visitor" )
-                            {
-                                // assign person as a known relationship of this family/group
                             }
                         }
 
@@ -355,7 +358,7 @@ namespace Excavator.F1
                         string campus = row["SubStatus_Name"] as string;
                         if ( campus != null )
                         {
-                            householdCampusList.Add( campus );
+                            currentCampus = campus;
                         }
 
                         string status_comment = row["Status_Comment"] as string;
@@ -486,13 +489,32 @@ namespace Excavator.F1
                         groupMember.Person = person;
                         groupMember.GroupRoleId = groupRoleId;
                         groupMember.GroupMemberStatus = GroupMemberStatus.Active;
-                        familyGroup.Members.Add( groupMember );
+
+                        if ( isFamilyRelationship )
+                        {
+                            householdCampusList.Add( currentCampus );
+                            familyGroup.Members.Add( groupMember );
+                            familyGroup.ForeignId = householdId.ToString();
+                        }
+                        else
+                        {
+                            var visitorGroup = new Group();
+                            visitorGroup.ForeignId = householdId.ToString();
+                            visitorGroup.Members.Add( groupMember );
+                            visitorGroup.GroupTypeId = familyGroupTypeId;
+                            visitorGroup.Name = person.LastName + " Family";
+                            visitorGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( currentCampus ) || c.ShortCode == currentCampus )
+                                .Select( c => (int?)c.Id ).FirstOrDefault();
+                            familyList.Add( visitorGroup );
+                            completed += visitorGroup.Members.Count;
+                        }
                     }
                 }
 
                 if ( familyGroup.Members.Any() )
                 {
-                    familyGroup.Name = familyGroup.Members.FirstOrDefault().Person.LastName + " Family";
+                    familyGroup.Name = familyGroup.Members.OrderByDescending( p => p.Person.Age )
+                        .FirstOrDefault().Person.LastName + " Family";
                     familyGroup.GroupTypeId = familyGroupTypeId;
 
                     string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() )
