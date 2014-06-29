@@ -233,6 +233,11 @@ namespace Excavator.F1
             // Group roles: Adult, Child, others
             int adultRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
             int childRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD ) ).Id;
+            int ownerRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) ).Id;
+            int invitedRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED ) ).Id;
+            int invitedByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED_BY ) ).Id;
+            int canCheckInRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_CAN_CHECK_IN ) ).Id;
+            int allowCheckInByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_ALLOW_CHECK_IN_BY ) ).Id;
 
             // Group type: Family
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
@@ -542,29 +547,39 @@ namespace Excavator.F1
                             rockContext.SaveChanges( DisableAudit );
 
                             var newAttributeValues = new List<AttributeValue>();
-                            foreach ( var newFamilyGroup in familyList )
+                            var memberService = new GroupMemberService( rockContext );
+                            foreach ( var familyRelationships in familyList.GroupBy<Group, int?>( g => g.ForeignId.AsType<int?>() ) )
                             {
-                                foreach ( var groupMember in newFamilyGroup.Members )
+                                int relationshipsToAdd = familyRelationships.Count();
+                                foreach ( var newFamilyGroup in familyRelationships )
                                 {
-                                    var person = groupMember.Person;
-                                    foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+                                    foreach ( var groupMember in newFamilyGroup.Members )
                                     {
-                                        var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                        if ( newValue != null )
+                                        var person = groupMember.Person;
+                                        foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                                         {
-                                            newValue.EntityId = person.Id;
-                                            newAttributeValues.Add( newValue );
+                                            var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                            if ( newValue != null )
+                                            {
+                                                newValue.EntityId = person.Id;
+                                                newAttributeValues.Add( newValue );
+                                            }
                                         }
-                                    }
 
-                                    if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
-                                    {
-                                        person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
-                                    }
+                                        if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                                        {
+                                            person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                                        }
 
-                                    if ( groupMember.GroupRoleId != childRoleId )
-                                    {
-                                        person.GivingGroupId = newFamilyGroup.Id;
+                                        if ( groupMember.GroupRoleId != childRoleId )
+                                        {
+                                            person.GivingGroupId = newFamilyGroup.Id;
+                                        }
+
+                                        if ( relationshipsToAdd > 1 )
+                                        {
+                                            var member = new GroupMember();
+                                        }
                                     }
                                 }
                             }
@@ -581,48 +596,49 @@ namespace Excavator.F1
             }
 
             // Save any remaining families in the batch
-            if ( familyList.Any() )
-            {
-                RockTransactionScope.WrapTransaction( () =>
-                {
-                    var rockContext = new RockContext();
-                    rockContext.Configuration.AutoDetectChangesEnabled = false;
-                    rockContext.Groups.AddRange( familyList );
-                    rockContext.SaveChanges( DisableAudit );
+            //if ( familyList.Any() )
+            //{
+            //    RockTransactionScope.WrapTransaction( () =>
+            //    {
+            //        private var rockContext = new RockContext();
 
-                    var newAttributeValues = new List<AttributeValue>();
-                    foreach ( var newFamilyGroup in familyList )
-                    {
-                        foreach ( var groupMember in newFamilyGroup.Members )
-                        {
-                            var person = groupMember.Person;
-                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
-                            {
-                                var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                if ( newValue != null )
-                                {
-                                    newValue.EntityId = person.Id;
-                                    newAttributeValues.Add( newValue );
-                                }
-                            }
+            //        rockContext.Configuration.AutoDetectChangesEnabled = false;
+            //        rockContext.Groups.AddRange( familyList );
+            //        rockContext.SaveChanges( DisableAudit );
 
-                            if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
-                            {
-                                person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
-                            }
+            //        private var newAttributeValues = new List<AttributeValue>();
+            //        foreach ( private var newFamilyGroup in familyList )
+            //        {
+            //            foreach ( private var groupMember in newFamilyGroup.Members )
+            //            {
+            //                private var person = groupMember.Person;
+            //                foreach ( private var attributeCache in person.Attributes.Select( a => a.Value ) )
+            //                {
+            //                    private var newValue = person.AttributeValues[attributeCache.Key].FirstOrDefault();
+            //                    if ( newValue != null )
+            //                    {
+            //                        newValue.EntityId = person.Id;
+            //                        newAttributeValues.Add( newValue );
+            //                    }
+            //                }
 
-                            if ( groupMember.GroupRoleId != childRoleId )
-                            {
-                                person.GivingGroupId = newFamilyGroup.Id;
-                            }
-                        }
-                    }
+            //                if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+            //                {
+            //                    person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+            //                }
 
-                    rockContext.AttributeValues.AddRange( newAttributeValues );
-                    rockContext.ChangeTracker.DetectChanges();
-                    rockContext.SaveChanges( DisableAudit );
-                } );
-            }
+            //                if ( groupMember.GroupRoleId != childRoleId )
+            //                {
+            //                    person.GivingGroupId = newFamilyGroup.Id;
+            //                }
+            //            }
+            //        }
+
+            //        rockContext.AttributeValues.AddRange( newAttributeValues );
+            //        rockContext.ChangeTracker.DetectChanges();
+            //        rockContext.SaveChanges( DisableAudit );
+            //    } );
+            //}
 
             ReportProgress( 100, string.Format( "Finished person import: {0:N0} people imported.", completed ) );
         }
