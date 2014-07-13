@@ -35,13 +35,24 @@ namespace Excavator.CSV
         /// <summary>
         /// The list of families
         /// </summary>
-        private List<Group> familyList = null;
+        private List<Group> _familyList = null;
+        protected List<Group> familyList
+        {
+            get
+            {
+                if (_familyList == null)
+                {
+                    _familyList = new List<Group>();
+                }
+                return _familyList;
+            }
+        }
 
         /// <summary>
         /// The family group
         /// </summary>
-        private Group familyGroup = null;
-
+        private Group _familyGroup = null;
+ 
         /// <summary>
         /// Whether the family file is included
         /// </summary>
@@ -51,33 +62,32 @@ namespace Excavator.CSV
 
         #region Maps
 
-        /// <summary>
-        /// Maps the family data.
-        /// </summary>
-        private void MapFamilyData()
-        {
-            familyList = new List<Group>();
-            familyGroup = new Group();
+        ///// <summary>
+        ///// Maps the family data.
+        ///// </summary>
+        //private void MapFamilyData()
+        //{
+        //    familyGroup = new Group();
 
-            int completed = 0;
-            ReportProgress( 0, string.Format( "Adding family data ({0:N0} people already exist).", ImportedPeople.Count() ) );
+        //    int completed = 0;
+        //    ReportProgress( 0, string.Format( "Adding family data ({0:N0} people already exist).", ImportedPeople.Count() ) );
 
-            FamilyFileIsIncluded = CsvDataToImport.FirstOrDefault( n => n.RecordType.Equals( CsvDataModel.RockDataType.FAMILY ) ) == null ? true : false;
+        //    FamilyFileIs_Included = CsvDataToImport.FirstOrDefault( n => n.RecordType.Equals( CsvDataModel.RockDataType.FAMILY ) ) == null ? true : false;
 
-            foreach ( var csvData in CsvDataToImport )
-            {
-                if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
-                {
-                    LoadFamily( csvData );
-                }
-                else
-                {
-                    LoadIndividuals( csvData );
-                }
-            } //read all files
+        //    foreach ( var csvData in CsvDataToImport )
+        //    {
+        //        if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
+        //        {
+        //            LoadFamily( csvData );
+        //        }
+        //        else
+        //        {
+        //            LoadIndividuals( csvData );
+        //        }
+        //    } //read all files
 
-            ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
-        }
+        //    ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
+        //}
 
         /// <summary>
         /// Loads the family data.
@@ -89,16 +99,18 @@ namespace Excavator.CSV
             int completed = 0;
             do
             {
-                var row = csvData.Database.First();
+                var row = csvData.Database.FirstOrDefault();
                 if ( row != null )
                 {
                     string rowFamilyId = row[FamilyId];
                     var rowFamilyName = row[FamilyName] ?? row[FamilyLastName] + " Family";
                     if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyId )
                     {
-                        // This line adds a null group when first run
-                        familyList.Add( familyGroup );
-                        familyGroup = new Group();
+                        if (_familyGroup != null)
+                        {
+                            familyList.Add(_familyGroup);
+                        }
+                        _familyGroup = new Group();
                         currentFamilyId = rowFamilyId;
 
                         // TODO: ADD FAMILY ADDRESS
@@ -107,53 +119,58 @@ namespace Excavator.CSV
                         var campus = row[Campus] as string;
                         if ( !string.IsNullOrWhiteSpace( campus ) )
                         {
-                            familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
+                            _familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
                         }
                     }
                     completed++;
                     if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
-                        {
-                            var rockContext = new RockContext();
-                            rockContext.Groups.AddRange( familyList );
-                            rockContext.SaveChanges();
 
-                            foreach ( var newFamilyGroup in familyList )
-                            {
-                                foreach ( var newFamilyMember in newFamilyGroup.Members )
-                                {
-                                    var newPerson = newFamilyMember.Person;
-                                    foreach ( var attributeCache in newPerson.Attributes.Select( a => a.Value ) )
-                                    {
-                                        var newValue = newPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                        if ( newValue != null )
-                                        {
-                                            newValue.EntityId = newPerson.Id;
-                                            rockContext.AttributeValues.Add( newValue );
-                                        }
-                                    }
-
-                                    if ( !newPerson.Aliases.Any( a => a.AliasPersonId == newPerson.Id ) )
-                                    {
-                                        newPerson.Aliases.Add( new PersonAlias
-                                        {
-                                            AliasPersonId = newPerson.Id,
-                                            AliasPersonGuid = newPerson.Guid
-                                        } );
-                                    }
-                                }
-                            }
-
-                            rockContext.SaveChanges();
-                        } );
-
+                        WriteAllFamilyChanges();
                         familyList.Clear();
                         ReportPartialProgress();
                     }
                 }
             } while ( csvData.Database.ReadNextRecord() );
+        }
+
+        void WriteAllFamilyChanges()
+        {
+            RockTransactionScope.WrapTransaction(() =>
+            {
+                var rockContext = new RockContext();
+                rockContext.Groups.AddRange(familyList);
+                rockContext.SaveChanges();
+
+                foreach (var newFamilyGroup in familyList)
+                {
+                    foreach (var newFamilyMember in newFamilyGroup.Members)
+                    {
+                        var newPerson = newFamilyMember.Person;
+                        foreach (var attributeCache in newPerson.Attributes.Select(a => a.Value))
+                        {
+                            var newValue = newPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                            if (newValue != null)
+                            {
+                                newValue.EntityId = newPerson.Id;
+                                rockContext.AttributeValues.Add(newValue);
+                            }
+                        }
+
+                        if (!newPerson.Aliases.Any(a => a.AliasPersonId == newPerson.Id))
+                        {
+                            newPerson.Aliases.Add(new PersonAlias
+                            {
+                                AliasPersonId = newPerson.Id,
+                                AliasPersonGuid = newPerson.Guid
+                            });
+                        }
+                    }
+                }
+
+                rockContext.SaveChanges();
+            });
         }
 
         /// <summary>
@@ -181,7 +198,8 @@ namespace Excavator.CSV
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS_REASON ) ).ToList();
 
             // Record statuses: Active, Inactive, Pending
-            int? recordStatusActiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
+            var activestatus = dvService.Get(new Guid(Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE));
+            int? recordStatusActiveId = activestatus.Id;
             int? recordStatusInactiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
             int? recordStatusPendingId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
 
@@ -223,7 +241,7 @@ namespace Excavator.CSV
 
             do
             {
-                var row = csvData.Database.First();
+                var row = csvData.Database.FirstOrDefault();
                 if ( row != null )
                 {
                     int groupRoleId = adultRoleId;
@@ -235,8 +253,8 @@ namespace Excavator.CSV
                     //keep track of family here if we're not loading a separate family file
                     if ( rowFamilyId > 1 && rowFamilyId != currentFamilyId && FamilyFileIsIncluded )
                     {
-                        familyList.Add( familyGroup );
-                        familyGroup = new Group();
+                        familyList.Add( _familyGroup );
+                        _familyGroup = new Group();
                         currentFamilyId = rowFamilyId;
                     }
 
@@ -249,10 +267,15 @@ namespace Excavator.CSV
                     person.LastName = row[LastName];
                     person.Email = row[Email];
 
-                    var activeEmail = row[IsEmailActive] as string;
-                    if ( activeEmail != null )
+                    string activeEmail = row[IsEmailActive] as string;
+                    if ( !string.IsNullOrEmpty(activeEmail) )
                     {
-                        person.IsEmailActive = bool.Parse( activeEmail );
+                        //activeEmail = "Active"
+                        bool emailIsActive = false;
+                        if ( bool.TryParse(activeEmail, out emailIsActive))
+                        {
+                            person.IsEmailActive = emailIsActive;
+                        }
                     }
 
                     DateTime birthDate;
@@ -472,59 +495,67 @@ namespace Excavator.CSV
                     groupMember.Person = person;
                     groupMember.GroupRoleId = groupRoleId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
-                    familyGroup.Members.Add( groupMember );
+                    _familyGroup.Members.Add( groupMember );
 
                     completed++;
                     if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
-                        {
-                            var rockContext = new RockContext();
-
-                            rockContext.Groups.AddRange( familyList );
-                            rockContext.SaveChanges();
-
-                            foreach ( var newFamilyGroup in familyList )
-                            {
-                                foreach ( var newFamilyMember in newFamilyGroup.Members )
-                                {
-                                    var newPerson = newFamilyMember.Person;
-                                    foreach ( var attributeCache in newPerson.Attributes.Select( a => a.Value ) )
-                                    {
-                                        var newValue = newPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
-                                        if ( newValue != null )
-                                        {
-                                            newValue.EntityId = newPerson.Id;
-                                            rockContext.AttributeValues.Add( newValue );
-                                        }
-                                    }
-
-                                    if ( !newPerson.Aliases.Any( a => a.AliasPersonId == newPerson.Id ) )
-                                    {
-                                        newPerson.Aliases.Add( new PersonAlias
-                                        {
-                                            AliasPersonId = newPerson.Id,
-                                            AliasPersonGuid = newPerson.Guid
-                                        } );
-                                    }
-
-                                    if ( newFamilyMember.GroupRoleId != childRoleId )
-                                    {
-                                        newPerson.GivingGroupId = newFamilyGroup.Id;
-                                    }
-                                }
-                            }
-
-                            rockContext.SaveChanges();
-                        } );
+                        WriteAllIndividualChanges(childRoleId);
 
                         familyList.Clear();
                         ReportPartialProgress();
                     }
                 }
             } while ( csvData.Database.ReadNextRecord() );
+            WriteAllIndividualChanges(childRoleId);
+
+            ReportPartialProgress();
         }
 
+        void WriteAllIndividualChanges(int childRoleId)
+        {
+            RockTransactionScope.WrapTransaction(() =>
+            {
+                var rockContext = new RockContext();
+
+                rockContext.Groups.AddRange(familyList);
+                rockContext.SaveChanges();
+
+                foreach (var newFamilyGroup in familyList)
+                {
+                    foreach (var newFamilyMember in newFamilyGroup.Members)
+                    {
+                        var newPerson = newFamilyMember.Person;
+                        foreach (var attributeCache in newPerson.Attributes.Select(a => a.Value))
+                        {
+                            var newValue = newPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                            if (newValue != null)
+                            {
+                                newValue.EntityId = newPerson.Id;
+                                rockContext.AttributeValues.Add(newValue);
+                            }
+                        }
+
+                        if (!newPerson.Aliases.Any(a => a.AliasPersonId == newPerson.Id))
+                        {
+                            newPerson.Aliases.Add(new PersonAlias
+                            {
+                                AliasPersonId = newPerson.Id,
+                                AliasPersonGuid = newPerson.Guid
+                            });
+                        }
+
+                        if (newFamilyMember.GroupRoleId != childRoleId)
+                        {
+                            newPerson.GivingGroupId = newFamilyGroup.Id;
+                        }
+                    }
+                }
+
+                rockContext.SaveChanges();
+            });
+
+        }
         #endregion
     }
 }
