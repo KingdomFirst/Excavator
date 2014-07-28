@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="CSVComponent.cs" />
     <Compile Include="CsvDataModel.cs" />
+    <Compile Include="Maps\Locations.cs" />
     <Compile Include="Maps\People.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -194,21 +194,8 @@ namespace Excavator.CSV
                 return -1;
             }
 
-            //ok, family first
-            var familyrecs = CsvDataToImport.Where( c => c.RecordType  == CsvDataModel.RockDataType.FAMILY );
 
-
-            foreach ( var csvData in familyrecs )
-            {
-                 LoadFamily( csvData );
-                }
-
-            var personrecs = CsvDataToImport.Where( c => c.RecordType  == CsvDataModel.RockDataType.INDIVIDUAL );
-            foreach ( var csvData in personrecs )
-            {
-                    LoadIndividuals( csvData );
-                
-            } 
+            MapFamilyData();
 
             return 0;
         }
@@ -324,6 +311,11 @@ namespace Excavator.CSV
 
         #region Family Constants
 
+        /*
+         this is based on the definition for family.csv import file.
+         * FamilyId,FamilyName,LastName,Campus,Address,Address2,City,State,ZipCode,Country,
+         * SecondaryAddress,SecondaryAddress2,SecondaryCity,SecondaryState,SecondaryZip,SecondaryCountry
+         */
         private const int FamilyId = 0;
         private const int FamilyName = 1;
         private const int FamilyLastName = 2;
@@ -344,8 +336,15 @@ namespace Excavator.CSV
         #endregion
 
         #region Individual Constants
-
-        private const int PersonId = 1;
+        /* this is based on the definition of the csv format for the individual.csv file
+         FamilyId,MemberId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
+         * MaritalStatus,ConnectionStatus,RecordStatus,HomePhone,MobilePhone,WorkPhone,Email,SecondaryEmail,
+         * IsEmailActive,SMS Allowed?,Bulk Email Allowed?,Gender,Age,DateOfBirth,MembershipDate,
+         * SalvationDate,BaptismDate,AnniversaryDate,FirstVisit,LastUpdated,PreviousChurch,Occupation,
+         * Employer,School,General Note,MedicalNote,Security Note
+         */
+        private const int PersonFamilyId = 0;
+        private const int MemberId = 1;
         private const int Prefix = 2;
         private const int FirstName = 3;
         private const int NickName = 4;

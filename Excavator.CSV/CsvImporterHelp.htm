@@ -12,27 +12,40 @@
         <dd>individual.csv</dd>
 
         <dt>Format of import files</dt>
-        <dd><label>family.csv</label>
+        <dd><label><strong>family.csv</strong></label>
         <ul>
             <li>FamilyId	int</li>
             <li>FamilyName	string</li>
+            <li>LastName</li>
+            <li>CampusName</li>
+            <li>Address</li>
+            <li>Address2</li>
+            <li>City,State</li>
+            <li>ZipCode</li>
+            <li>Country</li>
+            <li>SecondaryAddress</li>
+            <li>SecondaryAddress2</li>
+            <li>SecondaryCity</li>
+            <li>SecondaryState</li>
+            <li>SecondaryZip</li>
+            <li>SecondaryCountry</li>
             
             
         </ul>
         
         </dd>
         <dd>
-            <label>individual.csv</label>
+            <label><strong>individual.csv</strong></label>
             <i> * (before import, be sure to enter matching Prefix, Suffix, MaritalStatus, FamilyRole,ConnectionStatus values so they match up on import)</i>
             <ul>
                
-                <li>PersonId	int</li>
+                <li>MemberId	int</li>
                 <li>
                     FamilyId	int
                 </li>
                 <li>
                     FamilyName	string --for when there is no separate family
-                </li>
+                    file</li>
                 <li>
                     FirstName	string
                 </li>
@@ -71,9 +84,6 @@
                 </li>
                 <li>
                     RecordStatus     string
-                </li>
-                <li>
-                    Campus     string
                 </li>
                 <li>
                     MembershipDate     string
