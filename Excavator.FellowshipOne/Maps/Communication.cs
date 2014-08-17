@@ -273,9 +273,9 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
+                        var rockContext = new RockContext();
+                        rockContext.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.PhoneNumbers.AddRange( newNumberList );
                             rockContext.SaveChanges( DisableAudit );
@@ -310,9 +310,9 @@ namespace Excavator.F1
 
             if ( newNumberList.Any() || updatedPersonList.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.PhoneNumbers.AddRange( newNumberList );
                     rockContext.SaveChanges( DisableAudit );

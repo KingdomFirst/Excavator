@@ -111,9 +111,9 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
+                        var rockContext = new RockContext();
+                        rockContext.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.Groups.AddRange( businessList );
                             rockContext.SaveChanges( DisableAudit );
@@ -151,9 +151,9 @@ namespace Excavator.F1
 
             if ( businessList.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.Groups.AddRange( businessList );
                     rockContext.SaveChanges( DisableAudit );
@@ -544,9 +544,9 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
+                        var rockContext = new RockContext();
+                        rockContext.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.Groups.AddRange( familyList );
                             //rockContext.Groups.AddRange( visitorList );
@@ -662,9 +662,9 @@ namespace Excavator.F1
             // Save any remaining families in the batch
             if ( familyList.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.Groups.AddRange( familyList );
                     rockContext.SaveChanges( DisableAudit );
@@ -898,9 +898,9 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            RockTransactionScope.WrapTransaction( () =>
+                            var rockContext = new RockContext();
+                            rockContext.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.UserLogins.AddRange( newUserLogins );
                                 rockContext.SaveChanges( DisableAudit );
@@ -936,9 +936,9 @@ namespace Excavator.F1
 
             if ( newUserLogins.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.UserLogins.AddRange( newUserLogins );
                     rockContext.SaveChanges( DisableAudit );
