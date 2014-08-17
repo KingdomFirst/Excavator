@@ -232,12 +232,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\packages\Embeds\Rock.Wpf.dll" />
-    <Content Include="..\packages\Embeds\EntityFramework.dll" />
-    <Content Include="..\packages\Embeds\EntityFramework.SqlServer.dll" />
-    <Content Include="..\packages\Embeds\OrcaMDF.Core.dll" />
-    <Content Include="..\packages\Embeds\OrcaMDF.Framework.dll" />
-    <Content Include="..\packages\Embeds\Rock.dll" />
     <Resource Include="FodyWeavers.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
