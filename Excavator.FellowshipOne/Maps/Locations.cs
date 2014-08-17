@@ -324,7 +324,7 @@ namespace Excavator.F1
                 ( t.Street2 == street2 || ( street2 == null && t.Street2 == null ) ) &&
                 ( t.City == city || ( city == null && t.City == null ) ) &&
                 ( t.State == state || ( state == null && t.State == null ) ) &&
-                ( t.Zip == zip || ( zip == null && t.Zip == null ) ) );
+                ( t.PostalCode == zip || ( zip == null && t.PostalCode == null ) ) );
             if ( existingLocation != null )
             {
                 return existingLocation;
@@ -338,7 +338,7 @@ namespace Excavator.F1
                 Street2 = street2,
                 City = city,
                 State = state,
-                Zip = zip
+                PostalCode = zip
             };
 
             // uses MEF to look for verification providers (which Excavator doesn't have)
@@ -349,7 +349,7 @@ namespace Excavator.F1
                 ( t.Street2 == newLocation.Street2 || ( newLocation.Street2 == null && t.Street2 == null ) ) &&
                 ( t.City == newLocation.City || ( newLocation.City == null && t.City == null ) ) &&
                 ( t.State == newLocation.State || ( newLocation.State == null && t.State == null ) ) &&
-                ( t.Zip == newLocation.Zip || ( newLocation.Zip == null && t.Zip == null ) ) );
+                ( t.PostalCode == newLocation.PostalCode || ( newLocation.PostalCode == null && t.PostalCode == null ) ) );
 
             if ( existingLocation != null )
             {
