@@ -182,7 +182,7 @@ namespace Excavator
         /// Holds a list of all the excavator types
         /// </summary>
         [ImportMany( typeof( ExcavatorComponent ) )]
-        public List<ExcavatorComponent> excavatorTypes = new List<ExcavatorComponent>();
+        public IEnumerable<ExcavatorComponent> excavatorTypes = new List<ExcavatorComponent>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
