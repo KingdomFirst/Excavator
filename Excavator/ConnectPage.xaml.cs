@@ -204,6 +204,7 @@ namespace Excavator
                 //initialize from app.config
                 var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
                 var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+
                 if ( rockContext != null )
                 {
                     CurrentConnection = new ConnectionString( rockContext.ConnectionString );
@@ -290,6 +291,7 @@ namespace Excavator
 
             if ( sqlConnector.ConnectionString != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString.Database ) )
             {
+                CurrentConnection = sqlConnector.ConnectionString;
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
                 lblDbConnect.Content = "Successfully connected to the Rock database.";
             }
@@ -315,42 +317,39 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnNext_Click( object sender, RoutedEventArgs e )
         {
-            var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
-            var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
-
-            if ( excavator != null && ( rockContext != null || !string.IsNullOrWhiteSpace( existingConnection ) ) )
-            {
-                try
-                {
-                    if ( sqlConnector != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString ) )
-                    {
-                        if ( rockContext != null )
-                        {
-                            rockContext.ConnectionString = sqlConnector.ConnectionString;
-                        }
-                        else
-                        {
-                            appConfig.ConnectionStrings.ConnectionStrings.Add( new ConnectionStringSettings( "RockContext", sqlConnector.ConnectionString ) );
-                        }
-
-                        appConfig.Save( ConfigurationSaveMode.Modified );
-                        ConfigurationManager.RefreshSection( "connectionstrings" );
-                    }
-
-                    var selectPage = new SelectPage( excavator );
-                    this.NavigationService.Navigate( selectPage );
-                }
-                catch
-                {
-                    lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                    lblDbConnect.Content = "Unable to set the database connection. Please check the permissions on the current directory.";
-                    lblDbConnect.Visibility = Visibility.Visible;
-                }
-            }
-            else
+            if ( excavator == null || CurrentConnection == null )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
                 lblDbConnect.Content = "Please select a valid source and destination.";
+                lblDbConnect.Visibility = Visibility.Visible;
+                return;
+            }
+            
+            var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
+            var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+            if ( rockContext == null )
+            {
+                rockContext = new ConnectionStringSettings( "RockContext", CurrentConnection );
+                rockContext.ProviderName = "System.Data.SqlClient";
+                appConfig.ConnectionStrings.ConnectionStrings.Add( rockContext );                
+            }
+            else
+            {
+                rockContext.ConnectionString = CurrentConnection;
+            }
+
+            try {
+
+                appConfig.Save( ConfigurationSaveMode.Modified );
+                ConfigurationManager.RefreshSection( "connectionstrings" );
+
+                var selectPage = new SelectPage( excavator );
+                this.NavigationService.Navigate( selectPage );
+            }
+            catch ( Exception ex )
+            {
+                lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
+                lblDbConnect.Content = "Unable to save the database connection: " + ex.InnerException.ToString();
                 lblDbConnect.Visibility = Visibility.Visible;
             }
         }
