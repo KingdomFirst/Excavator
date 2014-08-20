@@ -57,7 +57,7 @@ namespace Excavator.Example
         /// </value>
         public override string ExtensionType
         {
-            get { return ".mdf"; }
+            get { return ".example"; }
         }
 
         /// <summary>
