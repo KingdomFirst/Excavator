@@ -122,7 +122,14 @@ namespace Excavator
                 importUser = "Admin";
             }
 
-            e.Result = excavator.TransformData( importUser );
+            try
+            {
+                e.Result = excavator.TransformData( importUser );
+            }
+            catch ( Exception ex )
+            {
+                var asdf = ex.InnerException.ToString();
+            }
         }
 
         /// <summary>
