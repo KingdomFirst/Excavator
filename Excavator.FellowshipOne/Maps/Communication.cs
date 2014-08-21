@@ -41,82 +41,46 @@ namespace Excavator.F1
             var lookupContext = new RockContext();
             var categoryService = new CategoryService( lookupContext );
             var personService = new PersonService( lookupContext );
+            var attributeService = new AttributeService( lookupContext );
 
             List<DefinedValue> numberTypeValues = new DefinedValueService( lookupContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
 
-            // Add a Social Media category if it doesn't exist
+            // Look up additional Person attributes (existing)
+            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
+
+            // Remove previously defined Excavator social attributes & categories if they exist
+            var oldFacebookAttribute = personAttributes.Where( a => a.Key == "FacebookUsername" ).FirstOrDefault();
+            if ( oldFacebookAttribute != null )
+            {
+                Rock.Web.Cache.AttributeCache.Flush( oldFacebookAttribute.Id );
+                attributeService.Delete( oldFacebookAttribute );
+                lookupContext.SaveChanges();
+            }
+
+            var oldTwitterAttribute = personAttributes.Where( a => a.Key == "TwitterUsername" ).FirstOrDefault();
+            if ( oldTwitterAttribute != null )
+            {
+                Rock.Web.Cache.AttributeCache.Flush( oldTwitterAttribute.Id );
+                attributeService.Delete( oldTwitterAttribute );
+                lookupContext.SaveChanges();
+            }
+
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
             var socialMediaCategory = categoryService.GetByEntityTypeId( attributeEntityTypeId )
-                .Where( c => c.Name == "Social Media" ).FirstOrDefault();
-
-            if ( socialMediaCategory == null )
+                .Where( c => c.Name == "Social Media" &&
+                    c.EntityTypeQualifierValue == PersonEntityTypeId.ToString() &&
+                    c.IconCssClass == "fa fa-twitter" )
+                .FirstOrDefault();
+            if ( socialMediaCategory != null )
             {
-                socialMediaCategory = new Category();
-                socialMediaCategory.IsSystem = false;
-                socialMediaCategory.Name = "Social Media";
-                socialMediaCategory.IconCssClass = "fa fa-twitter";
-                socialMediaCategory.EntityTypeId = attributeEntityTypeId;
-                socialMediaCategory.EntityTypeQualifierColumn = "EntityTypeId";
-                socialMediaCategory.EntityTypeQualifierValue = PersonEntityTypeId.ToString();
-                socialMediaCategory.Order = 0;
-
-                lookupContext.Categories.Add( socialMediaCategory );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.Categories.Remove( socialMediaCategory );
+                lookupContext.SaveChanges();
             }
 
-            // Look up additional Person attributes (existing)
-            var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
-
-            // Add an Attribute for Twitter
-            int twitterAttributeId = personAttributes.Where( a => a.Key == "TwitterUsername" ).Select( a => a.Id ).FirstOrDefault();
-            if ( twitterAttributeId == 0 )
-            {
-                var newTwitterAttribute = new Rock.Model.Attribute();
-                newTwitterAttribute.Key = "TwitterUsername";
-                newTwitterAttribute.Name = "Twitter Username";
-                newTwitterAttribute.FieldTypeId = TextFieldTypeId;
-                newTwitterAttribute.EntityTypeId = PersonEntityTypeId;
-                newTwitterAttribute.EntityTypeQualifierValue = string.Empty;
-                newTwitterAttribute.EntityTypeQualifierColumn = string.Empty;
-                newTwitterAttribute.Description = "The Twitter username (or link) for this person";
-                newTwitterAttribute.DefaultValue = string.Empty;
-                newTwitterAttribute.IsMultiValue = false;
-                newTwitterAttribute.IsRequired = false;
-                newTwitterAttribute.Order = 0;
-
-                lookupContext.Attributes.Add( newTwitterAttribute );
-                newTwitterAttribute.Categories.Add( socialMediaCategory );
-                lookupContext.SaveChanges( DisableAudit );
-
-                twitterAttributeId = newTwitterAttribute.Id;
-            }
-
-            // Add an Attribute for Facebook
-            var facebookAttributeId = personAttributes.Where( a => a.Key == "FacebookUsername" ).Select( a => a.Id ).FirstOrDefault();
-            if ( facebookAttributeId == 0 )
-            {
-                var newFacebookAttribute = new Rock.Model.Attribute();
-                newFacebookAttribute.Key = "FacebookUsername";
-                newFacebookAttribute.Name = "Facebook Username";
-                newFacebookAttribute.FieldTypeId = TextFieldTypeId;
-                newFacebookAttribute.EntityTypeId = PersonEntityTypeId;
-                newFacebookAttribute.EntityTypeQualifierValue = string.Empty;
-                newFacebookAttribute.EntityTypeQualifierColumn = string.Empty;
-                newFacebookAttribute.Description = "The Facebook username (or link) for this person";
-                newFacebookAttribute.DefaultValue = string.Empty;
-                newFacebookAttribute.IsMultiValue = false;
-                newFacebookAttribute.IsRequired = false;
-                newFacebookAttribute.Order = 0;
-
-                lookupContext.Attributes.Add( newFacebookAttribute );
-                newFacebookAttribute.Categories.Add( socialMediaCategory );
-                lookupContext.SaveChanges( DisableAudit );
-
-                facebookAttributeId = newFacebookAttribute.Id;
-            }
-
-            var twitterUsernameAttribute = AttributeCache.Read( twitterAttributeId );
-            var facebookUsernameAttribute = AttributeCache.Read( facebookAttributeId );
+            // Cached Rock attributes: Facebook, Twitter, Instagram
+            var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
+            var facebookAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Facebook" ) );
+            var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
             var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
 
             var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
@@ -241,22 +205,22 @@ namespace Excavator.F1
                         }
                         else if ( type.Contains( "Twitter" ) )
                         {
-                            person.Attributes.Add( twitterUsernameAttribute.Key, twitterUsernameAttribute );
-                            person.AttributeValues.Add( twitterUsernameAttribute.Key, new List<AttributeValue>() );
-                            person.AttributeValues[twitterUsernameAttribute.Key].Add( new AttributeValue()
+                            person.Attributes.Add( twitterAttribute.Key, twitterAttribute );
+                            person.AttributeValues.Add( twitterAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[twitterAttribute.Key].Add( new AttributeValue()
                             {
-                                AttributeId = twitterUsernameAttribute.Id,
+                                AttributeId = twitterAttribute.Id,
                                 Value = value,
                                 Order = 0
                             } );
                         }
                         else if ( type.Contains( "Facebook" ) )
                         {
-                            person.Attributes.Add( facebookUsernameAttribute.Key, facebookUsernameAttribute );
-                            person.AttributeValues.Add( facebookUsernameAttribute.Key, new List<AttributeValue>() );
-                            person.AttributeValues[facebookUsernameAttribute.Key].Add( new AttributeValue()
+                            person.Attributes.Add( facebookAttribute.Key, facebookAttribute );
+                            person.AttributeValues.Add( facebookAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[facebookAttribute.Key].Add( new AttributeValue()
                             {
-                                AttributeId = facebookUsernameAttribute.Id,
+                                AttributeId = facebookAttribute.Id,
                                 Value = value,
                                 Order = 0
                             } );
