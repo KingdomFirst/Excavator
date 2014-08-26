@@ -215,8 +215,10 @@ namespace Excavator.F1
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
+                        Location familyAddress = lookupService.Get( street1, street2, city, state, zip, country );
+
                         /* Use CheckAddress.Get instead of Rock.Model.LocationService.Get (more details below) */
-                        Location familyAddress = CheckAddress.Get( street1, street2, city, state, zip, DisableAudit );
+                        //Location familyAddress = CheckAddress.Get( street1, street2, city, state, zip, DisableAudit );
 
                         familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         familyAddress.Name = familyGroup.Name;
@@ -260,7 +262,7 @@ namespace Excavator.F1
                             var rockContext = new RockContext();
                             rockContext.WrapTransaction( () =>
                             {
-                                rockContext.Configuration.AutoDetectChangesEnabled = false;
+                                //rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.GroupLocations.AddRange( newGroupLocations );
                                 rockContext.SaveChanges( DisableAudit );
                             } );
