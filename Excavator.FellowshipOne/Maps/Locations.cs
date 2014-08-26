@@ -262,8 +262,9 @@ namespace Excavator.F1
                             var rockContext = new RockContext();
                             rockContext.WrapTransaction( () =>
                             {
-                                //rockContext.Configuration.AutoDetectChangesEnabled = false;
+                                rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.GroupLocations.AddRange( newGroupLocations );
+                                rockContext.ChangeTracker.DetectChanges();
                                 rockContext.SaveChanges( DisableAudit );
                             } );
 
