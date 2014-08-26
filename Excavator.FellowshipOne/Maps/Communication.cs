@@ -225,6 +225,17 @@ namespace Excavator.F1
                                 Order = 0
                             } );
                         }
+                        else if ( type.Contains( "Instagram" ) )
+                        {
+                            person.Attributes.Add( instagramAttribute.Key, instagramAttribute );
+                            person.AttributeValues.Add( instagramAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[instagramAttribute.Key].Add( new AttributeValue()
+                            {
+                                AttributeId = instagramAttribute.Id,
+                                Value = value,
+                                Order = 0
+                            } );
+                        }
 
                         updatedPersonList.Add( person );
                         completed++;
