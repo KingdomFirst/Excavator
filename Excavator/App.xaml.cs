@@ -55,6 +55,8 @@ namespace Excavator
             set { existingConnection = value; }
         }
 
+        # region Logging
+
         /// <summary>
         /// Logs the exception.
         /// </summary>
@@ -112,5 +114,7 @@ namespace Excavator
             var showWindow = connectWindow.ShowDialog();
             ShowingError = false;
         }
+
+        #endregion Logging
     }
 }

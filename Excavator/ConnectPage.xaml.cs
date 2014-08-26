@@ -324,22 +324,23 @@ namespace Excavator
                 lblDbConnect.Visibility = Visibility.Visible;
                 return;
             }
-            
+
             var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
             var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+
             if ( rockContext == null )
             {
                 rockContext = new ConnectionStringSettings( "RockContext", CurrentConnection );
                 rockContext.ProviderName = "System.Data.SqlClient";
-                appConfig.ConnectionStrings.ConnectionStrings.Add( rockContext );                
+                appConfig.ConnectionStrings.ConnectionStrings.Add( rockContext );
             }
             else
             {
                 rockContext.ConnectionString = CurrentConnection;
             }
 
-            try {
-
+            try
+            {
                 appConfig.Save( ConfigurationSaveMode.Modified );
                 ConfigurationManager.RefreshSection( "connectionstrings" );
 
@@ -348,6 +349,7 @@ namespace Excavator
             }
             catch ( Exception ex )
             {
+                App.LogException( "Next Page", ex.ToString() );
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
                 lblDbConnect.Content = "Unable to save the database connection: " + ex.InnerException.ToString();
                 lblDbConnect.Visibility = Visibility.Visible;
