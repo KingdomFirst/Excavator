@@ -295,7 +295,7 @@ namespace Excavator.F1
                         if ( prefix != null )
                         {
                             prefix = prefix.RemoveSpecialCharacters().Trim();
-                            person.TitleValueId = titleTypes.Where( s => prefix == s.Name.RemoveSpecialCharacters() )
+                            person.TitleValueId = titleTypes.Where( s => prefix == s.Value.RemoveSpecialCharacters() )
                                 .Select( s => (int?)s.Id ).FirstOrDefault();
                         }
 
@@ -303,19 +303,19 @@ namespace Excavator.F1
                         if ( suffix != null )
                         {
                             suffix = suffix.RemoveSpecialCharacters().Trim();
-                            person.SuffixValueId = suffixTypes.Where( s => suffix == s.Name.RemoveSpecialCharacters() )
+                            person.SuffixValueId = suffixTypes.Where( s => suffix == s.Value.RemoveSpecialCharacters() )
                                 .Select( s => (int?)s.Id ).FirstOrDefault();
                         }
 
                         string maritalStatus = row["Marital_Status"] as string;
                         if ( maritalStatus != null )
                         {
-                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == maritalStatus )
+                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Value == maritalStatus )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
                         else
                         {
-                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Name == "Unknown" )
+                            person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Value == "Unknown" )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
@@ -348,13 +348,13 @@ namespace Excavator.F1
                         {
                             person.IsDeceased = true;
                             person.RecordStatusValueId = recordStatusInactiveId;
-                            person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Name == "Deceased" )
+                            person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "Deceased" )
                                 .Select( dv => dv.Id ).FirstOrDefault();
                         }
                         else
                         {
                             // F1 defaults are Member & Visitor; all others are user-defined
-                            var customConnectionType = connectionStatusTypes.Where( dv => dv.Name == memberStatus )
+                            var customConnectionType = connectionStatusTypes.Where( dv => dv.Value == memberStatus )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
 
                             int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;

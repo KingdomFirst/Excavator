@@ -157,7 +157,7 @@ namespace Excavator.F1
                                     newNumber.Number = value.Left( 20 );
                                     newNumber.Description = communicationComment;
 
-                                    newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
+                                    newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Value ) )
                                         .Select( v => (int?)v.Id ).FirstOrDefault();
 
                                     newNumberList.Add( newNumber );
