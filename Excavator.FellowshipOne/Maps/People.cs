@@ -544,11 +544,11 @@ namespace Excavator.F1
                     else if ( completed % ReportingNumber < 1 )
                     {
                         var rockContext = new RockContext();
+                        groupMemberService = new GroupMemberService( rockContext );
                         rockContext.WrapTransaction( () =>
                         {
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.Groups.AddRange( familyList );
-                            //rockContext.Groups.AddRange( visitorList );
                             rockContext.SaveChanges( DisableAudit );
 
                             var newAttributeValues = new List<AttributeValue>();
