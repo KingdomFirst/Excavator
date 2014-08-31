@@ -157,7 +157,7 @@ namespace Excavator.F1
                                     newNumber.Number = value.Left( 20 );
                                     newNumber.Description = communicationComment;
 
-                                    newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Name ) )
+                                    newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Value ) )
                                         .Select( v => (int?)v.Id ).FirstOrDefault();
 
                                     newNumberList.Add( newNumber );
@@ -221,6 +221,17 @@ namespace Excavator.F1
                             person.AttributeValues[facebookAttribute.Key].Add( new AttributeValue()
                             {
                                 AttributeId = facebookAttribute.Id,
+                                Value = value,
+                                Order = 0
+                            } );
+                        }
+                        else if ( type.Contains( "Instagram" ) )
+                        {
+                            person.Attributes.Add( instagramAttribute.Key, instagramAttribute );
+                            person.AttributeValues.Add( instagramAttribute.Key, new List<AttributeValue>() );
+                            person.AttributeValues[instagramAttribute.Key].Add( new AttributeValue()
+                            {
+                                AttributeId = instagramAttribute.Id,
                                 Value = value,
                                 Order = 0
                             } );
