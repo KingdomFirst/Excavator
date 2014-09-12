@@ -65,6 +65,7 @@ namespace Excavator.F1
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             bankAccount.AccountNumberSecured = encodedNumber;
+                            bankAccount.AccountNumberMasked = routingNumber.ToString().Masked();
                             bankAccount.PersonId = (int)personId;
 
                             // Other Attributes (not used):
