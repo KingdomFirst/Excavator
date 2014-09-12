@@ -46,6 +46,7 @@ namespace Excavator.F1
                 .Select( nt => nt.Id ).FirstOrDefault();
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
+                .Where( u => u.ForeignId != null )
                 .Select( u => new { UserId = u.ForeignId, PersonId = u.PersonId } )
                 .ToDictionary( t => t.UserId.AsType<int?>(), t => t.PersonId );
 
@@ -68,10 +69,9 @@ namespace Excavator.F1
                     {
                         DateTime? dateCreated = row["NoteCreated"] as DateTime?;
                         string noteType = row["Note_Type_Name"] as string;
-                        int creatorId = (int)importedUsers[userId];
 
                         var note = new Note();
-                        note.CreatedByPersonAliasId = creatorId;
+                        note.CreatedByPersonAliasId = (int)importedUsers[userId];
                         note.CreatedDateTime = dateCreated;
                         note.EntityId = personId;
                         note.Text = text;
@@ -96,9 +96,9 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            RockTransactionScope.WrapTransaction( () =>
+                            var rockContext = new RockContext();
+                            rockContext.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.Notes.AddRange( noteList );
                                 rockContext.SaveChanges( DisableAudit );
@@ -112,9 +112,9 @@ namespace Excavator.F1
 
             if ( noteList.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.Notes.AddRange( noteList );
                     rockContext.SaveChanges( DisableAudit );

@@ -57,7 +57,7 @@ namespace Excavator.Example
         /// </value>
         public override string ExtensionType
         {
-            get { return ".mdf"; }
+            get { return ".example"; }
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Excavator.Example
                 Person person = new Person();
                 person.LastName = columnValue;
 
-                RockTransactionScope.WrapTransaction( () =>
+                rockContext.WrapTransaction( () =>
                 {
                     // If it's a new model, add it to the database first
                     rockContext.People.Add( person );
@@ -188,7 +188,7 @@ namespace Excavator.Example
                 // Save 100 people at a time
                 if ( completed % 100 < 1 )
                 {
-                    RockTransactionScope.WrapTransaction( () =>
+                    rockContext.WrapTransaction( () =>
                     {
                         rockContext.People.AddRange( newPersonList );
                         rockContext.SaveChanges( IsAudited );
@@ -199,7 +199,7 @@ namespace Excavator.Example
             // Outside foreach, save any that haven't been saved yet
             if ( newPersonList.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                rockContext.WrapTransaction( () =>
                 {
                     rockContext.People.AddRange( newPersonList );
                     rockContext.SaveChanges( IsAudited );

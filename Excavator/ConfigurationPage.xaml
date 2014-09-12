@@ -37,13 +37,14 @@
             Grid.Row="1" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
-            Please enter the user doing the import (default is Admin):
+            Please enter the user doing the import:
         </Label>
 
         <TextBox Name="txtImportUser"
             Grid.Row="1" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom"
             Style="{StaticResource textboxStyle}">
+            Admin
         </TextBox>
 
         <Label Name="lblPasswordKey"

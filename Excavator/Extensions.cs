@@ -16,7 +16,9 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
@@ -86,6 +88,17 @@ namespace Excavator
                 default:
                     throw new ArgumentOutOfRangeException( "Conversion failed: type not recognized " + type );
             }
+        }
+
+        /// <summary>
+        /// Gets the enumerable values.
+        /// http://damieng.com/blog/2008/04/10/using-linq-to-foreach-over-an-enum-in-c
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IEnumerable<T> Get<T>()
+        {
+            return Enum.GetValues( typeof( T ) ).Cast<T>();
         }
 
         /// <summary>
@@ -174,6 +187,23 @@ namespace Excavator
         public static bool IsValidEmail( this string email )
         {
             return Regex.IsMatch( email, @"^(?!((http|https)://|www.))[\w\.\'_%-]+(\+[\w-]*)?@([\w-]+\.)+[\w-]+" );
+        }
+
+        /// <summary>
+        /// Maskeds the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public static string Masked( this string value )
+        {
+            if ( value.Length > 4 )
+            {
+                return string.Concat( new string( '*', 12 ), value.Substring( value.Length - 4 ) );
+            }
+            else
+            {
+                return value;
+            }
         }
     }
 }

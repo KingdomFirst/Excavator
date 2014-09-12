@@ -155,8 +155,9 @@ namespace Excavator.F1
             ReportProgress( 0, "Starting import..." );
             var rockContext = new RockContext();
             var personService = new PersonService( rockContext );
-            var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
-            if ( importPerson == null )
+            var importPerson = personService.GetByFullName( importUser, allowFirstNameOnly: true ).FirstOrDefault();
+            
+            if ( importPerson == null  )
             {
                 importPerson = personService.Queryable().FirstOrDefault();
             }

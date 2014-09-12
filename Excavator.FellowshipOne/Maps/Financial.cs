@@ -65,6 +65,7 @@ namespace Excavator.F1
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             bankAccount.AccountNumberSecured = encodedNumber;
+                            bankAccount.AccountNumberMasked = routingNumber.ToString().Masked();
                             bankAccount.PersonId = (int)personId;
 
                             // Other Attributes (not used):
@@ -79,9 +80,9 @@ namespace Excavator.F1
                             }
                             else if ( completed % ReportingNumber < 1 )
                             {
-                                RockTransactionScope.WrapTransaction( () =>
+                                var rockContext = new RockContext();
+                                rockContext.WrapTransaction( () =>
                                 {
-                                    var rockContext = new RockContext();
                                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                                     rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
                                     rockContext.SaveChanges( DisableAudit );
@@ -97,9 +98,9 @@ namespace Excavator.F1
 
             if ( newBankAccounts.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
                     rockContext.SaveChanges( DisableAudit );
@@ -164,9 +165,9 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
+                        var rockContext = new RockContext();
+                        rockContext.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.FinancialBatches.AddRange( newBatches );
                             rockContext.SaveChanges( DisableAudit );
@@ -180,9 +181,9 @@ namespace Excavator.F1
 
             if ( newBatches.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialBatches.AddRange( newBatches );
                     rockContext.SaveChanges( DisableAudit );
@@ -298,20 +299,24 @@ namespace Excavator.F1
                     }
 
                     string fundName = row["Fund_Name"] as string;
-                    string subFund = row["Sub_Fund_Name"] as string;
                     decimal? amount = row["Amount"] as decimal?;
                     if ( fundName != null & amount != null )
                     {
                         FinancialAccount matchingAccount = null;
+                        int? parentAccountId = null;
+                        int? fundCampusId = null;
                         fundName = fundName.Trim();
 
-                        int? fundCampusId = null;
+                        string subFund = row["Sub_Fund_Name"] as string;
                         if ( subFund != null )
                         {
                             subFund = subFund.Trim();
-                            fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
+
+                            // Check if subfund was used to mark a multi-site campus
+                            fundCampusId = CampusList.Where( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
 
+                            // Matched a campus, check to see if an account exists for that campus already
                             if ( fundCampusId != null )
                             {
                                 matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName )
@@ -319,7 +324,32 @@ namespace Excavator.F1
                             }
                             else
                             {
-                                matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.Name.Equals( subFund ) );
+                                // No campus match, look for an account that matches parent name and subfund name
+                                matchingAccount = accountList.FirstOrDefault( a => a.ParentAccountId != null && a.ParentAccount.Name.Equals( fundName ) && a.Name.Equals( subFund ) );
+
+                                if ( matchingAccount == null )
+                                {
+                                    // Check if a parent account exists already
+                                    FinancialAccount parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) );
+                                    if ( parentAccount == null )
+                                    {
+                                        parentAccount = new FinancialAccount();
+                                        parentAccount.Name = fundName;
+                                        parentAccount.PublicName = fundName;
+                                        parentAccount.IsTaxDeductible = true;
+                                        parentAccount.IsActive = true;
+                                        parentAccount.CampusId = fundCampusId;
+                                        parentAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
+
+                                        lookupContext.FinancialAccounts.Add( parentAccount );
+                                        lookupContext.SaveChanges( DisableAudit );
+                                        accountList.Add( parentAccount );
+                                    }
+
+                                    // set data for subfund to be created
+                                    parentAccountId = parentAccount.Id;
+                                    fundName = subFund;
+                                }
                             }
                         }
                         else
@@ -327,11 +357,13 @@ namespace Excavator.F1
                             matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
                         }
 
+                        // No account matches, create the new account with campus Id and parent Id if they were set
                         if ( matchingAccount == null )
                         {
                             matchingAccount = new FinancialAccount();
                             matchingAccount.Name = fundName;
                             matchingAccount.PublicName = fundName;
+                            matchingAccount.ParentAccountId = parentAccountId;
                             matchingAccount.IsTaxDeductible = true;
                             matchingAccount.IsActive = true;
                             matchingAccount.CampusId = fundCampusId;
@@ -354,7 +386,7 @@ namespace Excavator.F1
                             var transactionRefund = new FinancialTransactionRefund();
                             transactionRefund.CreatedDateTime = receivedDate;
                             transactionRefund.RefundReasonSummary = summary;
-                            transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Name.Contains( summary ) )
+                            transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Value.Contains( summary ) )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                             transaction.Refund = transactionRefund;
                         }
@@ -369,9 +401,9 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
+                        var rockContext = new RockContext();
+                        rockContext.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.FinancialTransactions.AddRange( newTransactions );
                             rockContext.SaveChanges( DisableAudit );
@@ -385,9 +417,9 @@ namespace Excavator.F1
 
             if ( newTransactions.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialTransactions.AddRange( newTransactions );
                     rockContext.SaveChanges( DisableAudit );
@@ -448,7 +480,7 @@ namespace Excavator.F1
                             else
                             {
                                 pledge.PledgeFrequencyValueId = pledgeFrequencies
-                                    .Where( f => f.Name.StartsWith( frequency ) || f.Description.StartsWith( frequency ) )
+                                    .Where( f => f.Value.StartsWith( frequency ) || f.Description.StartsWith( frequency ) )
                                     .Select( f => f.Id ).FirstOrDefault();
                             }
                         }
@@ -508,9 +540,9 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            RockTransactionScope.WrapTransaction( () =>
+                            var rockContext = new RockContext();
+                            rockContext.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.FinancialPledges.AddRange( newPledges );
                                 rockContext.SaveChanges( DisableAudit );
@@ -524,9 +556,9 @@ namespace Excavator.F1
 
             if ( newPledges.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialPledges.AddRange( newPledges );
                     rockContext.SaveChanges( DisableAudit );

@@ -15,6 +15,8 @@
 // </copyright>
 //
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Linq;
@@ -42,6 +44,12 @@ namespace Excavator
 
         private ConnectionString existingConnection;
 
+        /// <summary>
+        /// Gets or sets the current connection.
+        /// </summary>
+        /// <value>
+        /// The current connection.
+        /// </value>
         public ConnectionString CurrentConnection
         {
             get
@@ -51,14 +59,106 @@ namespace Excavator
             set
             {
                 existingConnection = value;
-                if ( PropertyChanged != null )
-                {
-                    PropertyChanged( this, new PropertyChangedEventArgs( "Connection" ) );
-                }
+                App.ExistingConnection = value; //for back and forth, restore from session
+                RaisePropertyChanged( "Connection" );
+                RaisePropertyChanged( "ConnectionDescribed" );
             }
         }
 
+        private string _ConnectionDescribed = string.Empty;
+
+        /// <summary>
+        /// Highlights the current connection on the connect page.
+        /// </summary>
+        /// <value>
+        /// The connection described.
+        /// </value>
+        public string ConnectionDescribed
+        {
+            get
+            {
+                if ( existingConnection != null )
+                {
+                    _ConnectionDescribed = "(Current Destination: " + existingConnection.Server + ":" + existingConnection.Database + ")";
+                }
+                return _ConnectionDescribed;
+            }
+        }
+
+        private IEnumerable<ExcavatorComponent> _ExcavatorImportDlls = null;
+
+        /// <summary>
+        /// Gets or sets the excavator import DLLS.
+        /// </summary>
+        /// <value>
+        /// The excavator import DLLS.
+        /// </value>
+        public IEnumerable<ExcavatorComponent> ExcavatorImportDlls
+        {
+            get
+            {
+                return _ExcavatorImportDlls;
+            }
+            set
+            {
+                if ( _ExcavatorImportDlls == value )
+                    return;
+                _ExcavatorImportDlls = value;
+                RaisePropertyChanged( "ExcavatorImportDlls" );
+            }
+        }
+
+        private ExcavatorComponent _SelectedImportType = null;
+
+        /// <summary>
+        /// Gets or sets the type of the selected import.
+        /// </summary>
+        /// <value>
+        /// The type of the selected import.
+        /// </value>
+        public ExcavatorComponent SelectedImportType
+        {
+            get
+            {
+                return _SelectedImportType;
+            }
+            set
+            {
+                if ( _SelectedImportType == value )
+                    return;
+                _SelectedImportType = value;
+                RaisePropertyChanged( "SelectedImportType" );
+            }
+        }
+
+        /// <summary>
+        /// Gets the name of the selected type.
+        /// </summary>
+        /// <param name="src">The source.</param>
+        /// <param name="propName">Name of the property.</param>
+        /// <returns></returns>
+        public static object GetPropValue( object src, string propName )
+        {
+            if ( src.GetType().GetProperty( propName ) != null )
+            {
+                return src.GetType().GetProperty( propName ).GetValue( src, null );
+            }
+            return string.Empty;
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Raises the property changed.
+        /// </summary>
+        /// <param name="propertyName">Name of the property.</param>
+        private void RaisePropertyChanged( string propertyName )
+        {
+            if ( PropertyChanged != null )
+            {
+                PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) );
+            }
+        }
 
         #endregion
 
@@ -74,8 +174,9 @@ namespace Excavator
             frontEndLoader = new FrontEndLoader();
             if ( frontEndLoader.excavatorTypes.Any() )
             {
-                lstDatabaseTypes.ItemsSource = frontEndLoader.excavatorTypes.GroupBy( t => t.FullName ).Select( g => g.FirstOrDefault() );
-                lstDatabaseTypes.SelectedItem = frontEndLoader.excavatorTypes.FirstOrDefault();
+                ExcavatorImportDlls = frontEndLoader.excavatorTypes.GroupBy( t => t.FullName ).Select( g => g.FirstOrDefault() );
+                SelectedImportType = frontEndLoader.excavatorTypes.FirstOrDefault();
+                InitializeDBConnection();
             }
             else
             {
@@ -84,6 +185,30 @@ namespace Excavator
                 lblDatabaseTypes.Visibility = Visibility.Hidden;
                 lstDatabaseTypes.Visibility = Visibility.Hidden;
                 lblNoData.Content += string.Format( " ({0})", ConfigurationManager.AppSettings["ExtensionPath"] );
+            }
+
+            DataContext = this;
+        }
+
+        /// <summary>
+        /// Initializes the database connection.
+        /// </summary>
+        private void InitializeDBConnection()
+        {
+            if ( App.ExistingConnection != null )
+            {
+                CurrentConnection = App.ExistingConnection;
+            }
+            else
+            {
+                //initialize from app.config
+                var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
+                var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+
+                if ( rockContext != null )
+                {
+                    CurrentConnection = new ConnectionString( rockContext.ConnectionString );
+                }
             }
         }
 
@@ -166,6 +291,7 @@ namespace Excavator
 
             if ( sqlConnector.ConnectionString != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString.Database ) )
             {
+                CurrentConnection = sqlConnector.ConnectionString;
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
                 lblDbConnect.Content = "Successfully connected to the Rock database.";
             }
@@ -191,42 +317,41 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnNext_Click( object sender, RoutedEventArgs e )
         {
-            var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
-            var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
-
-            if ( excavator != null && ( rockContext != null || !string.IsNullOrWhiteSpace( existingConnection ) ) )
-            {
-                try
-                {
-                    if ( sqlConnector != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString ) )
-                    {
-                        if ( rockContext != null )
-                        {
-                            rockContext.ConnectionString = sqlConnector.ConnectionString;
-                        }
-                        else
-                        {
-                            appConfig.ConnectionStrings.ConnectionStrings.Add( new ConnectionStringSettings( "RockContext", sqlConnector.ConnectionString ) );
-                        }
-
-                        appConfig.Save( ConfigurationSaveMode.Modified );
-                        ConfigurationManager.RefreshSection( "connectionstrings" );
-                    }
-
-                    var selectPage = new SelectPage( excavator );
-                    this.NavigationService.Navigate( selectPage );
-                }
-                catch
-                {
-                    lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                    lblDbConnect.Content = "Unable to set the database connection. Please check the permissions on the current directory.";
-                    lblDbConnect.Visibility = Visibility.Visible;
-                }
-            }
-            else
+            if ( excavator == null || CurrentConnection == null )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
                 lblDbConnect.Content = "Please select a valid source and destination.";
+                lblDbConnect.Visibility = Visibility.Visible;
+                return;
+            }
+
+            var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
+            var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+
+            if ( rockContext == null )
+            {
+                rockContext = new ConnectionStringSettings( "RockContext", CurrentConnection );
+                rockContext.ProviderName = "System.Data.SqlClient";
+                appConfig.ConnectionStrings.ConnectionStrings.Add( rockContext );
+            }
+            else
+            {
+                rockContext.ConnectionString = CurrentConnection;
+            }
+
+            try
+            {
+                appConfig.Save( ConfigurationSaveMode.Modified );
+                ConfigurationManager.RefreshSection( "connectionstrings" );
+
+                var selectPage = new SelectPage( excavator );
+                this.NavigationService.Navigate( selectPage );
+            }
+            catch ( Exception ex )
+            {
+                App.LogException( "Next Page", ex.ToString() );
+                lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
+                lblDbConnect.Content = "Unable to save the database connection: " + ex.InnerException.ToString();
                 lblDbConnect.Visibility = Visibility.Visible;
             }
         }
@@ -244,6 +369,7 @@ namespace Excavator
         {
             var selectedExcavator = (string)e.Argument;
             var filePicker = new OpenFileDialog();
+            filePicker.Multiselect = true;
 
             var supportedExtensions = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
                 .Select( t => t.FullName + " |*" + t.ExtensionType ).ToList();
@@ -254,8 +380,20 @@ namespace Excavator
                 excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
                 if ( excavator != null )
                 {
-                    bool loadedSuccessfully = excavator.LoadSchema( filePicker.FileName );
-                    e.Cancel = !loadedSuccessfully;
+                    bool loadedSuccessfully = false;
+                    foreach ( var file in filePicker.FileNames )
+                    {
+                        loadedSuccessfully = excavator.LoadSchema( file );
+                        if ( !loadedSuccessfully )
+                        {
+                            e.Cancel = true;
+                            break;
+                        }
+
+                        Dispatcher.BeginInvoke( (Action)( () =>
+                            FilesUploaded.Children.Add( new TextBlock { Text = System.IO.Path.GetFileName( file ) } )
+                        ) );
+                    }
                 }
             }
             else
