@@ -1,5 +1,6 @@
-[![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)
 <b>Excavator</b>
+
+Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)
 =========
 
 Excavator converts data into [Rock RMS](http://www.rockrms.com/) from other church management systems.  You will need the SQL file (.mdf) from your previous database and an active Rock connection.
