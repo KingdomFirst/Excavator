@@ -215,63 +215,66 @@ namespace Excavator.F1
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
-                        Location familyAddress = lookupService.Get( street1, street2, city, state, zip, country );
-
                         /* Use CheckAddress.Get instead of Rock.Model.LocationService.Get (more details below) */
                         //Location familyAddress = CheckAddress.Get( street1, street2, city, state, zip, DisableAudit );
 
-                        familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                        familyAddress.Name = familyGroup.Name;
-                        familyAddress.IsActive = true;
+                        Location familyAddress = lookupService.Get( street1, street2, city, state, zip, country );
 
-                        groupLocation.GroupId = familyGroup.Id;
-                        groupLocation.LocationId = familyAddress.Id;
-                        groupLocation.IsMailingLocation = true;
-                        groupLocation.IsMappedLocation = true;
+                        if ( familyAddress != null )
+                        {
+                            familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            familyAddress.Name = familyGroup.Name;
+                            familyAddress.IsActive = true;
 
-                        string addressType = row["Address_Type"] as string;
+                            groupLocation.GroupId = familyGroup.Id;
+                            groupLocation.LocationId = familyAddress.Id;
+                            groupLocation.IsMailingLocation = true;
+                            groupLocation.IsMappedLocation = true;
 
-                        if ( addressType.Equals( "Primary" ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
-                        }
-                        else if ( addressType.Equals( "Business" ) || addressType.Equals( "Org" ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
-                        }
-                        else if ( addressType.Equals( "Previous" ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
-                        }
-                        else if ( !string.IsNullOrEmpty( addressType ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Value.Equals( addressType ) )
-                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                        }
+                            string addressType = row["Address_Type"] as string;
 
-                        newGroupLocations.Add( groupLocation );
-                        completed++;
-
-                        if ( completed % percentage < 1 )
-                        {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else if ( completed % ReportingNumber < 1 )
-                        {
-                            var rockContext = new RockContext();
-                            rockContext.WrapTransaction( () =>
+                            if ( addressType.Equals( "Primary" ) )
                             {
-                                rockContext.Configuration.AutoDetectChangesEnabled = false;
-                                rockContext.GroupLocations.AddRange( newGroupLocations );
-                                rockContext.ChangeTracker.DetectChanges();
-                                rockContext.SaveChanges( DisableAudit );
-                            } );
+                                groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
+                            }
+                            else if ( addressType.Equals( "Business" ) || addressType.Equals( "Org" ) )
+                            {
+                                groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
+                            }
+                            else if ( addressType.Equals( "Previous" ) )
+                            {
+                                groupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
+                            }
+                            else if ( !string.IsNullOrEmpty( addressType ) )
+                            {
+                                groupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Value.Equals( addressType ) )
+                                    .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                            }
 
-                            newGroupLocations.Clear();
-                            lookupContext = new RockContext();
-                            lookupService = new LocationService( lookupContext );
-                            ReportPartialProgress();
+                            newGroupLocations.Add( groupLocation );
+                            completed++;
+
+                            if ( completed % percentage < 1 )
+                            {
+                                int percentComplete = completed / percentage;
+                                ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
+                            }
+                            else if ( completed % ReportingNumber < 1 )
+                            {
+                                var rockContext = new RockContext();
+                                rockContext.WrapTransaction( () =>
+                                {
+                                    rockContext.Configuration.AutoDetectChangesEnabled = false;
+                                    rockContext.GroupLocations.AddRange( newGroupLocations );
+                                    rockContext.ChangeTracker.DetectChanges();
+                                    rockContext.SaveChanges( DisableAudit );
+                                } );
+
+                                newGroupLocations.Clear();
+                                lookupContext = new RockContext();
+                                lookupService = new LocationService( lookupContext );
+                                ReportPartialProgress();
+                            }
                         }
                     }
                 }
