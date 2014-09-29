@@ -85,9 +85,9 @@ namespace Excavator.F1
                     // BreakoutGroup_Name
                     // Pager_Code
 
-                    RockTransactionScope.WrapTransaction( () =>
+                    var rockContext = new RockContext();
+                    rockContext.WrapTransaction( () =>
                     {
-                        var rockContext = new RockContext();
                         rockContext.Configuration.AutoDetectChangesEnabled = false;
                         rockContext.Attendances.Add( attendance );
                         rockContext.SaveChanges( DisableAudit );

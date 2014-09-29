@@ -122,7 +122,14 @@ namespace Excavator
                 importUser = "Admin";
             }
 
-            e.Result = excavator.TransformData( importUser );
+            try
+            {
+                e.Result = excavator.TransformData( importUser );
+            }
+            catch ( Exception ex )
+            {
+                App.LogException( "Transform Data", ex.ToString() );
+            }
         }
 
         /// <summary>
@@ -132,19 +139,25 @@ namespace Excavator
         /// <param name="e">The <see cref="RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         private void bwImportData_RunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e )
         {
-            var rowsImported = (int)e.Result;
-            if ( rowsImported < 0 )
+            var rowsImported = (int?)e.Result;
+            if ( rowsImported > 0 )
             {
-                App.LogException( "Import Data", "An error occurred importing data" );
-                return;
+                this.Dispatcher.Invoke( (Action)( () =>
+                {
+                    lblHeader.Content = "Import Complete";
+                    txtProgress.AppendText( Environment.NewLine + DateTime.Now.ToLongTimeString() + "  Finished upload." );
+                    txtProgress.ScrollToEnd();
+                } ) );
             }
-
-            this.Dispatcher.Invoke( (Action)( () =>
+            else
             {
-                lblHeader.Content = "Import Complete";
-                txtProgress.AppendText( Environment.NewLine + DateTime.Now.ToLongTimeString() + "  Finished upload." );
-                txtProgress.ScrollToEnd();
-            } ) );
+                this.Dispatcher.Invoke( (Action)( () =>
+                {
+                    lblHeader.Content = "Import Failed";
+                    txtProgress.AppendText( Environment.NewLine + DateTime.Now.ToLongTimeString() + "  Could not finish upload. Check the exceptions log for details." );
+                    txtProgress.ScrollToEnd();
+                } ) );
+            }
 
             btnClose.Visibility = Visibility.Visible;
 

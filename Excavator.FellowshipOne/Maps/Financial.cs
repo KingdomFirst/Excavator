@@ -65,6 +65,7 @@ namespace Excavator.F1
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             bankAccount.AccountNumberSecured = encodedNumber;
+                            bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
                             bankAccount.PersonId = (int)personId;
 
                             // Other Attributes (not used):
@@ -79,9 +80,9 @@ namespace Excavator.F1
                             }
                             else if ( completed % ReportingNumber < 1 )
                             {
-                                RockTransactionScope.WrapTransaction( () =>
+                                var rockContext = new RockContext();
+                                rockContext.WrapTransaction( () =>
                                 {
-                                    var rockContext = new RockContext();
                                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                                     rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
                                     rockContext.SaveChanges( DisableAudit );
@@ -97,9 +98,9 @@ namespace Excavator.F1
 
             if ( newBankAccounts.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
                     rockContext.SaveChanges( DisableAudit );
@@ -164,9 +165,9 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
+                        var rockContext = new RockContext();
+                        rockContext.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.FinancialBatches.AddRange( newBatches );
                             rockContext.SaveChanges( DisableAudit );
@@ -180,9 +181,9 @@ namespace Excavator.F1
 
             if ( newBatches.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialBatches.AddRange( newBatches );
                     rockContext.SaveChanges( DisableAudit );
@@ -385,7 +386,7 @@ namespace Excavator.F1
                             var transactionRefund = new FinancialTransactionRefund();
                             transactionRefund.CreatedDateTime = receivedDate;
                             transactionRefund.RefundReasonSummary = summary;
-                            transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Name.Contains( summary ) )
+                            transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Value.Contains( summary ) )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                             transaction.Refund = transactionRefund;
                         }
@@ -400,9 +401,9 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        RockTransactionScope.WrapTransaction( () =>
+                        var rockContext = new RockContext();
+                        rockContext.WrapTransaction( () =>
                         {
-                            var rockContext = new RockContext();
                             rockContext.Configuration.AutoDetectChangesEnabled = false;
                             rockContext.FinancialTransactions.AddRange( newTransactions );
                             rockContext.SaveChanges( DisableAudit );
@@ -416,9 +417,9 @@ namespace Excavator.F1
 
             if ( newTransactions.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialTransactions.AddRange( newTransactions );
                     rockContext.SaveChanges( DisableAudit );
@@ -479,7 +480,7 @@ namespace Excavator.F1
                             else
                             {
                                 pledge.PledgeFrequencyValueId = pledgeFrequencies
-                                    .Where( f => f.Name.StartsWith( frequency ) || f.Description.StartsWith( frequency ) )
+                                    .Where( f => f.Value.StartsWith( frequency ) || f.Description.StartsWith( frequency ) )
                                     .Select( f => f.Id ).FirstOrDefault();
                             }
                         }
@@ -539,9 +540,9 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            RockTransactionScope.WrapTransaction( () =>
+                            var rockContext = new RockContext();
+                            rockContext.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.FinancialPledges.AddRange( newPledges );
                                 rockContext.SaveChanges( DisableAudit );
@@ -555,9 +556,9 @@ namespace Excavator.F1
 
             if ( newPledges.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.FinancialPledges.AddRange( newPledges );
                     rockContext.SaveChanges( DisableAudit );

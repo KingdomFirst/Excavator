@@ -104,9 +104,9 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            RockTransactionScope.WrapTransaction( () =>
+                            var rockContext = new RockContext();
+                            rockContext.WrapTransaction( () =>
                             {
-                                var rockContext = new RockContext();
                                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                                 rockContext.Groups.AddRange( newGroups );
                                 rockContext.SaveChanges( DisableAudit );
@@ -120,9 +120,9 @@ namespace Excavator.F1
 
             if ( newGroups.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.Groups.AddRange( newGroups );
                     rockContext.SaveChanges( DisableAudit );
@@ -216,59 +216,65 @@ namespace Excavator.F1
                         string zip = row["Postal_Code"] as string;
 
                         /* Use CheckAddress.Get instead of Rock.Model.LocationService.Get (more details below) */
-                        Location familyAddress = CheckAddress.Get( street1, street2, city, state, zip, DisableAudit );
+                        //Location familyAddress = CheckAddress.Get( street1, street2, city, state, zip, DisableAudit );
 
-                        familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                        familyAddress.Name = familyGroup.Name;
-                        familyAddress.IsActive = true;
+                        Location familyAddress = lookupService.Get( street1, street2, city, state, zip, country );
 
-                        groupLocation.GroupId = familyGroup.Id;
-                        groupLocation.LocationId = familyAddress.Id;
-                        groupLocation.IsMailingLocation = true;
-                        groupLocation.IsMappedLocation = true;
+                        if ( familyAddress != null )
+                        {
+                            familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            familyAddress.Name = familyGroup.Name;
+                            familyAddress.IsActive = true;
 
-                        string addressType = row["Address_Type"] as string;
+                            groupLocation.GroupId = familyGroup.Id;
+                            groupLocation.LocationId = familyAddress.Id;
+                            groupLocation.IsMailingLocation = true;
+                            groupLocation.IsMappedLocation = true;
 
-                        if ( addressType.Equals( "Primary" ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
-                        }
-                        else if ( addressType.Equals( "Business" ) || addressType.Equals( "Org" ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
-                        }
-                        else if ( addressType.Equals( "Previous" ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
-                        }
-                        else if ( !string.IsNullOrEmpty( addressType ) )
-                        {
-                            groupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Name.Equals( addressType ) )
-                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                        }
+                            string addressType = row["Address_Type"] as string;
 
-                        newGroupLocations.Add( groupLocation );
-                        completed++;
+                            if ( addressType.Equals( "Primary" ) )
+                            {
+                                groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
+                            }
+                            else if ( addressType.Equals( "Business" ) || addressType.Equals( "Org" ) )
+                            {
+                                groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
+                            }
+                            else if ( addressType.Equals( "Previous" ) )
+                            {
+                                groupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
+                            }
+                            else if ( !string.IsNullOrEmpty( addressType ) )
+                            {
+                                groupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Value.Equals( addressType ) )
+                                    .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                            }
 
-                        if ( completed % percentage < 1 )
-                        {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else if ( completed % ReportingNumber < 1 )
-                        {
-                            RockTransactionScope.WrapTransaction( () =>
+                            newGroupLocations.Add( groupLocation );
+                            completed++;
+
+                            if ( completed % percentage < 1 )
+                            {
+                                int percentComplete = completed / percentage;
+                                ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
+                            }
+                            else if ( completed % ReportingNumber < 1 )
                             {
                                 var rockContext = new RockContext();
-                                rockContext.Configuration.AutoDetectChangesEnabled = false;
-                                rockContext.GroupLocations.AddRange( newGroupLocations );
-                                rockContext.SaveChanges( DisableAudit );
-                            } );
+                                rockContext.WrapTransaction( () =>
+                                {
+                                    rockContext.Configuration.AutoDetectChangesEnabled = false;
+                                    rockContext.GroupLocations.AddRange( newGroupLocations );
+                                    rockContext.ChangeTracker.DetectChanges();
+                                    rockContext.SaveChanges( DisableAudit );
+                                } );
 
-                            newGroupLocations.Clear();
-                            lookupContext = new RockContext();
-                            lookupService = new LocationService( lookupContext );
-                            ReportPartialProgress();
+                                newGroupLocations.Clear();
+                                lookupContext = new RockContext();
+                                lookupService = new LocationService( lookupContext );
+                                ReportPartialProgress();
+                            }
                         }
                     }
                 }
@@ -276,9 +282,9 @@ namespace Excavator.F1
 
             if ( newGroupLocations.Any() )
             {
-                RockTransactionScope.WrapTransaction( () =>
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var rockContext = new RockContext();
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.GroupLocations.AddRange( newGroupLocations );
                     rockContext.SaveChanges( DisableAudit );
@@ -324,7 +330,7 @@ namespace Excavator.F1
                 ( t.Street2 == street2 || ( street2 == null && t.Street2 == null ) ) &&
                 ( t.City == city || ( city == null && t.City == null ) ) &&
                 ( t.State == state || ( state == null && t.State == null ) ) &&
-                ( t.Zip == zip || ( zip == null && t.Zip == null ) ) );
+                ( t.PostalCode == zip || ( zip == null && t.PostalCode == null ) ) );
             if ( existingLocation != null )
             {
                 return existingLocation;
@@ -338,7 +344,7 @@ namespace Excavator.F1
                 Street2 = street2,
                 City = city,
                 State = state,
-                Zip = zip
+                PostalCode = zip
             };
 
             // uses MEF to look for verification providers (which Excavator doesn't have)
@@ -349,7 +355,7 @@ namespace Excavator.F1
                 ( t.Street2 == newLocation.Street2 || ( newLocation.Street2 == null && t.Street2 == null ) ) &&
                 ( t.City == newLocation.City || ( newLocation.City == null && t.City == null ) ) &&
                 ( t.State == newLocation.State || ( newLocation.State == null && t.State == null ) ) &&
-                ( t.Zip == newLocation.Zip || ( newLocation.Zip == null && t.Zip == null ) ) );
+                ( t.PostalCode == newLocation.PostalCode || ( newLocation.PostalCode == null && t.PostalCode == null ) ) );
 
             if ( existingLocation != null )
             {

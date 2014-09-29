@@ -34,31 +34,27 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DotLiquid">
-      <HintPath>..\Excavator\Packages\DotLiquid.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\Embeds\DotLiquid.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework">
-      <HintPath>..\Excavator\Packages\EntityFramework.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\Excavator\Packages\EntityFramework.SqlServer.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="OrcaMDF.Core">
-      <HintPath>..\Excavator\Packages\OrcaMDF.Core.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\Embeds\OrcaMDF.Core.dll</HintPath>
     </Reference>
-    <Reference Include="OrcaMDF.Framework">
-      <HintPath>..\Excavator\Packages\OrcaMDF.Framework.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="OrcaMDF.Framework, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Embeds\OrcaMDF.Framework.dll</HintPath>
     </Reference>
     <Reference Include="Rock">
-      <HintPath>..\Excavator\Packages\Rock.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\Embeds\Rock.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
@@ -112,7 +108,10 @@
       <Name>Excavator</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

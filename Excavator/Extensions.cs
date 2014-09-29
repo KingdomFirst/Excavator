@@ -188,5 +188,22 @@ namespace Excavator
         {
             return Regex.IsMatch( email, @"^(?!((http|https)://|www.))[\w\.\'_%-]+(\+[\w-]*)?@([\w-]+\.)+[\w-]+" );
         }
+
+        /// <summary>
+        /// Maskeds the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public static string Masked( this string value )
+        {
+            if ( value.Length > 4 )
+            {
+                return string.Concat( new string( '*', 12 ), value.Substring( value.Length - 4 ) );
+            }
+            else
+            {
+                return value;
+            }
+        }
     }
 }

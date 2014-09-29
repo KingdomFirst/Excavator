@@ -37,23 +37,7 @@ namespace Excavator
         public static void Main()
         {
             Excavator.App app = new Excavator.App();
-            string embedPath = ConfigurationManager.AppSettings["EmbeddedResources"];
-
-            AppDomain.CurrentDomain.AssemblyResolve += ( sender, args ) =>
-            {
-                string resourceName = embedPath + "." + new AssemblyName( args.Name ).Name + ".dll";
-                using ( var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream( resourceName ) )
-                {
-                    Byte[] assemblyData = new Byte[stream.Length];
-
-                    stream.Read( assemblyData, 0, assemblyData.Length );
-
-                    return Assembly.Load( assemblyData );
-                }
-            };
-
             app.InitializeComponent();
-
             app.Run();
         }
 
@@ -70,6 +54,8 @@ namespace Excavator
             get { return existingConnection; }
             set { existingConnection = value; }
         }
+
+        # region Logging
 
         /// <summary>
         /// Logs the exception.
@@ -128,5 +114,7 @@ namespace Excavator
             var showWindow = connectWindow.ShowDialog();
             ShowingError = false;
         }
+
+        #endregion Logging
     }
 }

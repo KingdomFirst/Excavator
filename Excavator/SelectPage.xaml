@@ -62,7 +62,7 @@
             Please select the source and destination from the previous page.
         </Label>
 
-        <TreeView Name="treeView" Margin="10,0,50,0"
+        <TreeView Name="treeView" Margin="0 0 10 0"
                 Grid.Row="1" Grid.Column="0"
                 Background="{x:Null}"
                 BorderBrush="{x:Null}">
@@ -76,7 +76,7 @@
             CanUserAddRows="False" IsReadOnly="True"
             ColumnWidth="Auto" HorizontalContentAlignment="Stretch"
             Grid.Row="1" VerticalAlignment="Top"
-            Grid.Column="1" HorizontalAlignment="Center">
+            Grid.Column="1" HorizontalAlignment="Stretch">
             <DataGrid.LayoutTransform>
                 <TransformGroup>
                     <RotateTransform Angle="90" />
