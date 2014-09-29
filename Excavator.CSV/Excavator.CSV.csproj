@@ -32,26 +32,24 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DotLiquid">
-      <HintPath>..\Excavator\Packages\DotLiquid.dll</HintPath>
+      <HintPath>..\packages\Embeds\DotLiquid.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="EntityFramework">
-      <HintPath>..\Excavator\Packages\EntityFramework.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\Excavator\Packages\EntityFramework.SqlServer.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="LumenWorks.Framework.IO">
-      <HintPath>..\Excavator\Packages\LumenWorks.Framework.IO.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\Embeds\LumenWorks.Framework.IO.dll</HintPath>
     </Reference>
     <Reference Include="Rock">
-      <HintPath>..\Excavator\Packages\Rock.dll</HintPath>
+      <HintPath>..\packages\Embeds\Rock.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -74,6 +72,10 @@
       <Project>{6c4100b7-6b6b-40d7-a150-deba50512c95}</Project>
       <Name>Excavator</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Rock.Data;
+using Rock.Model;
+using Rock.Web.Cache;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using Rock.Data;
-using Rock.Model;
-using Rock.Web.Cache;
 
 namespace Excavator.CSV
 {
@@ -30,7 +30,7 @@ namespace Excavator.CSV
             int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault(dv => dv.Guid == new Guid(Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK)).Id;
 
             var newGroupLocations = new List<GroupLocation>();
-           
+
             if (address != null)
             {
                 var groupLocation = new GroupLocation();
@@ -59,13 +59,13 @@ namespace Excavator.CSV
 
             if (newGroupLocations.Count > 0)
             {
-                RockTransactionScope.WrapTransaction(() =>
-                    {
-                        var rockContext = new RockContext();
-                        rockContext.Configuration.AutoDetectChangesEnabled = false;
-                        rockContext.GroupLocations.AddRange(newGroupLocations);
-                        rockContext.SaveChanges(true);
-                    });
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction(() =>
+                {
+                    rockContext.Configuration.AutoDetectChangesEnabled = false;
+                    rockContext.GroupLocations.AddRange(newGroupLocations);
+                    rockContext.SaveChanges(true);
+                });
             }
         }
     }
