@@ -60,13 +60,13 @@ namespace Excavator.F1
                     {
                         accountNumber = accountNumber.Replace( " ", string.Empty );
                         string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
-                        if ( !importedBankAccounts.Any( a => a.PersonId == personId && a.AccountNumberSecured == encodedNumber ) )
+                        if ( !importedBankAccounts.Any( a => a.PersonAliasId == personId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
-                            bankAccount.PersonId = (int)personId;
+                            bankAccount.PersonAliasId = (int)personId;
 
                             // Other Attributes (not used):
                             // Account_Type_Name
@@ -241,9 +241,9 @@ namespace Excavator.F1
                 {
                     var transaction = new FinancialTransaction();
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
-                    transaction.AuthorizedPersonId = GetPersonId( individualId, householdId );
+                    transaction.AuthorizedPersonAliasId = GetPersonId( individualId, householdId );
                     transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    transaction.AuthorizedPersonId = GetPersonId( individualId, householdId );
+                    transaction.ProcessedByPersonAliasId = GetPersonId( individualId, householdId );
                     transaction.ForeignId = contributionId.ToString();
 
                     string summary = row["Memo"] as string;
@@ -462,7 +462,7 @@ namespace Excavator.F1
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
                     int? personId = GetPersonId( individualId, householdId );
-                    if ( personId != null && !importedPledges.Any( p => p.PersonId == personId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
+                    if ( personId != null && !importedPledges.Any( p => p.PersonAliasId == personId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
                     {
                         var pledge = new FinancialPledge();
                         pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;
