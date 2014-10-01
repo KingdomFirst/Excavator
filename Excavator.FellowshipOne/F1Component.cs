@@ -156,8 +156,8 @@ namespace Excavator.F1
             var rockContext = new RockContext();
             var personService = new PersonService( rockContext );
             var importPerson = personService.GetByFullName( importUser, allowFirstNameOnly: true ).FirstOrDefault();
-            
-            if ( importPerson == null  )
+
+            if ( importPerson == null )
             {
                 importPerson = personService.Queryable().FirstOrDefault();
             }
@@ -350,12 +350,14 @@ namespace Excavator.F1
 
             ImportedPeople = listHouseholdId.GroupJoin( listIndividualId,
                 household => household.PersonId,
-                individual => individual.PersonId, ( household, individual ) => new ImportedPerson
-                {
-                    PersonId = household.PersonId,
-                    HouseholdId = household.HouseholdId.AsType<int?>(),
-                    IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
-                } ).ToList();
+                individual => individual.PersonId,
+                ( household, individual ) => new ImportedPerson
+                    {
+                        PersonAliasId = household.PersonId,
+                        HouseholdId = household.HouseholdId.AsType<int?>(),
+                        IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
+                    }
+                ).ToList();
 
             ImportedBatches = new FinancialBatchService( rockContext ).Queryable()
                 .Where( b => b.ForeignId != null )
@@ -369,12 +371,12 @@ namespace Excavator.F1
         /// <param name="individualId">The individual identifier.</param>
         /// <param name="householdId">The household identifier.</param>
         /// <returns></returns>
-        private int? GetPersonId( int? individualId = null, int? householdId = null )
+        private int? GetPersonAliasId( int? individualId = null, int? householdId = null )
         {
             var existingPerson = ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
             if ( existingPerson != null )
             {
-                return existingPerson.PersonId;
+                return existingPerson.PersonAliasId;
             }
             else
             {
@@ -389,7 +391,7 @@ namespace Excavator.F1
                 {
                     ImportedPeople.Add( new ImportedPerson()
                     {
-                        PersonId = lookupPerson.EntityId,
+                        PersonAliasId = lookupPerson.EntityId,
                         HouseholdId = householdId,
                         IndividualId = individualId
                     } );
@@ -409,7 +411,7 @@ namespace Excavator.F1
         /// <returns></returns>
         private List<int?> GetFamilyByHouseholdId( int? householdId )
         {
-            var familyList = ImportedPeople.Where( p => p.HouseholdId == householdId && p.PersonId != null ).Select( p => p.PersonId ).ToList();
+            var familyList = ImportedPeople.Where( p => p.HouseholdId == householdId && p.PersonAliasId != null ).Select( p => p.PersonAliasId ).ToList();
             return familyList;
         }
 
@@ -422,9 +424,9 @@ namespace Excavator.F1
     public class ImportedPerson
     {
         /// <summary>
-        /// Stores the Rock.Person Id
+        /// Stores the Rock.PersonAliasId
         /// </summary>
-        public int? PersonId;
+        public int? PersonAliasId;
 
         /// <summary>
         /// Stores the F1 Individual Id

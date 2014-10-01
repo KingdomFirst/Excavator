@@ -198,7 +198,7 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? associatedPersonId = GetPersonId( individualId, householdId );
+                int? associatedPersonId = GetPersonAliasId( individualId, householdId );
                 if ( associatedPersonId != null )
                 {
                     var familyGroup = groupMembershipList.Where( gm => gm.PersonId == (int)associatedPersonId )

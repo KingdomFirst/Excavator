@@ -51,7 +51,7 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? personId = GetPersonId( individualId, householdId );
+                int? personId = GetPersonAliasId( individualId, householdId );
                 if ( personId != null )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
@@ -241,9 +241,9 @@ namespace Excavator.F1
                 {
                     var transaction = new FinancialTransaction();
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
-                    transaction.AuthorizedPersonAliasId = GetPersonId( individualId, householdId );
+                    transaction.AuthorizedPersonAliasId = GetPersonAliasId( individualId, householdId );
                     transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    transaction.ProcessedByPersonAliasId = GetPersonId( individualId, householdId );
+                    transaction.ProcessedByPersonAliasId = GetPersonAliasId( individualId, householdId );
                     transaction.ForeignId = contributionId.ToString();
 
                     string summary = row["Memo"] as string;
@@ -461,7 +461,7 @@ namespace Excavator.F1
                 {
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    int? personId = GetPersonId( individualId, householdId );
+                    int? personId = GetPersonAliasId( individualId, householdId );
                     if ( personId != null && !importedPledges.Any( p => p.PersonAliasId == personId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
                     {
                         var pledge = new FinancialPledge();

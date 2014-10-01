@@ -65,7 +65,7 @@ namespace Excavator.F1
             foreach ( var row in tableData )
             {
                 int? householdId = row["Household_ID"] as int?;
-                if ( GetPersonId( null, householdId ) == null )
+                if ( GetPersonAliasId( null, householdId ) == null )
                 {
                     var businessGroup = new Group();
                     var business = new Person();
@@ -270,7 +270,7 @@ namespace Excavator.F1
                     string currentCampus = string.Empty;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    if ( GetPersonId( individualId, householdId ) == null )
+                    if ( GetPersonAliasId( individualId, householdId ) == null )
                     {
                         var person = new Person();
                         person.FirstName = row["First_Name"] as string;
@@ -794,7 +794,7 @@ namespace Excavator.F1
                 int? userId = row["UserID"] as int?;
                 if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !importedUsers.ContainsKey( (int)userId ) )
                 {
-                    int? personId = GetPersonId( individualId, null );
+                    int? personId = GetPersonAliasId( individualId, null );
                     if ( personId != null )
                     {
                         DateTime? createdDate = row["UserCreatedDate"] as DateTime?;

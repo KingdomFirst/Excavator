@@ -102,7 +102,7 @@ namespace Excavator.F1
 
                 if ( individualId != null )
                 {
-                    int? personId = GetPersonId( individualId, householdId );
+                    int? personId = GetPersonAliasId( individualId, householdId );
                     if ( personId != null )
                     {
                         personList.Add( personId );

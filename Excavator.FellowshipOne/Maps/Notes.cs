@@ -61,7 +61,7 @@ namespace Excavator.F1
                 string text = row["Note_Text"] as string;
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? personId = GetPersonId( individualId, householdId );
+                int? personId = GetPersonAliasId( individualId, householdId );
                 if ( personId != null && !string.IsNullOrWhiteSpace( text ) )
                 {
                     int? userId = row["NoteCreatedByUserID"] as int?;

@@ -57,7 +57,7 @@ namespace Excavator.F1
                     int? individualId = row["Individual_ID"] as int?;
                     if ( individualId != null )
                     {
-                        attendance.PersonAliasId = GetPersonId( individualId );
+                        attendance.PersonAliasId = GetPersonAliasId( individualId );
                     }
 
                     DateTime? checkInTime = row["Check_In_Time"] as DateTime?;
