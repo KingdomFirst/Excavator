@@ -247,8 +247,9 @@ namespace Excavator.F1
                             }
                             else if ( !string.IsNullOrEmpty( addressType ) )
                             {
-                                groupLocation.GroupLocationTypeValueId = groupLocationTypeList.Where( dv => dv.Value.Equals( addressType ) )
+                                var customTypeId = groupLocationTypeList.Where( dv => dv.Value.Equals( addressType ) )
                                     .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                                groupLocation.GroupLocationTypeValueId = customTypeId ?? homeGroupLocationTypeId;
                             }
 
                             newGroupLocations.Add( groupLocation );
