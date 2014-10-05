@@ -102,7 +102,7 @@ namespace Excavator.F1
 
                 if ( individualId != null )
                 {
-                    int? personId = GetPersonId( individualId, householdId );
+                    int? personId = GetPersonAliasId( individualId, householdId );
                     if ( personId != null )
                     {
                         personList.Add( personId );
@@ -172,7 +172,7 @@ namespace Excavator.F1
                     {
                         var person = personService.Queryable( includeDeceased: true ).FirstOrDefault( p => p.Id == personList.FirstOrDefault() );
                         person.Attributes = new Dictionary<string, AttributeCache>();
-                        person.AttributeValues = new Dictionary<string, List<AttributeValue>>();
+                        person.AttributeValues = new Dictionary<string, AttributeValue>();
 
                         if ( value.IsValidEmail() )
                         {
@@ -194,46 +194,38 @@ namespace Excavator.F1
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
                             {
                                 person.Attributes.Add( secondaryEmailAttribute.Key, secondaryEmailAttribute );
-                                person.AttributeValues.Add( secondaryEmailAttribute.Key, new List<AttributeValue>() );
-                                person.AttributeValues[secondaryEmailAttribute.Key].Add( new AttributeValue()
+                                person.AttributeValues.Add( secondaryEmailAttribute.Key, new AttributeValue()
                                 {
                                     AttributeId = secondaryEmailAttribute.Id,
-                                    Value = secondaryEmail,
-                                    Order = 0
+                                    Value = secondaryEmail
                                 } );
                             }
                         }
                         else if ( type.Contains( "Twitter" ) )
                         {
                             person.Attributes.Add( twitterAttribute.Key, twitterAttribute );
-                            person.AttributeValues.Add( twitterAttribute.Key, new List<AttributeValue>() );
-                            person.AttributeValues[twitterAttribute.Key].Add( new AttributeValue()
+                            person.AttributeValues.Add( twitterAttribute.Key, new AttributeValue()
                             {
                                 AttributeId = twitterAttribute.Id,
-                                Value = value,
-                                Order = 0
+                                Value = value
                             } );
                         }
                         else if ( type.Contains( "Facebook" ) )
                         {
                             person.Attributes.Add( facebookAttribute.Key, facebookAttribute );
-                            person.AttributeValues.Add( facebookAttribute.Key, new List<AttributeValue>() );
-                            person.AttributeValues[facebookAttribute.Key].Add( new AttributeValue()
+                            person.AttributeValues.Add( facebookAttribute.Key, new AttributeValue()
                             {
                                 AttributeId = facebookAttribute.Id,
-                                Value = value,
-                                Order = 0
+                                Value = value
                             } );
                         }
                         else if ( type.Contains( "Instagram" ) )
                         {
                             person.Attributes.Add( instagramAttribute.Key, instagramAttribute );
-                            person.AttributeValues.Add( instagramAttribute.Key, new List<AttributeValue>() );
-                            person.AttributeValues[instagramAttribute.Key].Add( new AttributeValue()
+                            person.AttributeValues.Add( instagramAttribute.Key, new AttributeValue()
                             {
                                 AttributeId = instagramAttribute.Id,
-                                Value = value,
-                                Order = 0
+                                Value = value
                             } );
                         }
 
@@ -260,7 +252,7 @@ namespace Excavator.F1
                             {
                                 foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                                 {
-                                    var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                                    var newValue = updatedPerson.AttributeValues[attributeCache.Key];
                                     if ( newValue != null )
                                     {
                                         newValue.EntityId = updatedPerson.Id;
@@ -297,7 +289,7 @@ namespace Excavator.F1
                     {
                         foreach ( var attributeCache in updatedPerson.Attributes.Select( a => a.Value ) )
                         {
-                            var newValue = updatedPerson.AttributeValues[attributeCache.Key].FirstOrDefault();
+                            var newValue = updatedPerson.AttributeValues[attributeCache.Key];
                             if ( newValue != null )
                             {
                                 newValue.EntityId = updatedPerson.Id;
