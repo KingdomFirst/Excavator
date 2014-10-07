@@ -78,7 +78,7 @@ namespace Excavator.CSV
 
         #endregion
 
-        #region Maps
+        #region Main Methods
 
         /// <summary>
         /// Maps the family data.
@@ -93,15 +93,21 @@ namespace Excavator.CSV
             // only import things that the user checked
             List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
+            // Family Data is important, so it should be loaded first
+            if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.FAMILY ) )
+            {
+                selectedCsvData.OrderBy( d => d.RecordType != CsvDataModel.RockDataType.FAMILY );
+            }
+
             foreach ( var csvData in selectedCsvData )
             {
                 if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
                 {
-                    LoadFamily( csvData );
+                    completed += LoadFamily( csvData );
                 }
-                else
+                else if ( csvData.RecordType == CsvDataModel.RockDataType.INDIVIDUAL )
                 {
-                    completed = LoadIndividuals( csvData );
+                    completed += LoadIndividuals( csvData );
                 }
             } //read all files
 
@@ -112,9 +118,11 @@ namespace Excavator.CSV
         /// Loads the family data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
-        private void LoadFamily( CsvDataModel csvData )
+        private int LoadFamily( CsvDataModel csvData )
         {
-            // Family group type id (required)
+            // Required variables
+            var lookupContext = new RockContext();
+            var lookupService = new LocationService( lookupContext );
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
             string currentFamilyId = string.Empty;
@@ -130,26 +138,71 @@ namespace Excavator.CSV
                     {
                         //see if it's already loaded, and if it needs added to local storage for quick retrieval
                         bool needsAddedToList = false;
-                        _familyGroup = getFamilyGroup( rowFamilyId, ref needsAddedToList );
+                        _familyGroup = GetFamilyGroup( rowFamilyId, ref needsAddedToList );
 
                         if ( _familyGroup == null )
                         {
-                            needsAddedToList = true;
-                            FillInFamilyGroupInfo( rowFamilyId, familyGroupTypeId, row );
-                        }
-                        if ( needsAddedToList )
-                        {
+                            _familyGroup = new Group();
+                            _familyGroup.ForeignId = rowFamilyId;
+                            _familyGroup.Name = row[FamilyName] ?? row[FamilyLastName] + " Family";
+                            _familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            _familyGroup.GroupTypeId = familyGroupTypeId;
+
+                            // campus could be a column in the individual or family file.
+                            // Since Rock doesn't support campuses by individual we'll just put it on family;
+                            var campus = row[Campus] as string;
+                            if ( !string.IsNullOrWhiteSpace( campus ) )
+                            {
+                                _familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
+                                    .Select( c => (int?)c.Id ).FirstOrDefault();
+                            }
+
+                            // Add the family addresses since they exist in this file
+                            var famAddress = row[Address] as string;
+                            var famAddress2 = row[Address2] as string;
+                            var famCity = row[City] as string;
+                            var famState = row[State] as string;
+                            var famZip = row[Zip] as string;
+                            var famCountry = row[Country] as string;
+
+                            // Use the core Rock location service to add or lookup an address
+                            Location familyAddress = lookupService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
+                            if ( familyAddress != null )
+                            {
+                                familyAddress.Name = _familyGroup.Name + " Home";
+                                AddFamilyLocations( familyAddress, rowFamilyId );
+                            }
+
+                            var famSecondaryAddress = row[SecondaryAddress] as string;
+                            var famSecondaryAddress2 = row[SecondaryAddress2] as string;
+                            var famSecondaryCity = row[SecondaryCity] as string;
+                            var famSecondaryState = row[SecondaryState] as string;
+                            var famSecondaryZip = row[SecondaryZip] as string;
+                            var famSecondaryCountry = row[SecondaryCountry] as string;
+
+                            Location familyAddress2 = lookupService.Get( famSecondaryAddress, famSecondaryAddress2, famSecondaryCity, famSecondaryState, famSecondaryZip, famSecondaryCountry );
+                            if ( familyAddress2 != null )
+                            {
+                                familyAddress2.Name = _familyGroup.Name + " Work";
+                                AddFamilyLocations( familyAddress2, rowFamilyId );
+                            }
+
                             familyList.Add( _familyGroup );
                         }
+
                         // Set current family id
                         currentFamilyId = rowFamilyId;
                     }
                     completed++;
                     if ( completed % ReportingNumber < 1 )
                     {
-                        WriteAllFamilyChanges();
+                        SaveAllFamilyChanges();
                         familyList.Clear();
                         ReportPartialProgress();
+
+                        // Drop context and reset
+                        lookupContext = new RockContext();
+                        lookupService = new LocationService( lookupContext );
                     }
                 }
             } while ( csvData.Database.ReadNextRecord() );
@@ -157,150 +210,10 @@ namespace Excavator.CSV
             // Check to see if any rows didn't get saved to the database
             if ( familyList.Any() )
             {
-                WriteAllFamilyChanges();
-            }
-        }
-
-        private void FillInFamilyGroupInfo( string rowFamilyId, int familyGroupTypeId, string[] row )
-        {
-            _familyGroup = new Group();
-            _familyGroup.ForeignId = rowFamilyId;
-            _familyGroup.Name = row[FamilyName] ?? row[FamilyLastName] + " Family";
-            _familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
-            _familyGroup.GroupTypeId = familyGroupTypeId;
-
-            // campus could be a column in the individual or family file.
-            // Since Rock doesn't support campuses by individual we'll just put it on family;
-            var campus = row[Campus] as string;
-            if ( !string.IsNullOrWhiteSpace( campus ) )
-            {
-                _familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
-                    .Select( c => (int?)c.Id ).FirstOrDefault();
+                SaveAllFamilyChanges();
             }
 
-            // Add the family addresses since they exist in this file
-            var famAddress = row[Address] as string;
-            var famAddress2 = row[Address2] as string;
-            var famCity = row[City] as string;
-            var famState = row[State] as string;
-            var famZip = row[Zip] as string;
-            var famCountry = row[Country] as string;
-            Location familyAddress = CheckAddress.Get( _familyGroup.Name + " Home", famAddress, famAddress2, famCity, famState, famZip, famCountry, true );
-            if ( familyAddress != null )
-            {
-                addToLocationsDictionary( familyAddress, rowFamilyId );
-            }
-
-            var famSecondaryAddress = row[SecondaryAddress] as string;
-            var famSecondaryAddress2 = row[SecondaryAddress2] as string;
-            var famSecondaryCity = row[SecondaryCity] as string;
-            var famSecondaryState = row[SecondaryState] as string;
-            var famSecondaryZip = row[SecondaryZip] as string;
-            var famSecondaryCountry = row[SecondaryCountry] as string;
-            Location familyAddress2 = CheckAddress.Get( _familyGroup.Name + " Work", famSecondaryAddress, famSecondaryAddress2, famSecondaryCity, famSecondaryState, famSecondaryZip, famSecondaryCountry, true );
-            if ( familyAddress2 != null )
-            {
-                addToLocationsDictionary( familyAddress2, rowFamilyId );
-            }
-        }
-
-        private void addToLocationsDictionary( Location familyAddress, string rowFamilyId )
-        {
-            List<Location> locations = null;
-            if ( familyGroupLocationsList.Keys.Contains( rowFamilyId ) )
-                locations = familyGroupLocationsList[rowFamilyId];
-            if ( locations == null )
-            {
-                locations = new List<Location>();
-                familyGroupLocationsList.Add( rowFamilyId, locations );
-            }
-            locations.Add( familyAddress );
-        }
-
-        private void WriteAllFamilyChanges()
-        {
-            var unsavedFamilyRecs = familyList.Where( m => m.Guid == null ).ToList();
-            if ( unsavedFamilyRecs == null || unsavedFamilyRecs.Count < 1 )
-            {
-                return;
-            }
-
-            var rockContext = new RockContext();
-            rockContext.WrapTransaction( () =>
-            {
-                rockContext.Groups.AddRange( unsavedFamilyRecs );
-                rockContext.SaveChanges();
-
-                var locationService = new Locations();
-                foreach ( var familyLocations in familyGroupLocationsList )
-                {
-                    List<Location> locations = familyLocations.Value;
-                    var familyGrpForId = rockContext.Groups.FirstOrDefault( m => m.ForeignId == familyLocations.Key );
-                    if ( familyGrpForId == null ) //? shouldn't happen
-                    {
-                        continue;
-                    }
-
-                    var loc1 = locations[0];
-                    Location loc2 = null;
-                    if ( locations.Count > 1 )
-                        loc2 = locations[1];
-
-                    locationService.MapFamilyAddresses( loc1, loc2, familyGrpForId.Id, familyGrpForId.Name );
-                }
-            } );
-        }
-
-        /// <summary>
-        /// consolidate logic that's accessed from multiple locations,
-        /// see if a family exists (either in the list or in the table)
-        /// and return it if it does.
-        /// </summary>
-        /// <param name="familyid"></param>
-        /// <returns></returns>
-        private Group getFamilyGroup( string familyid, ref bool needsAddedToList )
-        {
-            //if its not in familylist, you have to check the database
-            var group = familyList.Where( n => n.ForeignId.Equals( familyid, StringComparison.OrdinalIgnoreCase ) ).FirstOrDefault();
-            if ( group == null )
-            {
-                needsAddedToList = true; //familyList didn't have it we will add it no need to check familyList again
-                using ( var rockContext = new RockContext() )
-                {
-                    //var groupservice = new  GroupService(rockContext);
-                    ////when it's pulled from the db, get all the parts because we're disposing of that context.
-                    //var inDBGroup = rockContext.Groups.FirstOrDefault(n => n.ForeignId == familyid);
-                    //if (inDBGroup != null)
-                    //    group = groupservice.Get(inDBGroup.Guid);
-
-                    group = rockContext.Groups.Include( "Members" ).Where( n => n.ForeignId == familyid ).FirstOrDefault();
-                }
-            }
-            return group;
-        }
-
-        private Person getPersonRecord( string rowFamilyId, string memberIdValue )
-        {
-            if ( string.IsNullOrEmpty( memberIdValue ) )
-                return null;
-
-            bool needsAddedToList = false;
-            var familyRecord = getFamilyGroup( rowFamilyId, ref needsAddedToList );
-            if ( familyRecord == null )
-                return null;
-
-            //error the objectcontext has been disposed and can no longer be used
-            var groupMembers = familyRecord.Members.Where( m => m.Person.ForeignId == memberIdValue ).ToList();
-            if ( groupMembers == null )
-                return null;
-
-            if ( groupMembers.Count > 1 )
-                throw new Exception( "ForeignId is not unique? Multiple people have the same value associated to ForeignId: " + rowFamilyId );
-
-            if ( groupMembers.Count > 0 )
-                return groupMembers.FirstOrDefault().Person;
-
-            return null;
+            return completed;
         }
 
         /// <summary>
@@ -386,7 +299,7 @@ namespace Excavator.CSV
                     if ( !string.IsNullOrEmpty( rowFamilyId ) )
                     {
                         bool needsAddedToList = false;
-                        _familyGroup = getFamilyGroup( rowFamilyId, ref needsAddedToList );
+                        _familyGroup = GetFamilyGroup( rowFamilyId, ref needsAddedToList );
                         if ( _familyGroup == null )
                         {
                             needsAddedToList = true;
@@ -403,7 +316,7 @@ namespace Excavator.CSV
                     }
 
                     //see if this person is already in our data
-                    Person person = getPersonRecord( rowFamilyId, memberIdValue );
+                    Person person = GetPersonRecord( rowFamilyId, memberIdValue );
                     if ( person == null )
                     {
                         person = new Person();
@@ -643,26 +556,71 @@ namespace Excavator.CSV
                     completed++;
                     if ( completed % ReportingNumber < 1 )
                     {
-                        WriteAllIndividualChanges( childRoleId );
+                        SaveIndividualChanges( childRoleId );
 
                         familyList.Clear();
                         ReportPartialProgress();
                     }
                 }
             } while ( csvData.Database.ReadNextRecord() );
-            WriteAllIndividualChanges( childRoleId );
+            SaveIndividualChanges( childRoleId );
 
             ReportPartialProgress();
             return completed;
         }
 
-        private void WriteAllIndividualChanges( int childRoleId )
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Saves all family changes.
+        /// </summary>
+        private void SaveAllFamilyChanges()
+        {
+            var unsavedFamilyRecs = familyList.Where( m => m.Guid == null ).ToList();
+            if ( unsavedFamilyRecs == null || unsavedFamilyRecs.Count < 1 )
+            {
+                return;
+            }
+
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Groups.AddRange( unsavedFamilyRecs );
+                rockContext.SaveChanges();
+
+                var locationService = new Locations();
+                foreach ( var familyLocations in familyGroupLocationsList )
+                {
+                    List<Location> locations = familyLocations.Value;
+                    var familyGrpForId = rockContext.Groups.FirstOrDefault( m => m.ForeignId == familyLocations.Key );
+                    if ( familyGrpForId == null ) //? shouldn't happen
+                    {
+                        continue;
+                    }
+
+                    var loc1 = locations[0];
+                    Location loc2 = null;
+                    if ( locations.Count > 1 )
+                        loc2 = locations[1];
+
+                    locationService.MapFamilyAddresses( loc1, loc2, familyGrpForId.Id, familyGrpForId.Name );
+                }
+            } );
+        }
+
+        /// <summary>
+        /// Saves the individual changes.
+        /// </summary>
+        /// <param name="childRoleId">The child role identifier.</param>
+        private void SaveIndividualChanges( int childRoleId )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
                 //if we didn't already save the family info, save it now.
-                WriteAllFamilyChanges();
+                SaveAllFamilyChanges();
 
                 PersonService personservice = new PersonService( rockContext );
 
@@ -704,84 +662,87 @@ namespace Excavator.CSV
             } );
         }
 
-        #endregion
-
-        internal struct CheckAddress
+        /// <summary>
+        /// Adds the family locations.
+        /// </summary>
+        /// <param name="familyAddress">The family address.</param>
+        /// <param name="rowFamilyId">The row family identifier.</param>
+        private void AddFamilyLocations( Location familyAddress, string rowFamilyId )
         {
-            /// <summary>
-            /// COPIED FROM EXCAVATOR.F1, added country
-            /// Modified version of Rock.Model.LocationService.Get()
-            /// to get or set the specified location in the database
-            /// (minus the call for address verification)
-            /// </summary>
-            /// <param name="street1">The street1.</param>
-            /// <param name="street2">The street2.</param>
-            /// <param name="city">The city.</param>
-            /// <param name="state">The state.</param>
-            /// <param name="zip">The zip.</param>
-            /// <returns></returns>
-            public static Location Get( string addressname, string street1, string street2, string city, string state, string zip, string country, bool DisableAudit = false )
+            List<Location> locations = null;
+            if ( familyGroupLocationsList.Keys.Contains( rowFamilyId ) )
             {
-                // Create a new context/service so that save does not affect calling method's context
-                var rockContext = new RockContext();
-                var locationService = new LocationService( rockContext );
-
-                // Make sure it's not an empty address
-                if ( string.IsNullOrWhiteSpace( street1 ) &&
-                    string.IsNullOrWhiteSpace( street2 ) &&
-                    string.IsNullOrWhiteSpace( city ) &&
-                    string.IsNullOrWhiteSpace( state ) &&
-                    string.IsNullOrWhiteSpace( zip ) )
-                {
-                    return null;
-                }
-
-                // First check if a location exists with the entered values
-                Location existingLocation = locationService.Queryable().FirstOrDefault( t =>
-                    ( t.Street1 == street1 || ( street1 == null && t.Street1 == null ) ) &&
-                    ( t.Street2 == street2 || ( street2 == null && t.Street2 == null ) ) &&
-                    ( t.City == city || ( city == null && t.City == null ) ) &&
-                    ( t.State == state || ( state == null && t.State == null ) ) &&
-                    ( t.PostalCode == zip || ( zip == null && t.PostalCode == null ) ) );
-                if ( existingLocation != null )
-                {
-                    return existingLocation;
-                }
-
-                // If existing location wasn't found with entered values, try standardizing the values, and
-                // search for an existing value again
-                var newLocation = new Location
-                {
-                    Name = addressname,
-                    Street1 = street1,
-                    Street2 = street2,
-                    City = city,
-                    State = state,
-                    PostalCode = zip,
-                    Country = country
-                };
-
-                // uses MEF to look for verification providers (which Excavator doesn't have)
-                // Verify( newLocation, false );
-
-                existingLocation = locationService.Queryable().FirstOrDefault( t =>
-                    ( t.Street1 == newLocation.Street1 || ( newLocation.Street1 == null && t.Street1 == null ) ) &&
-                    ( t.Street2 == newLocation.Street2 || ( newLocation.Street2 == null && t.Street2 == null ) ) &&
-                    ( t.City == newLocation.City || ( newLocation.City == null && t.City == null ) ) &&
-                    ( t.State == newLocation.State || ( newLocation.State == null && t.State == null ) ) &&
-                    ( t.PostalCode == newLocation.PostalCode || ( newLocation.PostalCode == null && t.PostalCode == null ) ) );
-
-                if ( existingLocation != null )
-                {
-                    return existingLocation;
-                }
-
-                locationService.Add( newLocation );
-                rockContext.SaveChanges( DisableAudit );
-
-                // refetch it from the database to make sure we get a valid .Id
-                return locationService.Get( newLocation.Guid );
+                locations = familyGroupLocationsList[rowFamilyId];
             }
+
+            if ( locations == null )
+            {
+                locations = new List<Location>();
+                familyGroupLocationsList.Add( rowFamilyId, locations );
+            }
+
+            locations.Add( familyAddress );
         }
+
+        /// <summary>
+        /// Consolidate logic that's accessed from multiple locations,
+        /// see if a family exists (either in the list or in the table)
+        /// and return it if it does.
+        /// </summary>
+        /// <param name="familyid"></param>
+        /// <returns></returns>
+        private Group GetFamilyGroup( string familyid, ref bool needsAddedToList )
+        {
+            //if its not in familylist, check the database
+            var group = familyList.Where( n => n.ForeignId.Equals( familyid, StringComparison.OrdinalIgnoreCase ) ).FirstOrDefault();
+            if ( group == null )
+            {
+                needsAddedToList = true; //familyList didn't have it we will add it no need to check familyList again
+                using ( var rockContext = new RockContext() )
+                {
+                    //var groupservice = new  GroupService(rockContext);
+                    ////when it's pulled from the db, get all the parts because we're disposing of that context.
+                    //var inDBGroup = rockContext.Groups.FirstOrDefault(n => n.ForeignId == familyid);
+                    //if (inDBGroup != null)
+                    //    group = groupservice.Get(inDBGroup.Guid);
+
+                    group = rockContext.Groups.Include( "Members" ).Where( n => n.ForeignId == familyid ).FirstOrDefault();
+                }
+            }
+            return group;
+        }
+
+        /// <summary>
+        /// Gets the person record.
+        /// </summary>
+        /// <param name="rowFamilyId">The row family identifier.</param>
+        /// <param name="memberIdValue">The member identifier value.</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">ForeignId is not unique? Multiple people have the same value associated to ForeignId:  + rowFamilyId</exception>
+        private Person GetPersonRecord( string rowFamilyId, string memberIdValue )
+        {
+            if ( string.IsNullOrEmpty( memberIdValue ) )
+                return null;
+
+            bool needsAddedToList = false;
+            var familyRecord = GetFamilyGroup( rowFamilyId, ref needsAddedToList );
+            if ( familyRecord == null )
+                return null;
+
+            //error the objectcontext has been disposed and can no longer be used
+            var groupMembers = familyRecord.Members.Where( m => m.Person.ForeignId == memberIdValue ).ToList();
+            if ( groupMembers == null )
+                return null;
+
+            if ( groupMembers.Count > 1 )
+                throw new Exception( "ForeignId is not unique? Multiple people have the same value associated to ForeignId: " + rowFamilyId );
+
+            if ( groupMembers.Count > 0 )
+                return groupMembers.FirstOrDefault().Person;
+
+            return null;
+        }
+
+        #endregion
     }
 }

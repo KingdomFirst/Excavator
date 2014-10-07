@@ -194,7 +194,6 @@ namespace Excavator.CSV
                 return -1;
             }
 
-
             MapFamilyData();
 
             return 0;
@@ -336,6 +335,7 @@ namespace Excavator.CSV
         #endregion
 
         #region Individual Constants
+
         /* this is based on the definition of the csv format for the individual.csv file
          FamilyId,MemberId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
          * MaritalStatus,ConnectionStatus,RecordStatus,HomePhone,MobilePhone,WorkPhone,Email,SecondaryEmail,
@@ -380,6 +380,9 @@ namespace Excavator.CSV
         private const int GeneralNote = 34;
         private const int MedicalNote = 35;
         private const int SecurityNote = 36;
+        private const int Facebook = 37;
+        private const int Instagram = 38;
+        private const int Twitter = 39;
 
         #endregion
     }
