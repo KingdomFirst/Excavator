@@ -129,6 +129,8 @@ namespace Excavator.CSV
             string currentFamilyId = string.Empty;
             int completed = 0;
 
+            ReportProgress( 0, string.Format( "Starting Family import." ) );
+
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
@@ -197,13 +199,17 @@ namespace Excavator.CSV
                 if ( completed % ReportingNumber < 1 )
                 {
                     SaveAllFamilyChanges();
-                    familyList.Clear();
                     ReportPartialProgress();
+                    familyList.Clear();
 
                     // Reset lookup context
                     lookupContext = new RockContext();
                     lookupService = new LocationService( lookupContext );
                 }
+                // else if ( completed / ReportingNumber is integer )
+                //{
+                //    ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
+                //}
             }
 
             // Check to see if any rows didn't get saved to the database
@@ -544,8 +550,8 @@ namespace Excavator.CSV
                 var groupMembers = _familyGroup.Members.Where( m => m.Person.ForeignId == memberIdValue ).ToList();
                 if ( groupMembers == null || groupMembers.Count < 1 )
                 {
-                    var groupMember = new GroupMember(); ;
-                    //now, add this person to the family membership so it can be persisted.
+                    // Add this person to the family membership so it can be persisted.
+                    var groupMember = new GroupMember();
                     groupMember.Person = person;
                     groupMember.GroupRoleId = groupRoleId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
@@ -556,10 +562,13 @@ namespace Excavator.CSV
                 if ( completed % ReportingNumber < 1 )
                 {
                     SaveIndividualChanges();
-
-                    familyList.Clear();
                     ReportPartialProgress();
+                    familyList.Clear();
                 }
+                // else if ( completed / ReportingNumber is integer )
+                //{
+                //    ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
+                //}
             }
 
             SaveIndividualChanges();
