@@ -194,9 +194,7 @@ namespace Excavator.CSV
                 return -1;
             }
 
-            MapFamilyData();
-
-            return 0;
+            return MapFamilyData();
         }
 
         /// <summary>
