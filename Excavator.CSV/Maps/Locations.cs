@@ -1,72 +1,73 @@
-﻿using Rock.Data;
-using Rock.Model;
-using Rock.Web.Cache;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using Rock.Data;
+using Rock.Model;
+using Rock.Web.Cache;
 
 namespace Excavator.CSV
 {
-    class Locations
+    /// <summary>
+    /// Partial of CSVComponent that holds the location import methods
+    /// </summary>
+    partial class CSVComponent
     {
         /// <summary>
-        /// Maps the family address. (modeled after Excavator.F1.MapFamilyAddress
-        ///             //we need the group id before we can persist the location information
-        ///    new Locations().MapFamilyAddresses(familyAddress, familyAddress2, _familyGroup);
+        /// Saves the family group locations.
         /// </summary>
-        /// <param name="tableData">The table data.</param>
-        /// <returns></returns>
-        public void MapFamilyAddresses(Location address, Location address2, int familyGroupId, string familyGroupName)
+        private void SaveFamilyGroupLocations( List<Group> familiesToSave )
         {
-            if (familyGroupId == 0)
-                throw new Exception("You'll need to save the Group to get an Id before saving locations associated with that Group. (Locations.MapFamilyAddress)");
-            var lookupContext = new RockContext();
-            var lookupService = new LocationService(lookupContext);
+            // Locations are already saved on lookup using locationService.Get(),
+            // just need to associate the group now with the location
+            var rockContext = new RockContext();
+            var definedValueService = new DefinedValueService( rockContext );
+            int homeGroupLocationTypeId = definedValueService.GetByGuid( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
+            int workGroupLocationTypeId = definedValueService.GetByGuid( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
 
-            List<DefinedValue> groupLocationTypeList = new DefinedValueService(lookupContext).GetByDefinedTypeGuid(new Guid(Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE)).ToList();
-
-            int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault(dv => dv.Guid == new Guid(Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME)).Id;
-            int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault(dv => dv.Guid == new Guid(Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK)).Id;
-
-            var newGroupLocations = new List<GroupLocation>();
-
-            if (address != null)
+            rockContext.WrapTransaction( () =>
             {
-                var groupLocation = new GroupLocation();
-
-                groupLocation.GroupId = familyGroupId;
-                groupLocation.LocationId = address.Id;
-                groupLocation.IsMailingLocation = true;
-                groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
-                newGroupLocations.Add(groupLocation);
-            }
-
-            if (address2 != null)
-            {
-                var groupLocation = new GroupLocation();
-
-                address2.Name = familyGroupName;
-                address2.IsActive = true;
-
-                groupLocation.GroupId = familyGroupId;
-                groupLocation.LocationId = address2.Id;
-                groupLocation.IsMailingLocation = false;
-                groupLocation.IsMappedLocation = false;
-                groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
-                newGroupLocations.Add(groupLocation);
-            }
-
-            if (newGroupLocations.Count > 0)
-            {
-                var rockContext = new RockContext();
-                rockContext.WrapTransaction(() =>
+                var newGroupLocations = new List<GroupLocation>();
+                foreach ( var locations in FamilyGroupLocations )
                 {
-                    rockContext.Configuration.AutoDetectChangesEnabled = false;
-                    rockContext.GroupLocations.AddRange(newGroupLocations);
-                    rockContext.SaveChanges(true);
-                });
-            }
+                    var familyForeignId = locations.Key;
+                    var familyLocations = locations.Value;
+                    var familyGroup = familiesToSave.FirstOrDefault( g => g.ForeignId == familyForeignId );
+
+                    Location primaryAddress = familyLocations[0];
+                    if ( primaryAddress != null )
+                    {
+                        var groupLocation = new GroupLocation();
+                        groupLocation.GroupId = familyGroup.Id;
+                        groupLocation.LocationId = primaryAddress.Id;
+                        groupLocation.IsMailingLocation = true;
+                        groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
+                        newGroupLocations.Add( groupLocation );
+                    }
+
+                    if ( familyLocations.Count > 1 )
+                    {
+                        Location secondaryAddress = familyLocations[1];
+                        if ( secondaryAddress != null )
+                        {
+                            var groupLocation = new GroupLocation();
+                            secondaryAddress.IsActive = true;
+                            groupLocation.GroupId = familyGroup.Id;
+                            groupLocation.LocationId = secondaryAddress.Id;
+                            groupLocation.IsMailingLocation = false;
+                            groupLocation.IsMappedLocation = false;
+                            groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
+                            newGroupLocations.Add( groupLocation );
+                        }
+                    }
+                }
+
+                if ( newGroupLocations.Count > 0 )
+                {
+                    rockContext.GroupLocations.AddRange( newGroupLocations );
+                    rockContext.SaveChanges( true );
+                }
+            } );
         }
     }
 }
