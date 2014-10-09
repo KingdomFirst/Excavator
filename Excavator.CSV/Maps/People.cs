@@ -35,46 +35,22 @@ namespace Excavator.CSV
         /// <summary>
         /// The list of families
         /// </summary>
-        private List<Group> _FamilyList = null;
+        private List<Group> FamilyList = new List<Group>();
 
-        protected List<Group> familyList
-        {
-            get
-            {
-                if ( _FamilyList == null )
-                {
-                    _FamilyList = new List<Group>();
-                }
-                return _FamilyList;
-            }
-        }
+        /// <summary>
+        /// The list of visitors
+        /// </summary>
+        private List<Group> VisitorList = new List<Group>();
 
         /// <summary>
         /// The list of families
         /// </summary>
-        private Dictionary<string, List<Location>> _FamilyGroupLocationsList = null;
-
-        protected Dictionary<string, List<Location>> familyGroupLocationsList
-        {
-            get
-            {
-                if ( _FamilyGroupLocationsList == null )
-                {
-                    _FamilyGroupLocationsList = new Dictionary<string, List<Location>>();
-                }
-                return _FamilyGroupLocationsList;
-            }
-        }
-
-        /// <summary>
-        /// The family group
-        /// </summary>
-        private Group _familyGroup = null;
+        private Dictionary<string, List<Location>> FamilyGroupLocations = new Dictionary<string, List<Location>>();
 
         /// <summary>
         /// Whether the family file is included
         /// </summary>
-        private bool FamilyFileIsIncluded = false;
+        //private bool FamilyFileIsIncluded = false;
 
         #endregion
 
@@ -86,14 +62,13 @@ namespace Excavator.CSV
         private int MapFamilyData()
         {
             int completed = 0;
-            ReportProgress( 0, string.Format( "Adding family data ({0:N0} people already exist).", ImportedPeople.Count() ) );
 
-            FamilyFileIsIncluded = CsvDataToImport.FirstOrDefault( n => n.RecordType.Equals( CsvDataModel.RockDataType.FAMILY ) ) == null ? false : true;
+            //FamilyFileIsIncluded = CsvDataToImport.FirstOrDefault( n => n.RecordType.Equals( CsvDataModel.RockDataType.FAMILY ) ) == null ? false : true;
 
             // only import things that the user checked
             List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
-            // Family Data is important, so load it first
+            // Family data is important, so load it first
             if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.FAMILY ) )
             {
                 selectedCsvData.OrderBy( d => d.RecordType != CsvDataModel.RockDataType.FAMILY );
@@ -123,13 +98,16 @@ namespace Excavator.CSV
         {
             // Required variables
             var lookupContext = new RockContext();
-            var lookupService = new LocationService( lookupContext );
+            var locationService = new LocationService( lookupContext );
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+
+            int numImportedFamilies = new GroupService( lookupContext ).Queryable()
+                .Where( f => f.ForeignId != null ).Count();
 
             string currentFamilyId = string.Empty;
             int completed = 0;
 
-            ReportProgress( 0, string.Format( "Starting Family import." ) );
+            ReportProgress( 0, string.Format( "Starting family import ({0:N0} already exist).", numImportedFamilies ) );
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
@@ -138,25 +116,28 @@ namespace Excavator.CSV
                 string rowFamilyId = row[FamilyId];
                 if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyId )
                 {
-                    //see if it's already loaded, and if it needs added to local storage for quick retrieval
-                    bool needsAddedToList = false;
-                    _familyGroup = GetFamilyGroup( rowFamilyId, ref needsAddedToList );
-
-                    if ( _familyGroup == null )
+                    var familyGroup = GetFamilyGroup( rowFamilyId );
+                    if ( familyGroup == null )
                     {
-                        _familyGroup = new Group();
-                        _familyGroup.ForeignId = rowFamilyId;
-                        _familyGroup.Name = row[FamilyName] ?? row[FamilyLastName] + " Family";
-                        _familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                        _familyGroup.GroupTypeId = familyGroupTypeId;
+                        familyGroup = new Group();
+                        familyGroup.ForeignId = rowFamilyId;
+                        familyGroup.Name = row[FamilyName] ?? row[FamilyLastName] + " Family";
+                        familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        familyGroup.GroupTypeId = familyGroupTypeId;
 
-                        // campus could be a column in the individual or family file.
-                        // Since Rock doesn't support campuses by individual we'll just put it on family;
-                        var campus = row[Campus] as string;
-                        if ( !string.IsNullOrWhiteSpace( campus ) )
+                        var campusName = row[Campus] as string;
+                        if ( !string.IsNullOrWhiteSpace( campusName ) )
                         {
-                            _familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( campus ) )
-                                .Select( c => (int?)c.Id ).FirstOrDefault();
+                            var familyCampus = CampusList.Where( c => c.Name.StartsWith( campusName ) ).FirstOrDefault();
+                            if ( familyCampus == null )
+                            {
+                                familyCampus = new Campus();
+                                familyCampus.IsSystem = false;
+                                familyCampus.Name = campusName;
+                                lookupContext.Campuses.Add( familyCampus );
+                            }
+
+                            familyGroup.CampusId = familyCampus.Id;
                         }
 
                         // Add the family addresses since they exist in this file
@@ -168,57 +149,83 @@ namespace Excavator.CSV
                         var famCountry = row[Country] as string;
 
                         // Use the core Rock location service to add or lookup an address
-                        Location familyAddress = lookupService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
-                        if ( familyAddress != null )
+                        Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
+                        if ( primaryAddress != null )
                         {
-                            familyAddress.Name = _familyGroup.Name + " Home";
-                            AddFamilyLocations( familyAddress, rowFamilyId );
+                            primaryAddress.Name = familyGroup.Name + " Home";
+                            AddFamilyGroupLocations( primaryAddress, rowFamilyId );
                         }
 
-                        var famSecondaryAddress = row[SecondaryAddress] as string;
-                        var famSecondaryAddress2 = row[SecondaryAddress2] as string;
-                        var famSecondaryCity = row[SecondaryCity] as string;
-                        var famSecondaryState = row[SecondaryState] as string;
-                        var famSecondaryZip = row[SecondaryZip] as string;
-                        var famSecondaryCountry = row[SecondaryCountry] as string;
+                        var famSecondAddress = row[SecondaryAddress] as string;
+                        var famSecondAddress2 = row[SecondaryAddress2] as string;
+                        var famSecondCity = row[SecondaryCity] as string;
+                        var famSecondState = row[SecondaryState] as string;
+                        var famSecondZip = row[SecondaryZip] as string;
+                        var famSecondCountry = row[SecondaryCountry] as string;
 
-                        Location familyAddress2 = lookupService.Get( famSecondaryAddress, famSecondaryAddress2, famSecondaryCity, famSecondaryState, famSecondaryZip, famSecondaryCountry );
-                        if ( familyAddress2 != null )
+                        Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
+                        if ( secondaryAddress != null )
                         {
-                            familyAddress2.Name = _familyGroup.Name + " Work";
-                            AddFamilyLocations( familyAddress2, rowFamilyId );
+                            secondaryAddress.Name = familyGroup.Name + " Work";
+                            AddFamilyGroupLocations( secondaryAddress, rowFamilyId );
                         }
 
-                        familyList.Add( _familyGroup );
+                        FamilyList.Add( familyGroup );
                     }
 
                     // Set current family id
                     currentFamilyId = rowFamilyId;
-                }
-                completed++;
-                if ( completed % ReportingNumber < 1 )
-                {
-                    SaveAllFamilyChanges();
-                    ReportPartialProgress();
-                    familyList.Clear();
 
-                    // Reset lookup context
-                    lookupContext = new RockContext();
-                    lookupService = new LocationService( lookupContext );
+                    completed++;
+                    if ( completed % ( ReportingNumber * 10 ) < 1 )
+                    {
+                        ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        SaveAllFamilyChanges();
+                        ReportPartialProgress();
+                        FamilyList.Clear();
+
+                        // Reset lookup context
+                        lookupContext = new RockContext();
+                        locationService = new LocationService( lookupContext );
+                    }
                 }
-                // else if ( completed / ReportingNumber is integer )
-                //{
-                //    ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
-                //}
             }
 
             // Check to see if any rows didn't get saved to the database
-            if ( familyList.Any() )
+            if ( FamilyList.Any() )
             {
                 SaveAllFamilyChanges();
             }
 
+            ReportProgress( 0, string.Format( "Finished family import: {0:N0} families imported.", completed ) );
             return completed;
+        }
+
+        /// <summary>
+        /// Saves all family changes.
+        /// </summary>
+        private void SaveAllFamilyChanges()
+        {
+            var familiesToSave = FamilyList.Where( f => f.Id == 0 ).ToList();
+            if ( familiesToSave.Count() < 1 )
+            {
+                return;
+            }
+
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Groups.AddRange( familiesToSave );
+                rockContext.SaveChanges();
+            } );
+
+            if ( FamilyGroupLocations.Count() > 0 )
+            {
+                SaveFamilyGroupLocations( familiesToSave );
+            }
         }
 
         /// <summary>
@@ -229,8 +236,7 @@ namespace Excavator.CSV
         {
             var lookupContext = new RockContext();
             var groupTypeRoleService = new GroupTypeRoleService( lookupContext );
-            var attributeService = new AttributeService( lookupContext );
-
+            var groupMemberService = new GroupMemberService( lookupContext );
             var dvService = new DefinedValueService( lookupContext );
 
             // Marital statuses: Married, Single, Separated, etc
@@ -246,8 +252,7 @@ namespace Excavator.CSV
                 .Where( dv => dv.DefinedType.Guid == new Guid( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS_REASON ) ).ToList();
 
             // Record statuses: Active, Inactive, Pending
-            var activestatus = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) );
-            int? recordStatusActiveId = activestatus.Id;
+            int? recordStatusActiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
             int? recordStatusInactiveId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
             int? recordStatusPendingId = dvService.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
 
@@ -265,80 +270,84 @@ namespace Excavator.CSV
             // Note type: Comment
             int noteCommentTypeId = new NoteTypeService( lookupContext ).Get( new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) ).Id;
 
-            // Group roles: Adult, Child, others
+            // Group roles: Owner, Adult, Child, others
+            GroupTypeRole ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
             int adultRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
             int childRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD ) ).Id;
+            int inviteeRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED ) ).Id;
+            int invitedByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED_BY ) ).Id;
+            int canCheckInRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_CAN_CHECK_IN ) ).Id;
+            int allowCheckInByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_ALLOW_CHECK_IN_BY ) ).Id;
 
             // Group type: Family
-            int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+            int familyGroupTypeId = new GroupTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).Id;
 
             // Look up additional Person attributes (existing)
-            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            // Cached attributes: PreviousChurch, Position, Employer, School
-            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
-            var baptismDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "BaptismDate" ) );
-            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
+            // Core attributes: PreviousChurch, Position, Employer, School, etc
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
             var employerAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Employer" ) );
             var positionAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Position" ) );
+            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
             var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "School" ) );
+            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
+            var baptismDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "BaptismDate" ) );
+            var facebookAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Facebook" ) );
+            var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
+            var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
 
             string currentFamilyId = string.Empty;
+            Group currentFamilyGroup = null;
+
             int completed = 0;
+            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count() ) );
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
                 int groupRoleId = adultRoleId;
+                bool isFamilyRelationship = true;
                 var memberIdValue = row[MemberId] as string;
-                // int rowMemberId = row[MemberId].AsType<int>();
 
                 //this matches back to the groups we just loaded
                 string rowFamilyId = row[PersonFamilyId] as string;
                 string rowFamilyName = row[LastName].ToString() + " Family";
 
-                //keep track of family here if we're not loading a separate family file
-                if ( !string.IsNullOrEmpty( rowFamilyId ) )
+                if ( rowFamilyId != currentFamilyId )
                 {
-                    bool needsAddedToList = false;
-                    _familyGroup = GetFamilyGroup( rowFamilyId, ref needsAddedToList );
-                    if ( _familyGroup == null )
+                    currentFamilyGroup = GetFamilyGroup( rowFamilyId );
+                    if ( currentFamilyGroup == null )
                     {
-                        needsAddedToList = true;
-                        _familyGroup = new Group();
-                        _familyGroup.ForeignId = rowFamilyId;
-                        _familyGroup.Name = rowFamilyName;
-
+                        currentFamilyGroup = new Group();
+                        currentFamilyGroup.ForeignId = rowFamilyId;
+                        currentFamilyGroup.Name = rowFamilyName;
+                        FamilyList.Add( currentFamilyGroup );
                         currentFamilyId = rowFamilyId;
-                    }
-                    if ( needsAddedToList )
-                    {
-                        familyList.Add( _familyGroup );
                     }
                 }
 
-                //see if this person is already in our data
-                Person person = GetPersonRecord( rowFamilyId, memberIdValue );
+                // Verify this person isn't already in our data
+                var person = currentFamilyGroup.Members.Where( m => m.Person.ForeignId == memberIdValue )
+                    .Select( m => m.Person ).FirstOrDefault();
                 if ( person == null )
                 {
                     person = new Person();
                     person.ForeignId = memberIdValue;
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    person.GivingGroupId = _familyGroup.Id;
+                    person.GivingGroupId = currentFamilyGroup.Id;
                     person.FirstName = row[FirstName];
                     person.NickName = row[NickName];
                     person.LastName = row[LastName];
                     person.Email = row[Email];
 
-                    #region assign values to the Person record
+                    #region Assign values to the Person record
 
                     string activeEmail = row[IsEmailActive] as string;
                     if ( !string.IsNullOrEmpty( activeEmail ) )
                     {
-                        //activeEmail = "Active"
                         bool emailIsActive = false;
                         if ( bool.TryParse( activeEmail, out emailIsActive ) )
                         {
@@ -410,13 +419,14 @@ namespace Excavator.CSV
                     var familyRole = row[FamilyRole] as string;
                     if ( familyRole != null )
                     {
+                        if ( familyRole == "Visitor" )
+                        {
+                            isFamilyRelationship = false;
+                        }
+
                         if ( familyRole == "Child" || person.Age < 18 )
                         {
                             groupRoleId = childRoleId;
-                        }
-                        else if ( familyRole == "Visitor" )
-                        {
-                            // assign person as a known relationship of this family/group
                         }
                     }
 
@@ -443,6 +453,7 @@ namespace Excavator.CSV
 
                         int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
                         person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
+                        person.RecordStatusValueId = recordStatusActiveId;
                     }
 
                     var recordStatus = row[RecordStatus] as string;
@@ -542,82 +553,77 @@ namespace Excavator.CSV
                         } );
                     }
 
-                    #endregion
-                }
+                    var facebookValue = row[Facebook] as string;
+                    if ( facebookValue != null )
+                    {
+                        person.Attributes.Add( facebookAttribute.Key, facebookAttribute );
+                        person.AttributeValues.Add( facebookAttribute.Key, new AttributeValue()
+                        {
+                            AttributeId = facebookAttribute.Id,
+                            Value = facebookValue
+                        } );
+                    }
 
-                //see if this person is already in the family group, if not then add them.
-                //Is there a guarantee that the memberIdValue will be unique within a group/family?
-                var groupMembers = _familyGroup.Members.Where( m => m.Person.ForeignId == memberIdValue ).ToList();
-                if ( groupMembers == null || groupMembers.Count < 1 )
-                {
-                    // Add this person to the family membership so it can be persisted.
+                    var twitterValue = row[Twitter] as string;
+                    if ( twitterValue != null )
+                    {
+                        person.Attributes.Add( twitterAttribute.Key, twitterAttribute );
+                        person.AttributeValues.Add( twitterAttribute.Key, new AttributeValue()
+                        {
+                            AttributeId = twitterAttribute.Id,
+                            Value = twitterValue
+                        } );
+                    }
+
+                    var instagramValue = row[Instagram] as string;
+                    if ( instagramValue != null )
+                    {
+                        person.Attributes.Add( instagramAttribute.Key, instagramAttribute );
+                        person.AttributeValues.Add( instagramAttribute.Key, new AttributeValue()
+                        {
+                            AttributeId = instagramAttribute.Id,
+                            Value = instagramValue
+                        } );
+                    }
+
+                    #endregion
+
                     var groupMember = new GroupMember();
                     groupMember.Person = person;
                     groupMember.GroupRoleId = groupRoleId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
-                    _familyGroup.Members.Add( groupMember );
-                }
 
-                completed++;
-                if ( completed % ReportingNumber < 1 )
-                {
-                    SaveIndividualChanges();
-                    ReportPartialProgress();
-                    familyList.Clear();
+                    if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
+                    {
+                        currentFamilyGroup.Members.Add( groupMember );
+                        completed++;
+                    }
+                    else
+                    {
+                        var visitorGroup = new Group();
+                        visitorGroup.ForeignId = rowFamilyId.ToString();
+                        visitorGroup.Members.Add( groupMember );
+                        visitorGroup.GroupTypeId = familyGroupTypeId;
+                        visitorGroup.Name = person.LastName + " Family";
+                        VisitorList.Add( visitorGroup );
+                        completed++;
+                    }
+
+                    if ( completed % ( ReportingNumber * 10 ) < 1 )
+                    {
+                        ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        SaveIndividualChanges();
+                        ReportPartialProgress();
+                    }
                 }
-                // else if ( completed / ReportingNumber is integer )
-                //{
-                //    ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
-                //}
             }
 
             SaveIndividualChanges();
 
-            ReportPartialProgress();
             return completed;
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Saves all family changes.
-        /// </summary>
-        private void SaveAllFamilyChanges()
-        {
-            var unsavedFamilyRecs = familyList.Where( m => m.Guid == null ).ToList();
-            if ( unsavedFamilyRecs == null || unsavedFamilyRecs.Count < 1 )
-            {
-                return;
-            }
-
-            var rockContext = new RockContext();
-            rockContext.WrapTransaction( () =>
-            {
-                rockContext.Groups.AddRange( unsavedFamilyRecs );
-                rockContext.SaveChanges();
-
-                var locationService = new Locations();
-                foreach ( var familyLocations in familyGroupLocationsList )
-                {
-                    List<Location> locations = familyLocations.Value;
-                    var familyGrpForId = rockContext.Groups.FirstOrDefault( m => m.ForeignId == familyLocations.Key );
-                    if ( familyGrpForId == null ) //? shouldn't happen
-                    {
-                        continue;
-                    }
-
-                    var loc1 = locations[0];
-                    Location loc2 = null;
-                    if ( locations.Count > 1 )
-                    {
-                        loc2 = locations[1];
-                    }
-
-                    locationService.MapFamilyAddresses( loc1, loc2, familyGrpForId.Id, familyGrpForId.Name );
-                }
-            } );
         }
 
         /// <summary>
@@ -626,63 +632,146 @@ namespace Excavator.CSV
         private void SaveIndividualChanges()
         {
             var rockContext = new RockContext();
+
+            var peopleToSave = FamilyList.Where( f => f.Members.Any( p => p.Person.Id == 0 ) )
+                .SelectMany( f => f.Members ).ToList();
+            if ( peopleToSave.Count() < 1 )
+            {
+                return;
+            }
+
+            //var groupMemberService = new GroupMemberService( rockContext );
+            //var groupTypeRoleService = new GroupTypeRoleService( rockContext );
+
+            //var ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
+            //int inviteeRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED ) ).Id;
+            //int invitedByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED_BY ) ).Id;
+            //int canCheckInRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_CAN_CHECK_IN ) ).Id;
+            //int allowCheckInByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_ALLOW_CHECK_IN_BY ) ).Id;
+
             rockContext.WrapTransaction( () =>
             {
-                //if we didn't already save the family info, save it now.
-                SaveAllFamilyChanges();
+                rockContext.People.AddRange( peopleToSave.Select( m => m.Person ) );
+                rockContext.SaveChanges( true );
 
-                PersonService personservice = new PersonService( rockContext );
-
-                foreach ( var newFamilyGroup in familyList )
+                foreach ( var familyGroups in FamilyList.GroupBy<Group, int?>( g => g.ForeignId.AsType<int?>() ) )
                 {
-                    foreach ( var newFamilyMember in newFamilyGroup.Members )
+                    bool visitorsExist = familyGroups.Count() > 1;
+                    foreach ( var newFamilyGroup in familyGroups )
                     {
-                        var newPerson = newFamilyMember.Person;
-                        personservice.Add( newPerson );
-                        rockContext.SaveChanges( true );
-
-                        foreach ( var attributeCache in newPerson.Attributes.Select( a => a.Value ) )
+                        foreach ( var person in newFamilyGroup.Members.Select( m => m.Person ) )
                         {
-                            var newValue = newPerson.AttributeValues[attributeCache.Key];
-                            if ( newValue != null )
+                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                             {
-                                newValue.EntityId = newPerson.Id;
-                                rockContext.AttributeValues.Add( newValue );
+                                var newValue = person.AttributeValues[attributeCache.Key];
+                                if ( newValue != null )
+                                {
+                                    newValue.EntityId = person.Id;
+                                    rockContext.AttributeValues.Add( newValue );
+                                }
                             }
-                        }
 
-                        if ( !newPerson.Aliases.Any( a => a.AliasPersonId == newPerson.Id ) )
-                        {
-                            newPerson.Aliases.Add( new PersonAlias
+                            if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
                             {
-                                AliasPersonId = newPerson.Id,
-                                AliasPersonGuid = newPerson.Guid
-                            } );
+                                person.Aliases.Add( new PersonAlias
+                                {
+                                    AliasPersonId = person.Id,
+                                    AliasPersonGuid = person.Guid
+                                } );
+                            }
+
+                            //if ( visitorsExist )
+                            //{
+                            //    // Retrieve or create the group this person is an owner of
+                            //    var ownerGroup = groupMemberService.Queryable()
+                            //        .Where( m => m.PersonId == person.Id && m.GroupRoleId == ownerRole.Id )
+                            //        .Select( m => m.Group )
+                            //        .FirstOrDefault();
+
+                            //    if ( ownerGroup == null )
+                            //    {
+                            //        var ownerGroupMember = new GroupMember();
+                            //        ownerGroupMember.PersonId = person.Id;
+                            //        ownerGroupMember.GroupRoleId = ownerRole.Id;
+
+                            //        ownerGroup = new Group();
+                            //        ownerGroup.Name = ownerRole.GroupType.Name;
+                            //        ownerGroup.GroupTypeId = ownerRole.GroupTypeId.Value;
+                            //        ownerGroup.Members.Add( ownerGroupMember );
+                            //        rockContext.Groups.Add( ownerGroup );
+                            //    }
+
+                            //    // if this is a visitor, then add proper relationships to the family member
+                            //    if ( VisitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
+                            //            .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.Id ) ) ) )
+                            //    {
+                            //        var familyMembers = familyGroups.Except( VisitorList ).SelectMany( g => g.Members );
+                            //        foreach ( var familyMember in familyMembers.Select( m => m.Person ) )
+                            //        {
+                            //            var invitedByMember = new GroupMember();
+                            //            invitedByMember.PersonId = familyMember.Id;
+                            //            invitedByMember.GroupRoleId = invitedByRoleId;
+                            //            ownerGroup.Members.Add( invitedByMember );
+
+                            //            if ( person.Age < 18 && familyMember.Age > 15 )
+                            //            {
+                            //                var allowCheckinMember = new GroupMember();
+                            //                allowCheckinMember.PersonId = familyMember.Id;
+                            //                allowCheckinMember.GroupRoleId = allowCheckInByRoleId;
+                            //                ownerGroup.Members.Add( allowCheckinMember );
+                            //            }
+                            //        }
+                            //    }
+                            //    else
+                            //    {   // not a visitor, add the visitors to the family member's known relationship
+                            //        var visitors = VisitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId ).SelectMany( g => g.Members );
+                            //        foreach ( var visitor in visitors.Select( g => g.Person ) )
+                            //        {
+                            //            var inviteeMember = new GroupMember();
+                            //            inviteeMember.PersonId = visitor.Id;
+                            //            inviteeMember.GroupRoleId = inviteeRoleId;
+                            //            ownerGroup.Members.Add( inviteeMember );
+
+                            //            // if visitor can be checked in and this person is considered an adult
+                            //            if ( visitor.Age < 18 && person.Age > 15 )
+                            //            {
+                            //                var canCheckInMember = new GroupMember();
+                            //                canCheckInMember.PersonId = visitor.Id;
+                            //                canCheckInMember.GroupRoleId = canCheckInRoleId;
+                            //                ownerGroup.Members.Add( canCheckInMember );
+                            //            }
+                            //        }
+                            //    }
+                            //}
                         }
                     }
                 }
 
-                rockContext.SaveChanges();
+                rockContext.SaveChanges( true );
             } );
         }
+
+        #endregion
+
+        #region Helper Methods
 
         /// <summary>
         /// Adds the family locations.
         /// </summary>
         /// <param name="familyAddress">The family address.</param>
         /// <param name="rowFamilyId">The row family identifier.</param>
-        private void AddFamilyLocations( Location familyAddress, string rowFamilyId )
+        private void AddFamilyGroupLocations( Location familyAddress, string rowFamilyId )
         {
             List<Location> locations = null;
-            if ( familyGroupLocationsList.Keys.Contains( rowFamilyId ) )
+            if ( FamilyGroupLocations.Keys.Contains( rowFamilyId ) )
             {
-                locations = familyGroupLocationsList[rowFamilyId];
+                locations = FamilyGroupLocations[rowFamilyId];
             }
 
             if ( locations == null )
             {
                 locations = new List<Location>();
-                familyGroupLocationsList.Add( rowFamilyId, locations );
+                FamilyGroupLocations.Add( rowFamilyId, locations );
             }
 
             locations.Add( familyAddress );
@@ -695,56 +784,18 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="familyid"></param>
         /// <returns></returns>
-        private Group GetFamilyGroup( string familyid, ref bool needsAddedToList )
+        private Group GetFamilyGroup( string familyid )
         {
             //if its not in familylist, check the database
-            var group = familyList.Where( n => n.ForeignId.Equals( familyid, StringComparison.OrdinalIgnoreCase ) ).FirstOrDefault();
+            var group = FamilyList.Where( n => n.ForeignId.Equals( familyid, StringComparison.OrdinalIgnoreCase ) ).FirstOrDefault();
             if ( group == null )
             {
-                needsAddedToList = true; //familyList didn't have it we will add it no need to check familyList again
                 using ( var rockContext = new RockContext() )
                 {
-                    //var groupservice = new  GroupService(rockContext);
-                    ////when it's pulled from the db, get all the parts because we're disposing of that context.
-                    //var inDBGroup = rockContext.Groups.FirstOrDefault(n => n.ForeignId == familyid);
-                    //if (inDBGroup != null)
-                    //    group = groupservice.Get(inDBGroup.Guid);
-
                     group = rockContext.Groups.Include( "Members" ).Where( n => n.ForeignId == familyid ).FirstOrDefault();
                 }
             }
             return group;
-        }
-
-        /// <summary>
-        /// Gets the person record.
-        /// </summary>
-        /// <param name="rowFamilyId">The row family identifier.</param>
-        /// <param name="memberIdValue">The member identifier value.</param>
-        /// <returns></returns>
-        /// <exception cref="System.Exception">ForeignId is not unique? Multiple people have the same value associated to ForeignId:  + rowFamilyId</exception>
-        private Person GetPersonRecord( string rowFamilyId, string memberIdValue )
-        {
-            if ( string.IsNullOrEmpty( memberIdValue ) )
-                return null;
-
-            bool needsAddedToList = false;
-            var familyRecord = GetFamilyGroup( rowFamilyId, ref needsAddedToList );
-            if ( familyRecord == null )
-                return null;
-
-            //error the objectcontext has been disposed and can no longer be used
-            var groupMembers = familyRecord.Members.Where( m => m.Person.ForeignId == memberIdValue ).ToList();
-            if ( groupMembers == null )
-                return null;
-
-            if ( groupMembers.Count > 1 )
-                throw new Exception( "ForeignId is not unique? Multiple people have the same value associated to ForeignId: " + rowFamilyId );
-
-            if ( groupMembers.Count > 0 )
-                return groupMembers.FirstOrDefault().Person;
-
-            return null;
         }
 
         #endregion
