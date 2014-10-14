@@ -88,7 +88,7 @@ namespace Excavator.CSV
         /// <summary>
         /// All the people who've been imported
         /// </summary>
-        private Dictionary<int, string> ImportedPeople;
+        private List<ImportedPerson> ImportedPeople;
 
         /// <summary>
         /// The list of current campuses
@@ -224,8 +224,15 @@ namespace Excavator.CSV
             var textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
 
             ReportProgress( 0, "Checking for existing people..." );
-            ImportedPeople = personService.Queryable().Where( p => p.ForeignId != null )
-                .ToDictionary( p => p.Id, p => p.ForeignId );
+
+            ImportedPeople = new GroupMemberService( lookupContext ).Queryable().Where( gm => gm.Group.ForeignId != null && gm.Person.ForeignId != null )
+                .Select( gm => new ImportedPerson
+                {
+                    GroupId = gm.Group.Id,
+                    FamilyId = gm.Group.ForeignId,
+                    PersonAliasId = gm.Person.Id,
+                    MemberId = gm.Person.ForeignId
+                } ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
             return true;
@@ -306,6 +313,60 @@ namespace Excavator.CSV
 
         #endregion
 
+        #region Individual Constants
+
+        /* this is based on the definition of the csv format for the individual.csv file
+         FamilyId,FamilyName,MemberId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
+         * MaritalStatus,ConnectionStatus,RecordStatus,HomePhone,MobilePhone,WorkPhone,Email,SecondaryEmail,
+         * IsEmailActive,SMS Allowed?,Bulk Email Allowed?,Gender,Age,DateOfBirth,MembershipDate,
+         * SalvationDate,BaptismDate,AnniversaryDate,FirstVisit,LastUpdated,PreviousChurch,Occupation,
+         * Employer,School,General Note,MedicalNote,Security Note
+         */
+
+        private const int FamilyId = 0;
+        private const int FamilyName = 1;
+        private const int PersonId = 2;
+        private const int Prefix = 3;
+        private const int FirstName = 4;
+        private const int NickName = 5;
+        private const int MiddleName = 6;
+        private const int LastName = 7;
+        private const int Suffix = 8;
+        private const int FormerName = 9;
+        private const int FamilyRole = 10;
+        private const int MaritalStatus = 11;
+        private const int ConnectionStatus = 12;
+        private const int RecordStatus = 13;
+        private const int HomePhone = 14;
+        private const int MobilePhone = 15;
+        private const int WorkPhone = 16;
+        private const int Email = 17;
+        private const int SecondaryEmail = 18;
+        private const int IsEmailActive = 19;
+        private const int AllowSMS = 20;
+        private const int AllowBulkEmail = 21;
+        private const int Gender = 22;
+        private const int Age = 23;
+        private const int DateOfBirth = 24;
+        private const int MembershipDate = 25;
+        private const int SalvationDate = 26;
+        private const int BaptismDate = 27;
+        private const int Anniversary = 28;
+        private const int FirstVisit = 29;
+        private const int LastUpdated = 30;
+        private const int PreviousChurch = 31;
+        private const int Occupation = 32;
+        private const int Employer = 33;
+        private const int School = 34;
+        private const int GeneralNote = 35;
+        private const int MedicalNote = 36;
+        private const int SecurityNote = 37;
+        private const int Facebook = 38;
+        private const int Instagram = 39;
+        private const int Twitter = 40;
+
+        #endregion
+
         #region Family Constants
 
         /*
@@ -313,75 +374,51 @@ namespace Excavator.CSV
          * FamilyId,FamilyName,LastName,Campus,Address,Address2,City,State,ZipCode,Country,
          * SecondaryAddress,SecondaryAddress2,SecondaryCity,SecondaryState,SecondaryZip,SecondaryCountry
          */
-        private const int FamilyId = 0;
-        private const int FamilyName = 1;
-        private const int FamilyLastName = 2;
-        private const int Campus = 3;
-        private const int Address = 4;
-        private const int Address2 = 5;
-        private const int City = 6;
-        private const int State = 7;
-        private const int Zip = 8;
-        private const int Country = 9;
-        private const int SecondaryAddress = 10;
-        private const int SecondaryAddress2 = 11;
-        private const int SecondaryCity = 12;
-        private const int SecondaryState = 13;
-        private const int SecondaryZip = 14;
-        private const int SecondaryCountry = 15;
+
+        // First two columns are already numbered from Individuals file
+        //private const int FamilyId = 0;
+        //private const int FamilyName = 1;
+
+        private const int Campus = 2;
+        private const int Address = 3;
+        private const int Address2 = 4;
+        private const int City = 5;
+        private const int State = 6;
+        private const int Zip = 7;
+        private const int Country = 8;
+        private const int SecondaryAddress = 9;
+        private const int SecondaryAddress2 = 10;
+        private const int SecondaryCity = 11;
+        private const int SecondaryState = 12;
+        private const int SecondaryZip = 13;
+        private const int SecondaryCountry = 14;
 
         #endregion
+    }
 
-        #region Individual Constants
+    /// <summary>
+    /// Helper class to store references to people that've been imported
+    /// </summary>
+    public class ImportedPerson
+    {
+        /// <summary>
+        /// Stores the Rock.GroupId
+        /// </summary>
+        public int GroupId;
 
-        /* this is based on the definition of the csv format for the individual.csv file
-         FamilyId,MemberId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
-         * MaritalStatus,ConnectionStatus,RecordStatus,HomePhone,MobilePhone,WorkPhone,Email,SecondaryEmail,
-         * IsEmailActive,SMS Allowed?,Bulk Email Allowed?,Gender,Age,DateOfBirth,MembershipDate,
-         * SalvationDate,BaptismDate,AnniversaryDate,FirstVisit,LastUpdated,PreviousChurch,Occupation,
-         * Employer,School,General Note,MedicalNote,Security Note
-         */
-        private const int PersonFamilyId = 0;
-        private const int MemberId = 1;
-        private const int Prefix = 2;
-        private const int FirstName = 3;
-        private const int NickName = 4;
-        private const int MiddleName = 5;
-        private const int LastName = 6;
-        private const int Suffix = 7;
-        private const int FormerName = 8;
-        private const int FamilyRole = 9;
-        private const int MaritalStatus = 10;
-        private const int ConnectionStatus = 11;
-        private const int RecordStatus = 12;
-        private const int HomePhone = 13;
-        private const int MobilePhone = 14;
-        private const int WorkPhone = 15;
-        private const int Email = 16;
-        private const int SecondaryEmail = 17;
-        private const int IsEmailActive = 18;
-        private const int AllowSMS = 19;
-        private const int AllowBulkEmail = 20;
-        private const int Gender = 21;
-        private const int Age = 22;
-        private const int DateOfBirth = 23;
-        private const int MembershipDate = 24;
-        private const int SalvationDate = 25;
-        private const int BaptismDate = 26;
-        private const int Anniversary = 27;
-        private const int FirstVisit = 28;
-        private const int LastUpdated = 29;
-        private const int PreviousChurch = 30;
-        private const int Occupation = 31;
-        private const int Employer = 32;
-        private const int School = 33;
-        private const int GeneralNote = 34;
-        private const int MedicalNote = 35;
-        private const int SecurityNote = 36;
-        private const int Facebook = 37;
-        private const int Instagram = 38;
-        private const int Twitter = 39;
+        /// <summary>
+        /// Stores the Rock.PersonAliasId
+        /// </summary>
+        public int? PersonAliasId;
 
-        #endregion
+        /// <summary>
+        /// Stores the imported family id
+        /// </summary>
+        public string FamilyId;
+
+        /// <summary>
+        /// Stores the imported member (person) id
+        /// </summary>
+        public string MemberId;
     }
 }
