@@ -86,9 +86,14 @@ namespace Excavator.CSV
         private int PersonEntityTypeId;
 
         /// <summary>
+        /// The family group type identifier
+        /// </summary>
+        private int FamilyGroupTypeId;
+
+        /// <summary>
         /// All the people who've been imported
         /// </summary>
-        private List<ImportedPerson> ImportedPeople;
+        private List<Group> ImportedPeople;
 
         /// <summary>
         /// The list of current campuses
@@ -221,20 +226,15 @@ namespace Excavator.CSV
             ImportPersonAlias = new PersonAliasService( lookupContext ).Get( importPerson.Id );
 
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-            var textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
+            FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+            //int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
 
             ReportProgress( 0, "Checking for existing people..." );
 
-            ImportedPeople = new GroupMemberService( lookupContext ).Queryable().Where( gm => gm.Group.ForeignId != null && gm.Person.ForeignId != null )
-                .Select( gm => new ImportedPerson
-                {
-                    GroupId = gm.Group.Id,
-                    FamilyId = gm.Group.ForeignId,
-                    PersonAliasId = gm.Person.Id,
-                    MemberId = gm.Person.ForeignId
-                } ).ToList();
+            ImportedPeople = new GroupService( lookupContext ).GetByGroupTypeId( FamilyGroupTypeId ).Where( n => n.ForeignId != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
+
             return true;
             //}
             //catch ( Exception ex )
@@ -394,31 +394,5 @@ namespace Excavator.CSV
         private const int SecondaryCountry = 14;
 
         #endregion
-    }
-
-    /// <summary>
-    /// Helper class to store references to people that've been imported
-    /// </summary>
-    public class ImportedPerson
-    {
-        /// <summary>
-        /// Stores the Rock.GroupId
-        /// </summary>
-        public int GroupId;
-
-        /// <summary>
-        /// Stores the Rock.PersonAliasId
-        /// </summary>
-        public int? PersonAliasId;
-
-        /// <summary>
-        /// Stores the imported family id
-        /// </summary>
-        public string FamilyId;
-
-        /// <summary>
-        /// Stores the imported member (person) id
-        /// </summary>
-        public string MemberId;
     }
 }

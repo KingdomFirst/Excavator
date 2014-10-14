@@ -24,7 +24,7 @@ namespace Excavator.CSV
             var locationService = new LocationService( lookupContext );
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            int numImportedFamilies = ImportedPeople.Select( p => p.FamilyId ).Distinct().Count();
+            int numImportedFamilies = ImportedPeople.Select( p => p.ForeignId ).Distinct().Count();
 
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
@@ -44,7 +44,8 @@ namespace Excavator.CSV
 
                 if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
                 {
-                    if ( !ImportedPeople.Any( p => p.FamilyId == rowFamilyId ) )
+                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
+                    if ( currentFamilyGroup == null )
                     {
                         currentFamilyGroup = new Group();
                         currentFamilyGroup.ForeignId = rowFamilyId;
@@ -123,11 +124,12 @@ namespace Excavator.CSV
                     {
                         SaveFamilyChanges( newFamilyList, newGroupLocations );
                         ReportPartialProgress();
-                        newGroupLocations.Clear();
 
                         // Reset lookup context
                         lookupContext = new RockContext();
                         locationService = new LocationService( lookupContext );
+                        newFamilyList.Clear();
+                        newGroupLocations.Clear();
                     }
                 }
             }
@@ -157,15 +159,22 @@ namespace Excavator.CSV
                     rockContext.Groups.AddRange( newFamilyList );
                     rockContext.SaveChanges();
                 } );
+
+                // Add these new families to the global list
+                ImportedPeople.AddRange( newFamilyList );
             }
 
+            // Now save locations
             if ( newGroupLocations.Any() )
             {
-                // Add group id to locations
+                // Add updated family id to locations
                 foreach ( var locationPair in newGroupLocations )
                 {
-                    // lookup group id by family foreign id
-                    // locationPair.Key.GroupId =
+                    int? familyGroupId = newFamilyList.Where( f => f.ForeignId == locationPair.Value ).Select( f => (int?)f.Id ).FirstOrDefault();
+                    if ( familyGroupId != null )
+                    {
+                        locationPair.Key.GroupId = (int)familyGroupId;
+                    }
                 }
 
                 // Save locations
