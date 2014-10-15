@@ -131,6 +131,11 @@ namespace Excavator.F1
                                         }
                                     }
 
+                                    if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                                    {
+                                        person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                                    }
+
                                     person.GivingGroupId = newBusiness.Id;
                                 }
                             }
@@ -169,6 +174,11 @@ namespace Excavator.F1
                                     newValue.EntityId = person.Id;
                                     newAttributeValues.Add( newValue );
                                 }
+                            }
+
+                            if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                            {
+                                person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
                             }
 
                             person.GivingGroupId = newBusiness.Id;
