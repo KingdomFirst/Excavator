@@ -463,6 +463,7 @@ namespace Excavator.CSV
                 SaveIndividuals( newFamilyList, newVisitorList );
             }
 
+            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people imported.", completed ) );
             return completed;
         }
 
