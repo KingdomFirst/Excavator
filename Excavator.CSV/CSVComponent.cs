@@ -340,10 +340,10 @@ namespace Excavator.CSV
         private const int HomePhone = 14;
         private const int MobilePhone = 15;
         private const int WorkPhone = 16;
-        private const int Email = 17;
-        private const int SecondaryEmail = 18;
-        private const int IsEmailActive = 19;
-        private const int AllowSMS = 20;
+        private const int AllowSMS = 17;
+        private const int Email = 18;
+        private const int SecondaryEmail = 19;
+        private const int IsEmailActive = 20;
         private const int AllowBulkEmail = 21;
         private const int Gender = 22;
         private const int Age = 23;

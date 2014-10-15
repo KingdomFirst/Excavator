@@ -126,6 +126,9 @@ namespace Excavator.CSV
             var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
             var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
 
+            var numberTypeValues = new DefinedValueService( lookupContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
+            //var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
+
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
@@ -304,6 +307,65 @@ namespace Excavator.CSV
                             person.RecordStatusValueId = recordStatusPendingId;
                             break;
                     }
+
+                    var personNumbers = new Dictionary<string, string>();
+                    personNumbers.Add( "Home", row[HomePhone] );
+                    personNumbers.Add( "Mobile", row[MobilePhone] );
+                    personNumbers.Add( "Work", row[WorkPhone] );
+                    var smsAllowed = row[AllowSMS] as string;
+
+                    foreach ( var numberPair in personNumbers.Where( n => !string.IsNullOrEmpty( n.Value ) ) )
+                    {
+                        var extension = string.Empty;
+                        var normalizedNumber = string.Empty;
+                        int extensionIndex = numberPair.Value.LastIndexOf( 'x' );
+                        if ( extensionIndex > 0 )
+                        {
+                            extension = numberPair.Value.Substring( extensionIndex ).AsNumeric();
+                            normalizedNumber = numberPair.Value.Substring( 0, extensionIndex ).AsNumeric();
+                        }
+                        else
+                        {
+                            normalizedNumber = numberPair.Value.AsNumeric();
+                        }
+
+                        if ( !string.IsNullOrWhiteSpace( normalizedNumber ) )
+                        {
+                            //var currentNumber = existingNumbers.FirstOrDefault( n => n.Number.Equals( normalizedNumber ) );
+                            //if ( currentNumber == null )
+                            //{
+                            var currentNumber = new PhoneNumber();
+                            currentNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            currentNumber.Extension = extension.Left( 20 );
+                            currentNumber.Number = normalizedNumber.Left( 20 );
+                            currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
+                                .Select( v => (int?)v.Id ).FirstOrDefault();
+                            if ( numberPair.Key == "Mobile" )
+                            {
+                                switch ( smsAllowed.Trim().ToLower() )
+                                {
+                                    case "y":
+                                    case "yes":
+                                    case "active":
+                                        currentNumber.IsMessagingEnabled = true;
+                                        break;
+
+                                    default:
+                                        currentNumber.IsMessagingEnabled = false;
+                                        break;
+                                }
+                            }
+
+                            person.PhoneNumbers.Add( currentNumber );
+                            //existingNumbers.Add( currentNumber );
+                            //}
+                        }
+                    }
+
+                    //Email
+                    //SecondaryEmail
+                    //IsEmailActive
+                    //Bulk Email Allowed
 
                     // Map Person attributes
                     person.Attributes = new Dictionary<string, AttributeCache>();
@@ -494,6 +556,7 @@ namespace Excavator.CSV
                                 foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                                 {
                                     var newAttributeValue = person.AttributeValues[attributeCache.Key];
+
                                     if ( newAttributeValue != null )
                                     {
                                         newAttributeValue.EntityId = person.Id;
