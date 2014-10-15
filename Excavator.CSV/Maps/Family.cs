@@ -86,7 +86,6 @@ namespace Excavator.CSV
                         primaryAddress.Name = currentFamilyGroup.Name + " Home";
 
                         var primaryLocation = new GroupLocation();
-                        //primaryLocation.GroupId = currentFamilyGroup.Id;
                         primaryLocation.LocationId = primaryAddress.Id;
                         primaryLocation.IsMailingLocation = true;
                         primaryLocation.IsMappedLocation = true;
@@ -107,7 +106,6 @@ namespace Excavator.CSV
                         secondaryAddress.Name = currentFamilyGroup.Name + " Work";
 
                         var secondaryLocation = new GroupLocation();
-                        //secondaryLocation.GroupId = currentFamilyGroup.Id;
                         secondaryLocation.LocationId = primaryAddress.Id;
                         secondaryLocation.IsMailingLocation = true;
                         secondaryLocation.IsMappedLocation = true;
@@ -170,7 +168,7 @@ namespace Excavator.CSV
                 // Add updated family id to locations
                 foreach ( var locationPair in newGroupLocations )
                 {
-                    int? familyGroupId = newFamilyList.Where( f => f.ForeignId == locationPair.Value ).Select( f => (int?)f.Id ).FirstOrDefault();
+                    int? familyGroupId = ImportedPeople.Where( g => g.ForeignId == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
                     if ( familyGroupId != null )
                     {
                         locationPair.Key.GroupId = (int)familyGroupId;
