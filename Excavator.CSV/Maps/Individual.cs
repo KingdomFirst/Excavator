@@ -30,15 +30,6 @@ namespace Excavator.CSV
     /// </summary>
     partial class CSVComponent
     {
-        #region Fields
-
-        /// <summary>
-        /// The list of families
-        /// </summary>
-        //private List<Group> FamilyList = new List<Group>();
-
-        #endregion
-
         #region Main Methods
 
         /// <summary>
@@ -54,7 +45,7 @@ namespace Excavator.CSV
             // Person data is important, so load it first
             if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
             {
-                selectedCsvData.OrderBy( d => d.RecordType != CsvDataModel.RockDataType.INDIVIDUAL );
+                selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ).ToList();
             }
 
             foreach ( var csvData in selectedCsvData )
@@ -119,10 +110,6 @@ namespace Excavator.CSV
             GroupTypeRole ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
             int adultRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
             int childRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD ) ).Id;
-            int inviteeRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED ) ).Id;
-            int invitedByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED_BY ) ).Id;
-            int canCheckInRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_CAN_CHECK_IN ) ).Id;
-            int allowCheckInByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_ALLOW_CHECK_IN_BY ) ).Id;
 
             // Look up additional Person attributes (existing)
             var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
@@ -144,7 +131,7 @@ namespace Excavator.CSV
             var newVisitorList = new List<Group>();
 
             int completed = 0;
-            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count() ) );
+            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignId != null ) ) ) );
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
@@ -196,9 +183,15 @@ namespace Excavator.CSV
                     }
 
                     DateTime birthDate;
+                    string approximateAge = row[Age] as string;
                     if ( DateTime.TryParse( row[DateOfBirth], out birthDate ) )
                     {
                         person.BirthDate = birthDate;
+                    }
+                    else if ( !string.IsNullOrEmpty( approximateAge ) )
+                    {
+                        int age = approximateAge.AsType<int>();
+                        person.BirthDate = DateTime.Now.AddYears( -age );
                     }
 
                     DateTime anniversary;
@@ -448,6 +441,8 @@ namespace Excavator.CSV
                         visitorGroup.Name = person.LastName + " Family";
                         newFamilyList.Add( visitorGroup );
                         completed++;
+
+                        newVisitorList.Add( visitorGroup );
                     }
 
                     if ( completed % ( ReportingNumber * 10 ) < 1 )
@@ -456,7 +451,7 @@ namespace Excavator.CSV
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        SaveIndividuals( newFamilyList );
+                        SaveIndividuals( newFamilyList, newVisitorList );
                         ReportPartialProgress();
                         newFamilyList.Clear();
                     }
@@ -465,7 +460,7 @@ namespace Excavator.CSV
 
             if ( newFamilyList.Any() )
             {
-                SaveIndividuals( newFamilyList );
+                SaveIndividuals( newFamilyList, newVisitorList );
             }
 
             return completed;
@@ -476,39 +471,32 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="newFamilyList">The family list.</param>
         /// <param name="visitorList">The optional visitor list.</param>
-        private void SaveIndividuals( List<Group> newFamilyList )
+        private void SaveIndividuals( List<Group> newFamilyList, List<Group> visitorList = null )
         {
             if ( newFamilyList.Any() )
             {
-                //var groupMemberService = new GroupMemberService( rockContext );
-                //var groupTypeRoleService = new GroupTypeRoleService( rockContext );
-
-                //var ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
-                //int inviteeRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED ) ).Id;
-                //int invitedByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED_BY ) ).Id;
-                //int canCheckInRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_CAN_CHECK_IN ) ).Id;
-                //int allowCheckInByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_ALLOW_CHECK_IN_BY ) ).Id;
-
                 var rockContext = new RockContext();
                 rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
                     rockContext.SaveChanges( true );
 
-                    foreach ( var familyGroups in newFamilyList.GroupBy<Group, int?>( g => g.ForeignId.AsType<int?>() ) )
+                    ImportedPeople.AddRange( newFamilyList );
+
+                    foreach ( var familyGroups in newFamilyList.GroupBy<Group, string>( g => g.ForeignId ) )
                     {
-                        bool visitorsExist = familyGroups.Count() > 1;
+                        bool visitorsExist = visitorList.Any() && familyGroups.Count() > 1;
                         foreach ( var newFamilyGroup in familyGroups )
                         {
                             foreach ( var person in newFamilyGroup.Members.Select( m => m.Person ) )
                             {
                                 foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                                 {
-                                    var newValue = person.AttributeValues[attributeCache.Key];
-                                    if ( newValue != null )
+                                    var newAttributeValue = person.AttributeValues[attributeCache.Key];
+                                    if ( newAttributeValue != null )
                                     {
-                                        newValue.EntityId = person.Id;
-                                        rockContext.AttributeValues.Add( newValue );
+                                        newAttributeValue.EntityId = person.Id;
+                                        rockContext.AttributeValues.Add( newAttributeValue );
                                     }
                                 }
 
@@ -523,77 +511,83 @@ namespace Excavator.CSV
 
                                 person.GivingGroupId = newFamilyGroup.Id;
 
-                                //if ( visitorsExist )
-                                //{
-                                //    // Retrieve or create the group this person is an owner of
-                                //    var ownerGroup = groupMemberService.Queryable()
-                                //        .Where( m => m.PersonId == person.Id && m.GroupRoleId == ownerRole.Id )
-                                //        .Select( m => m.Group )
-                                //        .FirstOrDefault();
+                                if ( visitorsExist )
+                                {
+                                    var groupTypeRoleService = new GroupTypeRoleService( rockContext );
+                                    var ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
+                                    int inviteeRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED ) ).Id;
+                                    int invitedByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_INVITED_BY ) ).Id;
+                                    int canCheckInRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_CAN_CHECK_IN ) ).Id;
+                                    int allowCheckInByRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_ALLOW_CHECK_IN_BY ) ).Id;
 
-                                //    if ( ownerGroup == null )
-                                //    {
-                                //        var ownerGroupMember = new GroupMember();
-                                //        ownerGroupMember.PersonId = person.Id;
-                                //        ownerGroupMember.GroupRoleId = ownerRole.Id;
+                                    // Retrieve or create the group this person is an owner of
+                                    var ownerGroup = new GroupMemberService( rockContext ).Queryable()
+                                        .Where( m => m.PersonId == person.Id && m.GroupRoleId == ownerRole.Id )
+                                        .Select( m => m.Group ).FirstOrDefault();
+                                    if ( ownerGroup == null )
+                                    {
+                                        var ownerGroupMember = new GroupMember();
+                                        ownerGroupMember.PersonId = person.Id;
+                                        ownerGroupMember.GroupRoleId = ownerRole.Id;
 
-                                //        ownerGroup = new Group();
-                                //        ownerGroup.Name = ownerRole.GroupType.Name;
-                                //        ownerGroup.GroupTypeId = ownerRole.GroupTypeId.Value;
-                                //        ownerGroup.Members.Add( ownerGroupMember );
-                                //        rockContext.Groups.Add( ownerGroup );
-                                //    }
+                                        ownerGroup = new Group();
+                                        ownerGroup.Name = ownerRole.GroupType.Name;
+                                        ownerGroup.GroupTypeId = ownerRole.GroupTypeId.Value;
+                                        ownerGroup.Members.Add( ownerGroupMember );
+                                        rockContext.Groups.Add( ownerGroup );
+                                    }
 
-                                //    // if this is a visitor, then add proper relationships to the family member
-                                //    if ( VisitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
-                                //            .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.Id ) ) ) )
-                                //    {
-                                //        var familyMembers = familyGroups.Except( VisitorList ).SelectMany( g => g.Members );
-                                //        foreach ( var familyMember in familyMembers.Select( m => m.Person ) )
-                                //        {
-                                //            var invitedByMember = new GroupMember();
-                                //            invitedByMember.PersonId = familyMember.Id;
-                                //            invitedByMember.GroupRoleId = invitedByRoleId;
-                                //            ownerGroup.Members.Add( invitedByMember );
+                                    // Visitor, add relationships to the family members
+                                    if ( visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
+                                            .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.ForeignId ) ) ) )
+                                    {
+                                        var familyMembers = familyGroups.Except( visitorList ).SelectMany( g => g.Members );
+                                        foreach ( var familyMember in familyMembers )
+                                        {
+                                            // Add visitor invitedBy relationship
+                                            var invitedByMember = new GroupMember();
+                                            invitedByMember.PersonId = familyMember.Person.Id;
+                                            invitedByMember.GroupRoleId = invitedByRoleId;
+                                            ownerGroup.Members.Add( invitedByMember );
 
-                                //            if ( person.Age < 18 && familyMember.Age > 15 )
-                                //            {
-                                //                var allowCheckinMember = new GroupMember();
-                                //                allowCheckinMember.PersonId = familyMember.Id;
-                                //                allowCheckinMember.GroupRoleId = allowCheckInByRoleId;
-                                //                ownerGroup.Members.Add( allowCheckinMember );
-                                //            }
-                                //        }
-                                //    }
-                                //    else
-                                //    {   // not a visitor, add the visitors to the family member's known relationship
-                                //        var visitors = VisitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId ).SelectMany( g => g.Members );
-                                //        foreach ( var visitor in visitors.Select( g => g.Person ) )
-                                //        {
-                                //            var inviteeMember = new GroupMember();
-                                //            inviteeMember.PersonId = visitor.Id;
-                                //            inviteeMember.GroupRoleId = inviteeRoleId;
-                                //            ownerGroup.Members.Add( inviteeMember );
+                                            if ( person.Age < 18 && familyMember.Person.Age > 15 )
+                                            {
+                                                // Add visitor allowCheckInBy relationship
+                                                var allowCheckinMember = new GroupMember();
+                                                allowCheckinMember.PersonId = familyMember.Person.Id;
+                                                allowCheckinMember.GroupRoleId = allowCheckInByRoleId;
+                                                ownerGroup.Members.Add( allowCheckinMember );
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {   // Family member, add relationships to the visitor(s)
+                                        var familyVisitors = visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId ).SelectMany( g => g.Members ).ToList();
+                                        foreach ( var visitor in familyVisitors )
+                                        {
+                                            // Add invited visitor relationship
+                                            var inviteeMember = new GroupMember();
+                                            inviteeMember.PersonId = visitor.Person.Id;
+                                            inviteeMember.GroupRoleId = inviteeRoleId;
+                                            ownerGroup.Members.Add( inviteeMember );
 
-                                //            // if visitor can be checked in and this person is considered an adult
-                                //            if ( visitor.Age < 18 && person.Age > 15 )
-                                //            {
-                                //                var canCheckInMember = new GroupMember();
-                                //                canCheckInMember.PersonId = visitor.Id;
-                                //                canCheckInMember.GroupRoleId = canCheckInRoleId;
-                                //                ownerGroup.Members.Add( canCheckInMember );
-                                //            }
-                                //        }
-                                //    }
-                                //}
+                                            if ( visitor.Person.Age < 18 && person.Age > 15 )
+                                            {
+                                                // Add canCheckIn visitor relationship
+                                                var canCheckInMember = new GroupMember();
+                                                canCheckInMember.PersonId = visitor.Person.Id;
+                                                canCheckInMember.GroupRoleId = canCheckInRoleId;
+                                                ownerGroup.Members.Add( canCheckInMember );
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
 
                     rockContext.SaveChanges( true );
                 } );
-
-                ImportedPeople.AddRange( newFamilyList );
             }
         }
 
