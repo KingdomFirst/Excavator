@@ -254,7 +254,8 @@ namespace Excavator.F1
             // Look up additional Person attributes (existing)
             var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            // Cached F1 attributes: IndividualId, HouseholdId, PreviousChurch, Position, Employer, School
+            // Cached F1 attributes: IndividualId, HouseholdId
+            // Core attributes: PreviousChurch, Position, Employer, School
             var individualIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
             var householdIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
@@ -624,6 +625,7 @@ namespace Excavator.F1
                                                     inviteeMember.GroupRoleId = inviteeRoleId;
                                                     ownerGroup.Members.Add( inviteeMember );
 
+                                                    // if visitor can be checked in and this person is considered an adult
                                                     if ( visitor.Age < 18 && person.Age > 15 )
                                                     {
                                                         var canCheckInMember = new GroupMember();
