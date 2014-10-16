@@ -126,7 +126,6 @@ namespace Excavator.CSV
             var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
             var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
 
-            var countryCodeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.COMMUNICATION_PHONE_COUNTRY_CODE ) ).DefinedValues;
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).DefinedValues;
 
             var currentFamilyGroup = new Group();
