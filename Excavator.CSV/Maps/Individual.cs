@@ -126,8 +126,8 @@ namespace Excavator.CSV
             var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
             var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
 
-            var numberTypeValues = new DefinedValueService( lookupContext ).GetByDefinedTypeGuid( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).ToList();
-            //var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
+            var countryCodeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.COMMUNICATION_PHONE_COUNTRY_CODE ) ).DefinedValues;
+            var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).DefinedValues;
 
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
@@ -317,12 +317,20 @@ namespace Excavator.CSV
                     foreach ( var numberPair in personNumbers.Where( n => !string.IsNullOrEmpty( n.Value ) ) )
                     {
                         var extension = string.Empty;
+                        var countryCode = Rock.Model.PhoneNumber.DefaultCountryCode();
                         var normalizedNumber = string.Empty;
-                        int extensionIndex = numberPair.Value.LastIndexOf( 'x' );
-                        if ( extensionIndex > 0 )
+                        var countryIndex = numberPair.Value.IndexOf( '+' );
+                        int extensionIndex = numberPair.Value.LastIndexOf( 'x' ) > 0 ? numberPair.Value.LastIndexOf( 'x' ) : numberPair.Value.Length;
+                        if ( countryIndex >= 0 )
                         {
-                            extension = numberPair.Value.Substring( extensionIndex ).AsNumeric();
+                            countryCode = numberPair.Value.Substring( countryIndex, countryIndex + 3 ).AsNumeric();
+                            normalizedNumber = numberPair.Value.Substring( countryIndex + 3, extensionIndex - 3 ).AsNumeric();
+                            extension = numberPair.Value.Substring( extensionIndex );
+                        }
+                        else if ( extensionIndex > 0 )
+                        {
                             normalizedNumber = numberPair.Value.Substring( 0, extensionIndex ).AsNumeric();
+                            extension = numberPair.Value.Substring( extensionIndex ).AsNumeric();
                         }
                         else
                         {
@@ -331,10 +339,8 @@ namespace Excavator.CSV
 
                         if ( !string.IsNullOrWhiteSpace( normalizedNumber ) )
                         {
-                            //var currentNumber = existingNumbers.FirstOrDefault( n => n.Number.Equals( normalizedNumber ) );
-                            //if ( currentNumber == null )
-                            //{
                             var currentNumber = new PhoneNumber();
+                            currentNumber.CountryCode = countryCode;
                             currentNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             currentNumber.Extension = extension.Left( 20 );
                             currentNumber.Number = normalizedNumber.Left( 20 );
@@ -357,8 +363,6 @@ namespace Excavator.CSV
                             }
 
                             person.PhoneNumbers.Add( currentNumber );
-                            //existingNumbers.Add( currentNumber );
-                            //}
                         }
                     }
 
