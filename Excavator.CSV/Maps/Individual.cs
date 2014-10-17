@@ -128,6 +128,38 @@ namespace Excavator.CSV
 
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ) ).DefinedValues;
 
+            int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
+
+            // Look for custom attributes in the Individual file
+            var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
+            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > 40 ).ToDictionary( f => f.index, f => f.node.Name );
+
+            if ( customAttributes.Any() )
+            {
+                var newAttributes = new List<Rock.Model.Attribute>();
+                foreach ( var newAttributePair in customAttributes.Where( ca => !personAttributes.Any( a => a.Name == ca.Value ) ) )
+                {
+                    var newAttribute = new Rock.Model.Attribute();
+                    newAttribute.Name = newAttributePair.Value;
+                    newAttribute.Key = newAttributePair.Value.RemoveWhitespace();
+                    newAttribute.Description = newAttributePair.Value + " created by CSV import";
+                    newAttribute.EntityTypeQualifierValue = string.Empty;
+                    newAttribute.EntityTypeQualifierColumn = string.Empty;
+                    newAttribute.EntityTypeId = PersonEntityTypeId;
+                    newAttribute.FieldTypeId = textFieldTypeId;
+                    newAttribute.DefaultValue = string.Empty;
+                    newAttribute.IsMultiValue = false;
+                    newAttribute.IsGridColumn = false;
+                    newAttribute.IsRequired = false;
+                    newAttribute.Order = 0;
+                    newAttributes.Add( newAttribute );
+                }
+
+                lookupContext.Attributes.AddRange( newAttributes );
+                lookupContext.SaveChanges();
+                personAttributes.AddRange( newAttributes );
+            }
+
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
@@ -482,6 +514,26 @@ namespace Excavator.CSV
                             AttributeId = instagramAttribute.Id,
                             Value = instagramValue
                         } );
+                    }
+
+                    foreach ( var attributePair in customAttributes )
+                    {
+                        var newAttributeValue = row[attributePair.Key] as string;
+                        if ( newAttributeValue != null )
+                        {
+                            int? newAttributeId = personAttributes.Where( a => a.Key == attributePair.Value )
+                                .Select( a => (int?)a.Id ).FirstOrDefault();
+                            if ( newAttributeId != null )
+                            {
+                                var newAttribute = AttributeCache.Read( (int)newAttributeId );
+                                person.Attributes.Add( newAttribute.Key, newAttribute );
+                                person.AttributeValues.Add( newAttribute.Key, new AttributeValue()
+                                {
+                                    AttributeId = newAttribute.Id,
+                                    Value = newAttributeValue
+                                } );
+                            }
+                        }
                     }
 
                     #endregion

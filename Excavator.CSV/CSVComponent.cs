@@ -227,7 +227,6 @@ namespace Excavator.CSV
 
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
-            //int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
 
             ReportProgress( 0, "Checking for existing people..." );
 
