@@ -155,7 +155,7 @@ namespace Excavator.CSV
                 rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
-                    rockContext.SaveChanges();
+                    rockContext.SaveChanges( true );
                 } );
 
                 // Add these new families to the global list

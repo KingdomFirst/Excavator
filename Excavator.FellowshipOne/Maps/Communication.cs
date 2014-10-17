@@ -54,7 +54,7 @@ namespace Excavator.F1
             {
                 Rock.Web.Cache.AttributeCache.Flush( oldFacebookAttribute.Id );
                 attributeService.Delete( oldFacebookAttribute );
-                lookupContext.SaveChanges();
+                lookupContext.SaveChanges( true );
             }
 
             var oldTwitterAttribute = personAttributes.Where( a => a.Key == "TwitterUsername" ).FirstOrDefault();
@@ -62,7 +62,7 @@ namespace Excavator.F1
             {
                 Rock.Web.Cache.AttributeCache.Flush( oldTwitterAttribute.Id );
                 attributeService.Delete( oldTwitterAttribute );
-                lookupContext.SaveChanges();
+                lookupContext.SaveChanges( true );
             }
 
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
@@ -74,7 +74,7 @@ namespace Excavator.F1
             if ( socialMediaCategory != null )
             {
                 lookupContext.Categories.Remove( socialMediaCategory );
-                lookupContext.SaveChanges();
+                lookupContext.SaveChanges( true );
             }
 
             // Cached Rock attributes: Facebook, Twitter, Instagram
@@ -184,7 +184,7 @@ namespace Excavator.F1
                                 person.IsEmailActive = isListed;
                                 person.ModifiedDateTime = lastUpdated;
                                 person.EmailNote = communicationComment;
-                                lookupContext.SaveChanges();
+                                lookupContext.SaveChanges( true );
                             }
                             else if ( !person.Email.Equals( value ) )
                             {
