@@ -66,7 +66,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="CsvImporterHelp.htm" />
     <Content Include="FodyWeavers.xml">
       <SubType>Designer</SubType>
     </Content>
