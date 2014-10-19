@@ -80,14 +80,7 @@ namespace Excavator.F1
                             }
                             else if ( completed % ReportingNumber < 1 )
                             {
-                                var rockContext = new RockContext();
-                                rockContext.WrapTransaction( () =>
-                                {
-                                    rockContext.Configuration.AutoDetectChangesEnabled = false;
-                                    rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
-                                    rockContext.SaveChanges( DisableAudit );
-                                } );
-
+                                SaveBankAccounts( newBankAccounts );
                                 newBankAccounts.Clear();
                                 ReportPartialProgress();
                             }
@@ -98,16 +91,21 @@ namespace Excavator.F1
 
             if ( newBankAccounts.Any() )
             {
-                var rockContext = new RockContext();
-                rockContext.WrapTransaction( () =>
-                {
-                    rockContext.Configuration.AutoDetectChangesEnabled = false;
-                    rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
-                    rockContext.SaveChanges( DisableAudit );
-                } );
+                SaveBankAccounts( newBankAccounts );
             }
 
             ReportProgress( 100, string.Format( "Finished check number import: {0:N0} numbers imported.", completed ) );
+        }
+
+        private static void SaveBankAccounts( List<FinancialPersonBankAccount> newBankAccounts )
+        {
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Configuration.AutoDetectChangesEnabled = false;
+                rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
+                rockContext.SaveChanges( DisableAudit );
+            } );
         }
 
         /// <summary>
@@ -165,14 +163,7 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        var rockContext = new RockContext();
-                        rockContext.WrapTransaction( () =>
-                        {
-                            rockContext.Configuration.AutoDetectChangesEnabled = false;
-                            rockContext.FinancialBatches.AddRange( newBatches );
-                            rockContext.SaveChanges( DisableAudit );
-                        } );
-
+                        SaveFinancialBatches( newBatches );
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -181,16 +172,25 @@ namespace Excavator.F1
 
             if ( newBatches.Any() )
             {
-                var rockContext = new RockContext();
-                rockContext.WrapTransaction( () =>
-                {
-                    rockContext.Configuration.AutoDetectChangesEnabled = false;
-                    rockContext.FinancialBatches.AddRange( newBatches );
-                    rockContext.SaveChanges( DisableAudit );
-                } );
+                SaveFinancialBatches( newBatches );
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
+        }
+
+        /// <summary>
+        /// Saves the financial batches.
+        /// </summary>
+        /// <param name="newBatches">The new batches.</param>
+        private static void SaveFinancialBatches( List<FinancialBatch> newBatches )
+        {
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Configuration.AutoDetectChangesEnabled = false;
+                rockContext.FinancialBatches.AddRange( newBatches );
+                rockContext.SaveChanges( DisableAudit );
+            } );
         }
 
         /// <summary>
@@ -331,20 +331,7 @@ namespace Excavator.F1
                                 {
                                     // Check if a parent account exists already
                                     FinancialAccount parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) );
-                                    if ( parentAccount == null )
-                                    {
-                                        parentAccount = new FinancialAccount();
-                                        parentAccount.Name = fundName;
-                                        parentAccount.PublicName = fundName;
-                                        parentAccount.IsTaxDeductible = true;
-                                        parentAccount.IsActive = true;
-                                        parentAccount.CampusId = fundCampusId;
-                                        parentAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
-
-                                        lookupContext.FinancialAccounts.Add( parentAccount );
-                                        lookupContext.SaveChanges( DisableAudit );
-                                        accountList.Add( parentAccount );
-                                    }
+                                    parentAccount = AddAccount( lookupContext, accountList, fundName, fundCampusId, parentAccount );
 
                                     // set data for subfund to be created
                                     parentAccountId = parentAccount.Id;
@@ -358,21 +345,7 @@ namespace Excavator.F1
                         }
 
                         // No account matches, create the new account with campus Id and parent Id if they were set
-                        if ( matchingAccount == null )
-                        {
-                            matchingAccount = new FinancialAccount();
-                            matchingAccount.Name = fundName;
-                            matchingAccount.PublicName = fundName;
-                            matchingAccount.ParentAccountId = parentAccountId;
-                            matchingAccount.IsTaxDeductible = true;
-                            matchingAccount.IsActive = true;
-                            matchingAccount.CampusId = fundCampusId;
-                            matchingAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
-
-                            lookupContext.FinancialAccounts.Add( matchingAccount );
-                            lookupContext.SaveChanges( DisableAudit );
-                            accountList.Add( matchingAccount );
-                        }
+                        matchingAccount = AddAccount( lookupContext, accountList, fundName, fundCampusId, matchingAccount );
 
                         var transactionDetail = new FinancialTransactionDetail();
                         transactionDetail.Amount = (decimal)amount;
@@ -427,6 +400,26 @@ namespace Excavator.F1
             }
 
             ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
+        }
+
+        private FinancialAccount AddAccount( RockContext lookupContext, List<FinancialAccount> accountList, string fundName, int? fundCampusId, FinancialAccount account )
+        {
+            if ( account == null )
+            {
+                account = new FinancialAccount();
+                account.Name = fundName;
+                account.PublicName = fundName;
+                account.IsTaxDeductible = true;
+                account.IsActive = true;
+                account.CampusId = fundCampusId;
+                account.CreatedByPersonAliasId = ImportPersonAlias.Id;
+
+                lookupContext.FinancialAccounts.Add( account );
+                lookupContext.SaveChanges( DisableAudit );
+                accountList.Add( account );
+            }
+
+            return account;
         }
 
         /// <summary>

@@ -91,8 +91,8 @@ namespace Excavator.F1
 
         // Custom attribute types
 
-        //private int IndividualAttributeId;
-        //private int HouseholdAttributeId;
+        private int IndividualAttributeId;
+        private int HouseholdAttributeId;
         private int SecondaryEmailAttributeId;
 
         // Report progress when a multiple of this number has been imported
@@ -276,47 +276,47 @@ namespace Excavator.F1
             // Look up and create attributes for F1 unique identifiers if they don't exist
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            //var householdAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" );
-            //if ( householdAttribute == null )
-            //{
-            //    householdAttribute = new Rock.Model.Attribute();
-            //    householdAttribute.Key = "F1HouseholdId";
-            //    householdAttribute.Name = "F1 Household Id";
-            //    householdAttribute.FieldTypeId = IntegerFieldTypeId;
-            //    householdAttribute.EntityTypeId = PersonEntityTypeId;
-            //    householdAttribute.EntityTypeQualifierValue = string.Empty;
-            //    householdAttribute.EntityTypeQualifierColumn = string.Empty;
-            //    householdAttribute.Description = "The FellowshipOne household identifier for the person that was imported";
-            //    householdAttribute.DefaultValue = string.Empty;
-            //    householdAttribute.IsMultiValue = false;
-            //    householdAttribute.IsRequired = false;
-            //    householdAttribute.Order = 0;
+            var householdAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" );
+            if ( householdAttribute == null )
+            {
+                householdAttribute = new Rock.Model.Attribute();
+                householdAttribute.Key = "F1HouseholdId";
+                householdAttribute.Name = "F1 Household Id";
+                householdAttribute.FieldTypeId = IntegerFieldTypeId;
+                householdAttribute.EntityTypeId = PersonEntityTypeId;
+                householdAttribute.EntityTypeQualifierValue = string.Empty;
+                householdAttribute.EntityTypeQualifierColumn = string.Empty;
+                householdAttribute.Description = "The FellowshipOne household identifier for the person that was imported";
+                householdAttribute.DefaultValue = string.Empty;
+                householdAttribute.IsMultiValue = false;
+                householdAttribute.IsRequired = false;
+                householdAttribute.Order = 0;
 
-            //    rockContext.Attributes.Add( householdAttribute );
-            //    rockContext.SaveChanges( DisableAudit );
-            //    personAttributes.Add( householdAttribute );
-            //}
+                rockContext.Attributes.Add( householdAttribute );
+                rockContext.SaveChanges( DisableAudit );
+                personAttributes.Add( householdAttribute );
+            }
 
-            //var individualAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" );
-            //if ( individualAttribute == null )
-            //{
-            //    individualAttribute = new Rock.Model.Attribute();
-            //    individualAttribute.Key = "F1IndividualId";
-            //    individualAttribute.Name = "F1 Individual Id";
-            //    individualAttribute.FieldTypeId = IntegerFieldTypeId;
-            //    individualAttribute.EntityTypeId = PersonEntityTypeId;
-            //    individualAttribute.EntityTypeQualifierValue = string.Empty;
-            //    individualAttribute.EntityTypeQualifierColumn = string.Empty;
-            //    individualAttribute.Description = "The FellowshipOne individual identifier for the person that was imported";
-            //    individualAttribute.DefaultValue = string.Empty;
-            //    individualAttribute.IsMultiValue = false;
-            //    individualAttribute.IsRequired = false;
-            //    individualAttribute.Order = 0;
+            var individualAttribute = personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" );
+            if ( individualAttribute == null )
+            {
+                individualAttribute = new Rock.Model.Attribute();
+                individualAttribute.Key = "F1IndividualId";
+                individualAttribute.Name = "F1 Individual Id";
+                individualAttribute.FieldTypeId = IntegerFieldTypeId;
+                individualAttribute.EntityTypeId = PersonEntityTypeId;
+                individualAttribute.EntityTypeQualifierValue = string.Empty;
+                individualAttribute.EntityTypeQualifierColumn = string.Empty;
+                individualAttribute.Description = "The FellowshipOne individual identifier for the person that was imported";
+                individualAttribute.DefaultValue = string.Empty;
+                individualAttribute.IsMultiValue = false;
+                individualAttribute.IsRequired = false;
+                individualAttribute.Order = 0;
 
-            //    rockContext.Attributes.Add( individualAttribute );
-            //    rockContext.SaveChanges( DisableAudit );
-            //    personAttributes.Add( individualAttribute );
-            //}
+                rockContext.Attributes.Add( individualAttribute );
+                rockContext.SaveChanges( DisableAudit );
+                personAttributes.Add( individualAttribute );
+            }
 
             var secondaryEmailAttribute = personAttributes.FirstOrDefault( a => a.Key == "SecondaryEmail" );
             if ( secondaryEmailAttribute == null )
@@ -340,14 +340,14 @@ namespace Excavator.F1
                 rockContext.SaveChanges( DisableAudit );
             }
 
-            //IndividualAttributeId = individualAttribute.Id;
-            //HouseholdAttributeId = householdAttribute.Id;
+            IndividualAttributeId = individualAttribute.Id;
+            HouseholdAttributeId = householdAttribute.Id;
             SecondaryEmailAttributeId = secondaryEmailAttribute.Id;
 
             ReportProgress( 0, "Checking for existing data..." );
-            //var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
-            //var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
-            var listHouseholdId = new PersonService().Queryable().Select( )
+            var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
+            var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
+            // var listHouseholdId = new PersonService().Queryable().Select( )
 
             ImportedPeople = listHouseholdId.GroupJoin( listIndividualId,
                 household => household.PersonId,

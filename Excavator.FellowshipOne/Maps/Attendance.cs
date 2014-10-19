@@ -74,7 +74,7 @@ namespace Excavator.F1
                     }
 
                     string f1AttendanceCode = row["Tag_Code"] as string;
-                    if ( f1AttendanceCode != null )
+                    if ( !string.IsNullOrWhiteSpace( f1AttendanceCode ) )
                     {
                         attendance.AttendanceCode = new AttendanceCode();
                         attendance.AttendanceCode.Code = f1AttendanceCode;

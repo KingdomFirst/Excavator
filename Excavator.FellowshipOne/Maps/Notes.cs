@@ -96,14 +96,7 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            var rockContext = new RockContext();
-                            rockContext.WrapTransaction( () =>
-                            {
-                                rockContext.Configuration.AutoDetectChangesEnabled = false;
-                                rockContext.Notes.AddRange( noteList );
-                                rockContext.SaveChanges( DisableAudit );
-                            } );
-
+                            SaveNotes( noteList );
                             ReportPartialProgress();
                         }
                     }
@@ -112,16 +105,21 @@ namespace Excavator.F1
 
             if ( noteList.Any() )
             {
-                var rockContext = new RockContext();
-                rockContext.WrapTransaction( () =>
-                {
-                    rockContext.Configuration.AutoDetectChangesEnabled = false;
-                    rockContext.Notes.AddRange( noteList );
-                    rockContext.SaveChanges( DisableAudit );
-                } );
+                SaveNotes( noteList );
             }
 
             ReportProgress( 100, string.Format( "Finished note import: {0:N0} notes imported.", completed ) );
+        }
+
+        private static void SaveNotes( List<Note> noteList )
+        {
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Configuration.AutoDetectChangesEnabled = false;
+                rockContext.Notes.AddRange( noteList );
+                rockContext.SaveChanges( DisableAudit );
+            } );
         }
     }
 }

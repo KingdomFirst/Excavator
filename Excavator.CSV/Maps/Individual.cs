@@ -233,7 +233,7 @@ namespace Excavator.CSV
                     #region Assign values to the Person record
 
                     string activeEmail = row[IsEmailActive] as string;
-                    if ( !string.IsNullOrEmpty( activeEmail ) )
+                    if ( !string.IsNullOrWhiteSpace( activeEmail ) )
                     {
                         bool emailIsActive = false;
                         if ( bool.TryParse( activeEmail, out emailIsActive ) )
@@ -248,7 +248,7 @@ namespace Excavator.CSV
                     {
                         person.BirthDate = birthDate;
                     }
-                    else if ( !string.IsNullOrEmpty( approximateAge ) )
+                    else if ( !string.IsNullOrWhiteSpace( approximateAge ) )
                     {
                         int age = approximateAge.AsType<int>();
                         person.BirthDate = DateTime.Now.AddYears( -age );
@@ -282,7 +282,7 @@ namespace Excavator.CSV
                     }
 
                     var prefix = row[Prefix] as string;
-                    if ( !string.IsNullOrEmpty( prefix ) )
+                    if ( !string.IsNullOrWhiteSpace( prefix ) )
                     {
                         prefix = prefix.RemoveSpecialCharacters().Trim();
                         person.TitleValueId = titleTypes.Where( s => prefix == s.Value.RemoveSpecialCharacters() )
@@ -290,7 +290,7 @@ namespace Excavator.CSV
                     }
 
                     var suffix = row[Suffix] as string;
-                    if ( !string.IsNullOrEmpty( suffix ) )
+                    if ( !string.IsNullOrWhiteSpace( suffix ) )
                     {
                         suffix = suffix.RemoveSpecialCharacters().Trim();
                         person.SuffixValueId = suffixTypes.Where( s => suffix == s.Value.RemoveSpecialCharacters() )
@@ -298,7 +298,7 @@ namespace Excavator.CSV
                     }
 
                     var maritalStatus = row[MaritalStatus] as string;
-                    if ( !string.IsNullOrEmpty( maritalStatus ) )
+                    if ( !string.IsNullOrWhiteSpace( maritalStatus ) )
                     {
                         person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Value == maritalStatus )
                             .Select( dv => (int?)dv.Id ).FirstOrDefault();
@@ -310,7 +310,7 @@ namespace Excavator.CSV
                     }
 
                     var familyRole = row[FamilyRole] as string;
-                    if ( !string.IsNullOrEmpty( familyRole ) )
+                    if ( !string.IsNullOrWhiteSpace( familyRole ) )
                     {
                         if ( familyRole == "Visitor" )
                         {
@@ -324,7 +324,7 @@ namespace Excavator.CSV
                     }
 
                     var connectionStatus = row[ConnectionStatus] as string;
-                    if ( !string.IsNullOrEmpty( connectionStatus ) )
+                    if ( !string.IsNullOrWhiteSpace( connectionStatus ) )
                     {
                         if ( connectionStatus == "Member" )
                         {
@@ -374,7 +374,7 @@ namespace Excavator.CSV
                     personNumbers.Add( "Work", row[WorkPhone] );
                     var smsAllowed = row[AllowSMS] as string;
 
-                    foreach ( var numberPair in personNumbers.Where( n => !string.IsNullOrEmpty( n.Value ) ) )
+                    foreach ( var numberPair in personNumbers.Where( n => !string.IsNullOrWhiteSpace( n.Value ) ) )
                     {
                         var extension = string.Empty;
                         var countryCode = Rock.Model.PhoneNumber.DefaultCountryCode();
@@ -459,7 +459,7 @@ namespace Excavator.CSV
                     }
 
                     var primaryEmail = row[Email] as string;
-                    if ( !string.IsNullOrEmpty( primaryEmail ) )
+                    if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
                     {
                         person.Email = primaryEmail;
                         person.IsEmailActive = isEmailActive;
@@ -511,7 +511,7 @@ namespace Excavator.CSV
                     }
 
                     var previousChurchValue = row[PreviousChurch] as string;
-                    if ( !string.IsNullOrEmpty( previousChurchValue ) )
+                    if ( !string.IsNullOrWhiteSpace( previousChurchValue ) )
                     {
                         person.Attributes.Add( previousChurchAttribute.Key, previousChurchAttribute );
                         person.AttributeValues.Add( previousChurchAttribute.Key, new AttributeValue()
@@ -522,7 +522,7 @@ namespace Excavator.CSV
                     }
 
                     var positionValue = row[Occupation] as string;
-                    if ( !string.IsNullOrEmpty( positionValue ) )
+                    if ( !string.IsNullOrWhiteSpace( positionValue ) )
                     {
                         person.Attributes.Add( positionAttribute.Key, positionAttribute );
                         person.AttributeValues.Add( positionAttribute.Key, new AttributeValue()
@@ -533,7 +533,7 @@ namespace Excavator.CSV
                     }
 
                     var employerValue = row[Employer] as string;
-                    if ( !string.IsNullOrEmpty( employerValue ) )
+                    if ( !string.IsNullOrWhiteSpace( employerValue ) )
                     {
                         person.Attributes.Add( employerAttribute.Key, employerAttribute );
                         person.AttributeValues.Add( employerAttribute.Key, new AttributeValue()
@@ -544,7 +544,7 @@ namespace Excavator.CSV
                     }
 
                     var schoolValue = row[School] as string;
-                    if ( !string.IsNullOrEmpty( schoolValue ) )
+                    if ( !string.IsNullOrWhiteSpace( schoolValue ) )
                     {
                         person.Attributes.Add( schoolAttribute.Key, schoolAttribute );
                         person.AttributeValues.Add( schoolAttribute.Key, new AttributeValue()
@@ -555,7 +555,7 @@ namespace Excavator.CSV
                     }
 
                     var facebookValue = row[Facebook] as string;
-                    if ( !string.IsNullOrEmpty( facebookValue ) )
+                    if ( !string.IsNullOrWhiteSpace( facebookValue ) )
                     {
                         person.Attributes.Add( facebookAttribute.Key, facebookAttribute );
                         person.AttributeValues.Add( facebookAttribute.Key, new AttributeValue()
@@ -566,7 +566,7 @@ namespace Excavator.CSV
                     }
 
                     var twitterValue = row[Twitter] as string;
-                    if ( !string.IsNullOrEmpty( twitterValue ) )
+                    if ( !string.IsNullOrWhiteSpace( twitterValue ) )
                     {
                         person.Attributes.Add( twitterAttribute.Key, twitterAttribute );
                         person.AttributeValues.Add( twitterAttribute.Key, new AttributeValue()
@@ -577,7 +577,7 @@ namespace Excavator.CSV
                     }
 
                     var instagramValue = row[Instagram] as string;
-                    if ( !string.IsNullOrEmpty( instagramValue ) )
+                    if ( !string.IsNullOrWhiteSpace( instagramValue ) )
                     {
                         person.Attributes.Add( instagramAttribute.Key, instagramAttribute );
                         person.AttributeValues.Add( instagramAttribute.Key, new AttributeValue()
@@ -590,7 +590,7 @@ namespace Excavator.CSV
                     foreach ( var attributePair in customAttributes )
                     {
                         var newAttributeValue = row[attributePair.Key] as string;
-                        if ( !string.IsNullOrEmpty( newAttributeValue ) )
+                        if ( !string.IsNullOrWhiteSpace( newAttributeValue ) )
                         {
                             int? newAttributeId = personAttributes.Where( a => a.Key == attributePair.Value )
                                 .Select( a => (int?)a.Id ).FirstOrDefault();

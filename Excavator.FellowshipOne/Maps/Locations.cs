@@ -104,13 +104,7 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            var rockContext = new RockContext();
-                            rockContext.WrapTransaction( () =>
-                            {
-                                rockContext.Configuration.AutoDetectChangesEnabled = false;
-                                rockContext.Groups.AddRange( newGroups );
-                                rockContext.SaveChanges( DisableAudit );
-                            } );
+                            SaveActivityMinistry( newGroups );
 
                             ReportPartialProgress();
                         }
@@ -120,16 +114,25 @@ namespace Excavator.F1
 
             if ( newGroups.Any() )
             {
-                var rockContext = new RockContext();
-                rockContext.WrapTransaction( () =>
-                {
-                    rockContext.Configuration.AutoDetectChangesEnabled = false;
-                    rockContext.Groups.AddRange( newGroups );
-                    rockContext.SaveChanges( DisableAudit );
-                } );
+                SaveActivityMinistry( newGroups );
             }
 
             ReportProgress( 100, string.Format( "Finished ministry import: {0:N0} ministries imported.", completed ) );
+        }
+
+        /// <summary>
+        /// Saves the ministries.
+        /// </summary>
+        /// <param name="newGroups">The new groups.</param>
+        private static void SaveActivityMinistry( List<Group> newGroups )
+        {
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Configuration.AutoDetectChangesEnabled = false;
+                rockContext.Groups.AddRange( newGroups );
+                rockContext.SaveChanges( DisableAudit );
+            } );
         }
 
         /// <summary>
