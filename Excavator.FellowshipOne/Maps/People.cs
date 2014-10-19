@@ -131,6 +131,11 @@ namespace Excavator.F1
                                         }
                                     }
 
+                                    if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                                    {
+                                        person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                                    }
+
                                     person.GivingGroupId = newBusiness.Id;
                                 }
                             }
@@ -169,6 +174,11 @@ namespace Excavator.F1
                                     newValue.EntityId = person.Id;
                                     newAttributeValues.Add( newValue );
                                 }
+                            }
+
+                            if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                            {
+                                person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
                             }
 
                             person.GivingGroupId = newBusiness.Id;
@@ -244,7 +254,8 @@ namespace Excavator.F1
             // Look up additional Person attributes (existing)
             var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            // Cached F1 attributes: IndividualId, HouseholdId, PreviousChurch, Position, Employer, School
+            // Cached F1 attributes: IndividualId, HouseholdId
+            // Core attributes: PreviousChurch, Position, Employer, School
             var individualIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
             var householdIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
@@ -614,6 +625,7 @@ namespace Excavator.F1
                                                     inviteeMember.GroupRoleId = inviteeRoleId;
                                                     ownerGroup.Members.Add( inviteeMember );
 
+                                                    // if visitor can be checked in and this person is considered an adult
                                                     if ( visitor.Age < 18 && person.Age > 15 )
                                                     {
                                                         var canCheckInMember = new GroupMember();
@@ -840,7 +852,7 @@ namespace Excavator.F1
                                 person.Email = userEmail.Left( 75 );
                                 person.IsEmailActive = isEnabled;
                                 person.EmailNote = userTitle;
-                                lookupContext.SaveChanges();
+                                lookupContext.SaveChanges( true );
                             }
                             else if ( !person.Email.Equals( userEmail ) )
                             {

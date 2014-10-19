@@ -97,6 +97,14 @@
                 Click="btnNext_Click">
                 Start
             </Button>
+
+            <!--<Button Style="{StaticResource buttonStylePrimary}"
+                x:Name="btnContinueAnyway" Width="100" Visibility="Collapsed"
+                VerticalAlignment="Center" Margin="70,0,10,0"
+                Grid.Column="1" HorizontalAlignment="Right"
+                Click="nextPage">
+                Continue Anyway
+            </Button>-->
         </Grid>
     </Grid>
 </Page>
