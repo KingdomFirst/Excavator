@@ -285,15 +285,42 @@ namespace Excavator
             connectWindow.ResizeMode = ResizeMode.NoResize;
             connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
             connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            var showWindow = connectWindow.ShowDialog();
+
+            bool? isConnected = false;
+            try
+            {
+                isConnected = connectWindow.ShowDialog();
+            }
+            catch ( Exception )
+            {
+                connectWindow.Hide();
+            }
+
+            // Undo graphical effects
             this.OpacityMask = null;
             this.Effect = null;
 
             if ( sqlConnector.ConnectionString != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString.Database ) )
             {
-                CurrentConnection = sqlConnector.ConnectionString;
-                lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDbConnect.Content = "Successfully connected to the Rock database.";
+                if ( isConnected == true )
+                {
+                    CurrentConnection = sqlConnector.ConnectionString;
+                    lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
+                    lblDbConnect.Content = "Successfully connected to the Rock database.";
+                }
+            }
+            else
+            {
+                lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
+                lblDbConnect.Content = "Unable to find the SQL SDK on your system.  Please set a database connection in Excavator.exe.config.";
+
+                //var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
+                //var sampleConnection = new ConnectionString();
+                //sampleConnection.Database = "RockChMS";
+                //sampleConnection.MultipleActiveResultSets = true;
+                //sampleConnection.Server = "localhost";
+                //appConfig.ConnectionStrings.ConnectionStrings.Add( new ConnectionStringSettings( "RockContext", sampleConnection, "System.Data.SqlClient" ) );
+                //appConfig.Save( ConfigurationSaveMode.Modified );
             }
 
             lblDbConnect.Visibility = Visibility.Visible;
@@ -330,8 +357,7 @@ namespace Excavator
 
             if ( rockContext == null )
             {
-                rockContext = new ConnectionStringSettings( "RockContext", CurrentConnection );
-                rockContext.ProviderName = "System.Data.SqlClient";
+                rockContext = new ConnectionStringSettings( "RockContext", CurrentConnection, "System.Data.SqlClient" );
                 appConfig.ConnectionStrings.ConnectionStrings.Add( rockContext );
             }
             else
