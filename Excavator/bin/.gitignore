@@ -14,14 +14,4 @@ System.Web.Http.WebHost.dll
 *.xml
 *.dll.config
 *.Example.dll
-/DotLiquid.dll
-/EntityFramework.SqlServer.dll
-/EntityFramework.dll
-/LumenWorks.Framework.IO.dll
-/Microsoft.SqlServer.ConnectionInfo.dll
-/Microsoft.SqlServer.Management.Sdk.Sfc.dll
-/Microsoft.SqlServer.Smo.dll
-/OrcaMDF.Core.dll
-/OrcaMDF.Framework.dll
-/Rock.Wpf.dll
-/Rock.dll
+
