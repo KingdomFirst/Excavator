@@ -293,6 +293,7 @@ namespace Excavator
             }
             catch ( Exception )
             {
+                //App.LogException( "Transform Data", ex.ToString() );
                 connectWindow.Hide();
             }
 
@@ -313,14 +314,6 @@ namespace Excavator
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
                 lblDbConnect.Content = "Unable to find the SQL SDK on your system.  Please set a database connection in Excavator.exe.config.";
-
-                //var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
-                //var sampleConnection = new ConnectionString();
-                //sampleConnection.Database = "RockChMS";
-                //sampleConnection.MultipleActiveResultSets = true;
-                //sampleConnection.Server = "localhost";
-                //appConfig.ConnectionStrings.ConnectionStrings.Add( new ConnectionStringSettings( "RockContext", sampleConnection, "System.Data.SqlClient" ) );
-                //appConfig.Save( ConfigurationSaveMode.Modified );
             }
 
             lblDbConnect.Visibility = Visibility.Visible;
