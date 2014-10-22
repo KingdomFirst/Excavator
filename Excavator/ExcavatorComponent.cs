@@ -168,9 +168,8 @@ namespace Excavator
         {
             App.LogException( category, message );
         }
-        
+
         #endregion
-        
     }
 
     /// <summary>
@@ -204,9 +203,9 @@ namespace Excavator
                 var container = new CompositionContainer( catalog, true );
                 container.ComposeParts( this );
             }
-            catch
+            catch ( Exception ex )
             {
-                // no extensions in this folder
+                App.LogException( "MEF", ex.ToString() );
             }
         }
     }
