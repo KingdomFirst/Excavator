@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Globalization;
 using System.Linq;
 using Rock.Data;
 using Rock.Model;
@@ -76,7 +77,11 @@ namespace Excavator.CSV
             // Phone types: Home, Work, Mobile
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext ).DefinedValues;
 
-            int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ), lookupContext ).Id;
+            // Timeline note type id
+            var noteTimelineTypeId = new NoteTypeService( lookupContext ).Get( new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) ).Id;
+
+            // School defined type
+            var schoolDefinedType = DefinedTypeCache.Read( new Guid( "576FF1E2-6225-4565-A16D-230E26167A3D" ) );
 
             // Look up additional Person attributes (existing)
             var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
@@ -93,11 +98,20 @@ namespace Excavator.CSV
             var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
             var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
 
+            // Text field type id
+            int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ), lookupContext ).Id;
+
+            // Attribute entity type id
+            int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
+
+            // Visit info category
+            var visitInfoCategory = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
+                    .Where( c => c.Name == "Visit Information" ).FirstOrDefault();
+
             // Add a Secondary Email attribute if it doesn't exist
             var secondaryEmail = personAttributes.FirstOrDefault( a => a.Key == "SecondaryEmail" );
             if ( secondaryEmail == null )
             {
-                int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
                 secondaryEmail = new Rock.Model.Attribute();
                 secondaryEmail.Key = "SecondaryEmail";
                 secondaryEmail.Name = "Secondary Email";
@@ -112,17 +126,39 @@ namespace Excavator.CSV
                 secondaryEmail.Order = 0;
 
                 lookupContext.Attributes.Add( secondaryEmail );
-                var visitInfoCategory = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
-                    .Where( c => c.Name == "Visit Information" ).FirstOrDefault();
                 secondaryEmail.Categories.Add( visitInfoCategory );
                 lookupContext.SaveChanges( true );
             }
 
             var secondaryEmailAttribute = AttributeCache.Read( secondaryEmail.Id, lookupContext );
 
+            // Add a former name attribute
+            var formerName = personAttributes.FirstOrDefault( a => a.Key == "FormerName" );
+            if ( formerName == null )
+            {
+                formerName = new Rock.Model.Attribute();
+                formerName.Key = "FormerName";
+                formerName.Name = "Former Name";
+                formerName.FieldTypeId = textFieldTypeId;
+                formerName.EntityTypeId = PersonEntityTypeId;
+                formerName.EntityTypeQualifierValue = string.Empty;
+                formerName.EntityTypeQualifierColumn = string.Empty;
+                formerName.Description = "The former name for this person";
+                formerName.DefaultValue = string.Empty;
+                formerName.IsMultiValue = false;
+                formerName.IsRequired = false;
+                formerName.Order = 0;
+
+                lookupContext.Attributes.Add( formerName );
+                secondaryEmail.Categories.Add( visitInfoCategory );
+                lookupContext.SaveChanges( true );
+            }
+
+            var formerNameAttribute = AttributeCache.Read( formerName.Id, lookupContext );
+
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
-            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > 40 ).ToDictionary( f => f.index, f => f.node.Name );
+            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > Twitter ).ToDictionary( f => f.index, f => f.node.Name );
 
             // Add any if they don't already exist
             if ( customAttributes.Any() )
@@ -151,9 +187,12 @@ namespace Excavator.CSV
                 personAttributes.AddRange( newAttributes );
             }
 
+            var dateFormats = new[] { "MM/dd/yyyy", "MM/dd/yy" };
+
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
+            var importDate = DateTime.Now;
 
             int completed = 0;
             ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignId != null ) ) ) );
@@ -188,6 +227,7 @@ namespace Excavator.CSV
                 {
                     var person = new Person();
                     person.ForeignId = rowPersonId;
+                    person.SystemNote = string.Format( "Imported via Excavator on {0}", importDate.ToString() );
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     string firstName = row[FirstName];
@@ -199,13 +239,13 @@ namespace Excavator.CSV
                     #region Assign values to the Person record
 
                     DateTime birthDate;
-                    if ( DateTime.TryParse( row[DateOfBirth], out birthDate ) )
+                    if ( DateTime.TryParseExact( row[DateOfBirth], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate ) )
                     {
                         person.BirthDate = birthDate;
                     }
 
                     DateTime anniversary;
-                    if ( DateTime.TryParse( row[Anniversary], out anniversary ) )
+                    if ( DateTime.TryParseExact( row[Anniversary], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out anniversary ) )
                     {
                         person.AnniversaryDate = anniversary;
                     }
@@ -381,6 +421,12 @@ namespace Excavator.CSV
                     person.Attributes = new Dictionary<string, AttributeCache>();
                     person.AttributeValues = new Dictionary<string, AttributeValue>();
 
+                    string formerNameValue = row[FormerName];
+                    if ( !string.IsNullOrWhiteSpace( formerNameValue ) )
+                    {
+                        AddPersonAttribute( formerNameAttribute, person, formerNameValue );
+                    }
+
                     bool isEmailActive;
                     switch ( row[IsEmailActive].Trim().ToLower() )
                     {
@@ -424,19 +470,19 @@ namespace Excavator.CSV
                     }
 
                     DateTime membershipDateValue;
-                    if ( DateTime.TryParse( row[MembershipDate], out membershipDateValue ) )
+                    if ( DateTime.TryParseExact( row[MembershipDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out membershipDateValue ) )
                     {
                         AddPersonAttribute( membershipDateAttribute, person, membershipDateValue.ToString() );
                     }
 
                     DateTime baptismDateValue;
-                    if ( DateTime.TryParse( row[BaptismDate], out baptismDateValue ) )
+                    if ( DateTime.TryParseExact( row[BaptismDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out baptismDateValue ) )
                     {
                         AddPersonAttribute( baptismDateAttribute, person, baptismDateValue.ToString() );
                     }
 
                     DateTime firstVisitValue;
-                    if ( DateTime.TryParse( row[FirstVisit], out firstVisitValue ) )
+                    if ( DateTime.TryParseExact( row[FirstVisit], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out firstVisitValue ) )
                     {
                         AddPersonAttribute( firstVisitAttribute, person, firstVisitValue.ToString() );
                     }
@@ -459,10 +505,30 @@ namespace Excavator.CSV
                         AddPersonAttribute( employerAttribute, person, employerValue );
                     }
 
-                    string schoolValue = row[School];
-                    if ( !string.IsNullOrWhiteSpace( schoolValue ) )
+                    string schoolName = row[School];
+                    if ( !string.IsNullOrWhiteSpace( schoolName ) )
                     {
-                        AddPersonAttribute( schoolAttribute, person, schoolValue );
+                        // Add school if it doesn't exist
+                        Guid schoolGuid;
+                        var schoolExists = schoolDefinedType.DefinedValues.Any( s => s.Value.Equals( schoolName ) );
+                        if ( !schoolExists )
+                        {
+                            var newSchool = new DefinedValue();
+                            newSchool.DefinedTypeId = schoolDefinedType.Id;
+                            newSchool.Value = schoolName;
+                            newSchool.Order = 0;
+
+                            lookupContext.DefinedValues.Add( newSchool );
+                            //lookupContext.SaveChanges();
+
+                            schoolGuid = newSchool.Guid;
+                        }
+                        else
+                        {
+                            schoolGuid = schoolDefinedType.DefinedValues.FirstOrDefault( s => s.Value.Equals( schoolName ) ).Guid;
+                        }
+
+                        AddPersonAttribute( schoolAttribute, person, schoolGuid.ToString() );
                     }
 
                     string facebookValue = row[Facebook];
@@ -496,6 +562,37 @@ namespace Excavator.CSV
                                 AddPersonAttribute( newAttribute, person, newAttributeValue );
                             }
                         }
+                    }
+
+                    // Add notes to timeline
+                    var notePairs = new Dictionary<string, string>();
+                    notePairs.Add( "General", row[GeneralNote] );
+                    notePairs.Add( "Medical", row[MedicalNote] );
+                    notePairs.Add( "Security", row[SecurityNote] );
+
+                    var newNoteList = new List<Note>();
+                    foreach ( var notePair in notePairs.Where( n => !string.IsNullOrWhiteSpace( n.Value ) ) )
+                    {
+                        var newNote = new Note();
+                        newNote.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        newNote.CreatedDateTime = importDate;
+                        newNote.EntityId = person.Id;
+                        newNote.Text = notePair.Value;
+                        newNote.NoteTypeId = noteTimelineTypeId;
+                        newNote.Caption = string.Format( "{0} Note", notePair.Key );
+
+                        if ( !notePair.Key.Equals( "General" ) )
+                        {
+                            newNote.IsAlert = true;
+                        }
+
+                        newNoteList.Add( newNote );
+                    }
+
+                    if ( newNoteList.Any() )
+                    {
+                        lookupContext.Notes.AddRange( newNoteList );
+                        lookupContext.SaveChanges( true );
                     }
 
                     #endregion
@@ -677,16 +774,16 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="attribute">The attribute.</param>
         /// <param name="person">The person.</param>
-        /// <param name="value">The value.</param>
-        private static void AddPersonAttribute( AttributeCache attribute, Person person, string value )
+        /// <param name="attributeValue">The value.</param>
+        private static void AddPersonAttribute( AttributeCache attribute, Person person, string attributeValue )
         {
-            if ( !string.IsNullOrWhiteSpace( value ) )
+            if ( !string.IsNullOrWhiteSpace( attributeValue ) )
             {
                 person.Attributes.Add( attribute.Key, attribute );
                 person.AttributeValues.Add( attribute.Key, new AttributeValue()
                 {
                     AttributeId = attribute.Id,
-                    Value = value
+                    Value = attributeValue
                 } );
             }
         }
