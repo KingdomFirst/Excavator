@@ -190,8 +190,9 @@ namespace Excavator.CSV
                     person.ForeignId = rowPersonId;
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    person.FirstName = row[FirstName];
-                    person.NickName = row[NickName];
+                    string firstName = row[FirstName];
+                    person.FirstName = firstName;
+                    person.NickName = row[NickName] ?? firstName;
                     person.LastName = row[LastName];
 
                     #region Assign values to the Person record
