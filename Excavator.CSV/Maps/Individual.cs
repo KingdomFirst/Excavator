@@ -199,15 +199,9 @@ namespace Excavator.CSV
                     #region Assign values to the Person record
 
                     DateTime birthDate;
-                    string approximateAge = row[Age];
                     if ( DateTime.TryParse( row[DateOfBirth], out birthDate ) )
                     {
                         person.BirthDate = birthDate;
-                    }
-                    else if ( !string.IsNullOrWhiteSpace( approximateAge ) )
-                    {
-                        int age = approximateAge.AsType<int>();
-                        person.BirthDate = DateTime.Now.AddYears( -age );
                     }
 
                     DateTime anniversary;
