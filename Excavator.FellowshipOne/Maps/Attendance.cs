@@ -85,15 +85,24 @@ namespace Excavator.F1
                     // BreakoutGroup_Name
                     // Pager_Code
 
-                    var rockContext = new RockContext();
-                    rockContext.WrapTransaction( () =>
-                    {
-                        rockContext.Configuration.AutoDetectChangesEnabled = false;
-                        rockContext.Attendances.Add( attendance );
-                        rockContext.SaveChanges( DisableAudit );
-                    } );
+                    SaveAttendance( attendance );
                 }
             }
+        }
+
+        /// <summary>
+        /// Saves the attendance.
+        /// </summary>
+        /// <param name="attendance">The attendance.</param>
+        private static void SaveAttendance( Rock.Model.Attendance attendance )
+        {
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Configuration.AutoDetectChangesEnabled = false;
+                rockContext.Attendances.Add( attendance );
+                rockContext.SaveChanges( DisableAudit );
+            } );
         }
     }
 }

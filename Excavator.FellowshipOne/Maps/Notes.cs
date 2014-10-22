@@ -98,6 +98,7 @@ namespace Excavator.F1
                         {
                             SaveNotes( noteList );
                             ReportPartialProgress();
+                            noteList.Clear();
                         }
                     }
                 }
@@ -111,6 +112,10 @@ namespace Excavator.F1
             ReportProgress( 100, string.Format( "Finished note import: {0:N0} notes imported.", completed ) );
         }
 
+        /// <summary>
+        /// Saves the notes.
+        /// </summary>
+        /// <param name="noteList">The note list.</param>
         private static void SaveNotes( List<Note> noteList )
         {
             var rockContext = new RockContext();

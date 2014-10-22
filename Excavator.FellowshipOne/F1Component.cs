@@ -79,9 +79,9 @@ namespace Excavator.F1
         private Dictionary<int, int?> ImportedBatches;
 
         /// <summary>
-        /// The list of current campuses
+        /// All campuses
         /// </summary>
-        private List<Campus> CampusList;
+        private List<CampusCache> CampusList;
 
         // Existing entity types
 
@@ -100,9 +100,6 @@ namespace Excavator.F1
 
         // Flag to set postprocessing audits on save
         private static bool DisableAudit = true;
-
-        // Flag to show debugging output
-        //private static bool DebugOutput = false;
 
         #endregion
 
@@ -256,22 +253,21 @@ namespace Excavator.F1
         /// </summary>
         private void LoadExistingRockData()
         {
-            var rockContext = new RockContext();
-            var attributeValueService = new AttributeValueService( rockContext );
-            var attributeService = new AttributeService( rockContext );
+            var lookupContext = new RockContext();
+            var attributeValueService = new AttributeValueService( lookupContext );
+            var attributeService = new AttributeService( lookupContext );
 
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
+            CampusList = CampusCache.All( lookupContext );
 
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
             int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
             int userLoginTypeId = EntityTypeCache.Read( "Rock.Model.UserLogin" ).Id;
 
-            int visitInfoCategoryId = new CategoryService( rockContext ).GetByEntityTypeId( attributeEntityTypeId )
+            int visitInfoCategoryId = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
                 .Where( c => c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
-
-            CampusList = new CampusService( rockContext ).Queryable().ToList();
 
             // Look up and create attributes for F1 unique identifiers if they don't exist
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
@@ -292,8 +288,8 @@ namespace Excavator.F1
                 householdAttribute.IsRequired = false;
                 householdAttribute.Order = 0;
 
-                rockContext.Attributes.Add( householdAttribute );
-                rockContext.SaveChanges( DisableAudit );
+                lookupContext.Attributes.Add( householdAttribute );
+                lookupContext.SaveChanges( DisableAudit );
                 personAttributes.Add( householdAttribute );
             }
 
@@ -313,8 +309,8 @@ namespace Excavator.F1
                 individualAttribute.IsRequired = false;
                 individualAttribute.Order = 0;
 
-                rockContext.Attributes.Add( individualAttribute );
-                rockContext.SaveChanges( DisableAudit );
+                lookupContext.Attributes.Add( individualAttribute );
+                lookupContext.SaveChanges( DisableAudit );
                 personAttributes.Add( individualAttribute );
             }
 
@@ -334,10 +330,10 @@ namespace Excavator.F1
                 secondaryEmailAttribute.IsRequired = false;
                 secondaryEmailAttribute.Order = 0;
 
-                rockContext.Attributes.Add( secondaryEmailAttribute );
-                var visitInfoCategory = new CategoryService( rockContext ).Get( visitInfoCategoryId );
+                lookupContext.Attributes.Add( secondaryEmailAttribute );
+                var visitInfoCategory = new CategoryService( lookupContext ).Get( visitInfoCategoryId );
                 secondaryEmailAttribute.Categories.Add( visitInfoCategory );
-                rockContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAudit );
             }
 
             IndividualAttributeId = individualAttribute.Id;
@@ -360,7 +356,7 @@ namespace Excavator.F1
                     }
                 ).ToList();
 
-            ImportedBatches = new FinancialBatchService( rockContext ).Queryable()
+            ImportedBatches = new FinancialBatchService( lookupContext ).Queryable()
                 .Where( b => b.ForeignId != null )
                 .Select( b => new { F1Id = b.ForeignId, BatchId = b.Id } )
                 .ToDictionary( t => t.F1Id.AsType<int>(), t => (int?)t.BatchId );
