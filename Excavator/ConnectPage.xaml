@@ -37,7 +37,7 @@
             Style="{StaticResource labelStyleAlert}"
             Grid.RowSpan="1" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom">
-            No excavator types found. Please add a compatible type to the Extensions folder.
+            No excavator types found. Please add a compatible type to the current directory.
         </Label>
 
         <!-- Select Database Type -->

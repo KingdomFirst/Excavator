@@ -286,16 +286,7 @@ namespace Excavator
             connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
             connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-            bool? isConnected = false;
-            try
-            {
-                isConnected = connectWindow.ShowDialog();
-            }
-            catch ( Exception )
-            {
-                //App.LogException( "Transform Data", ex.ToString() );
-                connectWindow.Hide();
-            }
+            bool? isConnected = connectWindow.ShowDialog();
 
             // Undo graphical effects
             this.OpacityMask = null;
@@ -303,17 +294,9 @@ namespace Excavator
 
             if ( sqlConnector.ConnectionString != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString.Database ) )
             {
-                if ( isConnected == true )
-                {
-                    CurrentConnection = sqlConnector.ConnectionString;
-                    lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
-                    lblDbConnect.Content = "Successfully connected to the Rock database.";
-                }
-            }
-            else
-            {
-                lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                lblDbConnect.Content = "Unable to find the SQL SDK on your system.  Please set a database connection in Excavator.exe.config.";
+                CurrentConnection = sqlConnector.ConnectionString;
+                lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
+                lblDbConnect.Content = "Successfully connected to the Rock database.";
             }
 
             lblDbConnect.Visibility = Visibility.Visible;
