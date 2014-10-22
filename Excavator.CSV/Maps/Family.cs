@@ -56,7 +56,7 @@ namespace Excavator.CSV
                     }
 
                     // Set the family campus
-                    var campusName = row[Campus] as string;
+                    string campusName = row[Campus];
                     if ( !string.IsNullOrWhiteSpace( campusName ) )
                     {
                         var familyCampus = CampusList.Where( c => c.Name.StartsWith( campusName ) ).FirstOrDefault();
@@ -72,12 +72,12 @@ namespace Excavator.CSV
                     }
 
                     // Add the family addresses since they exist in this file
-                    var famAddress = row[Address] as string;
-                    var famAddress2 = row[Address2] as string;
-                    var famCity = row[City] as string;
-                    var famState = row[State] as string;
-                    var famZip = row[Zip] as string;
-                    var famCountry = row[Country] as string;
+                    string famAddress = row[Address];
+                    string famAddress2 = row[Address2];
+                    string famCity = row[City];
+                    string famState = row[State];
+                    string famZip = row[Zip];
+                    string famCountry = row[Country];
 
                     // Use the core Rock location service to add or lookup an address
                     Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
@@ -93,12 +93,12 @@ namespace Excavator.CSV
                         newGroupLocations.Add( primaryLocation, rowFamilyId );
                     }
 
-                    var famSecondAddress = row[SecondaryAddress] as string;
-                    var famSecondAddress2 = row[SecondaryAddress2] as string;
-                    var famSecondCity = row[SecondaryCity] as string;
-                    var famSecondState = row[SecondaryState] as string;
-                    var famSecondZip = row[SecondaryZip] as string;
-                    var famSecondCountry = row[SecondaryCountry] as string;
+                    string famSecondAddress = row[SecondaryAddress];
+                    string famSecondAddress2 = row[SecondaryAddress2];
+                    string famSecondCity = row[SecondaryCity];
+                    string famSecondState = row[SecondaryState];
+                    string famSecondZip = row[SecondaryZip];
+                    string famSecondCountry = row[SecondaryCountry];
 
                     Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
                     if ( secondaryAddress != null )
@@ -120,7 +120,7 @@ namespace Excavator.CSV
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        SaveFamilyChanges( newFamilyList, newGroupLocations );
+                        SaveFamilies( newFamilyList, newGroupLocations );
                         ReportPartialProgress();
 
                         // Reset lookup context
@@ -135,7 +135,7 @@ namespace Excavator.CSV
             // Check to see if any rows didn't get saved to the database
             if ( newGroupLocations.Any() )
             {
-                SaveFamilyChanges( newFamilyList, newGroupLocations );
+                SaveFamilies( newFamilyList, newGroupLocations );
             }
 
             ReportProgress( 0, string.Format( "Finished family import: {0:N0} families imported.", completed ) );
@@ -145,7 +145,7 @@ namespace Excavator.CSV
         /// <summary>
         /// Saves all family changes.
         /// </summary>
-        private void SaveFamilyChanges( List<Group> newFamilyList, Dictionary<GroupLocation, string> newGroupLocations )
+        private void SaveFamilies( List<Group> newFamilyList, Dictionary<GroupLocation, string> newGroupLocations )
         {
             var rockContext = new RockContext();
 
