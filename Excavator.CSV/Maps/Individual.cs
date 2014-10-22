@@ -193,6 +193,7 @@ namespace Excavator.CSV
                     string firstName = row[FirstName];
                     person.FirstName = firstName;
                     person.NickName = row[NickName] ?? firstName;
+                    person.MiddleName = row[MiddleName];
                     person.LastName = row[LastName];
 
                     #region Assign values to the Person record
