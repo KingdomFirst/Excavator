@@ -225,19 +225,8 @@ namespace Excavator.CSV
                     person.FirstName = row[FirstName];
                     person.NickName = row[NickName];
                     person.LastName = row[LastName];
-                    person.Email = row[Email];
 
                     #region Assign values to the Person record
-
-                    string activeEmail = row[IsEmailActive];
-                    if ( !string.IsNullOrWhiteSpace( activeEmail ) )
-                    {
-                        bool emailIsActive = false;
-                        if ( bool.TryParse( activeEmail, out emailIsActive ) )
-                        {
-                            person.IsEmailActive = emailIsActive;
-                        }
-                    }
 
                     DateTime birthDate;
                     string approximateAge = row[Age];
