@@ -193,20 +193,43 @@ namespace Excavator.CSV
         /// </summary>
         public override int TransformData( string importUser = null )
         {
+            int completed = 0;
             ReportProgress( 0, "Starting import..." );
-            if ( !CheckExistingImport( importUser ) )
+            if ( !LoadExistingData( importUser ) )
             {
                 return -1;
             }
 
-            return MapFamilyData();
+            // only import things that the user checked
+            List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
+
+            // Person data is important, so load it first
+            if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
+            {
+                selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ).ToList();
+            }
+
+            foreach ( var csvData in selectedCsvData )
+            {
+                if ( csvData.RecordType == CsvDataModel.RockDataType.INDIVIDUAL )
+                {
+                    completed += LoadIndividuals( csvData );
+                }
+                else if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
+                {
+                    completed += LoadFamily( csvData );
+                }
+            } //read all files
+
+            ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
+            return completed;
         }
 
         /// <summary>
         /// Checks the database for existing import data.
         /// returns false if an error occurred
         /// </summary>
-        private bool CheckExistingImport( string importUser )
+        private bool LoadExistingData( string importUser )
         {
             //try
             //{
@@ -216,11 +239,11 @@ namespace Excavator.CSV
             if ( importPerson == null )
             {
                 importPerson = personService.Queryable().FirstOrDefault();
-            }
-            if ( importPerson == null )
-            {
-                LogException( "CheckExistingImport", "The named import user was not found, and none could be created." );
-                return false;
+                if ( importPerson == null )
+                {
+                    LogException( "CheckExistingImport", "The named import user was not found, and none could be created." );
+                    return false;
+                }
             }
 
             ImportPersonAlias = new PersonAliasService( lookupContext ).Get( importPerson.Id );

@@ -33,38 +33,6 @@ namespace Excavator.CSV
         #region Main Methods
 
         /// <summary>
-        /// Maps the family data.
-        /// </summary>
-        private int MapFamilyData()
-        {
-            int completed = 0;
-
-            // only import things that the user checked
-            List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
-
-            // Person data is important, so load it first
-            if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
-            {
-                selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ).ToList();
-            }
-
-            foreach ( var csvData in selectedCsvData )
-            {
-                if ( csvData.RecordType == CsvDataModel.RockDataType.INDIVIDUAL )
-                {
-                    completed += LoadIndividuals( csvData );
-                }
-                else if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
-                {
-                    completed += LoadFamily( csvData );
-                }
-            } //read all files
-
-            ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
-            return completed;
-        }
-
-        /// <summary>
         /// Loads the individual data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
@@ -78,7 +46,10 @@ namespace Excavator.CSV
             var maritalStatusTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS ), lookupContext ).DefinedValues;
 
             // Connection statuses: Member, Visitor, Attendee, etc
-            var connectionStatusTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS ), lookupContext ).DefinedValues;
+            var connectionStatusTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS ), lookupContext ).DefinedValues;
+            int memberConnectionStatusId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
+            int visitorConnectionStatusId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
+            int attendeeConnectionStatusId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE ) ).Id;
 
             // Suffix type: Dr., Jr., II, etc
             var suffixTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_SUFFIX ), lookupContext ).DefinedValues;
@@ -86,19 +57,16 @@ namespace Excavator.CSV
             // Title type: Mr., Mrs. Dr., etc
             var titleTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_TITLE ), lookupContext ).DefinedValues;
 
-            // Record status reasons: No Activity, Moved, Deceased, etc
-            var recordStatusReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS_REASON ), lookupContext ).DefinedValues;
-
             // Record statuses: Active, Inactive, Pending
             int? recordStatusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ), lookupContext ).Id;
             int? recordStatusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ), lookupContext ).Id;
             int? recordStatusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ), lookupContext ).Id;
 
+            // Deceased record status reason (others available: No Activity, Moved, etc)
+            var recordStatusDeceasedId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_REASON_DECEASED ) ).Id;
+
             // Record type: Person
             int? personRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON ), lookupContext ).Id;
-
-            // Note type: Comment
-            int noteCommentTypeId = new NoteTypeService( lookupContext ).Get( new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) ).Id;
 
             // Group roles: Owner, Adult, Child, others
             GroupTypeRole ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
@@ -314,17 +282,16 @@ namespace Excavator.CSV
                     {
                         if ( connectionStatus == "Member" )
                         {
-                            person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
+                            person.ConnectionStatusValueId = memberConnectionStatusId;
                         }
                         else if ( connectionStatus == "Visitor" )
                         {
-                            person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
+                            person.ConnectionStatusValueId = visitorConnectionStatusId;
                         }
                         else if ( connectionStatus == "Deceased" )
                         {
                             person.IsDeceased = true;
-                            person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "Deceased" )
-                                .Select( dv => dv.Id ).FirstOrDefault();
+                            person.RecordStatusReasonValueId = recordStatusDeceasedId;
                         }
                         else
                         {
@@ -332,26 +299,28 @@ namespace Excavator.CSV
                             var customConnectionType = connectionStatusTypes.Where( dv => dv.Value == connectionStatus )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
 
-                            int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( "39F491C5-D6AC-4A9B-8AC0-C431CB17D588" ) ).Id;
-                            person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
+                            person.ConnectionStatusValueId = customConnectionType ?? attendeeConnectionStatusId;
                             person.RecordStatusValueId = recordStatusActiveId;
                         }
                     }
 
                     string recordStatus = row[RecordStatus];
-                    switch ( recordStatus.Trim() )
+                    if ( !string.IsNullOrWhiteSpace( recordStatus ) )
                     {
-                        case "Active":
-                            person.RecordStatusValueId = recordStatusActiveId;
-                            break;
+                        switch ( recordStatus.Trim() )
+                        {
+                            case "Active":
+                                person.RecordStatusValueId = recordStatusActiveId;
+                                break;
 
-                        case "Inactive":
-                            person.RecordStatusValueId = recordStatusInactiveId;
-                            break;
+                            case "Inactive":
+                                person.RecordStatusValueId = recordStatusInactiveId;
+                                break;
 
-                        default:
-                            person.RecordStatusValueId = recordStatusPendingId;
-                            break;
+                            default:
+                                person.RecordStatusValueId = recordStatusPendingId;
+                                break;
+                        }
                     }
 
                     var personNumbers = new Dictionary<string, string>();
@@ -455,122 +424,67 @@ namespace Excavator.CSV
                     string secondaryEmailValue = row[SecondaryEmail];
                     if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) )
                     {
-                        person.Attributes.Add( secondaryEmailAttribute.Key, secondaryEmailAttribute );
-                        person.AttributeValues.Add( secondaryEmailAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = secondaryEmailAttribute.Id,
-                            Value = secondaryEmailValue
-                        } );
+                        AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
                     }
 
                     DateTime membershipDateValue;
                     if ( DateTime.TryParse( row[MembershipDate], out membershipDateValue ) )
                     {
-                        person.Attributes.Add( membershipDateAttribute.Key, membershipDateAttribute );
-                        person.AttributeValues.Add( membershipDateAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = membershipDateAttribute.Id,
-                            Value = membershipDateValue.ToString()
-                        } );
+                        AddPersonAttribute( membershipDateAttribute, person, membershipDateValue.ToString() );
                     }
 
                     DateTime baptismDateValue;
                     if ( DateTime.TryParse( row[BaptismDate], out baptismDateValue ) )
                     {
-                        person.Attributes.Add( baptismDateAttribute.Key, baptismDateAttribute );
-                        person.AttributeValues.Add( baptismDateAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = baptismDateAttribute.Id,
-                            Value = baptismDateValue.ToString()
-                        } );
+                        AddPersonAttribute( baptismDateAttribute, person, baptismDateValue.ToString() );
                     }
 
                     DateTime firstVisitValue;
                     if ( DateTime.TryParse( row[FirstVisit], out firstVisitValue ) )
                     {
-                        person.Attributes.Add( firstVisitAttribute.Key, firstVisitAttribute );
-                        person.AttributeValues.Add( firstVisitAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = firstVisitAttribute.Id,
-                            Value = firstVisitValue.ToString()
-                        } );
+                        AddPersonAttribute( firstVisitAttribute, person, firstVisitValue.ToString() );
                     }
 
                     string previousChurchValue = row[PreviousChurch];
                     if ( !string.IsNullOrWhiteSpace( previousChurchValue ) )
                     {
-                        person.Attributes.Add( previousChurchAttribute.Key, previousChurchAttribute );
-                        person.AttributeValues.Add( previousChurchAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = previousChurchAttribute.Id,
-                            Value = previousChurchValue
-                        } );
+                        AddPersonAttribute( previousChurchAttribute, person, previousChurchValue );
                     }
 
                     string positionValue = row[Occupation];
                     if ( !string.IsNullOrWhiteSpace( positionValue ) )
                     {
-                        person.Attributes.Add( positionAttribute.Key, positionAttribute );
-                        person.AttributeValues.Add( positionAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = positionAttribute.Id,
-                            Value = positionValue
-                        } );
+                        AddPersonAttribute( positionAttribute, person, positionValue );
                     }
 
                     string employerValue = row[Employer];
                     if ( !string.IsNullOrWhiteSpace( employerValue ) )
                     {
-                        person.Attributes.Add( employerAttribute.Key, employerAttribute );
-                        person.AttributeValues.Add( employerAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = employerAttribute.Id,
-                            Value = employerValue
-                        } );
+                        AddPersonAttribute( employerAttribute, person, employerValue );
                     }
 
                     string schoolValue = row[School];
                     if ( !string.IsNullOrWhiteSpace( schoolValue ) )
                     {
-                        person.Attributes.Add( schoolAttribute.Key, schoolAttribute );
-                        person.AttributeValues.Add( schoolAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = schoolAttribute.Id,
-                            Value = schoolValue
-                        } );
+                        AddPersonAttribute( schoolAttribute, person, schoolValue );
                     }
 
                     string facebookValue = row[Facebook];
                     if ( !string.IsNullOrWhiteSpace( facebookValue ) )
                     {
-                        person.Attributes.Add( facebookAttribute.Key, facebookAttribute );
-                        person.AttributeValues.Add( facebookAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = facebookAttribute.Id,
-                            Value = facebookValue
-                        } );
+                        AddPersonAttribute( facebookAttribute, person, facebookValue );
                     }
 
                     string twitterValue = row[Twitter];
                     if ( !string.IsNullOrWhiteSpace( twitterValue ) )
                     {
-                        person.Attributes.Add( twitterAttribute.Key, twitterAttribute );
-                        person.AttributeValues.Add( twitterAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = twitterAttribute.Id,
-                            Value = twitterValue
-                        } );
+                        AddPersonAttribute( twitterAttribute, person, twitterValue );
                     }
 
                     string instagramValue = row[Instagram];
                     if ( !string.IsNullOrWhiteSpace( instagramValue ) )
                     {
-                        person.Attributes.Add( instagramAttribute.Key, instagramAttribute );
-                        person.AttributeValues.Add( instagramAttribute.Key, new AttributeValue()
-                        {
-                            AttributeId = instagramAttribute.Id,
-                            Value = instagramValue
-                        } );
+                        AddPersonAttribute( instagramAttribute, person, instagramValue );
                     }
 
                     foreach ( var attributePair in customAttributes )
@@ -583,12 +497,7 @@ namespace Excavator.CSV
                             if ( newAttributeId != null )
                             {
                                 var newAttribute = AttributeCache.Read( (int)newAttributeId );
-                                person.Attributes.Add( newAttribute.Key, newAttribute );
-                                person.AttributeValues.Add( newAttribute.Key, new AttributeValue()
-                                {
-                                    AttributeId = newAttribute.Id,
-                                    Value = newAttributeValue
-                                } );
+                                AddPersonAttribute( newAttribute, person, newAttributeValue );
                             }
                         }
                     }
@@ -763,6 +672,25 @@ namespace Excavator.CSV
                     }
 
                     rockContext.SaveChanges( true );
+                } );
+            }
+        }
+
+        /// <summary>
+        /// Adds the person attribute.
+        /// </summary>
+        /// <param name="attribute">The attribute.</param>
+        /// <param name="person">The person.</param>
+        /// <param name="value">The value.</param>
+        private static void AddPersonAttribute( AttributeCache attribute, Person person, string value )
+        {
+            if ( !string.IsNullOrWhiteSpace( value ) )
+            {
+                person.Attributes.Add( attribute.Key, attribute );
+                person.AttributeValues.Add( attribute.Key, new AttributeValue()
+                {
+                    AttributeId = attribute.Id,
+                    Value = value
                 } );
             }
         }
