@@ -1,4 +1,4 @@
-Welcome to Excavator!
+**Welcome to Excavator!**
 
 Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)
 
