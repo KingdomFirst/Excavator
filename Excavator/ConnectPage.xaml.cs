@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Data.Entity;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -203,11 +204,11 @@ namespace Excavator
             {
                 //initialize from app.config
                 var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
-                var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+                var rockConnectionString = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
 
-                if ( rockContext != null )
+                if ( rockConnectionString != null )
                 {
-                    CurrentConnection = new ConnectionString( rockContext.ConnectionString );
+                    CurrentConnection = new ConnectionString( rockConnectionString.ConnectionString );
                 }
             }
         }
@@ -253,7 +254,7 @@ namespace Excavator
             this.OpacityMask = new SolidColorBrush( Colors.White );
             this.Effect = new BlurEffect();
 
-            sqlConnector.ConnectionString = existingConnection;
+            sqlConnector.ConnectionString = CurrentConnection;
             connectPanel.Children.Add( sqlConnector );
 
             var okBtn = new Button();
@@ -285,16 +286,14 @@ namespace Excavator
             connectWindow.ResizeMode = ResizeMode.NoResize;
             connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
             connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-
-            bool? isConnected = connectWindow.ShowDialog();
+            connectWindow.ShowDialog();
 
             // Undo graphical effects
             this.OpacityMask = null;
             this.Effect = null;
 
-            if ( sqlConnector.ConnectionString != null && !string.IsNullOrWhiteSpace( sqlConnector.ConnectionString.Database ) )
+            if ( CurrentConnection != null && !string.IsNullOrWhiteSpace( CurrentConnection.Database ) )
             {
-                CurrentConnection = sqlConnector.ConnectionString;
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
                 lblDbConnect.Content = "Successfully connected to the Rock database.";
             }
@@ -329,22 +328,23 @@ namespace Excavator
             }
 
             var appConfig = ConfigurationManager.OpenExeConfiguration( ConfigurationUserLevel.None );
-            var rockContext = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
+            var rockConnectionString = appConfig.ConnectionStrings.ConnectionStrings["RockContext"];
 
-            if ( rockContext == null )
+            if ( rockConnectionString == null )
             {
-                rockContext = new ConnectionStringSettings( "RockContext", CurrentConnection, "System.Data.SqlClient" );
-                appConfig.ConnectionStrings.ConnectionStrings.Add( rockContext );
+                rockConnectionString = new ConnectionStringSettings( "RockContext", CurrentConnection, "System.Data.SqlClient" );
+                appConfig.ConnectionStrings.ConnectionStrings.Add( rockConnectionString );
             }
             else
             {
-                rockContext.ConnectionString = CurrentConnection;
+                rockConnectionString.ConnectionString = CurrentConnection;
             }
 
             try
             {
+                // Save the user's selected connection string
                 appConfig.Save( ConfigurationSaveMode.Modified );
-                ConfigurationManager.RefreshSection( "connectionstrings" );
+                ConfigurationManager.RefreshSection( "connectionStrings" );
 
                 var selectPage = new SelectPage( excavator );
                 this.NavigationService.Navigate( selectPage );
