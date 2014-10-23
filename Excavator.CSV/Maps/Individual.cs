@@ -519,7 +519,7 @@ namespace Excavator.CSV
                             newSchool.Order = 0;
 
                             lookupContext.DefinedValues.Add( newSchool );
-                            //lookupContext.SaveChanges();
+                            lookupContext.SaveChanges();
 
                             schoolGuid = newSchool.Guid;
                         }

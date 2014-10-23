@@ -62,7 +62,7 @@ namespace Excavator.CSV
                     string campusName = row[Campus];
                     if ( !string.IsNullOrWhiteSpace( campusName ) )
                     {
-                        var familyCampus = CampusList.Where( c => c.Name.StartsWith( campusName ) ).FirstOrDefault();
+                        var familyCampus = CampusList.Where( c => c.Name.StartsWith( campusName ) || c.ShortCode.StartsWith( campusName ) ).FirstOrDefault();
                         if ( familyCampus == null )
                         {
                             familyCampus = new Campus();
@@ -72,6 +72,7 @@ namespace Excavator.CSV
                             lookupContext.SaveChanges( true );
                         }
 
+                        // This won't assign a campus if the family already exists because the context doesn't get saved
                         currentFamilyGroup.CampusId = familyCampus.Id;
                     }
 

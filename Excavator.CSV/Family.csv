@@ -1,9 +1,3 @@
 FamilyId,FamilyName,Campus,Address,Address2,City,State,ZipCode,Country,SecondaryAddress,SecondaryAddress2,SecondaryCity,SecondaryState,SecondaryZip,SecondaryCountry
-96811879691115097A,Smith Family,,20 Dorset Grove,Cannons Creek,Porirua,WA,12345,,,,,,,
-968111412207101120A,Meese Family,,26 Ludlam Crescent,Woburn,Lower Hutt,NC,12345,US,,,,,,
-96811647400711114A,Jafir Family,,10 Korkiri Crescent,Waitangirua,Atlanta,GA,12345,US,,,,,,
-96811326250712116A,Times Family,,10 Bedford Street,Cannons Creek,Greenville,TN,12345,US,,,,,,
-96811879691115087A,Smith II Family,,20 Dorset Grove,Cannons Creek,Porirua,WA,12345,,,,,,,
-968111412207100020A,Meese II Family,,26 Ludlam Crescent,Woburn,Lower Hutt,NC,12345,US,,,,,,
-96811647400711124A,Jafir II Family,,10 Korkiri Crescent,Waitangirua,Atlanta,GA,12345,US,,,,,,
-96811326250712346A,Times II Family,,10 Bedford Street,Cannons Creek,Greenville,TN,12345,US,,,,,,
+96811879691115097A,Smith Family,MAIN,20 Dorset Grove,Cannons Creek,Porirua,WA,12345,,,,,,,
+968111412207101120A,Meese Family,SECOND,26 Ludlam Crescent,Woburn,Lower Hutt,NC,12345,US,,,,,,
