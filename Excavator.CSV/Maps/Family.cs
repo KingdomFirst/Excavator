@@ -26,6 +26,9 @@ namespace Excavator.CSV
 
             int numImportedFamilies = ImportedPeople.Select( p => p.ForeignId ).Distinct().Count();
 
+            int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
+            int workLocationTypeId = DefinedValueCache.Read( new Guid( "E071472A-F805-4FC4-917A-D5E3C095C35C" ) ).Id;
+
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var newGroupLocations = new Dictionary<GroupLocation, string>();
@@ -59,15 +62,17 @@ namespace Excavator.CSV
                     string campusName = row[Campus];
                     if ( !string.IsNullOrWhiteSpace( campusName ) )
                     {
-                        var familyCampus = CampusList.Where( c => c.Name.StartsWith( campusName ) ).FirstOrDefault();
+                        var familyCampus = CampusList.Where( c => c.Name.StartsWith( campusName ) || c.ShortCode.StartsWith( campusName ) ).FirstOrDefault();
                         if ( familyCampus == null )
                         {
                             familyCampus = new Campus();
                             familyCampus.IsSystem = false;
                             familyCampus.Name = campusName;
                             lookupContext.Campuses.Add( familyCampus );
+                            lookupContext.SaveChanges( true );
                         }
 
+                        // This won't assign a campus if the family already exists because the context doesn't get saved
                         currentFamilyGroup.CampusId = familyCampus.Id;
                     }
 
@@ -89,7 +94,7 @@ namespace Excavator.CSV
                         primaryLocation.LocationId = primaryAddress.Id;
                         primaryLocation.IsMailingLocation = true;
                         primaryLocation.IsMappedLocation = true;
-
+                        primaryLocation.GroupLocationTypeValueId = homeLocationTypeId;
                         newGroupLocations.Add( primaryLocation, rowFamilyId );
                     }
 
@@ -109,7 +114,7 @@ namespace Excavator.CSV
                         secondaryLocation.LocationId = primaryAddress.Id;
                         secondaryLocation.IsMailingLocation = true;
                         secondaryLocation.IsMappedLocation = true;
-
+                        secondaryLocation.GroupLocationTypeValueId = workLocationTypeId;
                         newGroupLocations.Add( secondaryLocation, rowFamilyId );
                     }
 

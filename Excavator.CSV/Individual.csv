@@ -1,10 +1,5 @@
 FamilyId,FamilyName,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,MaritalStatus,ConnectionStatus,RecordStatus,HomePhone,MobilePhone,WorkPhone,SMS Allowed?,Email,SecondaryEmail,Is Email Active?,Allow Bulk Email?,Gender,Age,DateOfBirth,MembershipDate,SalvationDate,BaptismDate,AnniversaryDate,FirstVisit,LastUpdated,PreviousChurch,Occupation,Employer,School,General Note,MedicalNote,Security Note,Facebook,Instagram,Twitter
-96811879691115097A,Smith Family,25570361,Mr,John,,,Smith,,,Adult,,Member,Active,,(827) 345-1163,(804) 237-9876,Yes,jsmitha@windowslive.com,,Yes,Yes,Male,40,,,,,,,11/15/2009,,,,,,,,jsmith37,jsmitha,jsmith
-968111412207101120A,Meese Family,37111921,Mr,Katoa,,,Meese,,,Adult,,Member,Active,+1 2071838750,,,Yes,,,Yes,No,Female,,,,,,,,7/24/2011,,,,,,,,katmeese,katmeese,
-96811647400711114A,Jafir Family,37151991,Miss,Moana,,,Jafir,,,Adult,Single,Attendee,Active,(804) 235 5285,,,No,,,No,No,Female,,,,7/10/2011,,,,7/13/2011,,,,,,,,jafirm15,,
-96811326250712116A,Times Family,37172051,Miss,Starla,,,Times,,,Adult,,Attendee,Active,(804) 238-9722,,,No,,,Yes,No,Female,15,,,7/12/2011,,,,7/13/2011,,,,,,,,stimes_,,stimes_
-96811879691115087A,Smith II Family,25570361,Mr,John,,,Smith II,,,Adult,,Member,Active,,(827) 345-1163,(804) 237-9876,Yes,jsmitha@windowslive.com,,Yes,Yes,Male,40,,,,,,,11/15/2009,,,,,,,,,jsmitha,jsmitha
-968111412207100020A,Meese II Family,37111921,Mr,Katoa,,,Meese II,,,Adult,,Attendee,Active,,,,Yes,,,Yes,No,Female,,,,,,,,7/24/2011,,,,,,,,,kmeesea,
-96811647400711124A,Jafir II Family,37151991,Miss,Moana,,,Jafir II,,,Adult,Single,Attendee,Active,(804) 235 5285,,,No,,,No,No,Female,,,,7/10/2011,,,,7/13/2011,,,,,,,,,,moana
-96811326250712346A,Times II Family,37172051,Miss,Starla,,,Times II,,,Adult,,Visitor,Active,(804) 238-9722,,,No,,,Yes,No,Female,15,,,7/12/2011,,,,7/13/2011,,,,,,,,starlatimes,@times_starla_8529,@starla
-96811326250712346A,Times II Family,37172053,Ms,Karla,,,Macey,,,Visitor,,Visitor,Active,+44 20 7183 8750,,,,,,,,Female,14,,,,,,07/12/11,,,,,,,,,,,
+96811879691115097A,Smith Family,25570361,Mr,John,Jay,Adam,Smith,,,Adult,Married,Member,Active,,(827) 345-1163,(804) 237-9876,Yes,jsmitha@windowslive.com,,Yes,Yes,Male,40,,09/12/10,01/10/09,03/01/11,06/01/08,01/10/09,11/15/2009,Triune Methodist,Dev,Ruby Shops,Belvedere Community,general,medical,security,jsmith37,jsmitha,jsmith
+968111412207101120A,Meese Family,145,Mr,Allen,,,Meese,,,Adult,Married,Attendee,Active,,8645719853,,Yes,,,,,Male,,01/05/83,,,,,,,,,,,,,,,,
+968111412207101120A,Meese Family,146,Mrs,Sara,,,Meese,,Alliston,Adult,Married,Attendee,Active,,864-938-1593,,No,smeese@gmail.com,,Yes,,Female,,06/09/85,,,,,,,,,,,,,,,,
+968111412207101120A,Meese Family,147,,Oliver,,,Meese,,,Child,,,,,,,,,,,,Male,,05/01/11,,,,,,,,,,,,,,,,
