@@ -187,7 +187,7 @@ namespace Excavator.CSV
                 personAttributes.AddRange( newAttributes );
             }
 
-            var dateFormats = new[] { "MM/dd/yyyy", "MM/dd/yy" };
+            var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
 
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
@@ -662,7 +662,7 @@ namespace Excavator.CSV
 
                     foreach ( var familyGroups in newFamilyList.GroupBy<Group, string>( g => g.ForeignId ) )
                     {
-                        bool visitorsExist = visitorList.Any() && familyGroups.Count() > 1;
+                        bool visitorsExist = visitorList.Any() && familyGroups.Any();
                         foreach ( var newFamilyGroup in familyGroups )
                         {
                             foreach ( var person in newFamilyGroup.Members.Select( m => m.Person ) )
