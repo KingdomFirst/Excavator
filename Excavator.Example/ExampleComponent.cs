@@ -75,7 +75,10 @@ namespace Excavator.Example
         private PersonAlias ImportPersonAlias;
 
         // Flag to set postprocessing audits on save
-        private static bool IsAudited = false;
+        private static bool DisableAudit = true;
+
+        // Report progress when a multiple of this number has been imported
+        private static int ReportingNumber = 100;
 
 #pragma warning restore
 
@@ -163,7 +166,7 @@ namespace Excavator.Example
                     rockContext.People.Add( person );
 
                     // Save the data to the database
-                    rockContext.SaveChanges( IsAudited );
+                    rockContext.SaveChanges( DisableAudit );
                 } );
 
                 completed++;
@@ -186,24 +189,16 @@ namespace Excavator.Example
                 completed++;
 
                 // Save 100 people at a time
-                if ( completed % 100 < 1 )
+                if ( completed % ReportingNumber < 1 )
                 {
-                    rockContext.WrapTransaction( () =>
-                    {
-                        rockContext.People.AddRange( newPersonList );
-                        rockContext.SaveChanges( IsAudited );
-                    } );
+                    SaveModel( newPersonList );
                 }
             }
 
             // Outside foreach, save any that haven't been saved yet
             if ( newPersonList.Any() )
             {
-                rockContext.WrapTransaction( () =>
-                {
-                    rockContext.People.AddRange( newPersonList );
-                    rockContext.SaveChanges( IsAudited );
-                } );
+                SaveModel( newPersonList );
             }
 
             // end option #2
@@ -211,6 +206,21 @@ namespace Excavator.Example
             // Report the final imported count
             ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
             return completed;
+        }
+
+        /// <summary>
+        /// Saves the model.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="newPersonList">The new person list.</param>
+        private static void SaveModel( List<Person> newPersonList )
+        {
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.People.AddRange( newPersonList );
+                rockContext.SaveChanges( DisableAudit );
+            } );
         }
 
         #endregion
