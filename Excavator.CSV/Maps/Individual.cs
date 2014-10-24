@@ -268,6 +268,11 @@ namespace Excavator.CSV
                         person.CreatedDateTime = createdDateValue;
                         person.ModifiedDateTime = importDate;
                     }
+                    else
+                    {
+                        person.CreatedDateTime = importDate;
+                        person.ModifiedDateTime = importDate;
+                    }
 
                     #region Assign values to the Person record
 
