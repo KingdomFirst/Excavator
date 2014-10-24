@@ -611,7 +611,7 @@ namespace Excavator.CSV
                         string newAttributeValue = row[attributePair.Key];
                         if ( !string.IsNullOrWhiteSpace( newAttributeValue ) )
                         {
-                            int? newAttributeId = personAttributes.Where( a => a.Key == attributePair.Value )
+                            int? newAttributeId = personAttributes.Where( a => a.Key == attributePair.Value.RemoveWhitespace() )
                                 .Select( a => (int?)a.Id ).FirstOrDefault();
                             if ( newAttributeId != null )
                             {
