@@ -13,5 +13,4 @@ System.Web.Http.dll
 System.Web.Http.WebHost.dll
 *.xml
 *.dll.config
-*.Example.dll
 
