@@ -390,6 +390,7 @@ namespace Excavator.CSV
                             case "yes":
                                 person.IsDeceased = true;
                                 person.RecordStatusReasonValueId = recordStatusDeceasedId;
+                                person.RecordStatusValueId = recordStatusInactiveId;
                                 break;
 
                             default:
