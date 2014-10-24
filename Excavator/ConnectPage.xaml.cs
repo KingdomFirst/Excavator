@@ -18,8 +18,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.Composition;
+using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
-using System.Data.Entity;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -36,8 +38,6 @@ namespace Excavator
     public partial class ConnectPage : Page
     {
         #region Fields
-
-        private FrontEndLoader frontEndLoader;
 
         private ExcavatorComponent excavator;
 
@@ -86,26 +86,34 @@ namespace Excavator
             }
         }
 
-        private IEnumerable<ExcavatorComponent> _ExcavatorImportDlls = null;
+        private IEnumerable<ExcavatorComponent> _excavatorTypes = new List<ExcavatorComponent>();
 
         /// <summary>
-        /// Gets or sets the excavator import DLLS.
+        /// Gets or sets the excavator types.
         /// </summary>
         /// <value>
-        /// The excavator import DLLS.
+        /// The excavator types.
         /// </value>
-        public IEnumerable<ExcavatorComponent> ExcavatorImportDlls
+        [ImportMany( typeof( ExcavatorComponent ) )]
+        public IEnumerable<ExcavatorComponent> ExcavatorTypes
         {
             get
             {
-                return _ExcavatorImportDlls;
+                if ( _excavatorTypes == null )
+                {
+                    _excavatorTypes = new List<ExcavatorComponent>();
+                }
+
+                return _excavatorTypes;
             }
+
             set
             {
-                if ( _ExcavatorImportDlls == value )
+                if ( _excavatorTypes == value )
                     return;
-                _ExcavatorImportDlls = value;
-                RaisePropertyChanged( "ExcavatorImportDlls" );
+
+                _excavatorTypes = value;
+                RaisePropertyChanged( "ExcavatorTypes" );
             }
         }
 
@@ -171,12 +179,11 @@ namespace Excavator
         public ConnectPage()
         {
             InitializeComponent();
+            LoadExcavatorTypes();
 
-            frontEndLoader = new FrontEndLoader();
-            if ( frontEndLoader.excavatorTypes.Any() )
+            if ( ExcavatorTypes.Any() )
             {
-                ExcavatorImportDlls = frontEndLoader.excavatorTypes.GroupBy( t => t.FullName ).Select( g => g.FirstOrDefault() );
-                SelectedImportType = frontEndLoader.excavatorTypes.FirstOrDefault();
+                SelectedImportType = ExcavatorTypes.FirstOrDefault();
                 InitializeDBConnection();
             }
             else
@@ -185,10 +192,35 @@ namespace Excavator
                 lblNoData.Visibility = Visibility.Visible;
                 lblDatabaseTypes.Visibility = Visibility.Hidden;
                 lstDatabaseTypes.Visibility = Visibility.Hidden;
-                lblNoData.Content += string.Format( " ({0})", ConfigurationManager.AppSettings["ExtensionPath"] );
             }
 
             DataContext = this;
+        }
+
+        /// <summary>
+        /// Loads the excavator types as MEF components.
+        /// </summary>
+        public void LoadExcavatorTypes()
+        {
+            var extensionFolder = ConfigurationManager.AppSettings["ExtensionPath"];
+            var catalog = new AggregateCatalog();
+            if ( Directory.Exists( extensionFolder ) )
+            {
+                catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder, "Excavator.*.dll" ) );
+            }
+
+            var currentDirectory = Path.GetDirectoryName( System.Windows.Forms.Application.ExecutablePath );
+            catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory, "Excavator.*.dll" ) );
+
+            try
+            {
+                var container = new CompositionContainer( catalog, true );
+                container.ComposeParts( this );
+            }
+            catch ( Exception ex )
+            {
+                App.LogException( "Components", ex.ToString() );
+            }
         }
 
         /// <summary>
@@ -373,13 +405,13 @@ namespace Excavator
             var filePicker = new OpenFileDialog();
             filePicker.Multiselect = true;
 
-            var supportedExtensions = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
+            var supportedExtensions = ExcavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) )
                 .Select( t => t.FullName + " |*" + t.ExtensionType ).ToList();
             filePicker.Filter = string.Join( "|", supportedExtensions );
 
             if ( filePicker.ShowDialog() == true )
             {
-                excavator = frontEndLoader.excavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
+                excavator = ExcavatorTypes.Where( t => t.FullName.Equals( selectedExcavator ) ).FirstOrDefault();
                 if ( excavator != null )
                 {
                     bool loadedSuccessfully = false;
