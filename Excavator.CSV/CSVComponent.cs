@@ -359,33 +359,35 @@ namespace Excavator.CSV
         private const int MaritalStatus = 11;
         private const int ConnectionStatus = 12;
         private const int RecordStatus = 13;
-        private const int HomePhone = 14;
-        private const int MobilePhone = 15;
-        private const int WorkPhone = 16;
-        private const int AllowSMS = 17;
-        private const int Email = 18;
-        private const int SecondaryEmail = 19;
-        private const int IsEmailActive = 20;
-        private const int AllowBulkEmail = 21;
-        private const int Gender = 22;
-        private const int Age = 23;
-        private const int DateOfBirth = 24;
-        private const int MembershipDate = 25;
-        private const int SalvationDate = 26;
-        private const int BaptismDate = 27;
-        private const int Anniversary = 28;
-        private const int FirstVisit = 29;
-        private const int LastUpdated = 30;
-        private const int PreviousChurch = 31;
-        private const int Occupation = 32;
-        private const int Employer = 33;
-        private const int School = 34;
-        private const int GeneralNote = 35;
-        private const int MedicalNote = 36;
-        private const int SecurityNote = 37;
-        private const int Facebook = 38;
-        private const int Instagram = 39;
-        private const int Twitter = 40;
+        private const int IsDeceased = 14;
+        private const int CreatedDate = 15;
+        private const int HomePhone = 16;
+        private const int MobilePhone = 17;
+        private const int WorkPhone = 18;
+        private const int AllowSMS = 19;
+        private const int Email = 20;
+        private const int SecondaryEmail = 21;
+        private const int IsEmailActive = 22;
+        private const int AllowBulkEmail = 23;
+        private const int Gender = 24;
+        private const int Age = 25;
+        private const int DateOfBirth = 26;
+        private const int MembershipDate = 27;
+        private const int SalvationDate = 28;
+        private const int BaptismDate = 29;
+        private const int Anniversary = 30;
+        private const int FirstVisit = 31;
+        private const int LastUpdated = 32;
+        private const int PreviousChurch = 33;
+        private const int Occupation = 34;
+        private const int Employer = 35;
+        private const int School = 36;
+        private const int GeneralNote = 37;
+        private const int MedicalNote = 38;
+        private const int SecurityNote = 39;
+        private const int Facebook = 40;
+        private const int Instagram = 41;
+        private const int Twitter = 42;
 
         #endregion
 
@@ -400,6 +402,7 @@ namespace Excavator.CSV
         // First two columns are already numbered from Individuals file
         //private const int FamilyId = 0;
         //private const int FamilyName = 1;
+        //private const in CreatedDate = 15;
 
         private const int Campus = 2;
         private const int Address = 3;

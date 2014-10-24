@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Globalization;
 using System.Linq;
 using Rock.Data;
 using Rock.Model;
@@ -32,6 +33,8 @@ namespace Excavator.CSV
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var newGroupLocations = new Dictionary<GroupLocation, string>();
+
+            var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
 
             string currentFamilyId = string.Empty;
             int completed = 0;
@@ -116,6 +119,13 @@ namespace Excavator.CSV
                         secondaryLocation.IsMappedLocation = true;
                         secondaryLocation.GroupLocationTypeValueId = workLocationTypeId;
                         newGroupLocations.Add( secondaryLocation, rowFamilyId );
+                    }
+
+                    DateTime createdDateValue;
+                    if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
+                    {
+                        currentFamilyGroup.CreatedDateTime = createdDateValue;
+                        currentFamilyGroup.ModifiedDateTime = createdDateValue;
                     }
 
                     completed++;

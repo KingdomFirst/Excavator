@@ -260,6 +260,13 @@ namespace Excavator.CSV
                     person.MiddleName = row[MiddleName];
                     person.LastName = row[LastName];
 
+                    DateTime createdDateValue;
+                    if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
+                    {
+                        person.CreatedDateTime = createdDateValue;
+                        person.ModifiedDateTime = createdDateValue;
+                    }
+
                     #region Assign values to the Person record
 
                     DateTime birthDate;
@@ -348,11 +355,6 @@ namespace Excavator.CSV
                         {
                             person.ConnectionStatusValueId = visitorConnectionStatusId;
                         }
-                        else if ( connectionStatus == "Deceased" )
-                        {
-                            person.IsDeceased = true;
-                            person.RecordStatusReasonValueId = recordStatusDeceasedId;
-                        }
                         else
                         {
                             // look for user-defined connection type or default to Attendee
@@ -367,18 +369,35 @@ namespace Excavator.CSV
                     string recordStatus = row[RecordStatus];
                     if ( !string.IsNullOrWhiteSpace( recordStatus ) )
                     {
-                        switch ( recordStatus.Trim() )
+                        switch ( recordStatus.Trim().ToLower() )
                         {
-                            case "Active":
+                            case "active":
                                 person.RecordStatusValueId = recordStatusActiveId;
                                 break;
 
-                            case "Inactive":
+                            case "inactive":
                                 person.RecordStatusValueId = recordStatusInactiveId;
                                 break;
 
                             default:
                                 person.RecordStatusValueId = recordStatusPendingId;
+                                break;
+                        }
+                    }
+
+                    string isDeceasedValue = row[IsDeceased];
+                    if ( !string.IsNullOrWhiteSpace( isDeceasedValue ) )
+                    {
+                        switch ( isDeceasedValue.Trim().ToLower() )
+                        {
+                            case "y":
+                            case "yes":
+                                person.IsDeceased = true;
+                                person.RecordStatusReasonValueId = recordStatusDeceasedId;
+                                break;
+
+                            default:
+                                person.IsDeceased = false;
                                 break;
                         }
                     }
