@@ -276,12 +276,6 @@ namespace Excavator.CSV
                         person.BirthDate = birthDate;
                     }
 
-                    DateTime anniversary;
-                    if ( DateTime.TryParseExact( row[Anniversary], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out anniversary ) )
-                    {
-                        person.AnniversaryDate = anniversary;
-                    }
-
                     string gender = row[Gender];
                     if ( gender != null )
                     {
@@ -531,11 +525,19 @@ namespace Excavator.CSV
                         AddPersonAttribute( baptismDateAttribute, person, baptismDateValue.ToString() );
                     }
 
+                    DateTime anniversary;
+                    if ( DateTime.TryParseExact( row[Anniversary], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out anniversary ) )
+                    {
+                        person.AnniversaryDate = anniversary;
+                    }
+
                     DateTime firstVisitValue;
                     if ( DateTime.TryParseExact( row[FirstVisit], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out firstVisitValue ) )
                     {
                         AddPersonAttribute( firstVisitAttribute, person, firstVisitValue.ToString() );
                     }
+
+                    // LAST UPDATED HERE
 
                     string previousChurchValue = row[PreviousChurch];
                     if ( !string.IsNullOrWhiteSpace( previousChurchValue ) )
@@ -689,7 +691,7 @@ namespace Excavator.CSV
                 SaveIndividuals( newFamilyList, newVisitorList );
             }
 
-            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people imported.", completed ) );
+            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people added.", completed ) );
             return completed;
         }
 
