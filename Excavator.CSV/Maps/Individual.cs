@@ -217,6 +217,7 @@ namespace Excavator.CSV
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
+            var newNoteList = new List<Note>();
             var importDate = DateTime.Now;
 
             int completed = 0;
@@ -265,7 +266,7 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
                     {
                         person.CreatedDateTime = createdDateValue;
-                        person.ModifiedDateTime = createdDateValue;
+                        person.ModifiedDateTime = importDate;
                     }
 
                     #region Assign values to the Person record
@@ -537,8 +538,6 @@ namespace Excavator.CSV
                         AddPersonAttribute( firstVisitAttribute, person, firstVisitValue.ToString() );
                     }
 
-                    // LAST UPDATED HERE
-
                     string previousChurchValue = row[PreviousChurch];
                     if ( !string.IsNullOrWhiteSpace( previousChurchValue ) )
                     {
@@ -622,14 +621,13 @@ namespace Excavator.CSV
                     notePairs.Add( "Medical", row[MedicalNote] );
                     notePairs.Add( "Security", row[SecurityNote] );
 
-                    var newNoteList = new List<Note>();
                     foreach ( var notePair in notePairs.Where( n => !string.IsNullOrWhiteSpace( n.Value ) ) )
                     {
                         var newNote = new Note();
                         newNote.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         newNote.CreatedDateTime = importDate;
-                        newNote.EntityId = person.Id;
                         newNote.Text = notePair.Value;
+                        newNote.ForeignId = rowPersonId;
                         newNote.NoteTypeId = noteTimelineTypeId;
                         newNote.Caption = string.Format( "{0} Note", notePair.Key );
 
@@ -639,12 +637,6 @@ namespace Excavator.CSV
                         }
 
                         newNoteList.Add( newNote );
-                    }
-
-                    if ( newNoteList.Any() )
-                    {
-                        lookupContext.Notes.AddRange( newNoteList );
-                        lookupContext.SaveChanges( true );
                     }
 
                     #endregion
@@ -679,16 +671,18 @@ namespace Excavator.CSV
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        SaveIndividuals( newFamilyList, newVisitorList );
+                        SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
                         ReportPartialProgress();
                         newFamilyList.Clear();
+                        newVisitorList.Clear();
+                        newNoteList.Clear();
                     }
                 }
             }
 
             if ( newFamilyList.Any() )
             {
-                SaveIndividuals( newFamilyList, newVisitorList );
+                SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
             }
 
             ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people added.", completed ) );
@@ -700,7 +694,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="newFamilyList">The family list.</param>
         /// <param name="visitorList">The optional visitor list.</param>
-        private void SaveIndividuals( List<Group> newFamilyList, List<Group> visitorList = null )
+        private void SaveIndividuals( List<Group> newFamilyList, List<Group> visitorList = null, List<Note> newNoteList = null )
         {
             if ( newFamilyList.Any() )
             {
@@ -719,6 +713,14 @@ namespace Excavator.CSV
                         {
                             foreach ( var person in newFamilyGroup.Members.Select( m => m.Person ) )
                             {
+                                // Set notes on this person
+                                if ( newNoteList.Any( n => n.ForeignId == person.ForeignId ) )
+                                {
+                                    newNoteList.Where( n => n.ForeignId == person.ForeignId ).ToList()
+                                        .ForEach( n => n.EntityId = person.Id );
+                                }
+
+                                // Set attributes on this person
                                 foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                                 {
                                     var newAttributeValue = person.AttributeValues[attributeCache.Key];
@@ -730,6 +732,7 @@ namespace Excavator.CSV
                                     }
                                 }
 
+                                // Set aliases on this person
                                 if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
                                 {
                                     person.Aliases.Add( new PersonAlias
@@ -817,6 +820,8 @@ namespace Excavator.CSV
                         }
                     }
 
+                    // Save notes and all changes
+                    rockContext.Notes.AddRange( newNoteList );
                     rockContext.SaveChanges( true );
                 } );
             }
