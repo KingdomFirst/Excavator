@@ -100,6 +100,7 @@ namespace Excavator.CSV
 
             // Text field type id
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ), lookupContext ).Id;
+            int dateFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.DATE ), lookupContext ).Id;
 
             // Attribute entity type id
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
@@ -161,13 +162,13 @@ namespace Excavator.CSV
             if ( salvationDate == null )
             {
                 salvationDate = new Rock.Model.Attribute();
-                salvationDate.Key = "SecondaryEmail";
-                salvationDate.Name = "Secondary Email";
-                salvationDate.FieldTypeId = textFieldTypeId;
+                salvationDate.Key = "SalvationDate";
+                salvationDate.Name = "Salvation Date";
+                salvationDate.FieldTypeId = dateFieldTypeId;
                 salvationDate.EntityTypeId = PersonEntityTypeId;
                 salvationDate.EntityTypeQualifierValue = string.Empty;
                 salvationDate.EntityTypeQualifierColumn = string.Empty;
-                salvationDate.Description = "The secondary email for this person";
+                salvationDate.Description = "The salvation date for this person";
                 salvationDate.DefaultValue = string.Empty;
                 salvationDate.IsMultiValue = false;
                 salvationDate.IsRequired = false;
@@ -732,7 +733,8 @@ namespace Excavator.CSV
                                     person.Aliases.Add( new PersonAlias
                                     {
                                         AliasPersonId = person.Id,
-                                        AliasPersonGuid = person.Guid
+                                        AliasPersonGuid = person.Guid,
+                                        ForeignId = person.ForeignId
                                     } );
                                 }
 
