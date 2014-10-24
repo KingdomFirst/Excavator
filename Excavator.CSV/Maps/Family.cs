@@ -37,6 +37,7 @@ namespace Excavator.CSV
             var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
 
             string currentFamilyId = string.Empty;
+            var importDate = DateTime.Now;
             int completed = 0;
 
             ReportProgress( 0, string.Format( "Starting family import ({0:N0} already exist).", numImportedFamilies ) );
@@ -60,12 +61,17 @@ namespace Excavator.CSV
                         currentFamilyGroup.GroupTypeId = familyGroupTypeId;
                         newFamilyList.Add( currentFamilyGroup );
                     }
+                    else
+                    {
+                        lookupContext.Groups.Attach( currentFamilyGroup );
+                    }
 
                     // Set the family campus
                     string campusName = row[Campus];
                     if ( !string.IsNullOrWhiteSpace( campusName ) )
                     {
-                        var familyCampus = CampusList.Where( c => c.Name.StartsWith( campusName ) || c.ShortCode.StartsWith( campusName ) ).FirstOrDefault();
+                        var familyCampus = CampusList.Where( c => c.Name.Equals( campusName, StringComparison.InvariantCultureIgnoreCase )
+                            || c.ShortCode.Equals( campusName, StringComparison.InvariantCultureIgnoreCase ) ).FirstOrDefault();
                         if ( familyCampus == null )
                         {
                             familyCampus = new Campus();
@@ -75,7 +81,6 @@ namespace Excavator.CSV
                             lookupContext.SaveChanges( true );
                         }
 
-                        // This won't assign a campus if the family already exists because the context doesn't get saved
                         currentFamilyGroup.CampusId = familyCampus.Id;
                     }
 
@@ -125,10 +130,15 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
                     {
                         currentFamilyGroup.CreatedDateTime = createdDateValue;
-                        currentFamilyGroup.ModifiedDateTime = createdDateValue;
+                        currentFamilyGroup.ModifiedDateTime = importDate;
+                    }
+                    else
+                    {
+                        currentFamilyGroup.CreatedDateTime = importDate;
+                        currentFamilyGroup.ModifiedDateTime = importDate;
                     }
 
-                    completed += newFamilyList.Count;
+                    completed++;
                     if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
@@ -139,6 +149,7 @@ namespace Excavator.CSV
                         ReportPartialProgress();
 
                         // Reset lookup context
+                        lookupContext.SaveChanges();
                         lookupContext = new RockContext();
                         locationService = new LocationService( lookupContext );
                         newFamilyList.Clear();
@@ -151,6 +162,7 @@ namespace Excavator.CSV
             if ( newGroupLocations.Any() )
             {
                 SaveFamilies( newFamilyList, newGroupLocations );
+                lookupContext.SaveChanges();
             }
 
             ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added.", completed ) );
