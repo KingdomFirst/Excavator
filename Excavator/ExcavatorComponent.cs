@@ -17,13 +17,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.ComponentModel.Composition.Hosting;
-using System.Configuration;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Windows.Forms;
 
 namespace Excavator
 {
@@ -170,43 +165,5 @@ namespace Excavator
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Loads all the excavator components
-    /// </summary>
-    public class FrontEndLoader
-    {
-        /// <summary>
-        /// Holds a list of all the excavator types
-        /// </summary>
-        [ImportMany( typeof( ExcavatorComponent ) )]
-        public IEnumerable<ExcavatorComponent> excavatorTypes = new List<ExcavatorComponent>();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FrontEndLoader"/> class.
-        /// </summary>
-        public FrontEndLoader()
-        {
-            var extensionFolder = ConfigurationManager.AppSettings["ExtensionPath"];
-            var catalog = new AggregateCatalog();
-            if ( Directory.Exists( extensionFolder ) )
-            {
-                catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder, "Excavator.*.dll" ) );
-            }
-
-            var currentDirectory = Path.GetDirectoryName( Application.ExecutablePath );
-            catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory, "Excavator.*.dll" ) );
-
-            try
-            {
-                var container = new CompositionContainer( catalog, true );
-                container.ComposeParts( this );
-            }
-            catch ( Exception ex )
-            {
-                App.LogException( "MEF", ex.ToString() );
-            }
-        }
     }
 }

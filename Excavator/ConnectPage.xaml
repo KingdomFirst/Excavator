@@ -49,7 +49,7 @@
         </Label>
         <StackPanel Grid.Row="2" Grid.Column="2">
             <ComboBox x:Name="lstDatabaseTypes" Margin="30,0"
-                  ItemsSource="{Binding ExcavatorImportDlls, Mode=TwoWay}"
+                  ItemsSource="{Binding ExcavatorTypes, Mode=TwoWay}"
                   SelectedItem="{Binding SelectedImportType, Mode=TwoWay}"
                 VerticalAlignment="Top"
                 HorizontalAlignment="Left"

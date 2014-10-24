@@ -62,7 +62,6 @@ namespace Excavator
             {
                 builder.Dispatcher.BeginInvoke( (Action)( () => d.SetValue( ConnectionStringProperty, DefaultValue ) ) );
             }
-
             else
             {
                 builder.RegisterNewConnectionString( (ConnectionString)e.NewValue );
@@ -421,7 +420,6 @@ namespace Excavator
                 {
                     return new SqlConnectionStringBuilder { DataSource = Server }.ConnectionString;
                 }
-
                 else
                 {
                     return new SqlConnectionStringBuilder { DataSource = Server, Password = Password }.ConnectionString;
