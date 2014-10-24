@@ -128,7 +128,7 @@ namespace Excavator.CSV
                         currentFamilyGroup.ModifiedDateTime = createdDateValue;
                     }
 
-                    completed++;
+                    completed += newFamilyList.Count;
                     if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
@@ -153,7 +153,7 @@ namespace Excavator.CSV
                 SaveFamilies( newFamilyList, newGroupLocations );
             }
 
-            ReportProgress( 0, string.Format( "Finished family import: {0:N0} families imported.", completed ) );
+            ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added.", completed ) );
             return completed;
         }
 

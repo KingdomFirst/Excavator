@@ -377,17 +377,16 @@ namespace Excavator.CSV
         private const int BaptismDate = 29;
         private const int Anniversary = 30;
         private const int FirstVisit = 31;
-        private const int LastUpdated = 32;
-        private const int PreviousChurch = 33;
-        private const int Occupation = 34;
-        private const int Employer = 35;
-        private const int School = 36;
-        private const int GeneralNote = 37;
-        private const int MedicalNote = 38;
-        private const int SecurityNote = 39;
-        private const int Facebook = 40;
-        private const int Instagram = 41;
-        private const int Twitter = 42;
+        private const int PreviousChurch = 32;
+        private const int Occupation = 33;
+        private const int Employer = 34;
+        private const int School = 35;
+        private const int GeneralNote = 36;
+        private const int MedicalNote = 37;
+        private const int SecurityNote = 38;
+        private const int Facebook = 39;
+        private const int Instagram = 40;
+        private const int Twitter = 41;
 
         #endregion
 
