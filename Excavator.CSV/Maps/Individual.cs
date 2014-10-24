@@ -156,6 +156,30 @@ namespace Excavator.CSV
 
             var formerNameAttribute = AttributeCache.Read( formerName.Id, lookupContext );
 
+            // Add a Salvation Date attribute if it doesn't exist
+            var salvationDate = personAttributes.FirstOrDefault( a => a.Key == "SalvationDate" );
+            if ( salvationDate == null )
+            {
+                salvationDate = new Rock.Model.Attribute();
+                salvationDate.Key = "SecondaryEmail";
+                salvationDate.Name = "Secondary Email";
+                salvationDate.FieldTypeId = textFieldTypeId;
+                salvationDate.EntityTypeId = PersonEntityTypeId;
+                salvationDate.EntityTypeQualifierValue = string.Empty;
+                salvationDate.EntityTypeQualifierColumn = string.Empty;
+                salvationDate.Description = "The secondary email for this person";
+                salvationDate.DefaultValue = string.Empty;
+                salvationDate.IsMultiValue = false;
+                salvationDate.IsRequired = false;
+                salvationDate.Order = 0;
+
+                lookupContext.Attributes.Add( salvationDate );
+                salvationDate.Categories.Add( visitInfoCategory );
+                lookupContext.SaveChanges( true );
+            }
+
+            var salvationDateAttribute = AttributeCache.Read( salvationDate.Id, lookupContext );
+
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
             Dictionary<int, string> customAttributes = allFields.Where( f => f.index > Twitter ).ToDictionary( f => f.index, f => f.node.Name );
@@ -473,6 +497,12 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[MembershipDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out membershipDateValue ) )
                     {
                         AddPersonAttribute( membershipDateAttribute, person, membershipDateValue.ToString() );
+                    }
+
+                    DateTime salvationDateValue;
+                    if ( DateTime.TryParseExact( row[SalvationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out salvationDateValue ) )
+                    {
+                        AddPersonAttribute( salvationDateAttribute, person, salvationDateValue.ToString() );
                     }
 
                     DateTime baptismDateValue;
