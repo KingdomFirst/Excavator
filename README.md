@@ -30,20 +30,21 @@ Please note that the master branch contains fully-tested code; develop branch is
 
 <i>Simple version:</i><br>
 1.  Download the zipped copy of Excavator from GitHub and rewrite the Excavator.Example project<br>
-2.  Build or copy the compiled library (Excavator.Example.dll) to Excavator\bin or Excavator\Extensions<br>
+2.  Build or copy the compiled library (Excavator.Example.dll) to Excavator\bin<br>
 3.  Run Excavator and select your new database component from the list on the first page<br>
 
 <i>Advanced version:</i><br>
 1.  Download the zipped copy of Excavator from GitHub <br>
 2.  Add a new Class Library that extends the base ExcavatorComponent class<br>
 3.  Add a reference to Excavator (from Solutions\Projects)<br>
-4.  Add references to all the packages inside Excavator\Packages and set their "Copy Local" property to false.*<br>
+4.  Add references to the packages inside Excavator\packages\Embeds and set their "Copy Local" property to false.*<br>
 5.  Set the FullName of your specific database model <br>
-6.  Implement the TransformData method inside your new ExcavatorComponent<br>
-7.  Build or copy the compiled library (.dll) to Excavator\bin or Excavator\Extensions<br>
-8.  Run Excavator and select your new database component from the list on the first page<br>
+6.  Implement the LoadSchema method (a template already exists for MDF files)<br>
+7.  Implement the TransformData method inside your new ExcavatorComponent<br>
+8.  Build or copy the compiled library (.dll) to Excavator\bin<br>
+9.  Run Excavator and select your new database component from the list on the first page<br>
 
-\* If you use additional references, set "Copy Local" to true.  Copy the additional .dll to your server for Excavator to run.
+\*  All the packages in Excavator\packages\Embeds are included in Excavator.exe. If you use additional references, set "Copy Local" to true.  You will need to add the Costura.Fody (Nuget Package) to your project to make sure the references get compiled inside your DLL.
 
 =========
 Licensed under the Apache License, Version 2.0. You may not use this application except in compliance with the License.
