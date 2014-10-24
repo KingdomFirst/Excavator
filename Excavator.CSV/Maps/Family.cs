@@ -114,7 +114,7 @@ namespace Excavator.CSV
                         secondaryAddress.Name = currentFamilyGroup.Name + " Work";
 
                         var secondaryLocation = new GroupLocation();
-                        secondaryLocation.LocationId = primaryAddress.Id;
+                        secondaryLocation.LocationId = secondaryAddress.Id;
                         secondaryLocation.IsMailingLocation = true;
                         secondaryLocation.IsMappedLocation = true;
                         secondaryLocation.GroupLocationTypeValueId = workLocationTypeId;
