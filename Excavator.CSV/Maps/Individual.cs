@@ -100,6 +100,7 @@ namespace Excavator.CSV
 
             // Text field type id
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ), lookupContext ).Id;
+            int dateFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.DATE ), lookupContext ).Id;
 
             // Attribute entity type id
             int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
@@ -155,6 +156,30 @@ namespace Excavator.CSV
             }
 
             var formerNameAttribute = AttributeCache.Read( formerName.Id, lookupContext );
+
+            // Add a Salvation Date attribute if it doesn't exist
+            var salvationDate = personAttributes.FirstOrDefault( a => a.Key == "SalvationDate" );
+            if ( salvationDate == null )
+            {
+                salvationDate = new Rock.Model.Attribute();
+                salvationDate.Key = "SalvationDate";
+                salvationDate.Name = "Salvation Date";
+                salvationDate.FieldTypeId = dateFieldTypeId;
+                salvationDate.EntityTypeId = PersonEntityTypeId;
+                salvationDate.EntityTypeQualifierValue = string.Empty;
+                salvationDate.EntityTypeQualifierColumn = string.Empty;
+                salvationDate.Description = "The salvation date for this person";
+                salvationDate.DefaultValue = string.Empty;
+                salvationDate.IsMultiValue = false;
+                salvationDate.IsRequired = false;
+                salvationDate.Order = 0;
+
+                lookupContext.Attributes.Add( salvationDate );
+                salvationDate.Categories.Add( visitInfoCategory );
+                lookupContext.SaveChanges( true );
+            }
+
+            var salvationDateAttribute = AttributeCache.Read( salvationDate.Id, lookupContext );
 
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
@@ -235,6 +260,13 @@ namespace Excavator.CSV
                     person.NickName = row[NickName] ?? firstName;
                     person.MiddleName = row[MiddleName];
                     person.LastName = row[LastName];
+
+                    DateTime createdDateValue;
+                    if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
+                    {
+                        person.CreatedDateTime = createdDateValue;
+                        person.ModifiedDateTime = createdDateValue;
+                    }
 
                     #region Assign values to the Person record
 
@@ -324,11 +356,6 @@ namespace Excavator.CSV
                         {
                             person.ConnectionStatusValueId = visitorConnectionStatusId;
                         }
-                        else if ( connectionStatus == "Deceased" )
-                        {
-                            person.IsDeceased = true;
-                            person.RecordStatusReasonValueId = recordStatusDeceasedId;
-                        }
                         else
                         {
                             // look for user-defined connection type or default to Attendee
@@ -343,18 +370,35 @@ namespace Excavator.CSV
                     string recordStatus = row[RecordStatus];
                     if ( !string.IsNullOrWhiteSpace( recordStatus ) )
                     {
-                        switch ( recordStatus.Trim() )
+                        switch ( recordStatus.Trim().ToLower() )
                         {
-                            case "Active":
+                            case "active":
                                 person.RecordStatusValueId = recordStatusActiveId;
                                 break;
 
-                            case "Inactive":
+                            case "inactive":
                                 person.RecordStatusValueId = recordStatusInactiveId;
                                 break;
 
                             default:
                                 person.RecordStatusValueId = recordStatusPendingId;
+                                break;
+                        }
+                    }
+
+                    string isDeceasedValue = row[IsDeceased];
+                    if ( !string.IsNullOrWhiteSpace( isDeceasedValue ) )
+                    {
+                        switch ( isDeceasedValue.Trim().ToLower() )
+                        {
+                            case "y":
+                            case "yes":
+                                person.IsDeceased = true;
+                                person.RecordStatusReasonValueId = recordStatusDeceasedId;
+                                break;
+
+                            default:
+                                person.IsDeceased = false;
                                 break;
                         }
                     }
@@ -473,6 +517,12 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[MembershipDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out membershipDateValue ) )
                     {
                         AddPersonAttribute( membershipDateAttribute, person, membershipDateValue.ToString() );
+                    }
+
+                    DateTime salvationDateValue;
+                    if ( DateTime.TryParseExact( row[SalvationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out salvationDateValue ) )
+                    {
+                        AddPersonAttribute( salvationDateAttribute, person, salvationDateValue.ToString() );
                     }
 
                     DateTime baptismDateValue;
@@ -683,7 +733,8 @@ namespace Excavator.CSV
                                     person.Aliases.Add( new PersonAlias
                                     {
                                         AliasPersonId = person.Id,
-                                        AliasPersonGuid = person.Guid
+                                        AliasPersonGuid = person.Guid,
+                                        ForeignId = person.ForeignId
                                     } );
                                 }
 
