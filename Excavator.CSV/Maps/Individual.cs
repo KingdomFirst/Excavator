@@ -268,6 +268,11 @@ namespace Excavator.CSV
                         person.CreatedDateTime = createdDateValue;
                         person.ModifiedDateTime = importDate;
                     }
+                    else
+                    {
+                        person.CreatedDateTime = importDate;
+                        person.ModifiedDateTime = importDate;
+                    }
 
                     #region Assign values to the Person record
 
@@ -390,6 +395,7 @@ namespace Excavator.CSV
                             case "yes":
                                 person.IsDeceased = true;
                                 person.RecordStatusReasonValueId = recordStatusDeceasedId;
+                                person.RecordStatusValueId = recordStatusInactiveId;
                                 break;
 
                             default:
@@ -605,7 +611,7 @@ namespace Excavator.CSV
                         string newAttributeValue = row[attributePair.Key];
                         if ( !string.IsNullOrWhiteSpace( newAttributeValue ) )
                         {
-                            int? newAttributeId = personAttributes.Where( a => a.Key == attributePair.Value )
+                            int? newAttributeId = personAttributes.Where( a => a.Key == attributePair.Value.RemoveWhitespace() )
                                 .Select( a => (int?)a.Id ).FirstOrDefault();
                             if ( newAttributeId != null )
                             {
