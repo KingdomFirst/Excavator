@@ -3,7 +3,7 @@
 Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)
 
 
-![](https://raw.githubusercontent.com/wiki/newspring/excavator/excavator.jpg)
+![](https://raw.githubusercontent.com/wiki/newspring/excavator/images/excavator.jpg)
 
 Excavator converts data into [Rock RMS](http://www.rockrms.com/) from other church management systems.
 
