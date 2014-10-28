@@ -30,9 +30,10 @@ namespace Excavator.CSV
             int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workLocationTypeId = DefinedValueCache.Read( new Guid( "E071472A-F805-4FC4-917A-D5E3C095C35C" ) ).Id;
 
+            var newGroupLocations = new Dictionary<GroupLocation, string>();
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
-            var newGroupLocations = new Dictionary<GroupLocation, string>();
+            var updatedFamilyList = new List<Group>();
 
             var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
 
@@ -162,10 +163,11 @@ namespace Excavator.CSV
             if ( newGroupLocations.Any() )
             {
                 SaveFamilies( newFamilyList, newGroupLocations );
+
                 lookupContext.SaveChanges();
             }
 
-            ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added.", completed ) );
+            ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added or updated.", completed ) );
             return completed;
         }
 

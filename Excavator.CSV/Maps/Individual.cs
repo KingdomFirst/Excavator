@@ -245,6 +245,7 @@ namespace Excavator.CSV
                         currentFamilyGroup.Name = row[FamilyName];
                         currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
+                        newFamilyList.Add( currentFamilyGroup );
                     }
                 }
 
@@ -252,6 +253,8 @@ namespace Excavator.CSV
                 var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignId == rowPersonId ) );
                 if ( !personExists )
                 {
+                    #region person create
+
                     var person = new Person();
                     person.ForeignId = rowPersonId;
                     person.SystemNote = string.Format( "Imported via Excavator on {0}", importDate.ToString() );
@@ -274,8 +277,6 @@ namespace Excavator.CSV
                         person.CreatedDateTime = importDate;
                         person.ModifiedDateTime = importDate;
                     }
-
-                    #region Assign values to the Person record
 
                     DateTime birthDate;
                     if ( DateTime.TryParseExact( row[DateOfBirth], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate ) )
@@ -652,7 +653,7 @@ namespace Excavator.CSV
                         newNoteList.Add( newNote );
                     }
 
-                    #endregion
+                    #endregion person create
 
                     var groupMember = new GroupMember();
                     groupMember.Person = person;
@@ -662,7 +663,6 @@ namespace Excavator.CSV
                     if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
                     {
                         currentFamilyGroup.Members.Add( groupMember );
-                        newFamilyList.Add( currentFamilyGroup );
                         completed++;
                     }
                     else
