@@ -370,8 +370,8 @@ namespace Excavator.CSV
         private const int IsEmailActive = 22;
         private const int AllowBulkEmail = 23;
         private const int Gender = 24;
-        private const int Age = 25;
-        private const int DateOfBirth = 26;
+        private const int DateOfBirth = 25;
+        private const int GraduationDate = 26;
         private const int MembershipDate = 27;
         private const int SalvationDate = 28;
         private const int BaptismDate = 29;

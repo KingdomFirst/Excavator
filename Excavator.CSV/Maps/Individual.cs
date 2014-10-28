@@ -282,6 +282,12 @@ namespace Excavator.CSV
                         person.BirthDate = birthDate;
                     }
 
+                    DateTime graduationDate;
+                    if ( DateTime.TryParseExact( row[GraduationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out graduationDate ) )
+                    {
+                        person.GraduationDate = graduationDate;
+                    }
+
                     string gender = row[Gender];
                     if ( gender != null )
                     {
