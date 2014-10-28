@@ -183,13 +183,14 @@ namespace Excavator.CSV
 
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
-            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > Twitter ).ToDictionary( f => f.index, f => f.node.Name );
+            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > Twitter )
+                .ToDictionary( f => f.index, f => f.node.Name.RemoveWhitespace() );
 
-            // Add any if they don't already exist
+            // Add any attributes if they don't already exist
             if ( customAttributes.Any() )
             {
                 var newAttributes = new List<Rock.Model.Attribute>();
-                foreach ( var newAttributePair in customAttributes.Where( ca => !personAttributes.Any( a => a.Name == ca.Value ) ) )
+                foreach ( var newAttributePair in customAttributes.Where( ca => !personAttributes.Any( a => a.Key == ca.Value ) ) )
                 {
                     var newAttribute = new Rock.Model.Attribute();
                     newAttribute.Name = newAttributePair.Value;
