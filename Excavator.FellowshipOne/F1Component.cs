@@ -245,7 +245,7 @@ namespace Excavator.F1
                 ReportProgress( 0, "No imported people exist. Please include the Individual_Household table during the import." );
             }
 
-            return 0; // return total number of rows imported?
+            return 100; // return total number of rows imported?
         }
 
         /// <summary>
