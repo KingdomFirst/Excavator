@@ -183,13 +183,14 @@ namespace Excavator.CSV
 
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
-            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > Twitter ).ToDictionary( f => f.index, f => f.node.Name );
+            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > Twitter )
+                .ToDictionary( f => f.index, f => f.node.Name.RemoveWhitespace() );
 
-            // Add any if they don't already exist
+            // Add any attributes if they don't already exist
             if ( customAttributes.Any() )
             {
                 var newAttributes = new List<Rock.Model.Attribute>();
-                foreach ( var newAttributePair in customAttributes.Where( ca => !personAttributes.Any( a => a.Name == ca.Value ) ) )
+                foreach ( var newAttributePair in customAttributes.Where( ca => !personAttributes.Any( a => a.Key == ca.Value ) ) )
                 {
                     var newAttribute = new Rock.Model.Attribute();
                     newAttribute.Name = newAttributePair.Value;
@@ -244,6 +245,7 @@ namespace Excavator.CSV
                         currentFamilyGroup.Name = row[FamilyName];
                         currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
+                        newFamilyList.Add( currentFamilyGroup );
                     }
                 }
 
@@ -251,6 +253,8 @@ namespace Excavator.CSV
                 var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignId == rowPersonId ) );
                 if ( !personExists )
                 {
+                    #region person create
+
                     var person = new Person();
                     person.ForeignId = rowPersonId;
                     person.SystemNote = string.Format( "Imported via Excavator on {0}", importDate.ToString() );
@@ -274,12 +278,16 @@ namespace Excavator.CSV
                         person.ModifiedDateTime = importDate;
                     }
 
-                    #region Assign values to the Person record
-
                     DateTime birthDate;
                     if ( DateTime.TryParseExact( row[DateOfBirth], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate ) )
                     {
                         person.BirthDate = birthDate;
+                    }
+
+                    DateTime graduationDate;
+                    if ( DateTime.TryParseExact( row[GraduationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out graduationDate ) )
+                    {
+                        person.GraduationDate = graduationDate;
                     }
 
                     string gender = row[Gender];
@@ -645,7 +653,7 @@ namespace Excavator.CSV
                         newNoteList.Add( newNote );
                     }
 
-                    #endregion
+                    #endregion person create
 
                     var groupMember = new GroupMember();
                     groupMember.Person = person;
@@ -655,7 +663,6 @@ namespace Excavator.CSV
                     if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
                     {
                         currentFamilyGroup.Members.Add( groupMember );
-                        newFamilyList.Add( currentFamilyGroup );
                         completed++;
                     }
                     else

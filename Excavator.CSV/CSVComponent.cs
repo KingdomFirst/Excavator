@@ -253,7 +253,8 @@ namespace Excavator.CSV
 
             ReportProgress( 0, "Checking for existing people..." );
 
-            ImportedPeople = new GroupService( lookupContext ).GetByGroupTypeId( FamilyGroupTypeId ).Where( n => n.ForeignId != null ).ToList();
+            // Don't track groups in this context when we just use it as a reference
+            ImportedPeople = lookupContext.Groups.AsNoTracking().Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignId != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 
@@ -370,8 +371,8 @@ namespace Excavator.CSV
         private const int IsEmailActive = 22;
         private const int AllowBulkEmail = 23;
         private const int Gender = 24;
-        private const int Age = 25;
-        private const int DateOfBirth = 26;
+        private const int DateOfBirth = 25;
+        private const int GraduationDate = 26;
         private const int MembershipDate = 27;
         private const int SalvationDate = 28;
         private const int BaptismDate = 29;
