@@ -40,6 +40,8 @@ namespace Excavator.CSV
             string currentFamilyId = string.Empty;
             var importDate = DateTime.Now;
             int completed = 0;
+            int rows_checked = 0;
+            int block_counter = 0;
 
             ReportProgress( 0, string.Format( "Starting family import ({0:N0} already exist).", numImportedFamilies ) );
 
@@ -47,8 +49,12 @@ namespace Excavator.CSV
             // Uses a look-ahead enumerator: this call will move to the next record immediately
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
+                rows_checked++;
+                
                 string rowFamilyId = row[FamilyId];
                 string rowFamilyName = row[FamilyName];
+
+                ReportProgress( 0, "Importing family row " + (string.Format(" {0:N0} - ", rows_checked)) + rowFamilyName + " - FamilyId: " + rowFamilyId );
 
                 if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
                 {
@@ -140,21 +146,31 @@ namespace Excavator.CSV
                     }
 
                     completed++;
-                    if ( completed % ( ReportingNumber * 10 ) < 1 )
-                    {
-                        ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
-                    }
-                    else if ( completed % ReportingNumber < 1 )
-                    {
-                        SaveFamilies( newFamilyList, newGroupLocations );
-                        ReportPartialProgress();
 
+                    block_counter++;    
+                    if ( block_counter < ReportingNumber )
+                    {
+                        // ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
+                    }
+                    else 
+                    {
+
+                        ReportProgress(0, "...Saving...");
+                        SaveFamilies( newFamilyList, newGroupLocations );
+
+                        //ReportPartialProgress();
+                        ReportProgress(0, string.Format("...Saved or updated {0:N0} families.", completed));
+                        ReportProgress(0, " ");
+                        
                         // Reset lookup context
                         lookupContext.SaveChanges();
                         lookupContext = new RockContext();
                         locationService = new LocationService( lookupContext );
                         newFamilyList.Clear();
                         newGroupLocations.Clear();
+
+                        block_counter = 0;
+
                     }
                 }
             }
@@ -162,12 +178,20 @@ namespace Excavator.CSV
             // Check to see if any rows didn't get saved to the database
             if ( newGroupLocations.Any() )
             {
-                SaveFamilies( newFamilyList, newGroupLocations );
+                ReportProgress( 0, "...Saving..." );
+                SaveFamilies(newFamilyList, newGroupLocations);
 
                 lookupContext.SaveChanges();
+
+                ReportProgress(0, string.Format("...Saved or updated {0:N0} families.", completed));
+                ReportProgress(0, " ");
+
             }
 
             ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added or updated.", completed ) );
+            ReportProgress( 0, string.Format( "Finished family import: {0:N0} rows processed. ", rows_checked));
+            ReportProgress( 0, " " );
+
             return completed;
         }
 
