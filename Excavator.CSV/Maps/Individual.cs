@@ -222,11 +222,11 @@ namespace Excavator.CSV
             var importDate = DateTime.Now;
             DateTime today = DateTime.Today;
 
-            // rows_imported: the number of rows imported (including those not processed)
+            // rows_checked: the number of rows imported (including those not processed)
             // completed: the number of Individuals imported
             // block_counter: the number of rows processed in this reporting block
-            // save_block: a flag to indicate when a block is ready to be saved
-            // rowFamilyId_current and rowFamilId_last: used to push save to occur only on family change
+            // save_block: a flag to indicate when a block or imported rows is ready to be saved
+            // rowFamilyId_current and rowFamilId_last: used to check that saves only occur between family group changes
             int rows_checked = 0;
             int completed = 0;
             int block_counter = 0;
@@ -254,14 +254,14 @@ namespace Excavator.CSV
                 string rowLastName = row[LastName];
                 string rowName = rowFirstName + " " + rowLastName;
 
-                // Track the last rowFamilyId - save later only if these have changed  
+                // Track the last rowFamilyId - save only if the the family group is changing   
                 rowFamilyId_last = rowFamilyId_current;
                 rowFamilyId_current = rowFamilyId;
                 
                 // Save if the 'save_block' flag is true (we reached the end of a reporting block) 
-                // and the rowFamilyId has changed (only save between family group changes).
+                // and the family group (rowFamilyId) has changed (only save between family group changes).
                 // (This could be one or more rows after the completion of a reporting block.)
-                // This gets around a problem with SaveIndividuals when the family spans reporting blocks.
+                // This gets around a problem with SaveIndividuals when the family spans exact ReportingNumber blocks.
                 if ( save_block == 1 ) 
                 {
                     if ( rowFamilyId_current != rowFamilyId_last )
@@ -273,7 +273,7 @@ namespace Excavator.CSV
                         newFamilyList.Clear();
                         newVisitorList.Clear();
                         newNoteList.Clear();
-                        // Reset save_block ready for next reporting block
+                        
                         save_block = 0;
 
                         // ... and report progress
@@ -285,7 +285,7 @@ namespace Excavator.CSV
                 }
 
                 // Report which row we're importing
-                ReportProgress(1, "Importing individual row " + (string.Format(" {0:N0} - ", rows_checked)) + rowName + " - FamilyId: " + rowFamilyId + ", PersonId: " + rowPersonId);
+                ReportProgress( 0, "Importing individual row " + (string.Format(" {0:N0} - ", rows_checked)) + rowName + " - FamilyId: " + rowFamilyId + ", PersonId: " + rowPersonId);
 
                 // If there is a Family ID, and it is not the same as the one just processed...
                 if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
@@ -328,7 +328,7 @@ namespace Excavator.CSV
                     person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     string firstName = row[FirstName];
                     person.FirstName = firstName;
-                    //person.NickName = row[NickName] ?? firstName;
+                    //person.NickName = row[NickName] ?? firstName;  - doesn't work
                     if ( row[NickName] == "" )
                         person.NickName = firstName;
                     else
@@ -422,7 +422,6 @@ namespace Excavator.CSV
                             isFamilyRelationship = false;
                         }
 
-                        //if ( familyRole == "Child" || personAge < 18 )
                         if ( familyRole == "Child" || person.Age < 18 )
                         {
                             groupRoleId = childRoleId;
@@ -756,9 +755,6 @@ namespace Excavator.CSV
                     }
                     
                     // Report progress in blocks of ReportingNumber
-                    // - completed:a running count of how many we've processed so far
-                    // - ReportingNumer: the reporting block size
-                    
                     block_counter++;
                     if ( block_counter < ReportingNumber )
                     {
@@ -768,12 +764,10 @@ namespace Excavator.CSV
                     else 
                     {
                         // We've reached the end of a reporting block, so...
-                        
                         // Turn on the save flag and reset the block_counter.  
                         // This de-links saving from the completion of a reporting block.
                         save_block = 1;
                         block_counter = 0;
-
                     }
 
                     // Saving code taken from here and moved before processing of current row

@@ -39,8 +39,11 @@ namespace Excavator.CSV
 
             string currentFamilyId = string.Empty;
             var importDate = DateTime.Now;
+            // The number of imported families
             int completed = 0;
+            // The number of rows checked on import
             int rows_checked = 0;
+            // A counter within the ReportingNumber limit for block reporting progress
             int block_counter = 0;
 
             ReportProgress( 0, string.Format( "Starting family import ({0:N0} already exist).", numImportedFamilies ) );
@@ -147,6 +150,7 @@ namespace Excavator.CSV
 
                     completed++;
 
+                    // Save in blocks of ReportingNumber records
                     block_counter++;    
                     if ( block_counter < ReportingNumber )
                     {
@@ -158,10 +162,6 @@ namespace Excavator.CSV
                         ReportProgress(0, "...Saving...");
                         SaveFamilies( newFamilyList, newGroupLocations );
 
-                        //ReportPartialProgress();
-                        ReportProgress(0, string.Format("...Saved or updated {0:N0} families.", completed));
-                        ReportProgress(0, " ");
-                        
                         // Reset lookup context
                         lookupContext.SaveChanges();
                         lookupContext = new RockContext();
@@ -170,6 +170,10 @@ namespace Excavator.CSV
                         newGroupLocations.Clear();
 
                         block_counter = 0;
+
+                        //ReportPartialProgress();
+                        ReportProgress(0, string.Format("...Saved or updated {0:N0} families.", completed));
+                        ReportProgress(0, " ");
 
                     }
                 }
