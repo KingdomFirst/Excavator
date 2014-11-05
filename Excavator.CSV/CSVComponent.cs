@@ -100,7 +100,8 @@ namespace Excavator.CSV
         /// </summary>
         private List<Campus> CampusList;
 
-        // Report progress when a multiple of this number has been imported
+        // Report progress and save when a multiple of this number has been imported
+        // TODO: Enhancement - read this from the config file to aid in debugging 
         private static int ReportingNumber = 50;
 
         #endregion
@@ -204,6 +205,7 @@ namespace Excavator.CSV
             List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
             // Person data is important, so load it first
+            
             if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
             {
                 selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ).ToList();
@@ -221,7 +223,8 @@ namespace Excavator.CSV
                 }
             } //read all files
 
-            ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", completed ) );
+            ReportProgress( 100, string.Format( "Completed import: {0:N0} rows processed.", completed ) );
+
             return completed;
         }
 
@@ -251,7 +254,8 @@ namespace Excavator.CSV
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            ReportProgress( 0, "Checking for existing people..." );
+            // ReportProgress( 0, "Checking for existing people..." );
+            ReportProgress(0, "Checking your database for previously imported people...");
 
             // Don't track groups in this context when we just use it as a reference
             ImportedPeople = lookupContext.Groups.AsNoTracking().Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignId != null ).ToList();
@@ -338,12 +342,15 @@ namespace Excavator.CSV
 
         #region Individual Constants
 
-        /* this is based on the definition of the csv format for the individual.csv file
-         FamilyId,FamilyName,MemberId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
-         * MaritalStatus,ConnectionStatus,RecordStatus,HomePhone,MobilePhone,WorkPhone,Email,SecondaryEmail,
-         * IsEmailActive,SMS Allowed?,Bulk Email Allowed?,Gender,Age,DateOfBirth,MembershipDate,
-         * SalvationDate,BaptismDate,AnniversaryDate,FirstVisit,LastUpdated,PreviousChurch,Occupation,
+        /* 
+         this is based on the definition of the csv format for the individual.csv file
+         * FamilyId,FamilyName,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
+         * MaritalStatus,ConnectionStatus,RecordStatus,IsDeceased,CreatedDate,HomePhone,MobilePhone,WorkPhone,
+         * Allow SMS?,Email,SecondaryEmail,IsEmailActive,Bulk Email Allowed?,
+         * Gender,DateOfBirth,GraduationDate,MembershipDate,SalvationDate,BaptismDate,
+         * AnniversaryDate,FirstVisit,PreviousChurch,Occupation,
          * Employer,School,General Note,MedicalNote,Security Note
+         * Facebook,Instagram,Twitter
          */
 
         private const int FamilyId = 0;
@@ -396,7 +403,8 @@ namespace Excavator.CSV
         /*
          this is based on the definition for family.csv import file.
          * FamilyId,FamilyName,LastName,Campus,Address,Address2,City,State,ZipCode,Country,
-         * SecondaryAddress,SecondaryAddress2,SecondaryCity,SecondaryState,SecondaryZip,SecondaryCountry
+         * SecondaryAddress,SecondaryAddress2,SecondaryCity,SecondaryState,SecondaryZip,SecondaryCountry,
+         * CreatedDate
          */
 
         // First two columns are already numbered from Individuals file
