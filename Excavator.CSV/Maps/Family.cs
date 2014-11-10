@@ -35,7 +35,7 @@ namespace Excavator.CSV
             var newFamilyList = new List<Group>();
             var updatedFamilyList = new List<Group>();
 
-            var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
+            var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             string currentFamilyId = string.Empty;
             var importDate = DateTime.Now;
