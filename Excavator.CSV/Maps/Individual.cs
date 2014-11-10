@@ -213,42 +213,108 @@ namespace Excavator.CSV
                 personAttributes.AddRange( newAttributes );
             }
 
-            var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
+            var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
             var newNoteList = new List<Note>();
             var importDate = DateTime.Now;
+            DateTime today = DateTime.Today;
 
+            // rows_checked: the number of rows imported (including those not processed)
+            // completed: the number of Individuals imported
+            // block_counter: the number of rows processed in this reporting block
+            // save_block: a flag to indicate when a block or imported rows is ready to be saved
+            // rowFamilyId_current and rowFamilId_last: used to check that saves only occur between family group changes
+            int rows_checked = 0;
             int completed = 0;
-            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignId != null ) ) ) );
+            int block_counter = 0;
+            int save_block = 0 ;
+            string rowFamilyId_current = "";
+            string rowFamilyId_last = "";
+
+            //ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignId != null ) ) ) );
+            ReportProgress(0, string.Format("There are ({0:N0} individuals previously imported.).", ImportedPeople.Count(p => p.Members.Any(m => m.Person.ForeignId != null))));
+            ReportProgress(0, "Starting Individual import...");
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
+                rows_checked++;
+                               
                 int groupRoleId = adultRoleId;
                 bool isFamilyRelationship = true;
 
                 string rowFamilyId = row[FamilyId];
                 string rowPersonId = row[PersonId];
                 string rowFamilyName = row[FamilyName];
+                string rowFirstName = row[FirstName];
+                string rowLastName = row[LastName];
+                string rowName = rowFirstName + " " + rowLastName;
 
+                // Track the last rowFamilyId - save only if the the family group is changing   
+                rowFamilyId_last = rowFamilyId_current;
+                rowFamilyId_current = rowFamilyId;
+                
+                // Save if the 'save_block' flag is true (we reached the end of a reporting block) 
+                // and the family group (rowFamilyId) has changed (only save between family group changes).
+                // (This could be one or more rows after the completion of a reporting block.)
+                // This gets around a problem with SaveIndividuals when the family spans exact ReportingNumber blocks.
+                if ( save_block == 1 ) 
+                {
+                    if ( rowFamilyId_current != rowFamilyId_last )
+                    {
+                        ReportProgress(0, "...Saving...");
+
+                        // Save the block of records, and reset for next block
+                        SaveIndividuals(newFamilyList, newVisitorList, newNoteList);
+                        newFamilyList.Clear();
+                        newVisitorList.Clear();
+                        newNoteList.Clear();
+                        
+                        save_block = 0;
+
+                        // ... and report progress
+                        ReportProgress(0, string.Format("...Saved {0:N0} new people so far.", completed));
+                        ReportProgress(0, " ");
+
+                    }
+                // END if ( save_block == 1 )
+                }
+
+                // Report which row we're importing
+                ReportProgress( 0, "Importing individual row " + (string.Format(" {0:N0} - ", rows_checked)) + rowName + " - FamilyId: " + rowFamilyId + ", PersonId: " + rowPersonId);
+
+                // If there is a Family ID, and it is not the same as the one just processed...
                 if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
                 {
+                    // Verify this family isn't already in our data
                     currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
                     if ( currentFamilyGroup == null )
                     {
+                        // Save this families details if this is the first time we've encountered them
                         currentFamilyGroup = new Group();
                         currentFamilyGroup.ForeignId = rowFamilyId;
                         currentFamilyGroup.Name = row[FamilyName];
                         currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
-                        newFamilyList.Add( currentFamilyGroup );
-                    }
-                }
 
+                        newFamilyList.Add( currentFamilyGroup );
+            
+                        //ReportProgress( 0, string.Format( "Added FamilyGroup " + rowFamilyId + " - ({0:N0} ).", completed ) );
+                    
+                    // END if ( currentFamilyGroup == null )
+                    }
+                    else
+                    {
+                        ReportProgress( 0, "- FamilyId " + rowFamilyId + " already in database." );
+                    }
+
+                // END if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
+                }
+                
                 // Verify this person isn't already in our data
                 var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignId == rowPersonId ) );
                 if ( !personExists )
@@ -262,7 +328,11 @@ namespace Excavator.CSV
                     person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     string firstName = row[FirstName];
                     person.FirstName = firstName;
-                    person.NickName = row[NickName] ?? firstName;
+                    //person.NickName = row[NickName] ?? firstName;  - doesn't work
+                    if ( row[NickName] == "" )
+                        person.NickName = firstName;
+                    else
+                        person.NickName = row[NickName];
                     person.MiddleName = row[MiddleName];
                     person.LastName = row[LastName];
 
@@ -281,7 +351,12 @@ namespace Excavator.CSV
                     DateTime birthDate;
                     if ( DateTime.TryParseExact( row[DateOfBirth], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate ) )
                     {
-                        person.BirthDate = birthDate;
+                      person.BirthDate = birthDate;
+                        //DateTime today = DateTime.Today;
+                        // person.Age no longer used - replaced with calculation based on birth date
+                        //int personAge = today.Year - person.BirthDate;
+                        //if (person.BirthDate > today.AddYears(-personAge)) personAge--;
+
                     }
 
                     DateTime graduationDate;
@@ -508,7 +583,7 @@ namespace Excavator.CSV
                             break;
                     }
 
-                    string primaryEmail = row[Email];
+                    string primaryEmail = row[Email].Trim();
                     if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
                     {
                         person.Email = primaryEmail;
@@ -516,7 +591,7 @@ namespace Excavator.CSV
                         person.EmailPreference = emailPreference;
                     }
 
-                    string secondaryEmailValue = row[SecondaryEmail];
+                    string secondaryEmailValue = row[SecondaryEmail].Trim();
                     if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) )
                     {
                         AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
@@ -676,29 +751,54 @@ namespace Excavator.CSV
                         completed++;
 
                         newVisitorList.Add( visitorGroup );
+                                                                   
+                    }
+                    
+                    // Report progress in blocks of ReportingNumber
+                    block_counter++;
+                    if ( block_counter < ReportingNumber )
+                    {
+                        // We're part way through a reporting block - so report partial progress
+                        //ReportProgress( 2, string.Format( "--> {0:N0} people imported.", completed ) );
+                    }
+                    else 
+                    {
+                        // We've reached the end of a reporting block, so...
+                        // Turn on the save flag and reset the block_counter.  
+                        // This de-links saving from the completion of a reporting block.
+                        save_block = 1;
+                        block_counter = 0;
                     }
 
-                    if ( completed % ( ReportingNumber * 10 ) < 1 )
-                    {
-                        ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
-                    }
-                    else if ( completed % ReportingNumber < 1 )
-                    {
-                        SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
-                        ReportPartialProgress();
-                        newFamilyList.Clear();
-                        newVisitorList.Clear();
-                        newNoteList.Clear();
-                    }
+                    // Saving code taken from here and moved before processing of current row
+
+                // END if ( !personExists )
                 }
+                else
+                {
+                     ReportProgress( 0, "- IndividualId " + rowPersonId + " already in database." );
+                }
+
+            // END while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             }
 
+            // Clean up if anything is still unsaved because we finished part way through a reporting block
             if ( newFamilyList.Any() )
             {
+                
+                ReportProgress(0, "...Saving..." );
                 SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
+
+                ReportProgress( 0, string.Format("...Saved {0:N0} new people.", completed));
+                ReportProgress( 0, " ");
+
             }
 
-            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people added.", completed ) );
+            // Report number completed at finish
+            ReportProgress( 0, string.Format( "Finished individual import: saved {0:N0} new people.", completed ) );
+            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} rows processed. ", rows_checked ) );
+            ReportProgress( 0, " " );
+
             return completed;
         }
 
@@ -709,6 +809,7 @@ namespace Excavator.CSV
         /// <param name="visitorList">The optional visitor list.</param>
         private void SaveIndividuals( List<Group> newFamilyList, List<Group> visitorList = null, List<Note> newNoteList = null )
         {
+
             if ( newFamilyList.Any() )
             {
                 var rockContext = new RockContext();
@@ -797,6 +898,7 @@ namespace Excavator.CSV
                                             invitedByMember.GroupRoleId = invitedByRoleId;
                                             ownerGroup.Members.Add( invitedByMember );
 
+                                            //if (personAge < 18 && familyMember.Person.Age > 15)
                                             if ( person.Age < 18 && familyMember.Person.Age > 15 )
                                             {
                                                 // Add visitor allowCheckInBy relationship
@@ -818,6 +920,7 @@ namespace Excavator.CSV
                                             inviteeMember.GroupRoleId = inviteeRoleId;
                                             ownerGroup.Members.Add( inviteeMember );
 
+                                            //if (visitor.Person.Age < 18 && personAge > 15)
                                             if ( visitor.Person.Age < 18 && person.Age > 15 )
                                             {
                                                 // Add canCheckIn visitor relationship
