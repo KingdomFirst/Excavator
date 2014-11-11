@@ -80,6 +80,7 @@ namespace Excavator.CSV
                             familyCampus.Name = campusName;
                             lookupContext.Campuses.Add( familyCampus );
                             lookupContext.SaveChanges( true );
+                            CampusList.Add( familyCampus );
                         }
 
                         currentFamilyGroup.CampusId = familyCampus.Id;
