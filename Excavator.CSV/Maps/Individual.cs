@@ -213,7 +213,7 @@ namespace Excavator.CSV
                 personAttributes.AddRange( newAttributes );
             }
 
-            var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
+            var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
@@ -509,7 +509,7 @@ namespace Excavator.CSV
                     }
 
                     string primaryEmail = row[Email];
-                    if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
+                    if ( !string.IsNullOrWhiteSpace( primaryEmail ) && primaryEmail.IsValidEmail() )
                     {
                         person.Email = primaryEmail;
                         person.IsEmailActive = isEmailActive;
@@ -517,7 +517,7 @@ namespace Excavator.CSV
                     }
 
                     string secondaryEmailValue = row[SecondaryEmail];
-                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) )
+                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) && secondaryEmailValue.IsValidEmail() )
                     {
                         AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
                     }

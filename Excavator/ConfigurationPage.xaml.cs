@@ -45,6 +45,9 @@ namespace Excavator
                 txtImportUser.Text = ConfigurationManager.AppSettings["ImportUser"];
                 txtPasswordKey.Text = ConfigurationManager.AppSettings["PasswordKey"];
                 txtDataEncryption.Text = ConfigurationManager.AppSettings["DataEncryptionKey"];
+
+                int? reportingNum = ConfigurationManager.AppSettings["ReportingNumber"].AsType<int?>();
+                excavator.ReportingNumber = reportingNum ?? 100;
             }
             else
             {

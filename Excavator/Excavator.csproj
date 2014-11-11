@@ -114,6 +114,9 @@
       <HintPath>bin\Microsoft.SqlServer.SqlEnum.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Embeds\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="OrcaMDF.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Embeds\OrcaMDF.Core.dll</HintPath>

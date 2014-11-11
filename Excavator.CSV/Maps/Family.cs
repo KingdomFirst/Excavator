@@ -35,7 +35,7 @@ namespace Excavator.CSV
             var newFamilyList = new List<Group>();
             var updatedFamilyList = new List<Group>();
 
-            var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
+            var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             string currentFamilyId = string.Empty;
             var importDate = DateTime.Now;
@@ -80,6 +80,7 @@ namespace Excavator.CSV
                             familyCampus.Name = campusName;
                             lookupContext.Campuses.Add( familyCampus );
                             lookupContext.SaveChanges( true );
+                            CampusList.Add( familyCampus );
                         }
 
                         currentFamilyGroup.CampusId = familyCampus.Id;
@@ -97,8 +98,6 @@ namespace Excavator.CSV
                     Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
                     if ( primaryAddress != null )
                     {
-                        primaryAddress.Name = currentFamilyGroup.Name + " Home";
-
                         var primaryLocation = new GroupLocation();
                         primaryLocation.LocationId = primaryAddress.Id;
                         primaryLocation.IsMailingLocation = true;
@@ -117,8 +116,6 @@ namespace Excavator.CSV
                     Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
                     if ( secondaryAddress != null )
                     {
-                        secondaryAddress.Name = currentFamilyGroup.Name + " Work";
-
                         var secondaryLocation = new GroupLocation();
                         secondaryLocation.LocationId = secondaryAddress.Id;
                         secondaryLocation.IsMailingLocation = true;
