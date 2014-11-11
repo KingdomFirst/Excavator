@@ -213,7 +213,7 @@ namespace Excavator.CSV
                 personAttributes.AddRange( newAttributes );
             }
 
-            var dateFormats = new[] { "YYYY-MM-DD", "MM/dd/yyyy", "MM/dd/yy" };
+            var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
