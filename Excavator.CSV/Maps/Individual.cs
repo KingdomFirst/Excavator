@@ -525,19 +525,19 @@ namespace Excavator.CSV
                     DateTime membershipDateValue;
                     if ( DateTime.TryParseExact( row[MembershipDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out membershipDateValue ) )
                     {
-                        AddPersonAttribute( membershipDateAttribute, person, membershipDateValue.ToString() );
+                        AddPersonAttribute( membershipDateAttribute, person, membershipDateValue.ToString( "yyyy-MM-dd" ) );
                     }
 
                     DateTime salvationDateValue;
                     if ( DateTime.TryParseExact( row[SalvationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out salvationDateValue ) )
                     {
-                        AddPersonAttribute( salvationDateAttribute, person, salvationDateValue.ToString() );
+                        AddPersonAttribute( salvationDateAttribute, person, salvationDateValue.ToString( "yyyy-MM-dd" ) );
                     }
 
                     DateTime baptismDateValue;
                     if ( DateTime.TryParseExact( row[BaptismDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out baptismDateValue ) )
                     {
-                        AddPersonAttribute( baptismDateAttribute, person, baptismDateValue.ToString() );
+                        AddPersonAttribute( baptismDateAttribute, person, baptismDateValue.ToString( "yyyy-MM-dd" ) );
                     }
 
                     DateTime anniversary;
@@ -549,7 +549,7 @@ namespace Excavator.CSV
                     DateTime firstVisitValue;
                     if ( DateTime.TryParseExact( row[FirstVisit], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out firstVisitValue ) )
                     {
-                        AddPersonAttribute( firstVisitAttribute, person, firstVisitValue.ToString() );
+                        AddPersonAttribute( firstVisitAttribute, person, firstVisitValue.ToString( "yyyy-MM-dd" ) );
                     }
 
                     string previousChurchValue = row[PreviousChurch];
