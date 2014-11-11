@@ -95,9 +95,6 @@ namespace Excavator.F1
         private int HouseholdAttributeId;
         private int SecondaryEmailAttributeId;
 
-        // Report progress when a multiple of this number has been imported
-        private static int ReportingNumber = 100;
-
         // Flag to set postprocessing audits on save
         private static bool DisableAudit = true;
 

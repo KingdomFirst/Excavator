@@ -100,9 +100,6 @@ namespace Excavator.CSV
         /// </summary>
         private List<Campus> CampusList;
 
-        // Report progress when a multiple of this number has been imported
-        private static int ReportingNumber = 50;
-
         #endregion
 
         #region Methods

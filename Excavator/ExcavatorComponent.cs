@@ -58,6 +58,9 @@ namespace Excavator
             get;
         }
 
+        // Report progress when a multiple of this number has been imported
+        public int ReportingNumber = 100;
+
         /// <summary>
         /// Holds a reference to the loaded nodes
         /// </summary>
