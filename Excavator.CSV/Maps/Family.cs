@@ -97,8 +97,6 @@ namespace Excavator.CSV
                     Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
                     if ( primaryAddress != null )
                     {
-                        primaryAddress.Name = currentFamilyGroup.Name + " Home";
-
                         var primaryLocation = new GroupLocation();
                         primaryLocation.LocationId = primaryAddress.Id;
                         primaryLocation.IsMailingLocation = true;
@@ -117,8 +115,6 @@ namespace Excavator.CSV
                     Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
                     if ( secondaryAddress != null )
                     {
-                        secondaryAddress.Name = currentFamilyGroup.Name + " Work";
-
                         var secondaryLocation = new GroupLocation();
                         secondaryLocation.LocationId = secondaryAddress.Id;
                         secondaryLocation.IsMailingLocation = true;
