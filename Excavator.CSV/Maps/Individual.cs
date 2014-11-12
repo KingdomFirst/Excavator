@@ -508,20 +508,31 @@ namespace Excavator.CSV
                             break;
                     }
 
-                    string primaryEmail = row[Email];
-                    if ( !string.IsNullOrWhiteSpace( primaryEmail ) && primaryEmail.IsValidEmail() )
-                    {
-                        person.Email = primaryEmail;
-                        person.IsEmailActive = isEmailActive;
-                        person.EmailPreference = emailPreference;
-                    }
-
-                    string secondaryEmailValue = row[SecondaryEmail];
-                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) && secondaryEmailValue.IsValidEmail() )
-                    {
-                        AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
-                    }
-
+                    
+                    string primaryEmail = row[Email].Trim();
+                    if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
+                        if ( primaryEmail.IsValidEmail() )
+                        {
+                            person.Email = primaryEmail;
+                            person.IsEmailActive = isEmailActive;
+                            person.EmailPreference = emailPreference;
+                        }
+                        else
+                        {
+                            LogException("InvalidPrimaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + primaryEmail);
+                        }
+                    
+                    string secondaryEmailValue = row[SecondaryEmail].Trim();
+                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) )
+                        if ( secondaryEmailValue.IsValidEmail() )
+                        {
+                            AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
+                        }
+                        else
+                        {
+                            LogException ( "InvalidSecondaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + secondaryEmailValue );
+                        }
+                    
                     DateTime membershipDateValue;
                     if ( DateTime.TryParseExact( row[MembershipDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out membershipDateValue ) )
                     {
