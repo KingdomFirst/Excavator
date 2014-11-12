@@ -508,18 +508,32 @@ namespace Excavator.CSV
                             break;
                     }
 
-                    string primaryEmail = row[Email];
-                    if ( !string.IsNullOrWhiteSpace( primaryEmail ) && primaryEmail.IsValidEmail() )
+                    string primaryEmail = row[Email].Trim();
+                    if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
                     {
-                        person.Email = primaryEmail;
-                        person.IsEmailActive = isEmailActive;
-                        person.EmailPreference = emailPreference;
+                        if ( primaryEmail.IsValidEmail() )
+                        {
+                            person.Email = primaryEmail;
+                            person.IsEmailActive = isEmailActive;
+                            person.EmailPreference = emailPreference;
+                        }
+                        else
+                        {
+                            LogException( "InvalidPrimaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + primaryEmail );
+                        }
                     }
 
-                    string secondaryEmailValue = row[SecondaryEmail];
-                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) && secondaryEmailValue.IsValidEmail() )
+                    string secondaryEmailValue = row[SecondaryEmail].Trim();
+                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) )
                     {
-                        AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
+                        if ( secondaryEmailValue.IsValidEmail() )
+                        {
+                            AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
+                        }
+                        else
+                        {
+                            LogException( "InvalidSecondaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + secondaryEmailValue );
+                        }
                     }
 
                     DateTime membershipDateValue;
@@ -703,6 +717,25 @@ namespace Excavator.CSV
         }
 
         /// <summary>
+        /// Adds the person attribute.
+        /// </summary>
+        /// <param name="attribute">The attribute.</param>
+        /// <param name="person">The person.</param>
+        /// <param name="attributeValue">The value.</param>
+        private static void AddPersonAttribute( AttributeCache attribute, Person person, string attributeValue )
+        {
+            if ( !string.IsNullOrWhiteSpace( attributeValue ) )
+            {
+                person.Attributes.Add( attribute.Key, attribute );
+                person.AttributeValues.Add( attribute.Key, new AttributeValue()
+                {
+                    AttributeId = attribute.Id,
+                    Value = attributeValue
+                } );
+            }
+        }
+
+        /// <summary>
         /// Saves the individuals.
         /// </summary>
         /// <param name="newFamilyList">The family list.</param>
@@ -836,25 +869,6 @@ namespace Excavator.CSV
                     // Save notes and all changes
                     rockContext.Notes.AddRange( newNoteList );
                     rockContext.SaveChanges( true );
-                } );
-            }
-        }
-
-        /// <summary>
-        /// Adds the person attribute.
-        /// </summary>
-        /// <param name="attribute">The attribute.</param>
-        /// <param name="person">The person.</param>
-        /// <param name="attributeValue">The value.</param>
-        private static void AddPersonAttribute( AttributeCache attribute, Person person, string attributeValue )
-        {
-            if ( !string.IsNullOrWhiteSpace( attributeValue ) )
-            {
-                person.Attributes.Add( attribute.Key, attribute );
-                person.AttributeValues.Add( attribute.Key, new AttributeValue()
-                {
-                    AttributeId = attribute.Id,
-                    Value = attributeValue
                 } );
             }
         }
