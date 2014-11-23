@@ -390,7 +390,7 @@ namespace Excavator.CSV
          * CreatedDate
          */
 
-        // First two columns are already numbered from Individuals file
+        // Columns are already numbered from Individuals file:
         //private const int FamilyId = 0;
         //private const int FamilyName = 1;
         //private const in CreatedDate = 15;
