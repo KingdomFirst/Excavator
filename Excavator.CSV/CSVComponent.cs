@@ -340,10 +340,7 @@ namespace Excavator.CSV
          * FamilyId,FamilyName,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
          * MaritalStatus,ConnectionStatus,RecordStatus,IsDeceased,CreatedDate,HomePhone,MobilePhone,WorkPhone,
          * Allow SMS?,Email,SecondaryEmail,IsEmailActive,Bulk Email Allowed?,
-         * Gender,DateOfBirth,GraduationDate,MembershipDate,SalvationDate,BaptismDate,
-         * AnniversaryDate,FirstVisit,PreviousChurch,Occupation,
-         * Employer,School,General Note,MedicalNote,Security Note
-         * Facebook,Instagram,Twitter
+         * Gender,DateOfBirth,GraduationDate,Anniversary,School,General Note,MedicalNote,Security Note
          */
 
         private const int FamilyId = 0;
