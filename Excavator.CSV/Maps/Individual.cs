@@ -83,20 +83,9 @@ namespace Excavator.CSV
             // School defined type
             var schoolDefinedType = DefinedTypeCache.Read( new Guid( "576FF1E2-6225-4565-A16D-230E26167A3D" ) );
 
-            // Look up additional Person attributes (existing)
+            // Look up existing Person attributes
             var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
-
-            // Core attributes: PreviousChurch, Position, Employer, School, etc
-            var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
-            var employerAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Employer" ) );
-            var positionAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Position" ) );
-            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
             var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "School" ) );
-            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
-            var baptismDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "BaptismDate" ) );
-            var facebookAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Facebook" ) );
-            var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
-            var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
 
             // Text field type id
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ), lookupContext ).Id;
@@ -133,57 +122,9 @@ namespace Excavator.CSV
 
             var secondaryEmailAttribute = AttributeCache.Read( secondaryEmail.Id, lookupContext );
 
-            // Add a former name attribute
-            var formerName = personAttributes.FirstOrDefault( a => a.Key == "FormerName" );
-            if ( formerName == null )
-            {
-                formerName = new Rock.Model.Attribute();
-                formerName.Key = "FormerName";
-                formerName.Name = "Former Name";
-                formerName.FieldTypeId = textFieldTypeId;
-                formerName.EntityTypeId = PersonEntityTypeId;
-                formerName.EntityTypeQualifierValue = string.Empty;
-                formerName.EntityTypeQualifierColumn = string.Empty;
-                formerName.Description = "The former name for this person";
-                formerName.DefaultValue = string.Empty;
-                formerName.IsMultiValue = false;
-                formerName.IsRequired = false;
-                formerName.Order = 0;
-
-                lookupContext.Attributes.Add( formerName );
-                secondaryEmail.Categories.Add( visitInfoCategory );
-                lookupContext.SaveChanges( true );
-            }
-
-            var formerNameAttribute = AttributeCache.Read( formerName.Id, lookupContext );
-
-            // Add a Salvation Date attribute if it doesn't exist
-            var salvationDate = personAttributes.FirstOrDefault( a => a.Key == "SalvationDate" );
-            if ( salvationDate == null )
-            {
-                salvationDate = new Rock.Model.Attribute();
-                salvationDate.Key = "SalvationDate";
-                salvationDate.Name = "Salvation Date";
-                salvationDate.FieldTypeId = dateFieldTypeId;
-                salvationDate.EntityTypeId = PersonEntityTypeId;
-                salvationDate.EntityTypeQualifierValue = string.Empty;
-                salvationDate.EntityTypeQualifierColumn = string.Empty;
-                salvationDate.Description = "The salvation date for this person";
-                salvationDate.DefaultValue = string.Empty;
-                salvationDate.IsMultiValue = false;
-                salvationDate.IsRequired = false;
-                salvationDate.Order = 0;
-
-                lookupContext.Attributes.Add( salvationDate );
-                salvationDate.Categories.Add( visitInfoCategory );
-                lookupContext.SaveChanges( true );
-            }
-
-            var salvationDateAttribute = AttributeCache.Read( salvationDate.Id, lookupContext );
-
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
-            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > Twitter )
+            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > SecurityNote )
                 .ToDictionary( f => f.index, f => f.node.Name.RemoveWhitespace() );
 
             // Add any attributes if they don't already exist
@@ -213,6 +154,7 @@ namespace Excavator.CSV
                 personAttributes.AddRange( newAttributes );
             }
 
+            // Set the supported date formats
             var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             var currentFamilyGroup = new Group();
@@ -288,6 +230,12 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[GraduationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out graduationDate ) )
                     {
                         person.GraduationDate = graduationDate;
+                    }
+
+                    DateTime anniversary;
+                    if ( DateTime.TryParseExact( row[Anniversary], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out anniversary ) )
+                    {
+                        person.AnniversaryDate = anniversary;
                     }
 
                     string gender = row[Gender];
@@ -474,12 +422,6 @@ namespace Excavator.CSV
                     person.Attributes = new Dictionary<string, AttributeCache>();
                     person.AttributeValues = new Dictionary<string, AttributeValue>();
 
-                    string formerNameValue = row[FormerName];
-                    if ( !string.IsNullOrWhiteSpace( formerNameValue ) )
-                    {
-                        AddPersonAttribute( formerNameAttribute, person, formerNameValue );
-                    }
-
                     bool isEmailActive;
                     switch ( row[IsEmailActive].Trim().ToLower() )
                     {
@@ -536,54 +478,6 @@ namespace Excavator.CSV
                         }
                     }
 
-                    DateTime membershipDateValue;
-                    if ( DateTime.TryParseExact( row[MembershipDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out membershipDateValue ) )
-                    {
-                        AddPersonAttribute( membershipDateAttribute, person, membershipDateValue.ToString( "yyyy-MM-dd" ) );
-                    }
-
-                    DateTime salvationDateValue;
-                    if ( DateTime.TryParseExact( row[SalvationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out salvationDateValue ) )
-                    {
-                        AddPersonAttribute( salvationDateAttribute, person, salvationDateValue.ToString( "yyyy-MM-dd" ) );
-                    }
-
-                    DateTime baptismDateValue;
-                    if ( DateTime.TryParseExact( row[BaptismDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out baptismDateValue ) )
-                    {
-                        AddPersonAttribute( baptismDateAttribute, person, baptismDateValue.ToString( "yyyy-MM-dd" ) );
-                    }
-
-                    DateTime anniversary;
-                    if ( DateTime.TryParseExact( row[Anniversary], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out anniversary ) )
-                    {
-                        person.AnniversaryDate = anniversary;
-                    }
-
-                    DateTime firstVisitValue;
-                    if ( DateTime.TryParseExact( row[FirstVisit], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out firstVisitValue ) )
-                    {
-                        AddPersonAttribute( firstVisitAttribute, person, firstVisitValue.ToString( "yyyy-MM-dd" ) );
-                    }
-
-                    string previousChurchValue = row[PreviousChurch];
-                    if ( !string.IsNullOrWhiteSpace( previousChurchValue ) )
-                    {
-                        AddPersonAttribute( previousChurchAttribute, person, previousChurchValue );
-                    }
-
-                    string positionValue = row[Occupation];
-                    if ( !string.IsNullOrWhiteSpace( positionValue ) )
-                    {
-                        AddPersonAttribute( positionAttribute, person, positionValue );
-                    }
-
-                    string employerValue = row[Employer];
-                    if ( !string.IsNullOrWhiteSpace( employerValue ) )
-                    {
-                        AddPersonAttribute( employerAttribute, person, employerValue );
-                    }
-
                     string schoolName = row[School];
                     if ( !string.IsNullOrWhiteSpace( schoolName ) )
                     {
@@ -607,25 +501,7 @@ namespace Excavator.CSV
                             schoolGuid = schoolDefinedType.DefinedValues.FirstOrDefault( s => s.Value.Equals( schoolName ) ).Guid;
                         }
 
-                        AddPersonAttribute( schoolAttribute, person, schoolGuid.ToString() );
-                    }
-
-                    string facebookValue = row[Facebook];
-                    if ( !string.IsNullOrWhiteSpace( facebookValue ) )
-                    {
-                        AddPersonAttribute( facebookAttribute, person, facebookValue );
-                    }
-
-                    string twitterValue = row[Twitter];
-                    if ( !string.IsNullOrWhiteSpace( twitterValue ) )
-                    {
-                        AddPersonAttribute( twitterAttribute, person, twitterValue );
-                    }
-
-                    string instagramValue = row[Instagram];
-                    if ( !string.IsNullOrWhiteSpace( instagramValue ) )
-                    {
-                        AddPersonAttribute( instagramAttribute, person, instagramValue );
+                        AddPersonAttribute( schoolAttribute, person, schoolGuid.ToString().ToUpper() );
                     }
 
                     foreach ( var attributePair in customAttributes )
@@ -633,6 +509,13 @@ namespace Excavator.CSV
                         string newAttributeValue = row[attributePair.Key];
                         if ( !string.IsNullOrWhiteSpace( newAttributeValue ) )
                         {
+                            // check if this attribute value is a date
+                            DateTime valueAsDateTime;
+                            if ( DateTime.TryParseExact( newAttributeValue, dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out valueAsDateTime ) )
+                            {
+                                newAttributeValue = valueAsDateTime.ToString( "yyyy-MM-dd" );
+                            }
+
                             int? newAttributeId = personAttributes.Where( a => a.Key == attributePair.Value.RemoveWhitespace() )
                                 .Select( a => (int?)a.Id ).FirstOrDefault();
                             if ( newAttributeId != null )
@@ -873,6 +756,6 @@ namespace Excavator.CSV
             }
         }
 
-        #endregion
+        #endregion Main Methods
     }
 }

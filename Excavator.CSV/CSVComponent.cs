@@ -43,7 +43,7 @@ namespace Excavator.CSV
         {
         }
 
-        #endregion
+        #endregion Constructor
 
         #region Fields
 
@@ -100,7 +100,7 @@ namespace Excavator.CSV
         /// </summary>
         private List<Campus> CampusList;
 
-        #endregion
+        #endregion Fields
 
         #region Methods
 
@@ -264,7 +264,7 @@ namespace Excavator.CSV
             //}
         }
 
-        #endregion
+        #endregion Methods
 
         #region File Processing Methods
 
@@ -331,7 +331,7 @@ namespace Excavator.CSV
             return CsvDataModel.RockDataType.NONE;
         }
 
-        #endregion
+        #endregion File Processing Methods
 
         #region Individual Constants
 
@@ -372,24 +372,14 @@ namespace Excavator.CSV
         private const int AllowBulkEmail = 23;
         private const int Gender = 24;
         private const int DateOfBirth = 25;
-        private const int GraduationDate = 26;
-        private const int MembershipDate = 27;
-        private const int SalvationDate = 28;
-        private const int BaptismDate = 29;
-        private const int Anniversary = 30;
-        private const int FirstVisit = 31;
-        private const int PreviousChurch = 32;
-        private const int Occupation = 33;
-        private const int Employer = 34;
-        private const int School = 35;
-        private const int GeneralNote = 36;
-        private const int MedicalNote = 37;
-        private const int SecurityNote = 38;
-        private const int Facebook = 39;
-        private const int Instagram = 40;
-        private const int Twitter = 41;
+        private const int School = 26;
+        private const int GraduationDate = 27;
+        private const int Anniversary = 28;
+        private const int GeneralNote = 29;
+        private const int MedicalNote = 30;
+        private const int SecurityNote = 31;
 
-        #endregion
+        #endregion Individual Constants
 
         #region Family Constants
 
@@ -419,6 +409,6 @@ namespace Excavator.CSV
         private const int SecondaryZip = 13;
         private const int SecondaryCountry = 14;
 
-        #endregion
+        #endregion Family Constants
     }
 }
