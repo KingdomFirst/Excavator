@@ -334,7 +334,7 @@ namespace Excavator.F1
                                     FinancialAccount parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) );
                                     if ( parentAccount == null )
                                     {
-                                        parentAccount = AddAccount( lookupContext, fundName, fundCampusId );
+                                        parentAccount = AddAccount( lookupContext, fundName, fundCampusId, null );
                                         accountList.Add( parentAccount );
                                     }
 
@@ -352,7 +352,7 @@ namespace Excavator.F1
                         if ( matchingAccount == null )
                         {
                             // No account matches, create the new account with campus Id and parent Id if they were set
-                            matchingAccount = AddAccount( lookupContext, fundName, fundCampusId );
+                            matchingAccount = AddAccount( lookupContext, fundName, fundCampusId, parentAccountId );
                             accountList.Add( matchingAccount );
                         }
 
@@ -494,7 +494,7 @@ namespace Excavator.F1
 
                             if ( matchingAccount == null )
                             {
-                                matchingAccount = AddAccount( lookupContext, fundName, fundCampusId );
+                                matchingAccount = AddAccount( lookupContext, fundName, fundCampusId, null );
                                 accountList.Add( matchingAccount );
                             }
 
@@ -550,7 +550,7 @@ namespace Excavator.F1
         /// <param name="fundName">Name of the fund.</param>
         /// <param name="fundCampusId">The fund campus identifier.</param>
         /// <returns></returns>
-        private FinancialAccount AddAccount( RockContext lookupContext, string fundName, int? fundCampusId )
+        private FinancialAccount AddAccount( RockContext lookupContext, string fundName, int? fundCampusId, int? parentAccountId )
         {
             if ( lookupContext == null )
             {
@@ -563,6 +563,7 @@ namespace Excavator.F1
             account.IsTaxDeductible = true;
             account.IsActive = true;
             account.CampusId = fundCampusId;
+            account.ParentAccountId = parentAccountId;
             account.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
             lookupContext.FinancialAccounts.Add( account );
