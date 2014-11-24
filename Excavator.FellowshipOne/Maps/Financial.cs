@@ -223,8 +223,7 @@ namespace Excavator.F1
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable()
                .Where( c => c.ForeignId != null )
-               .Select( t => new { ContributionId = t.ForeignId, TransactionId = t.Id } )
-               .ToDictionary( t => t.ContributionId.AsType<int>(), t => (int?)t.TransactionId );
+               .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
 
             // List for batching new contributions
             var newTransactions = new List<FinancialTransaction>();

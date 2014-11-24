@@ -98,7 +98,7 @@ namespace Excavator.F1
         // Flag to set postprocessing audits on save
         private static bool DisableAudit = true;
 
-        #endregion
+        #endregion Fields
 
         #region Methods
 
@@ -355,8 +355,7 @@ namespace Excavator.F1
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable()
                 .Where( b => b.ForeignId != null )
-                .Select( b => new { F1Id = b.ForeignId, BatchId = b.Id } )
-                .ToDictionary( t => t.F1Id.AsType<int>(), t => (int?)t.BatchId );
+                .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
         }
 
         /// <summary>
@@ -409,7 +408,7 @@ namespace Excavator.F1
             return familyList;
         }
 
-        #endregion
+        #endregion Methods
     }
 
     /// <summary>
