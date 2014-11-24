@@ -98,30 +98,6 @@ namespace Excavator.CSV
             var visitInfoCategory = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
                     .Where( c => c.Name == "Visit Information" ).FirstOrDefault();
 
-            // Add a Secondary Email attribute if it doesn't exist
-            var secondaryEmail = personAttributes.FirstOrDefault( a => a.Key == "SecondaryEmail" );
-            if ( secondaryEmail == null )
-            {
-                secondaryEmail = new Rock.Model.Attribute();
-                secondaryEmail.Key = "SecondaryEmail";
-                secondaryEmail.Name = "Secondary Email";
-                secondaryEmail.FieldTypeId = textFieldTypeId;
-                secondaryEmail.EntityTypeId = PersonEntityTypeId;
-                secondaryEmail.EntityTypeQualifierValue = string.Empty;
-                secondaryEmail.EntityTypeQualifierColumn = string.Empty;
-                secondaryEmail.Description = "The secondary email for this person";
-                secondaryEmail.DefaultValue = string.Empty;
-                secondaryEmail.IsMultiValue = false;
-                secondaryEmail.IsRequired = false;
-                secondaryEmail.Order = 0;
-
-                lookupContext.Attributes.Add( secondaryEmail );
-                secondaryEmail.Categories.Add( visitInfoCategory );
-                lookupContext.SaveChanges( true );
-            }
-
-            var secondaryEmailAttribute = AttributeCache.Read( secondaryEmail.Id, lookupContext );
-
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
             Dictionary<int, string> customAttributes = allFields.Where( f => f.index > SecurityNote )
@@ -470,19 +446,6 @@ namespace Excavator.CSV
                         else
                         {
                             LogException( "InvalidPrimaryEmail", "PersonId " + rowPersonId + " - Email: " + primaryEmail );
-                        }
-                    }
-
-                    string secondaryEmailValue = row[SecondaryEmail].Trim();
-                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) )
-                    {
-                        if ( secondaryEmailValue.IsValidEmail() )
-                        {
-                            AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
-                        }
-                        else
-                        {
-                            LogException( "InvalidSecondaryEmail", "PersonId " + rowPersonId + " - Email: " + secondaryEmailValue );
                         }
                     }
 
