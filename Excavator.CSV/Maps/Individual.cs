@@ -100,7 +100,8 @@ namespace Excavator.CSV
 
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
-            Dictionary<int, string> customAttributes = allFields.Where( f => f.index > SecurityNote )
+            Dictionary<int, string> customAttributes = allFields
+                .Where( f => f.index > SecurityNote )
                 .ToDictionary( f => f.index, f => f.node.Name.RemoveWhitespace() );
 
             // Add any attributes if they don't already exist

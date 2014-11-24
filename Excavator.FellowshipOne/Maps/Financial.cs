@@ -222,8 +222,8 @@ namespace Excavator.F1
 
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable()
-               .Select( t => new { ContributionId = t.ForeignId, TransactionId = t.Id } )
-               .ToDictionary( t => t.ContributionId.AsType<int?>(), t => (int?)t.TransactionId );
+               .Where( c => c.ForeignId != null )
+               .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
 
             // List for batching new contributions
             var newTransactions = new List<FinancialTransaction>();
@@ -238,14 +238,14 @@ namespace Excavator.F1
                 int? householdId = row["Household_ID"] as int?;
                 int? contributionId = row["ContributionID"] as int?;
 
-                if ( contributionId != null && !importedContributions.ContainsKey( contributionId ) )
+                if ( contributionId != null && !importedContributions.ContainsKey( (int)contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
                     transaction.AuthorizedPersonAliasId = GetPersonAliasId( individualId, householdId );
                     transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     transaction.ProcessedByPersonAliasId = GetPersonAliasId( individualId, householdId );
-                    transaction.ForeignId = contributionId.ToString();
+                    transaction.ForeignId = contributionId.ToStringSafe();
 
                     string summary = row["Memo"] as string;
                     if ( summary != null )

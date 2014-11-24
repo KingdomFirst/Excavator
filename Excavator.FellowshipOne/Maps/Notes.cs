@@ -47,8 +47,7 @@ namespace Excavator.F1
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
                 .Where( u => u.ForeignId != null )
-                .Select( u => new { UserId = u.ForeignId, PersonId = u.PersonId } )
-                .ToDictionary( t => t.UserId.AsType<int?>(), t => t.PersonId );
+                .ToDictionary( t => t.ForeignId.AsType<int?>(), t => t.PersonId );
 
             var noteList = new List<Note>();
 

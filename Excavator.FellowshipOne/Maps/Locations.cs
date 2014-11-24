@@ -62,8 +62,7 @@ namespace Excavator.F1
 
             // Get previously imported Ministries
             var importedMinistries = new AttributeValueService( lookupContext ).GetByAttributeId( ministryAttributeId )
-                .Select( av => new { RLCId = av.Value.AsType<int?>(), LocationId = av.EntityId } )
-                .ToDictionary( t => t.RLCId, t => t.LocationId );
+                .ToDictionary( t => t.Value.AsType<int?>(), t => t.EntityId );
 
             var newGroups = new List<Group>();
 

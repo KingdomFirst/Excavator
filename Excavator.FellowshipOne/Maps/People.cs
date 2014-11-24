@@ -595,13 +595,15 @@ namespace Excavator.F1
             var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
 
             int staffGroupId = new GroupService( lookupContext ).GetByGuid( new Guid( Rock.SystemGuid.Group.GROUP_STAFF_MEMBERS ) ).Id;
-            int memberGroupRoleId = new GroupTypeRoleService( lookupContext ).Queryable().Where( r => r.Guid.Equals( new Guid( "00F3AC1C-71B9-4EE5-A30E-4C48C8A0BF1F" ) ) )
+            int memberGroupRoleId = new GroupTypeRoleService( lookupContext ).Queryable()
+                .Where( r => r.Guid.Equals( new Guid( "00F3AC1C-71B9-4EE5-A30E-4C48C8A0BF1F" ) ) )
                 .Select( r => r.Id ).FirstOrDefault();
 
-            var importedUsers = new UserLoginService( lookupContext ).Queryable()
-                 .Where( u => u.ForeignId != null )
-                 .Select( u => new { UserId = u.ForeignId, PersonId = u.PersonId } ).ToList()
-                 .ToDictionary( t => t.UserId.AsType<int>(), t => t.PersonId );
+            var userLoginService = new UserLoginService( lookupContext );
+            var importedUserCount = userLoginService.Queryable().Where( u => u.ForeignId != null ).Count();
+
+            var allUsers = userLoginService.Queryable()
+                .ToDictionary( t => t.UserName.Trim(), t => t.PersonId );
 
             var newUserLogins = new List<UserLogin>();
             var newStaffMembers = new List<GroupMember>();
@@ -610,14 +612,14 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying user import ({0:N0} found, {1:N0} already exist).", totalRows, importedUsers.Count() ) );
+            ReportProgress( 0, string.Format( "Verifying user import ({0:N0} found, {1:N0} already exist).", totalRows, importedUserCount ) );
 
             foreach ( var row in tableData )
             {
                 int? individualId = row["LinkedIndividualID"] as int?;
                 string userName = row["UserLogin"] as string;
                 int? userId = row["UserID"] as int?;
-                if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !importedUsers.ContainsKey( (int)userId ) )
+                if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !allUsers.ContainsKey( userName ) )
                 {
                     int? personId = GetPersonAliasId( individualId, null );
                     if ( personId != null )
@@ -635,7 +637,7 @@ namespace Excavator.F1
                         user.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         user.EntityTypeId = rockAuthenticatedTypeId;
                         user.IsConfirmed = isEnabled;
-                        user.UserName = userName;
+                        user.UserName = userName.Trim();
                         user.PersonId = personId;
                         user.ForeignId = userId.ToString();
 
@@ -661,11 +663,11 @@ namespace Excavator.F1
                             userEmail = userEmail.Trim();
                             if ( string.IsNullOrWhiteSpace( person.Email ) )
                             {
-                                secondaryEmail = person.Email;
                                 person.Email = userEmail.Left( 75 );
                                 person.IsEmailActive = isEnabled;
+                                person.EmailPreference = EmailPreference.EmailAllowed;
                                 person.EmailNote = userTitle;
-                                lookupContext.SaveChanges( true );
+                                lookupContext.SaveChanges( DisableAudit );
                             }
                             else if ( !person.Email.Equals( userEmail ) )
                             {
@@ -682,7 +684,7 @@ namespace Excavator.F1
                             updatedPersonList.Add( person );
                         }
 
-                        // other Attributes to save
+                        // other Attributes to save?
                         // UserBio
                         // DepartmentName
                         // IsPastor
@@ -705,6 +707,10 @@ namespace Excavator.F1
                             ReportPartialProgress();
                         }
                     }
+                }
+                else
+                {
+                    LogException( "User Import", string.Format( "User: {0} - UserName: {1} is not linked to a person or already exists.", userId, userName ) );
                 }
             }
 
