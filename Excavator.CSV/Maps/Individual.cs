@@ -154,27 +154,7 @@ namespace Excavator.CSV
                 string rowPersonId = row[PersonId];
                 string rowFamilyName = row[FamilyName];
 
-                //if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
-                //{
-                //    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
-                //    if ( currentFamilyGroup == null )
-                //    {
-                //        currentFamilyGroup = new Group();
-                //        currentFamilyGroup.ForeignId = rowFamilyId;
-                //        currentFamilyGroup.Name = row[FamilyName];
-                //        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                //        currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
-                //        newFamilyList.Add( currentFamilyGroup );
-                //        newFamilies++;
-                //    }
-                //    else
-                //    {
-                //        lookupContext.Groups.Attach( currentFamilyGroup );
-                //        lookupContext.Entry( currentFamilyGroup ).State = EntityState.Modified;
-                //    }
-                //}
-
-                // Verify this person isn't already in our data
+                // Check that this person isn't already in our data
                 var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignId == rowPersonId ) );
                 if ( !personExists )
                 {
@@ -445,7 +425,7 @@ namespace Excavator.CSV
                         }
                         else
                         {
-                            LogException( "InvalidPrimaryEmail", "PersonId " + rowPersonId + " - Email: " + primaryEmail );
+                            LogException( "InvalidPrimaryEmail", string.Format( "PersonId: {0} - Email: {1}", rowPersonId, primaryEmail ) );
                         }
                     }
 
@@ -526,19 +506,18 @@ namespace Excavator.CSV
                     var groupMember = new GroupMember();
                     groupMember.Person = person;
                     groupMember.GroupRoleId = groupRoleId;
+                    groupMember.CreatedDateTime = importDate;
+                    groupMember.ModifiedDateTime = importDate;
+                    groupMember.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
 
                     if ( rowFamilyId != currentFamilyGroup.ForeignId )
                     {
-                        // not part of this family group, see if it already exists or create a new one
+                        // person not part of the previous family, see if that family exists or create a new one
                         currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
                         if ( currentFamilyGroup == null )
                         {
-                            currentFamilyGroup = new Group();
-                            currentFamilyGroup.ForeignId = rowFamilyId;
-                            currentFamilyGroup.Name = row[FamilyName];
-                            currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                            currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
+                            currentFamilyGroup = CreateFamilyGroup( row[FamilyName], rowFamilyId );
                             newFamilyList.Add( currentFamilyGroup );
                             newFamilies++;
                         }
@@ -552,20 +531,18 @@ namespace Excavator.CSV
                     }
                     else
                     {
-                        // IS part of this family group, is it a visitor though?
+                        // person is part of this family group, check if they're a visitor
                         if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
                         {
                             currentFamilyGroup.Members.Add( groupMember );
                         }
                         else
                         {
-                            var visitorGroup = new Group();
-                            visitorGroup.ForeignId = rowFamilyId.ToString();
-                            visitorGroup.Members.Add( groupMember );
-                            visitorGroup.GroupTypeId = FamilyGroupTypeId;
-                            visitorGroup.Name = person.LastName + " Family";
-                            newFamilyList.Add( visitorGroup );
-                            newVisitorList.Add( visitorGroup );
+                            var visitorFamily = CreateFamilyGroup( person.LastName + " Family", rowFamilyId );
+                            visitorFamily.Members.Add( groupMember );
+                            newFamilyList.Add( visitorFamily );
+                            newVisitorList.Add( visitorFamily );
+                            newFamilies++;
                         }
                     }
 
@@ -589,16 +566,33 @@ namespace Excavator.CSV
                 }
             }
 
+            // Save any changes to new families
             if ( newFamilyList.Any() )
             {
                 SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
             }
 
-            // Save any changes that may have occurred
+            // Save any changes to existing families
             lookupContext.SaveChanges();
 
-            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people and {0:N0} families added.", completed, newFamilies ) );
+            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} families and {1:N0} people added.", newFamilies, completed ) );
             return completed;
+        }
+
+        /// <summary>
+        /// Creates the family group.
+        /// </summary>
+        /// <param name="rowFamilyName">Name of the row family.</param>
+        /// <param name="rowFamilyId">The row family identifier.</param>
+        /// <returns></returns>
+        private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyId )
+        {
+            var familyGroup = new Group();
+            familyGroup.Name = rowFamilyName;
+            familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+            familyGroup.ForeignId = rowFamilyId.ToString();
+            familyGroup.GroupTypeId = FamilyGroupTypeId;
+            return familyGroup;
         }
 
         /// <summary>
