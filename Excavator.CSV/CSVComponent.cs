@@ -336,78 +336,65 @@ namespace Excavator.CSV
         #region Individual Constants
 
         /*
-         this is based on the definition of the csv format for the individual.csv file
-         * FamilyId,FamilyName,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FormerName,FamilyRole,
-         * MaritalStatus,ConnectionStatus,RecordStatus,IsDeceased,CreatedDate,HomePhone,MobilePhone,WorkPhone,
-         * Allow SMS?,Email,SecondaryEmail,IsEmailActive,Bulk Email Allowed?,
-         * Gender,DateOfBirth,GraduationDate,MembershipDate,SalvationDate,BaptismDate,
-         * AnniversaryDate,FirstVisit,PreviousChurch,Occupation,
-         * Employer,School,General Note,MedicalNote,Security Note
-         * Facebook,Instagram,Twitter
+         * This is the definition of the csv format for the Individual.csv file
          */
 
         private const int FamilyId = 0;
         private const int FamilyName = 1;
-        private const int PersonId = 2;
-        private const int Prefix = 3;
-        private const int FirstName = 4;
-        private const int NickName = 5;
-        private const int MiddleName = 6;
-        private const int LastName = 7;
-        private const int Suffix = 8;
-        private const int FormerName = 9;
+        private const int CreatedDate = 2;
+        private const int PersonId = 3;
+        private const int Prefix = 4;
+        private const int FirstName = 5;
+        private const int NickName = 6;
+        private const int MiddleName = 7;
+        private const int LastName = 8;
+        private const int Suffix = 9;
         private const int FamilyRole = 10;
         private const int MaritalStatus = 11;
         private const int ConnectionStatus = 12;
         private const int RecordStatus = 13;
         private const int IsDeceased = 14;
-        private const int CreatedDate = 15;
-        private const int HomePhone = 16;
-        private const int MobilePhone = 17;
-        private const int WorkPhone = 18;
-        private const int AllowSMS = 19;
-        private const int Email = 20;
-        private const int SecondaryEmail = 21;
-        private const int IsEmailActive = 22;
-        private const int AllowBulkEmail = 23;
-        private const int Gender = 24;
-        private const int DateOfBirth = 25;
-        private const int School = 26;
-        private const int GraduationDate = 27;
-        private const int Anniversary = 28;
-        private const int GeneralNote = 29;
-        private const int MedicalNote = 30;
-        private const int SecurityNote = 31;
+        private const int HomePhone = 15;
+        private const int MobilePhone = 16;
+        private const int WorkPhone = 17;
+        private const int AllowSMS = 18;
+        private const int Email = 19;
+        private const int IsEmailActive = 20;
+        private const int AllowBulkEmail = 21;
+        private const int Gender = 22;
+        private const int DateOfBirth = 23;
+        private const int School = 24;
+        private const int GraduationDate = 25;
+        private const int Anniversary = 26;
+        private const int GeneralNote = 27;
+        private const int MedicalNote = 28;
+        private const int SecurityNote = 29;
 
         #endregion Individual Constants
 
         #region Family Constants
 
         /*
-         this is based on the definition for family.csv import file.
-         * FamilyId,FamilyName,LastName,Campus,Address,Address2,City,State,ZipCode,Country,
-         * SecondaryAddress,SecondaryAddress2,SecondaryCity,SecondaryState,SecondaryZip,SecondaryCountry,
-         * CreatedDate
+         * This is the definition for the Family.csv import file:
+         * Columns already numbered from Individuals file:
+         * private const int FamilyId = 0;
+         * private const int FamilyName = 1;
+         * private const in CreatedDate = 2;
          */
 
-        // Columns are already numbered from Individuals file:
-        //private const int FamilyId = 0;
-        //private const int FamilyName = 1;
-        //private const in CreatedDate = 15;
-
-        private const int Campus = 2;
-        private const int Address = 3;
-        private const int Address2 = 4;
-        private const int City = 5;
-        private const int State = 6;
-        private const int Zip = 7;
-        private const int Country = 8;
-        private const int SecondaryAddress = 9;
-        private const int SecondaryAddress2 = 10;
-        private const int SecondaryCity = 11;
-        private const int SecondaryState = 12;
-        private const int SecondaryZip = 13;
-        private const int SecondaryCountry = 14;
+        private const int Campus = 3;
+        private const int Address = 4;
+        private const int Address2 = 5;
+        private const int City = 6;
+        private const int State = 7;
+        private const int Zip = 8;
+        private const int Country = 9;
+        private const int SecondaryAddress = 10;
+        private const int SecondaryAddress2 = 11;
+        private const int SecondaryCity = 12;
+        private const int SecondaryState = 13;
+        private const int SecondaryZip = 14;
+        private const int SecondaryCountry = 15;
 
         #endregion Family Constants
     }

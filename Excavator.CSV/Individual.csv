@@ -1,5 +1,5 @@
-FamilyId,FamilyName,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FamilyRole,MaritalStatus,ConnectionStatus,RecordStatus,IsDeceased,CreatedDate,HomePhone,MobilePhone,WorkPhone,SMS Allowed?,Email,Is Email Active?,Allow Bulk Email?,Gender,DateOfBirth,School,GraduationDate,Anniversary,General Note,MedicalNote,Security Note
-96811879691115097A,Smith Family,25570361,Mr,John,Jay,Adam,Smith,,Adult,Married,Member,Active,,10/29/04,,(827) 345-1163,(804) 237-9876,Yes,jsmitha@windowslive.com,Yes,Yes,Male,,Belvedere Community,06/01/08,,general,medical,security
-968111412207101120A,Meese Family,145,Mr,Allen,,,Meese,,Adult,Married,Attendee,Active,,,,8645719853,,Yes,,,,Male,01/05/83,,,,,,
-968111412207101120A,Meese Family,146,Mrs,Sara,,,Meese,,Adult,Married,Attendee,Active,,,,864-938-1593,,No,smeese@gmail.com,Yes,,Female,06/09/85,,,,,,
-968111412207101120A,Meese Family,147,,Oliver,,,Meese,,Child,,,,,,,,,,,,,Male,05/01/11,,,,,,
+FamilyId,FamilyName,CreatedDate,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FamilyRole,MaritalStatus,ConnectionStatus,RecordStatus,IsDeceased,HomePhone,MobilePhone,WorkPhone,Allow SMS?,Email,Is Email Active?,Allow Bulk Email?,Gender,DateOfBirth,School,GraduationDate,Anniversary,General Note,MedicalNote,Security Note
+96811879691115097A,Smith Family,10/29/04,25570361,Mr,John,Jay,Adam,Smith,,Adult,Married,Member,Active,,,(827) 345-1163,(804) 237-9876,Yes,jsmitha@windowslive.com,Yes,Yes,Male,,Belvedere Community,06/01/08,,general,medical,security
+968111412207101120A,Meese Family,,145,Mr,Allen,,,Meese,,Adult,Married,Attendee,Active,,,8645719853,,Yes,,,,Male,01/05/83,,,,,,
+968111412207101120A,Meese Family,,146,Mrs,Sara,,,Meese,,Adult,Married,Attendee,Active,,,864-938-1593,,No,smeese@gmail.com,Yes,,Female,06/09/85,,,,,,
+968111412207101120A,Meese Family,,147,,Oliver,,,Meese,,Child,,,,,,,,,,,,Male,05/01/11,,,,,,

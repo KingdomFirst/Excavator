@@ -98,30 +98,6 @@ namespace Excavator.CSV
             var visitInfoCategory = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
                     .Where( c => c.Name == "Visit Information" ).FirstOrDefault();
 
-            // Add a Secondary Email attribute if it doesn't exist
-            var secondaryEmail = personAttributes.FirstOrDefault( a => a.Key == "SecondaryEmail" );
-            if ( secondaryEmail == null )
-            {
-                secondaryEmail = new Rock.Model.Attribute();
-                secondaryEmail.Key = "SecondaryEmail";
-                secondaryEmail.Name = "Secondary Email";
-                secondaryEmail.FieldTypeId = textFieldTypeId;
-                secondaryEmail.EntityTypeId = PersonEntityTypeId;
-                secondaryEmail.EntityTypeQualifierValue = string.Empty;
-                secondaryEmail.EntityTypeQualifierColumn = string.Empty;
-                secondaryEmail.Description = "The secondary email for this person";
-                secondaryEmail.DefaultValue = string.Empty;
-                secondaryEmail.IsMultiValue = false;
-                secondaryEmail.IsRequired = false;
-                secondaryEmail.Order = 0;
-
-                lookupContext.Attributes.Add( secondaryEmail );
-                secondaryEmail.Categories.Add( visitInfoCategory );
-                lookupContext.SaveChanges( true );
-            }
-
-            var secondaryEmailAttribute = AttributeCache.Read( secondaryEmail.Id, lookupContext );
-
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
             Dictionary<int, string> customAttributes = allFields.Where( f => f.index > SecurityNote )
@@ -164,6 +140,7 @@ namespace Excavator.CSV
             var importDate = DateTime.Now;
 
             int completed = 0;
+            int newFamilies = 0;
             ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignId != null ) ) ) );
 
             string[] row;
@@ -177,21 +154,7 @@ namespace Excavator.CSV
                 string rowPersonId = row[PersonId];
                 string rowFamilyName = row[FamilyName];
 
-                if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
-                {
-                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
-                    if ( currentFamilyGroup == null )
-                    {
-                        currentFamilyGroup = new Group();
-                        currentFamilyGroup.ForeignId = rowFamilyId;
-                        currentFamilyGroup.Name = row[FamilyName];
-                        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                        currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
-                        newFamilyList.Add( currentFamilyGroup );
-                    }
-                }
-
-                // Verify this person isn't already in our data
+                // Check that this person isn't already in our data
                 var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignId == rowPersonId ) );
                 if ( !personExists )
                 {
@@ -203,8 +166,9 @@ namespace Excavator.CSV
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     string firstName = row[FirstName];
+                    string nickName = row[NickName];
                     person.FirstName = firstName;
-                    person.NickName = row[NickName] ?? firstName;
+                    person.NickName = string.IsNullOrWhiteSpace( nickName ) ? firstName : nickName;
                     person.MiddleName = row[MiddleName];
                     person.LastName = row[LastName];
 
@@ -461,20 +425,7 @@ namespace Excavator.CSV
                         }
                         else
                         {
-                            LogException( "InvalidPrimaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + primaryEmail );
-                        }
-                    }
-
-                    string secondaryEmailValue = row[SecondaryEmail].Trim();
-                    if ( !string.IsNullOrWhiteSpace( secondaryEmailValue ) )
-                    {
-                        if ( secondaryEmailValue.IsValidEmail() )
-                        {
-                            AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmailValue );
-                        }
-                        else
-                        {
-                            LogException( "InvalidSecondaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + secondaryEmailValue );
+                            LogException( "InvalidPrimaryEmail", string.Format( "PersonId: {0} - Email: {1}", rowPersonId, primaryEmail ) );
                         }
                     }
 
@@ -555,26 +506,47 @@ namespace Excavator.CSV
                     var groupMember = new GroupMember();
                     groupMember.Person = person;
                     groupMember.GroupRoleId = groupRoleId;
+                    groupMember.CreatedDateTime = importDate;
+                    groupMember.ModifiedDateTime = importDate;
+                    groupMember.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
 
-                    if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
+                    if ( rowFamilyId != currentFamilyGroup.ForeignId )
                     {
+                        // person not part of the previous family, see if that family exists or create a new one
+                        currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
+                        if ( currentFamilyGroup == null )
+                        {
+                            currentFamilyGroup = CreateFamilyGroup( row[FamilyName], rowFamilyId );
+                            newFamilyList.Add( currentFamilyGroup );
+                            newFamilies++;
+                        }
+                        else
+                        {
+                            lookupContext.Groups.Attach( currentFamilyGroup );
+                            lookupContext.Entry( currentFamilyGroup ).State = EntityState.Modified;
+                        }
+
                         currentFamilyGroup.Members.Add( groupMember );
-                        completed++;
                     }
                     else
                     {
-                        var visitorGroup = new Group();
-                        visitorGroup.ForeignId = rowFamilyId.ToString();
-                        visitorGroup.Members.Add( groupMember );
-                        visitorGroup.GroupTypeId = FamilyGroupTypeId;
-                        visitorGroup.Name = person.LastName + " Family";
-                        newFamilyList.Add( visitorGroup );
-                        completed++;
-
-                        newVisitorList.Add( visitorGroup );
+                        // person is part of this family group, check if they're a visitor
+                        if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
+                        {
+                            currentFamilyGroup.Members.Add( groupMember );
+                        }
+                        else
+                        {
+                            var visitorFamily = CreateFamilyGroup( person.LastName + " Family", rowFamilyId );
+                            visitorFamily.Members.Add( groupMember );
+                            newFamilyList.Add( visitorFamily );
+                            newVisitorList.Add( visitorFamily );
+                            newFamilies++;
+                        }
                     }
 
+                    completed++;
                     if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
@@ -582,7 +554,11 @@ namespace Excavator.CSV
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
+                        lookupContext.SaveChanges();
                         ReportPartialProgress();
+
+                        // Clear out variables
+                        currentFamilyGroup = new Group();
                         newFamilyList.Clear();
                         newVisitorList.Clear();
                         newNoteList.Clear();
@@ -590,13 +566,33 @@ namespace Excavator.CSV
                 }
             }
 
+            // Save any changes to new families
             if ( newFamilyList.Any() )
             {
                 SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
             }
 
-            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people added.", completed ) );
+            // Save any changes to existing families
+            lookupContext.SaveChanges();
+
+            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} families and {1:N0} people added.", newFamilies, completed ) );
             return completed;
+        }
+
+        /// <summary>
+        /// Creates the family group.
+        /// </summary>
+        /// <param name="rowFamilyName">Name of the row family.</param>
+        /// <param name="rowFamilyId">The row family identifier.</param>
+        /// <returns></returns>
+        private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyId )
+        {
+            var familyGroup = new Group();
+            familyGroup.Name = rowFamilyName;
+            familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+            familyGroup.ForeignId = rowFamilyId.ToString();
+            familyGroup.GroupTypeId = FamilyGroupTypeId;
+            return familyGroup;
         }
 
         /// <summary>
