@@ -164,6 +164,7 @@ namespace Excavator.CSV
             var importDate = DateTime.Now;
 
             int completed = 0;
+            int newFamilies = 0;
             ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignId != null ) ) ) );
 
             string[] row;
@@ -177,19 +178,25 @@ namespace Excavator.CSV
                 string rowPersonId = row[PersonId];
                 string rowFamilyName = row[FamilyName];
 
-                if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
-                {
-                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
-                    if ( currentFamilyGroup == null )
-                    {
-                        currentFamilyGroup = new Group();
-                        currentFamilyGroup.ForeignId = rowFamilyId;
-                        currentFamilyGroup.Name = row[FamilyName];
-                        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                        currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
-                        newFamilyList.Add( currentFamilyGroup );
-                    }
-                }
+                //if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
+                //{
+                //    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
+                //    if ( currentFamilyGroup == null )
+                //    {
+                //        currentFamilyGroup = new Group();
+                //        currentFamilyGroup.ForeignId = rowFamilyId;
+                //        currentFamilyGroup.Name = row[FamilyName];
+                //        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                //        currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
+                //        newFamilyList.Add( currentFamilyGroup );
+                //        newFamilies++;
+                //    }
+                //    else
+                //    {
+                //        lookupContext.Groups.Attach( currentFamilyGroup );
+                //        lookupContext.Entry( currentFamilyGroup ).State = EntityState.Modified;
+                //    }
+                //}
 
                 // Verify this person isn't already in our data
                 var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignId == rowPersonId ) );
@@ -203,8 +210,9 @@ namespace Excavator.CSV
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     string firstName = row[FirstName];
+                    string nickName = row[NickName];
                     person.FirstName = firstName;
-                    person.NickName = row[NickName] ?? firstName;
+                    person.NickName = string.IsNullOrWhiteSpace( nickName ) ? firstName : nickName;
                     person.MiddleName = row[MiddleName];
                     person.LastName = row[LastName];
 
@@ -461,7 +469,7 @@ namespace Excavator.CSV
                         }
                         else
                         {
-                            LogException( "InvalidPrimaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + primaryEmail );
+                            LogException( "InvalidPrimaryEmail", "PersonId " + rowPersonId + " - Email: " + primaryEmail );
                         }
                     }
 
@@ -474,7 +482,7 @@ namespace Excavator.CSV
                         }
                         else
                         {
-                            LogException( "InvalidSecondaryEmail", rowFamilyName + " - FamilyId " + rowFamilyId + " - PersonId " + rowPersonId + " - Email: " + secondaryEmailValue );
+                            LogException( "InvalidSecondaryEmail", "PersonId " + rowPersonId + " - Email: " + secondaryEmailValue );
                         }
                     }
 
@@ -557,24 +565,48 @@ namespace Excavator.CSV
                     groupMember.GroupRoleId = groupRoleId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
 
-                    if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
+                    if ( rowFamilyId != currentFamilyGroup.ForeignId )
                     {
+                        // not part of this family group, see if it already exists or create a new one
+                        currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
+                        if ( currentFamilyGroup == null )
+                        {
+                            currentFamilyGroup = new Group();
+                            currentFamilyGroup.ForeignId = rowFamilyId;
+                            currentFamilyGroup.Name = row[FamilyName];
+                            currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            currentFamilyGroup.GroupTypeId = FamilyGroupTypeId;
+                            newFamilyList.Add( currentFamilyGroup );
+                            newFamilies++;
+                        }
+                        else
+                        {
+                            lookupContext.Groups.Attach( currentFamilyGroup );
+                            lookupContext.Entry( currentFamilyGroup ).State = EntityState.Modified;
+                        }
+
                         currentFamilyGroup.Members.Add( groupMember );
-                        completed++;
                     }
                     else
                     {
-                        var visitorGroup = new Group();
-                        visitorGroup.ForeignId = rowFamilyId.ToString();
-                        visitorGroup.Members.Add( groupMember );
-                        visitorGroup.GroupTypeId = FamilyGroupTypeId;
-                        visitorGroup.Name = person.LastName + " Family";
-                        newFamilyList.Add( visitorGroup );
-                        completed++;
-
-                        newVisitorList.Add( visitorGroup );
+                        // IS part of this family group, is it a visitor though?
+                        if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
+                        {
+                            currentFamilyGroup.Members.Add( groupMember );
+                        }
+                        else
+                        {
+                            var visitorGroup = new Group();
+                            visitorGroup.ForeignId = rowFamilyId.ToString();
+                            visitorGroup.Members.Add( groupMember );
+                            visitorGroup.GroupTypeId = FamilyGroupTypeId;
+                            visitorGroup.Name = person.LastName + " Family";
+                            newFamilyList.Add( visitorGroup );
+                            newVisitorList.Add( visitorGroup );
+                        }
                     }
 
+                    completed++;
                     if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
@@ -582,7 +614,11 @@ namespace Excavator.CSV
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
+                        lookupContext.SaveChanges();
                         ReportPartialProgress();
+
+                        // Clear out variables
+                        currentFamilyGroup = new Group();
                         newFamilyList.Clear();
                         newVisitorList.Clear();
                         newNoteList.Clear();
@@ -595,7 +631,10 @@ namespace Excavator.CSV
                 SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
             }
 
-            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people added.", completed ) );
+            // Save any changes that may have occurred
+            lookupContext.SaveChanges();
+
+            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} people and {0:N0} families added.", completed, newFamilies ) );
             return completed;
         }
 
