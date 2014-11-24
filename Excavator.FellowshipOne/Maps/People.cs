@@ -665,7 +665,7 @@ namespace Excavator.F1
                                 person.Email = userEmail.Left( 75 );
                                 person.IsEmailActive = isEnabled;
                                 person.EmailNote = userTitle;
-                                lookupContext.SaveChanges( true );
+                                lookupContext.SaveChanges( DisableAudit );
                             }
                             else if ( !person.Email.Equals( userEmail ) )
                             {

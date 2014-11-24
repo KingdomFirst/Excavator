@@ -44,37 +44,8 @@ namespace Excavator.F1
 
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext ).DefinedValues;
 
-            // Look up additional Person attributes (existing)
+            // Look up existing Person attributes
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
-
-            // Remove previously defined Excavator social attributes & categories if they exist
-            var oldFacebookAttribute = personAttributes.Where( a => a.Key == "FacebookUsername" ).FirstOrDefault();
-            if ( oldFacebookAttribute != null )
-            {
-                Rock.Web.Cache.AttributeCache.Flush( oldFacebookAttribute.Id );
-                attributeService.Delete( oldFacebookAttribute );
-                lookupContext.SaveChanges( true );
-            }
-
-            var oldTwitterAttribute = personAttributes.Where( a => a.Key == "TwitterUsername" ).FirstOrDefault();
-            if ( oldTwitterAttribute != null )
-            {
-                Rock.Web.Cache.AttributeCache.Flush( oldTwitterAttribute.Id );
-                attributeService.Delete( oldTwitterAttribute );
-                lookupContext.SaveChanges( true );
-            }
-
-            int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
-            var socialMediaCategory = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
-                .Where( c => c.Name == "Social Media" &&
-                    c.EntityTypeQualifierValue == PersonEntityTypeId.ToString() &&
-                    c.IconCssClass == "fa fa-twitter" )
-                .FirstOrDefault();
-            if ( socialMediaCategory != null )
-            {
-                lookupContext.Categories.Remove( socialMediaCategory );
-                lookupContext.SaveChanges( true );
-            }
 
             // Cached Rock attributes: Facebook, Twitter, Instagram
             var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
@@ -186,56 +157,39 @@ namespace Excavator.F1
                         if ( value.IsValidEmail() )
                         {
                             string secondaryEmail = string.Empty;
+                            // person email is empty
                             if ( string.IsNullOrWhiteSpace( person.Email ) )
                             {
-                                secondaryEmail = person.Email;
                                 person.Email = value.Left( 75 );
                                 person.IsEmailActive = isListed;
+                                person.EmailPreference = isListed ? EmailPreference.EmailAllowed : EmailPreference.DoNotEmail;
                                 person.ModifiedDateTime = lastUpdated;
                                 person.EmailNote = communicationComment;
-                                lookupContext.SaveChanges( true );
+                                lookupContext.SaveChanges( DisableAudit );
                             }
+                            // person email not empty and this is a different email
                             else if ( !person.Email.Equals( value ) )
                             {
                                 secondaryEmail = value;
                             }
 
+                            // person has two email addresses, make sure the second
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
                             {
-                                person.Attributes.Add( secondaryEmailAttribute.Key, secondaryEmailAttribute );
-                                person.AttributeValues.Add( secondaryEmailAttribute.Key, new AttributeValue()
-                                {
-                                    AttributeId = secondaryEmailAttribute.Id,
-                                    Value = secondaryEmail
-                                } );
+                                AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmail );
                             }
                         }
                         else if ( type.Contains( "Twitter" ) )
                         {
-                            person.Attributes.Add( twitterAttribute.Key, twitterAttribute );
-                            person.AttributeValues.Add( twitterAttribute.Key, new AttributeValue()
-                            {
-                                AttributeId = twitterAttribute.Id,
-                                Value = value
-                            } );
+                            AddPersonAttribute( twitterAttribute, person, value );
                         }
                         else if ( type.Contains( "Facebook" ) )
                         {
-                            person.Attributes.Add( facebookAttribute.Key, facebookAttribute );
-                            person.AttributeValues.Add( facebookAttribute.Key, new AttributeValue()
-                            {
-                                AttributeId = facebookAttribute.Id,
-                                Value = value
-                            } );
+                            AddPersonAttribute( facebookAttribute, person, value );
                         }
                         else if ( type.Contains( "Instagram" ) )
                         {
-                            person.Attributes.Add( instagramAttribute.Key, instagramAttribute );
-                            person.AttributeValues.Add( instagramAttribute.Key, new AttributeValue()
-                            {
-                                AttributeId = instagramAttribute.Id,
-                                Value = value
-                            } );
+                            AddPersonAttribute( instagramAttribute, person, value );
                         }
 
                         updatedPersonList.Add( person );
