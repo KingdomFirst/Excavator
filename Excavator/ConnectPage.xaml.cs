@@ -35,7 +35,7 @@ namespace Excavator
     /// <summary>
     /// Interaction logic for ConnectPage.xaml
     /// </summary>
-    public partial class ConnectPage : Page
+    public partial class ConnectPage : Page, INotifyPropertyChanged
     {
         #region Fields
 
@@ -63,6 +63,7 @@ namespace Excavator
                 App.ExistingConnection = value; //for back and forth, restore from session
                 RaisePropertyChanged( "Connection" );
                 RaisePropertyChanged( "ConnectionDescribed" );
+                RaisePropertyChanged("OkToProceed");
             }
         }
 
@@ -83,6 +84,30 @@ namespace Excavator
                     _ConnectionDescribed = "(Current Destination: " + existingConnection.Server + ":" + existingConnection.Database + ")";
                 }
                 return _ConnectionDescribed;
+            }
+        }
+
+        public bool OkToProceed
+        {
+            get
+            {
+                if (CurrentConnection == null || excavator == null || !CurrentConnection.IsValid())
+                    return false;
+                return true;
+            }
+        }
+
+        private string _DbConnectMsg = "Could not connect to database. Please verify the server is online.";
+        public string DbConnectMsg
+        {
+            get
+            {
+                return _DbConnectMsg;
+            }
+            set
+            {
+                _DbConnectMsg = value;
+                RaisePropertyChanged("DbConnectMsg");
             }
         }
 
@@ -320,14 +345,26 @@ namespace Excavator
             connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             connectWindow.ShowDialog();
 
+            if (CurrentConnection.Database.Contains("failed"))
+            {
+                CurrentConnection.Database = string.Empty;
+            }
+
             // Undo graphical effects
             this.OpacityMask = null;
             this.Effect = null;
+            RaisePropertyChanged("OkToProceed");
+            RaisePropertyChanged("ConnectionDescribed");
 
-            if ( CurrentConnection != null && !string.IsNullOrWhiteSpace( CurrentConnection.Database ) )
+            if ( CurrentConnection != null && CurrentConnection.IsValid() )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
-                lblDbConnect.Content = "Successfully connected to the Rock database.";
+                DbConnectMsg = "Successfully connected to the Rock database." ;
+            }
+            else
+            {
+                lblDbConnect.Style = (Style)FindResource("labelStyleAlert");
+                DbConnectMsg = "Database connection string is not valid.";
             }
 
             lblDbConnect.Visibility = Visibility.Visible;
@@ -354,7 +391,7 @@ namespace Excavator
             if ( excavator == null || CurrentConnection == null )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                lblDbConnect.Content = "Please select a valid source and destination.";
+                DbConnectMsg = "Please select a valid source and destination.";
                 lblDbConnect.Visibility = Visibility.Visible;
                 return;
             }
@@ -385,7 +422,7 @@ namespace Excavator
             {
                 App.LogException( "Next Page", ex.ToString() );
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                lblDbConnect.Content = "Unable to save the database connection: " + ex.InnerException.ToString();
+                DbConnectMsg = "Unable to save the database connection: " + ex.InnerException.ToString();
                 lblDbConnect.Visibility = Visibility.Visible;
             }
         }
@@ -434,6 +471,7 @@ namespace Excavator
             {
                 e.Cancel = true;
             }
+
         }
 
         /// <summary>
@@ -449,6 +487,8 @@ namespace Excavator
                 lblDbUpload.Style = (Style)FindResource( "labelStyleSuccess" );
                 lblDbUpload.Content = "Successfully read the import file";
             }
+
+            RaisePropertyChanged("OkToProceed");
 
             lblDbUpload.Visibility = Visibility.Visible;
             Mouse.OverrideCursor = null;

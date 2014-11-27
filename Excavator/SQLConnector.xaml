@@ -38,7 +38,7 @@
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ComboBox x:Name="SqlServerName"
+                <ComboBox 
                 Margin="3"
                 IsEditable="True"
                 ItemsSource="{Binding ElementName=_this, Path=Servers}"
@@ -67,12 +67,12 @@
                     Grid.Row="2"
                     Grid.ColumnSpan="2">
                 <StackPanel>
-                    <RadioButton Content="Windows Authentication"
-                    Margin="3"
+                    <RadioButton Content="Windows Authentication" Checked="ValidateConnection"  
+                                 Margin="3"
                     x:Name="SqlAuthTypeWindows"
                     IsChecked="{Binding ElementName=_this, Path=ConnectionString.IntegratedSecurity, UpdateSourceTrigger=PropertyChanged}">
                     </RadioButton>
-                    <RadioButton Content="Sql Authentication"
+                    <RadioButton Content="Sql Authentication" Checked="ValidateConnection"  
                     Margin="3"
                     x:Name="SqlAuthTypeSql">
                         <RadioButton.Style>
@@ -117,6 +117,10 @@
                     </Grid>
                 </StackPanel>
             </GroupBox>
+            <Border Background="#88ffffff" Grid.RowSpan="5" Grid.ColumnSpan="3" Visibility="{Binding ElementName=_this, Path=DatabasesLoading, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                    >
+                <TextBlock Text="          " HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
         </Grid>
     </GroupBox>
 </UserControl>

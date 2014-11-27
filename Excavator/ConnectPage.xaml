@@ -101,17 +101,16 @@
             Content="Connect" IsEnabled="True"
             Click="btnConnect_Click" />
 
-        <Label Name="lblDbConnect" Visibility="Hidden"
+        <Label Name="lblDbConnect" Visibility="Hidden" Content="{Binding DbConnectMsg}"
             Grid.Row="4" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom"
-            Style="{StaticResource labelStyleAlert}">
-            Could not connect to database. Please verify the server is online.
-        </Label>
+            Style="{StaticResource labelStyleAlert}" />
+        
 
         <!-- Navigation -->
         <Grid Grid.Row="5" Grid.ColumnSpan="2">
             <Button Style="{StaticResource buttonStylePrimary}"
-                x:Name="btnNext" Margin="10,0"
+                x:Name="btnNext" Margin="10,0" IsEnabled="{Binding OkToProceed}"
                 VerticalAlignment="Center"
                 Grid.Column="1" HorizontalAlignment="Right"
                 Click="btnNext_Click">
