@@ -52,7 +52,6 @@ namespace Excavator
 
         private readonly ObservableCollection<string> _databases = new ObservableCollection<string>();
 
-        //private static readonly ConnectionString DefaultValue = new ConnectionString { IntegratedSecurity = false, MultipleActiveResultSets = true };
         private static readonly ConnectionString DefaultValue = new ConnectionString();
 
         private static void ConnectionStringChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
@@ -82,7 +81,7 @@ namespace Excavator
 
         public static readonly DependencyProperty ConnectionStringProperty = DependencyProperty.Register( "ConnectionString"
             , typeof( ConnectionString ), typeof( SqlConnector ), new FrameworkPropertyMetadata(
-                DefaultValue,
+                null,
                 FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 ConnectionStringChanged
             )
@@ -100,7 +99,7 @@ namespace Excavator
             {
                 lock ( ServersLock )
                 {
-                    if ( _servers == null )
+                    if ( _servers == null || _servers.Count == 0 )
                     {
                         _servers = new ObservableCollection<string>();
                         LoadServersAsync();
@@ -126,7 +125,25 @@ namespace Excavator
             }
         }
 
-        #endregion
+        private void ValidateConnection( object sender, RoutedEventArgs e )
+        {
+            if ( ConnectionString.IntegratedSecurity && !string.IsNullOrEmpty( ConnectionString.Password ) )
+            {
+                ConnectionString.Password = string.Empty;
+                ConnectionString.UserName = string.Empty;
+            }
+            OnPropertyChanged( "ConnectionString" );
+        }
+
+        public bool DatabasesLoading
+        {
+            get
+            {
+                return _dbLoader.IsBusy;
+            }
+        }
+
+        #endregion Fields
 
         #region Constructor
 
@@ -143,7 +160,7 @@ namespace Excavator
             _dbLoader.RunWorkerCompleted += DbLoaderRunWorkerCompleted;
         }
 
-        #endregion
+        #endregion Constructor
 
         #region Internal Methods
 
@@ -160,13 +177,16 @@ namespace Excavator
         private void RegisterNewConnectionString( ConnectionString newValue )
         {
             if ( newValue != null )
+            {
+                ConnectionStringPropertyChanged( this, new PropertyChangedEventArgs( "Server" ) ); //takes care of initialization of the database list
                 newValue.PropertyChanged += ConnectionStringPropertyChanged;
+            }
         }
 
         private void ConnectionStringPropertyChanged( object sender, PropertyChangedEventArgs e )
         {
             //Server has changed, reload
-            if ( e.PropertyName == "Server" && !_dbLoader.IsBusy )
+            if ( ( e.PropertyName.Equals( "Server" ) || e.PropertyName.Equals( "IntegratedSecurity" ) ) && !_dbLoader.IsBusy )
             {
                 _dbLoader.RunWorkerAsync( ConnectionString );
                 OnPropertyChanged( "DatabasesLoading" );
@@ -179,7 +199,7 @@ namespace Excavator
             }
         }
 
-        #endregion
+        #endregion Internal Methods
 
         #region Async Tasks
 
@@ -214,12 +234,14 @@ namespace Excavator
                 return;
             }
 
-            OnPropertyChanged( "DatabasesLoading" );
+            //this breaks the binding so it's removed and the equivalent action is added below it.
+            //this.Dispatcher.Invoke( (Action)( () =>
+            //{
+            //    SqlDatabaseName.SelectedItem = _databases.FirstOrDefault();
+            //} ) );
+            ConnectionString.Database = _databases.FirstOrDefault();
 
-            this.Dispatcher.Invoke( (Action)( () =>
-            {
-                SqlDatabaseName.SelectedItem = _databases.FirstOrDefault();
-            } ) );
+            OnPropertyChanged( "DatabasesLoading" );
         }
 
         private void LoadServersAsync()
@@ -238,7 +260,7 @@ namespace Excavator
             serverLoader.RunWorkerAsync();
         }
 
-        #endregion
+        #endregion Async Tasks
     }
 
     /// <summary>
@@ -250,8 +272,6 @@ namespace Excavator
 
         private readonly SqlConnectionStringBuilder _builder = new SqlConnectionStringBuilder
         {
-            //IntegratedSecurity = true,
-            //MultipleActiveResultSets = true
         };
 
         private void OnPropertyChanged( string propertyName )
@@ -377,7 +397,7 @@ namespace Excavator
                  ( IntegratedSecurity || ( !string.IsNullOrEmpty( UserName ) && !string.IsNullOrEmpty( Password ) ) ) );
         }
 
-        #endregion
+        #endregion Fields
 
         #region Constructor
 
@@ -403,7 +423,7 @@ namespace Excavator
             };
         }
 
-        #endregion
+        #endregion Constructor
 
         #region Internal Methods
 
@@ -429,7 +449,7 @@ namespace Excavator
             return _builder.ConnectionString;
         }
 
-        #endregion
+        #endregion Internal Methods
     }
 
     /// <summary>
