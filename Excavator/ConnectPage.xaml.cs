@@ -23,6 +23,7 @@ using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Web.UI;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -44,6 +45,20 @@ namespace Excavator
         private SqlConnector sqlConnector;
 
         private ConnectionString existingConnection;
+
+        /// <summary>
+        /// Gets the supported rock version.
+        /// </summary>
+        /// <value>
+        /// The supported rock version.
+        /// </value>
+        public string SupportedRockVersion
+        {
+            get
+            {
+                return string.Format( "Using Rock.dll v{0}", App.RockVersion );
+            }
+        }
 
         /// <summary>
         /// Gets or sets the current connection.
