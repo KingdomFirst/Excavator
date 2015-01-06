@@ -23,6 +23,7 @@ using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Web.UI;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -46,6 +47,20 @@ namespace Excavator
         private ConnectionString existingConnection;
 
         /// <summary>
+        /// Gets the supported rock version.
+        /// </summary>
+        /// <value>
+        /// The supported rock version.
+        /// </value>
+        public string SupportedRockVersion
+        {
+            get
+            {
+                return string.Format( "Using Rock.dll v{0}", App.RockVersion );
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the current connection.
         /// </summary>
         /// <value>
@@ -63,7 +78,7 @@ namespace Excavator
                 App.ExistingConnection = value; //for back and forth, restore from session
                 RaisePropertyChanged( "Connection" );
                 RaisePropertyChanged( "ConnectionDescribed" );
-                RaisePropertyChanged("OkToProceed");
+                RaisePropertyChanged( "OkToProceed" );
             }
         }
 
@@ -91,13 +106,14 @@ namespace Excavator
         {
             get
             {
-                if (CurrentConnection == null || excavator == null || !CurrentConnection.IsValid())
+                if ( CurrentConnection == null || excavator == null || !CurrentConnection.IsValid() )
                     return false;
                 return true;
             }
         }
 
         private string _DbConnectMsg = "Could not connect to database. Please verify the server is online.";
+
         public string DbConnectMsg
         {
             get
@@ -107,7 +123,7 @@ namespace Excavator
             set
             {
                 _DbConnectMsg = value;
-                RaisePropertyChanged("DbConnectMsg");
+                RaisePropertyChanged( "DbConnectMsg" );
             }
         }
 
@@ -194,7 +210,7 @@ namespace Excavator
             }
         }
 
-        #endregion
+        #endregion Fields
 
         #region Initializer Methods
 
@@ -270,7 +286,7 @@ namespace Excavator
             }
         }
 
-        #endregion
+        #endregion Initializer Methods
 
         #region Events
 
@@ -345,7 +361,7 @@ namespace Excavator
             connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             connectWindow.ShowDialog();
 
-            if (CurrentConnection.Database.Contains("failed"))
+            if ( CurrentConnection.Database.Contains( "failed" ) )
             {
                 CurrentConnection.Database = string.Empty;
             }
@@ -353,17 +369,17 @@ namespace Excavator
             // Undo graphical effects
             this.OpacityMask = null;
             this.Effect = null;
-            RaisePropertyChanged("OkToProceed");
-            RaisePropertyChanged("ConnectionDescribed");
+            RaisePropertyChanged( "OkToProceed" );
+            RaisePropertyChanged( "ConnectionDescribed" );
 
             if ( CurrentConnection != null && CurrentConnection.IsValid() )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
-                DbConnectMsg = "Successfully connected to the Rock database." ;
+                DbConnectMsg = "Successfully connected to the Rock database.";
             }
             else
             {
-                lblDbConnect.Style = (Style)FindResource("labelStyleAlert");
+                lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
                 DbConnectMsg = "Database connection string is not valid.";
             }
 
@@ -427,7 +443,7 @@ namespace Excavator
             }
         }
 
-        #endregion
+        #endregion Events
 
         #region Async Tasks
 
@@ -471,7 +487,6 @@ namespace Excavator
             {
                 e.Cancel = true;
             }
-
         }
 
         /// <summary>
@@ -488,12 +503,12 @@ namespace Excavator
                 lblDbUpload.Content = "Successfully read the import file";
             }
 
-            RaisePropertyChanged("OkToProceed");
+            RaisePropertyChanged( "OkToProceed" );
 
             lblDbUpload.Visibility = Visibility.Visible;
             Mouse.OverrideCursor = null;
         }
 
-        #endregion
+        #endregion Async Tasks
     }
 }

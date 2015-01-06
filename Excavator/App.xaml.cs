@@ -17,6 +17,7 @@
 
 using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -53,6 +54,21 @@ namespace Excavator
         {
             get { return existingConnection; }
             set { existingConnection = value; }
+        }
+
+        /// <summary>
+        /// Gets the rock version.
+        /// </summary>
+        /// <value>
+        /// The rock version.
+        /// </value>
+        public static string RockVersion
+        {
+            get
+            {
+                var rockAssembly = typeof( Rock.Model.EntityType ).Assembly.GetName();
+                return rockAssembly.Version.ToString();
+            }
         }
 
         # region Logging

@@ -105,10 +105,12 @@
             Grid.Row="4" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Bottom"
             Style="{StaticResource labelStyleAlert}" />
-        
 
         <!-- Navigation -->
         <Grid Grid.Row="5" Grid.ColumnSpan="2">
+            <Label Name="lblRockVersion" HorizontalAlignment="Center"
+                   Style="{StaticResource labelStyle}"
+                   Content="{Binding SupportedRockVersion}" />
             <Button Style="{StaticResource buttonStylePrimary}"
                 x:Name="btnNext" Margin="10,0" IsEnabled="{Binding OkToProceed}"
                 VerticalAlignment="Center"
