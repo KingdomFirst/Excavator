@@ -419,7 +419,8 @@ namespace Excavator
                 IntegratedSecurity = IntegratedSecurity,
                 UserName = UserName,
                 Password = Password,
-                MultipleActiveResultSets = MultipleActiveResultSets
+                MultipleActiveResultSets = MultipleActiveResultSets,
+                ConnectionTimeout = ConnectionTimeout
             };
         }
 
@@ -469,7 +470,6 @@ namespace Excavator
         public List<string> GetDatabases( ConnectionString connectionString )
         {
             var databases = new List<string>();
-
             using ( var conn = new SqlConnection( connectionString.WithDatabase( "master" ) ) )
             {
                 try
