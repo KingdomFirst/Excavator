@@ -575,6 +575,7 @@ namespace Excavator.CSV
 
             // Save any changes to existing families
             lookupContext.SaveChanges();
+            lookupContext.Dispose();
 
             ReportProgress( 0, string.Format( "Finished individual import: {0:N0} families and {1:N0} people added.", newFamilies, completed ) );
             return completed;

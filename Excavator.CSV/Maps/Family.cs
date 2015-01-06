@@ -159,8 +159,10 @@ namespace Excavator.CSV
             if ( newGroupLocations.Any() )
             {
                 SaveFamilies( newFamilyList, newGroupLocations );
-                lookupContext.SaveChanges();
             }
+
+            lookupContext.SaveChanges();
+            lookupContext.Dispose();
 
             ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added or updated.", completed ) );
             return completed;
