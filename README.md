@@ -10,6 +10,8 @@ Excavator converts data into [Rock RMS](http://www.rockrms.com/) from other chur
 Imports from FellowshipOne and CSV are currently supported.  A port for Arena ChMS is in active development.
 
 ## What You'll Need To Get Started
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NewSpring/Excavator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 - A local or hosted version of Rock
 - A login to the Rock SQL database
 - Your old database in a supported format
