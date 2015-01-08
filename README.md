@@ -1,8 +1,10 @@
 ## Welcome to Excavator!
 
-Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)<br><br>
+Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)
+
 Chat Room: [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NewSpring/Excavator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+Twitter: [![@ExcavatorApp](http://i.imgur.com/7mMQxUt.png)](https://twitter.com/ExcavatorApp)
 
 ![](https://raw.githubusercontent.com/wiki/newspring/excavator/images/excavator.jpg)
 
