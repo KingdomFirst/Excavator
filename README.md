@@ -1,6 +1,7 @@
 **Welcome to Excavator!**
 
-Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)
+Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)<br><br>
+Chat: [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NewSpring/Excavator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
 ![](https://raw.githubusercontent.com/wiki/newspring/excavator/images/excavator.jpg)
@@ -11,7 +12,6 @@ Imports from FellowshipOne and CSV are currently supported.  A port for Arena Ch
 
 ## What You'll Need To Get Started
 
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NewSpring/Excavator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 - A local or hosted version of Rock
 - A login to the Rock SQL database
 - Your old database in a supported format
