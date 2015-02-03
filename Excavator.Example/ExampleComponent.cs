@@ -21,6 +21,7 @@ using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
 using System.Linq;
+using Excavator.Utility;
 using OrcaMDF.Core.Engine;
 using Rock.Data;
 using Rock.Model;
@@ -82,7 +83,7 @@ namespace Excavator.Example
 
 #pragma warning restore
 
-        #endregion
+        #endregion Fields
 
         #region Methods
 
@@ -223,6 +224,6 @@ namespace Excavator.Example
             } );
         }
 
-        #endregion
+        #endregion Methods
     }
 }

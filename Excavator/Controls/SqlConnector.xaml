@@ -1,0 +1,125 @@
+﻿<UserControl x:Class="Excavator.SqlConnector"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:Excavator="clr-namespace:Excavator"
+        x:Name="_this">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <GroupBox MinHeight="200" MinWidth="250"
+    BorderBrush="{StaticResource windowBackground}"
+    Background="{StaticResource windowBackground}"
+    Foreground="{StaticResource headerBackground}">
+        <GroupBox.Header>
+            <TextBlock Text="{Binding ElementName=_this, Path=Header}"
+            FontSize="14"
+            FontWeight="Bold" />
+        </GroupBox.Header>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Server: "
+            VerticalAlignment="Center"
+            Margin="3"
+            Grid.Column="0"
+            Grid.Row="0" />
+            <Grid Grid.Column="1"
+                Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox
+                Margin="3"
+                IsEditable="True"
+                ItemsSource="{Binding ElementName=_this, Path=Servers}"
+                Text="{Binding ElementName=_this, Path=ConnectionString.Server, UpdateSourceTrigger=LostFocus}" />
+            </Grid>
+            <TextBlock Text="Database: "
+            VerticalAlignment="Center"
+            Margin="3"
+            Grid.Column="0"
+            Grid.Row="1" />
+            <Grid Grid.Column="1"
+                Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox x:Name="SqlDatabaseName"
+                Margin="3"
+                IsEditable="True"
+                ItemsSource="{Binding ElementName=_this, Path=Databases}"
+                Text="{Binding ElementName=_this, Path=ConnectionString.Database, UpdateSourceTrigger=PropertyChanged}" />
+            </Grid>
+
+            <GroupBox Header="Authentication:"
+                    Grid.Column="0"
+                    Grid.Row="2"
+                    Grid.ColumnSpan="2">
+                <StackPanel>
+                    <RadioButton Content="Windows Authentication" Checked="ValidateConnection"
+                                 Margin="3"
+                    x:Name="SqlAuthTypeWindows"
+                    IsChecked="{Binding ElementName=_this, Path=ConnectionString.IntegratedSecurity, UpdateSourceTrigger=PropertyChanged}">
+                    </RadioButton>
+                    <RadioButton Content="Sql Authentication" Checked="ValidateConnection"
+                    Margin="3"
+                    x:Name="SqlAuthTypeSql">
+                        <RadioButton.Style>
+                            <Style>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ElementName=_this, Path=ConnectionString.IntegratedSecurity}"
+                                        Value="False">
+                                        <Setter Property="RadioButton.IsChecked"
+                                        Value="True" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </RadioButton.Style>
+                    </RadioButton>
+                    <Grid Visibility="{Binding ElementName=SqlAuthTypeSql, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Username: "
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Margin="3"
+                        VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1"
+                        Grid.Row="0"
+                        Margin="3"
+                        Text="{Binding ElementName=_this, Path=ConnectionString.UserName, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="Password: "
+                        Grid.Column="0"
+                        Grid.Row="1"
+                        Margin="3"
+                        VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1"
+                        Grid.Row="1"
+                        Margin="3"
+                        Text="{Binding ElementName=_this, Path=ConnectionString.Password, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </StackPanel>
+            </GroupBox>
+            <Border Background="#88ffffff" Grid.RowSpan="5" Grid.ColumnSpan="3" Visibility="{Binding ElementName=_this, Path=DatabasesLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="          " HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+        </Grid>
+    </GroupBox>
+</UserControl>
