@@ -658,7 +658,7 @@ namespace Excavator.F1
                         }
 
                         // set user login email to primary email
-                        if ( !string.IsNullOrWhiteSpace( userEmail ) && userEmail.IsValidEmail() )
+                        if ( !string.IsNullOrWhiteSpace( userEmail ) && userEmail.IsEmail() )
                         {
                             var person = personService.Queryable( includeDeceased: true ).FirstOrDefault( p => p.Id == personId );
                             string secondaryEmail = string.Empty;

@@ -421,7 +421,7 @@ namespace Excavator.CSV
                     string primaryEmail = row[Email].Trim();
                     if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
                     {
-                        if ( primaryEmail.IsValidEmail() )
+                        if ( primaryEmail.IsEmail() )
                         {
                             person.Email = primaryEmail;
                             person.IsEmailActive = isEmailActive;

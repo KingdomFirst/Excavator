@@ -155,7 +155,7 @@ namespace Excavator.F1
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, AttributeValue>();
 
-                        if ( value.IsValidEmail() )
+                        if ( value.IsEmail() )
                         {
                             string secondaryEmail = string.Empty;
                             // person email is empty
