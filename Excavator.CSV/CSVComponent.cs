@@ -249,7 +249,7 @@ namespace Excavator.CSV
 
             ReportProgress( 0, "Checking your database for previously imported people..." );
 
-            // Don't track groups in this context, just use it as a reference
+            // Don't track groups in this context, just use it as a static reference
             ImportedPeople = lookupContext.Groups.AsNoTracking().Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignId != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
@@ -279,7 +279,7 @@ namespace Excavator.CSV
         /// <returns></returns>
         private bool FileTypeMatches( CsvDataModel.RockDataType filetype, string name )
         {
-            if ( name.ToUpper().Equals( filetype.ToString() ) )
+            if ( name.ToUpper().StartsWith( filetype.ToString() ) )
             {
                 return true;
             }
