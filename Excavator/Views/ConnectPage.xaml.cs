@@ -360,7 +360,7 @@ namespace Excavator
             connectWindow.ResizeMode = ResizeMode.NoResize;
             connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
             connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            connectWindow.ShowDialog();
+            var windowConnected = connectWindow.ShowDialog() ?? false;
 
             if ( CurrentConnection.Database.Contains( "failed" ) )
             {
@@ -373,7 +373,7 @@ namespace Excavator
             RaisePropertyChanged( "OkToProceed" );
             RaisePropertyChanged( "ConnectionDescribed" );
 
-            if ( CurrentConnection != null && CurrentConnection.IsValid() )
+            if ( windowConnected && CurrentConnection != null && CurrentConnection.IsValid() )
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
                 DbConnectMsg = "Successfully connected to the Rock database.";
@@ -381,7 +381,7 @@ namespace Excavator
             else
             {
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                DbConnectMsg = "Database connection string is not valid.";
+                DbConnectMsg = "Could not validate database connection.";
             }
 
             lblDbConnect.Visibility = Visibility.Visible;
