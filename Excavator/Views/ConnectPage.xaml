@@ -1,0 +1,123 @@
+﻿<Page x:Class="Excavator.ConnectPage"
+        xmlns:Excavator="clr-namespace:Excavator"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        d:DesignHeight="350" d:DesignWidth="500" mc:Ignorable="d"
+        Title="Connect" x:Name="_this">
+    <Grid x:Name="grdLayout">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="3*" />
+            <RowDefinition Height="3*" />
+            <RowDefinition Height="3*" />
+            <RowDefinition Height="40" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Page Header -->
+        <Border Name="clrBorder"
+            Grid.Row="0" Grid.ColumnSpan="2"
+            Background="{StaticResource headerBackground}">
+        </Border>
+        <Label Name="lblHeader"
+            Foreground="White" FontSize="16"
+            Grid.Row="0" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyle}">
+            Database Connections
+        </Label>
+
+        <Label Name="lblNoData" Visibility="Hidden"
+            Style="{StaticResource labelStyleAlert}"
+            Grid.RowSpan="1" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom">
+            No excavator types found. Please add a compatible type to the current directory.
+        </Label>
+
+        <!-- Select Database Type -->
+        <Label x:Name="lblDatabaseTypes" Margin="30,0"
+            Style="{StaticResource labelStyle}"
+            Grid.Row="2" VerticalAlignment="Top"
+            Grid.Column="0" HorizontalAlignment="Right">
+            Select the database type:
+        </Label>
+        <StackPanel Grid.Row="2" Grid.Column="2">
+            <ComboBox x:Name="lstDatabaseTypes" Margin="30,0"
+                  ItemsSource="{Binding ExcavatorTypes, Mode=TwoWay}"
+                  SelectedItem="{Binding SelectedImportType, Mode=TwoWay}"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Left"
+                IsEditable="False">
+            </ComboBox>
+        </StackPanel>
+
+        <!-- Connect to Source -->
+        <Label Grid.Row="3" Style="{StaticResource labelStyle}"
+            VerticalAlignment="Top" Margin="30,0"
+            Grid.Column="0" HorizontalAlignment="Right">
+            <StackPanel>
+                <TextBlock Text="Upload the source database file:" />
+                <TextBlock Text="(Hold Ctrl while clicking to select multiple files)" FontSize="12" />
+            </StackPanel>
+        </Label>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Grid.Column="1">
+            <Button Style="{StaticResource buttonStyle}"
+            x:Name="btnUpload" Margin="30,0"
+            VerticalAlignment="Top"  HorizontalAlignment="Left"
+            Content="Upload"
+            Click="btnUpload_Click" />
+
+            <StackPanel x:Name="FilesUploaded"></StackPanel>
+        </StackPanel>
+
+        <Label Name="lblDbUpload" Visibility="Hidden" Grid.Row="3"
+            HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom"
+               Margin="0 0 0 20"
+            Style="{StaticResource labelStyleAlert}">
+            Could not open source file. Please make sure the file is not in use.
+        </Label>
+
+        <!-- Connect to Destination -->
+        <Label Style="{StaticResource labelStyle}"
+            Grid.Row="4" VerticalAlignment="Top" Margin="30,0"
+            Grid.Column="0" HorizontalAlignment="Right">
+            <StackPanel>
+                <TextBlock Text="Connect to the Rock server:" />
+                <TextBlock Text="{Binding ConnectionDescribed}" FontSize="12" />
+            </StackPanel>
+        </Label>
+        <Button Style="{StaticResource buttonStyle}"
+            x:Name="btnConnect" Margin="30,0"
+            Grid.Row="4" VerticalAlignment="Top"
+            Grid.Column="1" HorizontalAlignment="Left"
+            Content="Connect" IsEnabled="True"
+            Click="btnConnect_Click" />
+
+        <Label Name="lblDbConnect" Visibility="Hidden" Content="{Binding DbConnectMsg}"
+            Grid.Row="4" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Bottom"
+            Style="{StaticResource labelStyleAlert}" />
+
+        <!-- Navigation -->
+        <Grid Grid.Row="5" Grid.ColumnSpan="2">
+            <Label Name="lblRockVersion" HorizontalAlignment="Center"
+                   Style="{StaticResource labelStyle}"
+                   Content="{Binding SupportedRockVersion}" />
+            <Button Style="{StaticResource buttonStylePrimary}"
+                x:Name="btnNext" Margin="10,0" IsEnabled="{Binding OkToProceed}"
+                VerticalAlignment="Center"
+                Grid.Column="1" HorizontalAlignment="Right"
+                Click="btnNext_Click">
+                Next
+            </Button>
+        </Grid>
+    </Grid>
+</Page>

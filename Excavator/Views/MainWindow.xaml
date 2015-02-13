@@ -1,0 +1,13 @@
+﻿<NavigationWindow x:Class="Excavator.MainWindow"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                Icon="..\Resources\rock.ico"
+                Title="Rock Excavator (Beta)"
+                Height="500" Width="750"
+                MinHeight="450" MinWidth="600"
+                Background="{StaticResource windowBackground}"
+                ShowsNavigationUI="False"
+                Source=".\ConnectPage.xaml"
+                FontFamily="Resources/#Open Sans Regular" FontSize="14"
+                WindowStartupLocation="CenterScreen">
+</NavigationWindow>

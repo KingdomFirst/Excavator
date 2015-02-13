@@ -1,0 +1,72 @@
+﻿<Page x:Class="Excavator.ProgressPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      d:DesignHeight="350" d:DesignWidth="500" mc:Ignorable="d"
+      Title="Progress">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="40" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Page Header -->
+        <Border Name="clrBorder"
+            Grid.Row="0" Grid.ColumnSpan="2"
+            Background="{StaticResource headerBackground}">
+        </Border>
+        <Label Name="lblHeader"
+            Foreground="White" FontSize="16"
+            Grid.Row="0" HorizontalAlignment="Center"
+            Grid.ColumnSpan="2" VerticalAlignment="Center"
+            Style="{StaticResource labelStyle}">
+            Import in Progress
+        </Label>
+
+        <!-- Display progress here -->
+        <TextBox Name="txtProgress"
+            Margin="20,0" VerticalScrollBarVisibility="Auto"
+            Grid.Row="1" HorizontalAlignment="Stretch"
+            Grid.ColumnSpan="2" VerticalAlignment="Stretch"
+            IsReadOnly="True" BorderThickness="0"
+            Background="{StaticResource windowBackground}">
+        </TextBox>
+
+        <!-- Navigation -->
+        <Grid Grid.Row="2" Grid.ColumnSpan="2">
+            <Button Style="{StaticResource buttonStyle}"
+                x:Name="btnBack" Margin="10,0"
+                VerticalAlignment="Center"
+                IsEnabled="{Binding CanGoBack}"
+                Grid.Column="0" HorizontalAlignment="Left"
+                Click="btnBack_Click">
+                Back
+            </Button>
+            <Label Name="lblFoundIssue"
+                Grid.Row="0" HorizontalAlignment="Center"
+                Grid.ColumnSpan="2" VerticalAlignment="Center"
+                Style="{StaticResource labelStyle}">
+                <TextBlock>Found a bug?  Submit an issue
+                    <Hyperlink NavigateUri="http://github.com/NewSpring/Excavator/issues"
+                               RequestNavigate="btnIssue_RequestNavigate">
+                        here.
+                    </Hyperlink>
+                </TextBlock>
+            </Label>
+            <Button Style="{StaticResource buttonStylePrimary}"
+                x:Name="btnClose" Visibility="Hidden"
+                VerticalAlignment="Center" Margin="10,0"
+                Grid.Column="1" HorizontalAlignment="Right"
+                Click="btnClose_Click">
+                Close
+            </Button>
+        </Grid>
+    </Grid>
+</Page>

@@ -21,6 +21,7 @@ using System.ComponentModel.Composition;
 using System.Data;
 using System.IO;
 using System.Linq;
+using Excavator.Utility;
 using LumenWorks.Framework.IO.Csv;
 using Rock.Data;
 using Rock.Model;
@@ -228,8 +229,6 @@ namespace Excavator.CSV
         /// </summary>
         private bool LoadExistingData( string importUser )
         {
-            //try
-            //{
             var lookupContext = new RockContext();
             var personService = new PersonService( lookupContext );
             var importPerson = personService.GetByFullName( importUser, includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
@@ -250,18 +249,12 @@ namespace Excavator.CSV
 
             ReportProgress( 0, "Checking your database for previously imported people..." );
 
-            // Don't track groups in this context when we just use it as a reference
+            // Don't track groups in this context, just use it as a reference
             ImportedPeople = lookupContext.Groups.AsNoTracking().Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignId != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 
             return true;
-            //}
-            //catch ( Exception ex )
-            //{
-            //    LogException( "CheckExistingImport", ex.ToString() );
-            //    return false;
-            //}
         }
 
         #endregion Methods

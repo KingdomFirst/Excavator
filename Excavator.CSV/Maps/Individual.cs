@@ -20,6 +20,9 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
+using System.Web;
+using Excavator.Utility;
+using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -415,14 +418,14 @@ namespace Excavator.CSV
                             break;
                     }
 
+                    person.EmailPreference = emailPreference;
                     string primaryEmail = row[Email].Trim();
                     if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
                     {
-                        if ( primaryEmail.IsValidEmail() )
+                        if ( primaryEmail.IsEmail() )
                         {
                             person.Email = primaryEmail;
                             person.IsEmailActive = isEmailActive;
-                            person.EmailPreference = emailPreference;
                         }
                         else
                         {
@@ -575,6 +578,7 @@ namespace Excavator.CSV
 
             // Save any changes to existing families
             lookupContext.SaveChanges();
+            lookupContext.Dispose();
 
             ReportProgress( 0, string.Format( "Finished individual import: {0:N0} families and {1:N0} people added.", newFamilies, completed ) );
             return completed;
@@ -589,7 +593,15 @@ namespace Excavator.CSV
         private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyId )
         {
             var familyGroup = new Group();
-            familyGroup.Name = rowFamilyName;
+            if ( !string.IsNullOrWhiteSpace( rowFamilyName ) )
+            {
+                familyGroup.Name = rowFamilyName;
+            }
+            else
+            {
+                familyGroup.Name = string.Format( "Family Group {0}", rowFamilyId );
+            }
+
             familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
             familyGroup.ForeignId = rowFamilyId.ToString();
             familyGroup.GroupTypeId = FamilyGroupTypeId;
