@@ -418,6 +418,7 @@ namespace Excavator.CSV
                             break;
                     }
 
+                    person.EmailPreference = emailPreference;
                     string primaryEmail = row[Email].Trim();
                     if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
                     {
@@ -425,7 +426,6 @@ namespace Excavator.CSV
                         {
                             person.Email = primaryEmail;
                             person.IsEmailActive = isEmailActive;
-                            person.EmailPreference = emailPreference;
                         }
                         else
                         {
@@ -593,7 +593,15 @@ namespace Excavator.CSV
         private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyId )
         {
             var familyGroup = new Group();
-            familyGroup.Name = rowFamilyName;
+            if ( !string.IsNullOrWhiteSpace( rowFamilyName ) )
+            {
+                familyGroup.Name = rowFamilyName;
+            }
+            else
+            {
+                familyGroup.Name = string.Format( "Family Group {0}", rowFamilyId );
+            }
+
             familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
             familyGroup.ForeignId = rowFamilyId.ToString();
             familyGroup.GroupTypeId = FamilyGroupTypeId;
