@@ -5,6 +5,8 @@
 
 
 #Specific files
+EntityFramework.dll
+EntityFramework.SqlServer.dll
 System.Net.Http.Formatting.xml
 System.Web.Http.WebHost.xml
 System.Web.Http.xml
