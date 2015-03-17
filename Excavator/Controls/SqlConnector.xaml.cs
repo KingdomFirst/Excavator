@@ -156,6 +156,7 @@ namespace Excavator
 
         public SqlConnector( SqlTasks smoTasks )
         {
+            ConnectionString.Database = string.Empty;
             _smoTasks = smoTasks;
             _dbLoader.DoWork += DbLoaderDoWork;
             _dbLoader.RunWorkerCompleted += DbLoaderRunWorkerCompleted;
