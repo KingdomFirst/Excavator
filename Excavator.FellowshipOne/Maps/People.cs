@@ -252,7 +252,16 @@ namespace Excavator.F1
                         person.MiddleName = row["Middle_Name"] as string;
                         person.NickName = row["Goes_By"] as string ?? person.FirstName;
                         person.LastName = row["Last_Name"] as string;
-                        person.BirthDate = row["Date_Of_Birth"] as DateTime?;
+
+                        var DOB = row["Date_Of_Birth"] as DateTime?;
+                        if ( DOB != null )
+                        {
+                            var birthDate = (DateTime)DOB;
+                            person.BirthDay = birthDate.Day;
+                            person.BirthMonth = birthDate.Month;
+                            person.BirthYear = birthDate.Year;
+                        }
+
                         person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         person.RecordTypeValueId = personRecordTypeId;
                         person.ForeignId = individualId.ToString();

@@ -191,13 +191,15 @@ namespace Excavator.CSV
                     DateTime birthDate;
                     if ( DateTime.TryParseExact( row[DateOfBirth], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate ) )
                     {
-                        person.BirthDate = birthDate;
+                        person.BirthDay = birthDate.Day;
+                        person.BirthMonth = birthDate.Month;
+                        person.BirthYear = birthDate.Year;
                     }
 
                     DateTime graduationDate;
                     if ( DateTime.TryParseExact( row[GraduationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out graduationDate ) )
                     {
-                        person.GraduationDate = graduationDate;
+                        person.GraduationYear = graduationDate.Year;
                     }
 
                     DateTime anniversary;
