@@ -192,6 +192,10 @@ namespace Excavator.F1
                                 MapBankAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
 
+                            case "Attribute":
+                                MapAttribute( scanner.ScanTable( table.Name ).AsQueryable() );
+                                break;
+
                             case "Communication":
                                 MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
                                 break;
@@ -342,7 +346,6 @@ namespace Excavator.F1
             ReportProgress( 0, "Checking for existing data..." );
             var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
             var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
-            // var listHouseholdId = new PersonService().Queryable().Select( )
 
             ImportedPeople = listHouseholdId.GroupJoin( listIndividualId,
                 household => household.PersonId,

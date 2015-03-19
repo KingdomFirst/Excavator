@@ -71,6 +71,7 @@
   <ItemGroup>
     <Compile Include="F1Component.cs" />
     <Compile Include="Maps\Attendance.cs" />
+    <Compile Include="Maps\Attribute.cs" />
     <Compile Include="Maps\Notes.cs" />
     <Compile Include="Maps\Communication.cs" />
     <Compile Include="Maps\Financial.cs" />
