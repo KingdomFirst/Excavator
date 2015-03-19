@@ -710,7 +710,7 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            SaveNewUserLogins( newUserLogins, newStaffMembers, updatedPersonList );
+                            SaveUsers( newUserLogins, newStaffMembers, updatedPersonList );
 
                             updatedPersonList.Clear();
                             newUserLogins.Clear();
@@ -727,7 +727,7 @@ namespace Excavator.F1
 
             if ( newUserLogins.Any() )
             {
-                SaveNewUserLogins( newUserLogins, newStaffMembers, updatedPersonList );
+                SaveUsers( newUserLogins, newStaffMembers, updatedPersonList );
             }
 
             ReportProgress( 100, string.Format( "Finished user import: {0:N0} users imported.", completed ) );
@@ -739,7 +739,7 @@ namespace Excavator.F1
         /// <param name="newUserLogins">The new user logins.</param>
         /// <param name="newStaffMembers">The new staff members.</param>
         /// <param name="updatedPersonList">The updated person list.</param>
-        private static void SaveNewUserLogins( List<UserLogin> newUserLogins, List<GroupMember> newStaffMembers, List<Person> updatedPersonList )
+        private static void SaveUsers( List<UserLogin> newUserLogins, List<GroupMember> newStaffMembers, List<Person> updatedPersonList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
