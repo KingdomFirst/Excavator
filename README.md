@@ -20,7 +20,7 @@ Imports from FellowshipOne and CSV are currently supported.  A port for Arena Ch
 - Excavator files( see below for download )
 
 ## Downloads
-- [Excavator.zip](https://github.com/NewSpring/Excavator/blob/master/Excavator.zip)
+- [Excavator.zip](https://github.com/NewSpring/Excavator/raw/master/Excavator.zip)
 
 ## What If I Have A Problem?
 - If you have a problem with the import, please file an issue on Github: [Excavator Issues](https://github.com/NewSpring/Excavator/issues)
