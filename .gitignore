@@ -24,3 +24,4 @@ StyleCop.Cache
 [Rr]elease*/
 /scaffolding.config
 *.mdf
+/Excavator.sln.GhostDoc.xml
