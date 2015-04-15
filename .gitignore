@@ -19,6 +19,7 @@ Quartz.xml
 StyleCop.Cache
 
 #specific folders
+bak
 [Oo]bj/
 [Dd]ebug*/
 [Rr]elease*/

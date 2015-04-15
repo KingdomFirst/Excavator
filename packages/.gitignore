@@ -1,4 +1,6 @@
 #specific folders
-Costura*/
-Entity*/
-Fody*/
+*
+!.gitignore
+!Embeds
+!Embeds/*
+!repositories.config
