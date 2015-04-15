@@ -252,7 +252,16 @@ namespace Excavator.F1
                         person.MiddleName = row["Middle_Name"] as string;
                         person.NickName = row["Goes_By"] as string ?? person.FirstName;
                         person.LastName = row["Last_Name"] as string;
-                        person.BirthDate = row["Date_Of_Birth"] as DateTime?;
+
+                        var DOB = row["Date_Of_Birth"] as DateTime?;
+                        if ( DOB != null )
+                        {
+                            var birthDate = (DateTime)DOB;
+                            person.BirthDay = birthDate.Day;
+                            person.BirthMonth = birthDate.Month;
+                            person.BirthYear = birthDate.Year;
+                        }
+
                         person.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         person.RecordTypeValueId = personRecordTypeId;
                         person.ForeignId = individualId.ToString();
@@ -701,7 +710,7 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            SaveNewUserLogins( newUserLogins, newStaffMembers, updatedPersonList );
+                            SaveUsers( newUserLogins, newStaffMembers, updatedPersonList );
 
                             updatedPersonList.Clear();
                             newUserLogins.Clear();
@@ -718,7 +727,7 @@ namespace Excavator.F1
 
             if ( newUserLogins.Any() )
             {
-                SaveNewUserLogins( newUserLogins, newStaffMembers, updatedPersonList );
+                SaveUsers( newUserLogins, newStaffMembers, updatedPersonList );
             }
 
             ReportProgress( 100, string.Format( "Finished user import: {0:N0} users imported.", completed ) );
@@ -730,7 +739,7 @@ namespace Excavator.F1
         /// <param name="newUserLogins">The new user logins.</param>
         /// <param name="newStaffMembers">The new staff members.</param>
         /// <param name="updatedPersonList">The updated person list.</param>
-        private static void SaveNewUserLogins( List<UserLogin> newUserLogins, List<GroupMember> newStaffMembers, List<Person> updatedPersonList )
+        private static void SaveUsers( List<UserLogin> newUserLogins, List<GroupMember> newStaffMembers, List<Person> updatedPersonList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
