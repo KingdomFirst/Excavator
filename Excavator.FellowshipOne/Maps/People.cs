@@ -509,7 +509,7 @@ namespace Excavator.F1
 
                             if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
                             {
-                                person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                                person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid, ForeignId = person.ForeignId } );
                             }
 
                             if ( groupMember.GroupRoleId != childRoleId )
