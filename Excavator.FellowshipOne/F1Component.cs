@@ -95,6 +95,7 @@ namespace Excavator.F1
 
         private int IndividualAttributeId;
         private int HouseholdAttributeId;
+        private int InfellowshipLoginAttributeId;
         private int SecondaryEmailAttributeId;
 
         // Flag to set postprocessing audits on save
@@ -339,8 +340,30 @@ namespace Excavator.F1
                 lookupContext.SaveChanges( DisableAudit );
             }
 
+            var infellowshipLoginAttribute = personAttributes.FirstOrDefault( a => a.Key == "InfellowshipLogin" );
+            if ( infellowshipLoginAttribute == null )
+            {
+                infellowshipLoginAttribute = new Rock.Model.Attribute();
+                infellowshipLoginAttribute.Key = "InfellowshipLogin";
+                infellowshipLoginAttribute.Name = "Infellowship Login";
+                infellowshipLoginAttribute.FieldTypeId = TextFieldTypeId;
+                infellowshipLoginAttribute.EntityTypeId = PersonEntityTypeId;
+                infellowshipLoginAttribute.EntityTypeQualifierValue = string.Empty;
+                infellowshipLoginAttribute.EntityTypeQualifierColumn = string.Empty;
+                infellowshipLoginAttribute.Description = "The infellowship login for this person";
+                infellowshipLoginAttribute.DefaultValue = string.Empty;
+                infellowshipLoginAttribute.IsMultiValue = false;
+                infellowshipLoginAttribute.IsRequired = false;
+                infellowshipLoginAttribute.Order = 0;
+
+                // don't add a category as this attribute is only used via the API
+                lookupContext.Attributes.Add( infellowshipLoginAttribute );
+                lookupContext.SaveChanges( DisableAudit );
+            }
+
             IndividualAttributeId = individualAttribute.Id;
             HouseholdAttributeId = householdAttribute.Id;
+            InfellowshipLoginAttributeId = infellowshipLoginAttribute.Id;
             SecondaryEmailAttributeId = secondaryEmailAttribute.Id;
 
             ReportProgress( 0, "Checking for existing data..." );

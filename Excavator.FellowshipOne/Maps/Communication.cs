@@ -53,6 +53,7 @@ namespace Excavator.F1
             var facebookAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Facebook" ) );
             var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
             var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
+            var infellowshipLoginAttribute = AttributeCache.Read( InfellowshipLoginAttributeId );
 
             var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
 
@@ -155,9 +156,16 @@ namespace Excavator.F1
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, AttributeValue>();
 
-                        if ( value.IsEmail() )
+                        // Check for an Infellowship ID/email before checking other types of email
+                        if ( type.Contains( "Infellowship" ) )
+                        {
+                            AddPersonAttribute( infellowshipLoginAttribute, person, value );
+                            updatedPersonList.Add( person );
+                        }
+                        else if ( value.IsEmail() )
                         {
                             string secondaryEmail = string.Empty;
+
                             // person email is empty
                             if ( string.IsNullOrWhiteSpace( person.Email ) )
                             {
@@ -168,32 +176,37 @@ namespace Excavator.F1
                                 person.EmailNote = communicationComment;
                                 lookupContext.SaveChanges( DisableAudit );
                             }
+
                             // person email not empty and this is a different email
                             else if ( !person.Email.Equals( value ) )
                             {
                                 secondaryEmail = value;
                             }
 
-                            // person has two email addresses, make sure the second
+                            // person has two email addresses, save the second
                             if ( !string.IsNullOrWhiteSpace( secondaryEmail ) )
                             {
                                 AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmail );
                             }
+
+                            updatedPersonList.Add( person );
                         }
                         else if ( type.Contains( "Twitter" ) )
                         {
                             AddPersonAttribute( twitterAttribute, person, value );
+                            updatedPersonList.Add( person );
                         }
                         else if ( type.Contains( "Facebook" ) )
                         {
                             AddPersonAttribute( facebookAttribute, person, value );
+                            updatedPersonList.Add( person );
                         }
                         else if ( type.Contains( "Instagram" ) )
                         {
                             AddPersonAttribute( instagramAttribute, person, value );
+                            updatedPersonList.Add( person );
                         }
 
-                        updatedPersonList.Add( person );
                         completed++;
                     }
 
