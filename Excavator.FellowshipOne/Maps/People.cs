@@ -220,11 +220,12 @@ namespace Excavator.F1
             var individualIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
             var householdIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
+            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
             var employerAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Employer" ) );
             var positionAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Position" ) );
             var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
             var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "School" ) );
-            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
+            var legalNoteAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "LegalNotes" ) );
 
             var familyList = new List<Group>();
             var visitorList = new List<Group>();
@@ -360,23 +361,35 @@ namespace Excavator.F1
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, AttributeValue>();
 
-                        // individual_id already defined in scope
+                        // Individual_id already defined in scope
                         AddPersonAttribute( individualIdAttribute, person, individualId.ToString() );
 
-                        // household_id already defined in scope
+                        // Household_id already defined in scope
                         AddPersonAttribute( householdIdAttribute, person, householdId.ToString() );
 
                         string previousChurch = row["Former_Church"] as string;
-                        AddPersonAttribute( previousChurchAttribute, person, previousChurch );
+                        if ( previousChurch != null )
+                        {
+                            AddPersonAttribute( previousChurchAttribute, person, previousChurch );
+                        }
 
                         string employer = row["Employer"] as string;
-                        AddPersonAttribute( employerAttribute, person, employer );
+                        if ( employer != null )
+                        {
+                            AddPersonAttribute( employerAttribute, person, employer );
+                        }
 
                         string position = row["Occupation_Name"] as string ?? row["Occupation_Description"] as string;
-                        AddPersonAttribute( positionAttribute, person, position );
+                        if ( position != null )
+                        {
+                            AddPersonAttribute( positionAttribute, person, position );
+                        }
 
                         string school = row["School_Name"] as string;
-                        AddPersonAttribute( schoolAttribute, person, school );
+                        if ( school != null )
+                        {
+                            AddPersonAttribute( schoolAttribute, person, school );
+                        }
 
                         DateTime? membershipDate = row["Status_Date"] as DateTime?;
                         if ( membershipDate != null )
@@ -392,7 +405,13 @@ namespace Excavator.F1
                             AddPersonAttribute( firstVisitAttribute, person, firstVisit.Value.ToString( "MM/dd/yyyy" ) );
                         }
 
-                        // Other Attributes to create:
+                        string checkinNote = row["Default_tag_comment"] as string;
+                        if ( checkinNote != null )
+                        {
+                            AddPersonAttribute( legalNoteAttribute, person, checkinNote );
+                        }
+
+                        // Other Attributes to create?
                         // former name
                         // bar_code
                         // member_env_code
