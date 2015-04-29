@@ -317,26 +317,32 @@ namespace Excavator.F1
                         }
 
                         string memberStatus = row["Status_Name"].ToString().ToLower();
-                        if ( memberStatus == "member" )
+                        if ( memberStatus.Equals( "member" ) )
                         {
                             person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
                             person.RecordStatusValueId = recordStatusActiveId;
                         }
-                        else if ( memberStatus == "visitor" )
+                        else if ( memberStatus.Equals( "visitor" ) )
                         {
                             person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
                             person.RecordStatusValueId = recordStatusActiveId;
                         }
-                        else if ( memberStatus == "deceased" )
+                        else if ( memberStatus.Equals( "deceased" ) )
                         {
                             person.IsDeceased = true;
                             person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "Deceased" )
                                 .Select( dv => dv.Id ).FirstOrDefault();
                             person.RecordStatusValueId = recordStatusInactiveId;
                         }
+                        else if ( memberStatus.Equals( "dropped" ) || memberStatus.StartsWith( "inactive" ) )
+                        {
+                            person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "No Activity" )
+                                .Select( dv => dv.Id ).FirstOrDefault();
+                            person.RecordStatusValueId = recordStatusInactiveId;
+                        }
                         else
                         {
-                            // F1 defaults are Member & Visitor; all others are user-defined
+                            // Lookup others that may be user-defined
                             var customConnectionType = connectionStatusTypes.Where( dv => dv.Value == memberStatus )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
 
@@ -516,6 +522,7 @@ namespace Excavator.F1
                         foreach ( var groupMember in newFamilyGroup.Members )
                         {
                             var person = groupMember.Person;
+                            person.LoadAttributes( rockContext );
                             foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                             {
                                 var newValue = person.AttributeValues[attributeCache.Key];
@@ -569,7 +576,7 @@ namespace Excavator.F1
                                         invitedByMember.GroupRoleId = invitedByRoleId;
                                         ownerGroup.Members.Add( invitedByMember );
 
-                                        if ( person.Age < 18 && familyMember.Age > 15 )
+                                        if ( person.Age < 18 && familyMember.Age > 18 )
                                         {
                                             var allowCheckinMember = new GroupMember();
                                             allowCheckinMember.PersonId = familyMember.Id;
@@ -589,7 +596,7 @@ namespace Excavator.F1
                                         ownerGroup.Members.Add( inviteeMember );
 
                                         // if visitor can be checked in and this person is considered an adult
-                                        if ( visitor.Age < 18 && person.Age > 15 )
+                                        if ( visitor.Age < 18 && person.Age > 18 )
                                         {
                                             var canCheckInMember = new GroupMember();
                                             canCheckInMember.PersonId = visitor.Id;
