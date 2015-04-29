@@ -297,8 +297,8 @@ namespace Excavator.F1
                     string checkNumber = row["Check_Number"] as string;
                     if ( checkNumber != null && checkNumber.AsType<int?>() != null )
                     {
-                        // routing & account set to zero
-                        transaction.CheckMicrEncrypted = Encryption.EncryptString( string.Format( "{0}_{1}_{2}", 0, 0, checkNumber ) );
+                        // set the transaction code to the check number
+                        transaction.TransactionCode = checkNumber;
                     }
 
                     string fundName = row["Fund_Name"] as string;
