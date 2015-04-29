@@ -43,7 +43,21 @@ namespace Excavator.F1
             var personService = new PersonService( lookupContext );
             var attributeService = new AttributeService( lookupContext );
 
-            var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext ).DefinedValues;
+            var definedTypePhoneType = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext );
+            var otherNumberType = definedTypePhoneType.DefinedValues.Where( dv => dv.Value.StartsWith( "Other" ) ).Select( v => (int?)v.Id ).FirstOrDefault();
+            if ( otherNumberType == null )
+            {
+                var otherType = new DefinedValue();
+                otherType.IsSystem = false;
+                otherType.DefinedTypeId = definedTypePhoneType.Id;
+                otherType.Order = 0;
+                otherType.Value = "Other";
+                otherType.Description = "Imported from FellowshipOne and did not match a current phone type";
+                otherType.CreatedByPersonAliasId = ImportPersonAlias.Id;
+
+                lookupContext.DefinedValues.Add( otherType );
+                lookupContext.SaveChanges( DisableAudit );
+            }
 
             // Look up existing Person attributes
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
@@ -139,8 +153,9 @@ namespace Excavator.F1
                                     newNumber.Number = normalizedNumber.Left( 20 );
                                     newNumber.Description = communicationComment;
 
-                                    newNumber.NumberTypeValueId = numberTypeValues.Where( v => type.StartsWith( v.Value ) )
+                                    var matchingNumberType = definedTypePhoneType.DefinedValues.Where( v => type.StartsWith( v.Value ) )
                                         .Select( v => (int?)v.Id ).FirstOrDefault();
+                                    newNumber.NumberTypeValueId = matchingNumberType ?? otherNumberType;
 
                                     newNumberList.Add( newNumber );
                                     existingNumbers.Add( newNumber );
