@@ -87,9 +87,9 @@ namespace Excavator.F1
 
         // Existing entity types
 
-        protected int IntegerFieldTypeId;
-        protected int TextFieldTypeId;
-        protected int PersonEntityTypeId;
+        protected static int IntegerFieldTypeId;
+        protected static int TextFieldTypeId;
+        protected static int PersonEntityTypeId;
 
         // Custom attribute types
 
@@ -98,7 +98,7 @@ namespace Excavator.F1
         protected static int InfellowshipLoginAttributeId;
         protected static int SecondaryEmailAttributeId;
 
-        // Flag to set postprocessing audits on save
+        // Flag to run postprocessing audits during save
         protected static bool DisableAudit = true;
 
         #endregion Fields
