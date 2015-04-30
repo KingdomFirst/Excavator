@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.MetaData;
@@ -124,7 +125,7 @@ namespace Excavator.F1
         /// Saves the companies.
         /// </summary>
         /// <param name="businessList">The business list.</param>
-        private static void SaveCompanies( List<Group> businessList )
+        private void SaveCompanies( List<Group> businessList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
@@ -169,7 +170,7 @@ namespace Excavator.F1
         /// </summary>
         /// <param name="tableData">The table data.</param>
         /// <param name="selectedColumns">The selected columns.</param>
-        private void MapPerson( IQueryable<Row> tableData, List<string> selectedColumns = null )
+        public void MapPerson( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
             var groupTypeRoleService = new GroupTypeRoleService( lookupContext );
@@ -198,7 +199,7 @@ namespace Excavator.F1
             var titleTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_TITLE ), lookupContext ).DefinedValues;
 
             // Note type: Comment
-            int noteCommentTypeId = new NoteTypeService( lookupContext ).Get( new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) ).Id;
+            int noteCommentTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) ).Id;
 
             // Group roles: Owner, Adult, Child, others
             GroupTypeRole ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
@@ -215,30 +216,31 @@ namespace Excavator.F1
             // Look up additional Person attributes (existing)
             var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
-            // Cached F1 attributes: IndividualId, HouseholdId
+            // F1 attributes: IndividualId, HouseholdId
             // Core attributes: PreviousChurch, Position, Employer, School
             var individualIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
             var householdIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
             var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
+            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
+            var legalNoteAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "LegalNotes" ) );
             var employerAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Employer" ) );
             var positionAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Position" ) );
-            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
             var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "School" ) );
-            var legalNoteAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "LegalNotes" ) );
 
             var familyList = new List<Group>();
             var visitorList = new List<Group>();
+            var householdCampusList = new List<string>();
 
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying person import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedPeople.Count() ) );
+            ReportProgress( 0, string.Format( "Verifying person import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedPeople.Count ) );
 
             foreach ( var groupedRows in tableData.GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
                 var familyGroup = new Group();
-                var householdCampusList = new List<string>();
+                householdCampusList.Clear();
 
                 foreach ( var row in groupedRows )
                 {
@@ -246,7 +248,8 @@ namespace Excavator.F1
                     string currentCampus = string.Empty;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    if ( GetPersonAliasId( individualId, householdId ) == null )
+                    int? currentPersonAliasId = GetPersonAliasId( individualId, householdId );
+                    if ( currentPersonAliasId == null )
                     {
                         var person = new Person();
                         person.FirstName = row["First_Name"] as string;
@@ -397,18 +400,18 @@ namespace Excavator.F1
                             AddPersonAttribute( schoolAttribute, person, school );
                         }
 
-                        DateTime? membershipDate = row["Status_Date"] as DateTime?;
-                        if ( membershipDate != null )
-                        {
-                            person.CreatedDateTime = membershipDate;
-                            AddPersonAttribute( membershipDateAttribute, person, membershipDate.Value.ToString( "MM/dd/yyyy" ) );
-                        }
-
                         DateTime? firstVisit = row["First_Record"] as DateTime?;
                         if ( firstVisit != null )
                         {
                             person.CreatedDateTime = firstVisit;
                             AddPersonAttribute( firstVisitAttribute, person, firstVisit.Value.ToString( "MM/dd/yyyy" ) );
+                        }
+
+                        // Only import membership date if they are a member
+                        DateTime? membershipDate = row["Status_Date"] as DateTime?;
+                        if ( membershipDate != null && memberStatus.Contains( "member" ) )
+                        {
+                            AddPersonAttribute( membershipDateAttribute, person, membershipDate.Value.ToString( "MM/dd/yyyy" ) );
                         }
 
                         string checkinNote = row["Default_tag_comment"] as string;
@@ -459,7 +462,7 @@ namespace Excavator.F1
 
                     string primaryHouseholdCampus = householdCampusList.GroupBy( c => c ).OrderByDescending( c => c.Count() )
                         .Select( c => c.Key ).FirstOrDefault();
-                    if ( primaryHouseholdCampus != null )
+                    if ( !string.IsNullOrWhiteSpace( primaryHouseholdCampus ) )
                     {
                         familyGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( primaryHouseholdCampus ) || c.ShortCode == primaryHouseholdCampus )
                              .Select( c => (int?)c.Id ).FirstOrDefault();
@@ -503,7 +506,7 @@ namespace Excavator.F1
         /// <param name="invitedByRoleId">The invited by role identifier.</param>
         /// <param name="canCheckInRoleId">The can check in role identifier.</param>
         /// <param name="allowCheckInByRoleId">The allow check in by role identifier.</param>
-        private static void SavePeople( List<Group> familyList, List<Group> visitorList, GroupTypeRole ownerRole, int childRoleId, int inviteeRoleId, int invitedByRoleId, int canCheckInRoleId, int allowCheckInByRoleId )
+        private void SavePeople( List<Group> familyList, List<Group> visitorList, GroupTypeRole ownerRole, int childRoleId, int inviteeRoleId, int invitedByRoleId, int canCheckInRoleId, int allowCheckInByRoleId )
         {
             var rockContext = new RockContext();
             var groupMemberService = new GroupMemberService( rockContext );
@@ -513,7 +516,7 @@ namespace Excavator.F1
                 rockContext.Groups.AddRange( familyList );
                 rockContext.SaveChanges( DisableAudit );
 
-                var newAttributeValues = new List<AttributeValue>();
+                //var newAttributeValues = new List<AttributeValue>();
                 foreach ( var familyGroups in familyList.GroupBy<Group, int?>( g => g.ForeignId.AsType<int?>() ) )
                 {
                     bool visitorsExist = familyGroups.Count() > 1;
@@ -522,14 +525,24 @@ namespace Excavator.F1
                         foreach ( var groupMember in newFamilyGroup.Members )
                         {
                             var person = groupMember.Person;
+
+                            // save current values before loading from the db
+                            var newPersonAttributes = person.Attributes;
+                            var newPersonValues = person.AttributeValues;
                             person.LoadAttributes( rockContext );
-                            foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
+
+                            foreach ( var attributeCache in newPersonAttributes.Select( a => a.Value ) )
                             {
-                                var newValue = person.AttributeValues[attributeCache.Key];
-                                if ( newValue != null )
-                                {
-                                    newValue.EntityId = person.Id;
-                                    newAttributeValues.Add( newValue );
+                                var currentAttributeValue = person.AttributeValues[attributeCache.Key];
+                                currentAttributeValue.Value = newPersonValues[attributeCache.Key].Value;
+                                if ( currentAttributeValue.EntityId == null )
+                                {   // new attribute value, add it to context
+                                    currentAttributeValue.EntityId = person.Id;
+                                    rockContext.AttributeValues.Add( currentAttributeValue );
+                                }
+                                else
+                                {   // existing attribute value, attach the change
+                                    rockContext.AttributeValues.Attach( currentAttributeValue );
                                 }
                             }
 
@@ -566,7 +579,7 @@ namespace Excavator.F1
 
                                 // if this is a visitor, then add proper relationships to the family member
                                 if ( visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
-                                        .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.Id ) ) ) )
+                                        .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.ForeignId ) ) ) )
                                 {
                                     var familyMembers = familyGroups.Except( visitorList ).SelectMany( g => g.Members );
                                     foreach ( var familyMember in familyMembers.Select( m => m.Person ) )
@@ -587,7 +600,8 @@ namespace Excavator.F1
                                 }
                                 else
                                 {   // not a visitor, add the visitors to the family member's known relationship
-                                    var visitors = visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId ).SelectMany( g => g.Members );
+                                    var visitors = visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
+                                        .SelectMany( g => g.Members ).ToList();
                                     foreach ( var visitor in visitors.Select( g => g.Person ) )
                                     {
                                         var inviteeMember = new GroupMember();
@@ -610,30 +624,57 @@ namespace Excavator.F1
                     }
                 }
 
-                rockContext.AttributeValues.AddRange( newAttributeValues );
+                //rockContext.AttributeValues.AddRange( newAttributeValues );
                 rockContext.ChangeTracker.DetectChanges();
                 rockContext.SaveChanges( DisableAudit );
+
+                var individualIdAttribute = AttributeCache.Read( IndividualAttributeId );
+                var householdIdAttribute = AttributeCache.Read( HouseholdAttributeId );
+
+                if ( familyList.Any() )
+                {
+                    var familyMembers = familyList.SelectMany( gm => gm.Members );
+                    ImportedPeople.AddRange( familyMembers.Select( m => new ImportedPerson
+                    {
+                        PersonAliasId = m.Person.PrimaryAliasId,
+                        IndividualId = m.Person.AttributeValues[individualIdAttribute.Key].Value.AsType<int?>(),
+                        HouseholdId = m.Person.AttributeValues[householdIdAttribute.Key].Value.AsType<int?>()
+                    } ).ToList()
+                    );
+                }
+
+                if ( visitorList.Any() )
+                {
+                    var visitors = visitorList.SelectMany( gm => gm.Members );
+                    ImportedPeople.AddRange( visitors.Select( m => new ImportedPerson
+                    {
+                        PersonAliasId = m.Person.PrimaryAliasId,
+                        IndividualId = m.Person.AttributeValues[individualIdAttribute.Key].Value.AsType<int?>(),
+                        HouseholdId = m.Person.AttributeValues[householdIdAttribute.Key].Value.AsType<int?>()
+                    } ).ToList()
+                    );
+                }
             } );
+            // end wrap transaction
         }
 
         /// <summary>
         /// Maps the users.
         /// </summary>
         /// <param name="tableData">The table data.</param>
-        private void MapUsers( IQueryable<Row> tableData )
+        public void MapUsers( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
             var personService = new PersonService( lookupContext );
 
             int rockAuthenticatedTypeId = EntityTypeCache.Read( "Rock.Security.Authentication.Database" ).Id;
 
-            int secondaryEmailAttributeId = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId )
-                .Where( a => a.Key == "SecondaryEmail" ).Select( a => a.Id ).FirstOrDefault();
             var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
 
             int staffGroupId = new GroupService( lookupContext ).GetByGuid( new Guid( Rock.SystemGuid.Group.GROUP_STAFF_MEMBERS ) ).Id;
+
             int memberGroupRoleId = new GroupTypeRoleService( lookupContext ).Queryable()
-                .Where( r => r.Guid.Equals( new Guid( "00F3AC1C-71B9-4EE5-A30E-4C48C8A0BF1F" ) ) )
+                .Where( r => r.Guid.Equals( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_SECURITY_GROUP_MEMBER ) ) )
                 .Select( r => r.Id ).FirstOrDefault();
 
             var userLoginService = new UserLoginService( lookupContext );
@@ -765,7 +806,7 @@ namespace Excavator.F1
         /// <param name="newUserLogins">The new user logins.</param>
         /// <param name="newStaffMembers">The new staff members.</param>
         /// <param name="updatedPersonList">The updated person list.</param>
-        private static void SaveUsers( List<UserLogin> newUserLogins, List<GroupMember> newStaffMembers, List<Person> updatedPersonList )
+        private void SaveUsers( List<UserLogin> newUserLogins, List<GroupMember> newStaffMembers, List<Person> updatedPersonList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
@@ -804,7 +845,7 @@ namespace Excavator.F1
         /// <param name="attribute">The attribute.</param>
         /// <param name="person">The person.</param>
         /// <param name="value">The value.</param>
-        private static void AddPersonAttribute( AttributeCache attribute, Person person, string value )
+        protected void AddPersonAttribute( AttributeCache attribute, Person person, string value )
         {
             if ( !string.IsNullOrWhiteSpace( value ) )
             {
