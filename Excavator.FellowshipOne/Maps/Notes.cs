@@ -35,14 +35,14 @@ namespace Excavator.F1
         /// Maps the notes.
         /// </summary>
         /// <param name="tableData">The table data.</param>
-        private void MapNotes( IQueryable<Row> tableData )
+        public void MapNotes( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
             var categoryService = new CategoryService( lookupContext );
             var personService = new PersonService( lookupContext );
 
             var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
-            int noteTimelineTypeId = noteTypes.Where( nt => nt.Guid == new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) )
+            int noteTimelineTypeId = noteTypes.Where( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) )
                 .Select( nt => nt.Id ).FirstOrDefault();
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
@@ -115,7 +115,7 @@ namespace Excavator.F1
         /// Saves the notes.
         /// </summary>
         /// <param name="noteList">The note list.</param>
-        private static void SaveNotes( List<Note> noteList )
+        private void SaveNotes( List<Note> noteList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
