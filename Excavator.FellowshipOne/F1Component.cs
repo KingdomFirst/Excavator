@@ -229,15 +229,15 @@ namespace Excavator.F1
                         }
                         else if ( table.Name == "Company" )
                         {
-                            MapCompany( scanner.ScanTable( table.Name ).AsQueryable(), ImportPersonAlias, DisableAudit );
+                            MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Individual_Household" )
                         {
-                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable(), ImportPersonAlias, DisableAudit );
+                            MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                         else if ( table.Name == "Users" )
                         {
-                            MapUsers( scanner.ScanTable( table.Name ).AsQueryable(), ImportPersonAlias, DisableAudit );
+                            MapUsers( scanner.ScanTable( table.Name ).AsQueryable() );
                         }
                     }
                 }
