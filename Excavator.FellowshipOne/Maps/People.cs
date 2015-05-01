@@ -57,9 +57,6 @@ namespace Excavator.F1
             // Group type: Family
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            // Cached F1 attribute: HouseholdId
-            var householdIdAttribute = AttributeCache.Read( HouseholdAttributeId, lookupContext );
-
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
@@ -88,7 +85,7 @@ namespace Excavator.F1
 
                     business.Attributes = new Dictionary<string, AttributeCache>();
                     business.AttributeValues = new Dictionary<string, AttributeValue>();
-                    AddPersonAttribute( householdIdAttribute, business, householdId.ToString() );
+                    AddPersonAttribute( HouseholdIdAttribute, business, householdId.ToString() );
 
                     var groupMember = new GroupMember();
                     groupMember.Person = business;
@@ -163,6 +160,19 @@ namespace Excavator.F1
                 rockContext.ChangeTracker.DetectChanges();
                 rockContext.SaveChanges( DisableAudit );
             } );
+
+            if ( businessList.Any() )
+            {
+                var groupMembers = businessList.SelectMany( gm => gm.Members );
+                ImportedPeople.AddRange( groupMembers.Select( m => new ImportedPerson
+                {
+                    PersonAliasId = m.Person.PrimaryAliasId,
+                    IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
+                    HouseholdId = m.Person.AttributeValues[HouseholdIdAttribute.Key].Value.AsType<int?>(),
+                    IsFamilyMember = true
+                } ).ToList()
+                );
+            }
         }
 
         /// <summary>
@@ -218,8 +228,6 @@ namespace Excavator.F1
 
             // F1 attributes: IndividualId, HouseholdId
             // Core attributes: PreviousChurch, Position, Employer, School
-            var individualIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1IndividualId" ) );
-            var householdIdAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "F1HouseholdId" ) );
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
             var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
             var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
@@ -329,6 +337,9 @@ namespace Excavator.F1
                         {
                             person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
                             person.RecordStatusValueId = recordStatusActiveId;
+
+                            // F1 can designate visitors with member status or household position
+                            isFamilyRelationship = false;
                         }
                         else if ( memberStatus.Equals( "deceased" ) )
                         {
@@ -370,11 +381,11 @@ namespace Excavator.F1
                         person.Attributes = new Dictionary<string, AttributeCache>();
                         person.AttributeValues = new Dictionary<string, AttributeValue>();
 
-                        // Individual_id already defined in scope
-                        AddPersonAttribute( individualIdAttribute, person, individualId.ToString() );
+                        // IndividualId already defined in scope
+                        AddPersonAttribute( IndividualIdAttribute, person, individualId.ToString() );
 
-                        // Household_id already defined in scope
-                        AddPersonAttribute( householdIdAttribute, person, householdId.ToString() );
+                        // HouseholdId already defined in scope
+                        AddPersonAttribute( HouseholdIdAttribute, person, householdId.ToString() );
 
                         string previousChurch = row["Former_Church"] as string;
                         if ( previousChurch != null )
@@ -439,6 +450,9 @@ namespace Excavator.F1
                         }
                         else
                         {
+                            // set a processing flag to keep visitors from receiving household info
+                            person.ReviewReasonNote = F1Component.FamilyVisitor;
+
                             var visitorGroup = new Group();
                             visitorGroup.ForeignId = householdId.ToString();
                             visitorGroup.Members.Add( groupMember );
@@ -516,7 +530,6 @@ namespace Excavator.F1
                 rockContext.Groups.AddRange( familyList );
                 rockContext.SaveChanges( DisableAudit );
 
-                //var newAttributeValues = new List<AttributeValue>();
                 foreach ( var familyGroups in familyList.GroupBy<Group, int?>( g => g.ForeignId.AsType<int?>() ) )
                 {
                     bool visitorsExist = familyGroups.Count() > 1;
@@ -534,15 +547,21 @@ namespace Excavator.F1
                             foreach ( var attributeCache in newPersonAttributes.Select( a => a.Value ) )
                             {
                                 var currentAttributeValue = person.AttributeValues[attributeCache.Key];
-                                currentAttributeValue.Value = newPersonValues[attributeCache.Key].Value;
-                                if ( currentAttributeValue.EntityId == null )
-                                {   // new attribute value, add it to context
-                                    currentAttributeValue.EntityId = person.Id;
-                                    rockContext.AttributeValues.Add( currentAttributeValue );
-                                }
-                                else
-                                {   // existing attribute value, attach the change
-                                    rockContext.AttributeValues.Attach( currentAttributeValue );
+                                var newAttributeValue = newPersonValues[attributeCache.Key].Value;
+                                if ( currentAttributeValue.Value != newAttributeValue && !string.IsNullOrWhiteSpace( newAttributeValue ) )
+                                {
+                                    // set the new value and add it to the database
+                                    currentAttributeValue.Value = newAttributeValue;
+                                    if ( currentAttributeValue.EntityId == null )
+                                    {
+                                        currentAttributeValue.EntityId = person.Id;
+                                        rockContext.AttributeValues.Add( currentAttributeValue );
+                                    }
+                                    else
+                                    {
+                                        rockContext.AttributeValues.Attach( currentAttributeValue );
+                                        rockContext.Entry( currentAttributeValue ).State = EntityState.Modified;
+                                    }
                                 }
                             }
 
@@ -577,7 +596,7 @@ namespace Excavator.F1
                                     rockContext.Groups.Add( ownerGroup );
                                 }
 
-                                // if this is a visitor, then add proper relationships to the family member
+                                // if this is a visitor, then add relationships to the family member(s)
                                 if ( visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
                                         .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.ForeignId ) ) ) )
                                 {
@@ -624,12 +643,8 @@ namespace Excavator.F1
                     }
                 }
 
-                //rockContext.AttributeValues.AddRange( newAttributeValues );
                 rockContext.ChangeTracker.DetectChanges();
                 rockContext.SaveChanges( DisableAudit );
-
-                var individualIdAttribute = AttributeCache.Read( IndividualAttributeId );
-                var householdIdAttribute = AttributeCache.Read( HouseholdAttributeId );
 
                 if ( familyList.Any() )
                 {
@@ -637,8 +652,9 @@ namespace Excavator.F1
                     ImportedPeople.AddRange( familyMembers.Select( m => new ImportedPerson
                     {
                         PersonAliasId = m.Person.PrimaryAliasId,
-                        IndividualId = m.Person.AttributeValues[individualIdAttribute.Key].Value.AsType<int?>(),
-                        HouseholdId = m.Person.AttributeValues[householdIdAttribute.Key].Value.AsType<int?>()
+                        IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
+                        HouseholdId = m.Person.AttributeValues[HouseholdIdAttribute.Key].Value.AsType<int?>(),
+                        IsFamilyMember = true
                     } ).ToList()
                     );
                 }
@@ -649,8 +665,9 @@ namespace Excavator.F1
                     ImportedPeople.AddRange( visitors.Select( m => new ImportedPerson
                     {
                         PersonAliasId = m.Person.PrimaryAliasId,
-                        IndividualId = m.Person.AttributeValues[individualIdAttribute.Key].Value.AsType<int?>(),
-                        HouseholdId = m.Person.AttributeValues[householdIdAttribute.Key].Value.AsType<int?>()
+                        IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
+                        HouseholdId = m.Person.AttributeValues[HouseholdIdAttribute.Key].Value.AsType<int?>(),
+                        IsFamilyMember = false
                     } ).ToList()
                     );
                 }
@@ -668,8 +685,6 @@ namespace Excavator.F1
             var personService = new PersonService( lookupContext );
 
             int rockAuthenticatedTypeId = EntityTypeCache.Read( "Rock.Security.Authentication.Database" ).Id;
-
-            var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
 
             int staffGroupId = new GroupService( lookupContext ).GetByGuid( new Guid( Rock.SystemGuid.Group.GROUP_STAFF_MEMBERS ) ).Id;
 
@@ -756,7 +771,7 @@ namespace Excavator.F1
                             {
                                 person.Attributes = new Dictionary<string, AttributeCache>();
                                 person.AttributeValues = new Dictionary<string, AttributeValue>();
-                                AddPersonAttribute( secondaryEmailAttribute, person, secondaryEmail );
+                                AddPersonAttribute( SecondaryEmailAttribute, person, secondaryEmail );
                             }
 
                             updatedPersonList.Add( person );
@@ -845,7 +860,7 @@ namespace Excavator.F1
         /// <param name="attribute">The attribute.</param>
         /// <param name="person">The person.</param>
         /// <param name="value">The value.</param>
-        protected void AddPersonAttribute( AttributeCache attribute, Person person, string value )
+        protected static void AddPersonAttribute( AttributeCache attribute, Person person, string value )
         {
             if ( !string.IsNullOrWhiteSpace( value ) )
             {

@@ -68,7 +68,7 @@ namespace Excavator.F1
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
-        protected PersonAlias ImportPersonAlias;
+        protected static PersonAlias ImportPersonAlias;
 
         /// <summary>
         /// All the people who've been imported
@@ -83,7 +83,7 @@ namespace Excavator.F1
         /// <summary>
         /// All campuses
         /// </summary>
-        protected List<CampusCache> CampusList;
+        protected static List<CampusCache> CampusList;
 
         // Existing entity types
 
@@ -93,13 +93,16 @@ namespace Excavator.F1
 
         // Custom attribute types
 
-        protected static int IndividualAttributeId;
-        protected static int HouseholdAttributeId;
-        protected static int InfellowshipLoginAttributeId;
-        protected static int SecondaryEmailAttributeId;
+        protected static AttributeCache IndividualIdAttribute;
+        protected static AttributeCache HouseholdIdAttribute;
+        protected static AttributeCache InfellowshipLoginAttribute;
+        protected static AttributeCache SecondaryEmailAttribute;
 
         // Flag to run postprocessing audits during save
         protected static bool DisableAudit = true;
+
+        // Flag to designate household visitors
+        protected const string FamilyVisitor = "1";
 
         #endregion Fields
 
@@ -361,23 +364,25 @@ namespace Excavator.F1
                 lookupContext.SaveChanges( DisableAudit );
             }
 
-            IndividualAttributeId = individualAttribute.Id;
-            HouseholdAttributeId = householdAttribute.Id;
-            InfellowshipLoginAttributeId = infellowshipLoginAttribute.Id;
-            SecondaryEmailAttributeId = secondaryEmailAttribute.Id;
+            IndividualIdAttribute = AttributeCache.Read( individualAttribute.Id );
+            HouseholdIdAttribute = AttributeCache.Read( householdAttribute.Id );
+            InfellowshipLoginAttribute = AttributeCache.Read( infellowshipLoginAttribute.Id );
+            SecondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttribute.Id );
 
             ReportProgress( 0, "Checking for existing data..." );
-            var listHouseholdId = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
-            var listIndividualId = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
+            var visitorIdList = new PersonService( lookupContext ).Queryable().Where( p => p.ReviewReasonNote.Equals( FamilyVisitor ) ).OrderBy( p => p.Id ).Select( p => (int?)p.Id ).ToList();
+            var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
+            var individualIdList = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
 
-            ImportedPeople = listHouseholdId.GroupJoin( listIndividualId,
+            ImportedPeople = householdIdList.GroupJoin( individualIdList,
                 household => household.PersonId,
                 individual => individual.PersonId,
                 ( household, individual ) => new ImportedPerson
                     {
                         PersonAliasId = household.PersonId,
                         HouseholdId = household.HouseholdId.AsType<int?>(),
-                        IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault()
+                        IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault(),
+                        IsFamilyMember = visitorIdList.Contains( (int)household.PersonId )
                     }
                 ).ToList();
 
@@ -387,17 +392,32 @@ namespace Excavator.F1
         }
 
         /// <summary>
-        /// Checks if this person or business has been imported and returns the Rock.Person Id
+        /// Gets the person alias identifier.
         /// </summary>
         /// <param name="individualId">The individual identifier.</param>
         /// <param name="householdId">The household identifier.</param>
+        /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
         /// <returns></returns>
-        protected int? GetPersonAliasId( int? individualId = null, int? householdId = null )
+        protected int? GetPersonAliasId( int? individualId = null, int? householdId = null, bool includeVisitors = true )
         {
-            var existingPerson = ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId && p.HouseholdId == householdId );
-            if ( existingPerson != null )
+            if ( individualId != null && householdId != null )
             {
-                return existingPerson.PersonAliasId;
+                return ImportedPeople.Where( p => p.IndividualId == individualId && p.HouseholdId == householdId )
+                    .Select( p => p.PersonAliasId ).FirstOrDefault();
+            }
+            else if ( individualId != null )
+            {
+                return ImportedPeople.Where( p => p.IndividualId == individualId && ( includeVisitors || p.IsFamilyMember ) )
+                    .Select( p => p.PersonAliasId ).FirstOrDefault();
+            }
+            else if ( householdId != null )
+            {
+                return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.IsFamilyMember ) )
+                    .Select( p => p.PersonAliasId ).FirstOrDefault();
+            }
+            else
+            {
+                return null;
             }
             //else
             //{
@@ -420,19 +440,18 @@ namespace Excavator.F1
             //        return lookupPerson.EntityId;
             //    }
             //}
-
-            return null;
         }
 
         /// <summary>
         /// Gets the family by household identifier.
         /// </summary>
-        /// <param name="individualId">The individual identifier.</param>
         /// <param name="householdId">The household identifier.</param>
+        /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
         /// <returns></returns>
-        protected List<int?> GetFamilyByHouseholdId( int? householdId )
+        protected List<int?> GetFamilyByHouseholdId( int? householdId, bool includeVisitors = true )
         {
-            return ImportedPeople.Where( p => p.HouseholdId == householdId && p.PersonAliasId != null ).Select( p => p.PersonAliasId ).ToList();
+            return ImportedPeople.Where( p => p.HouseholdId == householdId && p.PersonAliasId != null && ( includeVisitors || p.IsFamilyMember ) )
+                .Select( p => p.PersonAliasId ).ToList();
         }
 
         #endregion Methods
@@ -457,5 +476,10 @@ namespace Excavator.F1
         /// Stores the F1 Household Id
         /// </summary>
         public int? HouseholdId;
+
+        /// <summary>
+        /// Stores whether the person was part of the family
+        /// </summary>
+        public bool IsFamilyMember;
     }
 }

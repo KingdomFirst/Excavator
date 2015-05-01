@@ -219,8 +219,8 @@ namespace Excavator.F1
 
             var refundReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ), lookupContext ).DefinedValues;
 
-            List<FinancialPledge> pledgeList = new FinancialPledgeService( lookupContext ).Queryable().ToList();
-            List<FinancialAccount> accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
+            var pledgeList = new FinancialPledgeService( lookupContext ).Queryable().ToList();
+            var accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
 
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable()
@@ -444,7 +444,7 @@ namespace Excavator.F1
                 {
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    int? personId = GetPersonAliasId( individualId, householdId );
+                    int? personId = GetPersonAliasId( individualId, householdId, includeVisitors: false );
                     if ( personId != null && !importedPledges.Any( p => p.PersonAliasId == personId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
                     {
                         var pledge = new FinancialPledge();
@@ -552,7 +552,7 @@ namespace Excavator.F1
         /// <param name="fundName">Name of the fund.</param>
         /// <param name="fundCampusId">The fund campus identifier.</param>
         /// <returns></returns>
-        private FinancialAccount AddAccount( RockContext lookupContext, string fundName, int? fundCampusId, int? parentAccountId )
+        private static FinancialAccount AddAccount( RockContext lookupContext, string fundName, int? fundCampusId, int? parentAccountId )
         {
             if ( lookupContext == null )
             {
