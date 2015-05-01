@@ -73,12 +73,12 @@ namespace Excavator.F1
         /// <summary>
         /// All the people who've been imported
         /// </summary>
-        protected List<ImportedPerson> ImportedPeople;
+        protected static List<ImportedPerson> ImportedPeople;
 
         /// <summary>
         /// All imported batches. Used in Batches & Contributions
         /// </summary>
-        protected Dictionary<int, int?> ImportedBatches;
+        protected static Dictionary<int, int?> ImportedBatches;
 
         /// <summary>
         /// All campuses
@@ -398,7 +398,7 @@ namespace Excavator.F1
         /// <param name="householdId">The household identifier.</param>
         /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
         /// <returns></returns>
-        protected int? GetPersonAliasId( int? individualId = null, int? householdId = null, bool includeVisitors = true )
+        protected static int? GetPersonAliasId( int? individualId = null, int? householdId = null, bool includeVisitors = true )
         {
             if ( individualId != null && householdId != null )
             {
@@ -448,7 +448,7 @@ namespace Excavator.F1
         /// <param name="householdId">The household identifier.</param>
         /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
         /// <returns></returns>
-        protected List<int?> GetFamilyByHouseholdId( int? householdId, bool includeVisitors = true )
+        protected static List<int?> GetFamilyByHouseholdId( int? householdId, bool includeVisitors = true )
         {
             return ImportedPeople.Where( p => p.HouseholdId == householdId && p.PersonAliasId != null && ( includeVisitors || p.IsFamilyMember ) )
                 .Select( p => p.PersonAliasId ).ToList();

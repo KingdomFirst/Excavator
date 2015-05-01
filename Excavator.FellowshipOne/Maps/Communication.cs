@@ -67,8 +67,6 @@ namespace Excavator.F1
             var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
             var facebookAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Facebook" ) );
             var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
-            var secondaryEmailAttribute = AttributeCache.Read( SecondaryEmailAttributeId );
-            var infellowshipLoginAttribute = AttributeCache.Read( InfellowshipLoginAttributeId );
 
             var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
 
@@ -87,26 +85,22 @@ namespace Excavator.F1
                     string value = row["Communication_Value"] as string;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    var personList = new List<int?>();
+                    var personIdsToUpdate = new List<int?>();
 
                     if ( individualId != null )
                     {
-                        int? personId = GetPersonAliasId( individualId, householdId );
+                        int? personId = GetPersonAliasId( individualId, householdId, includeVisitors: false );
                         if ( personId != null )
                         {
-                            personList.Add( personId );
+                            personIdsToUpdate.Add( personId );
                         }
                     }
                     else
                     {
-                        List<int?> personIds = GetFamilyByHouseholdId( householdId );
-                        if ( personIds.Any() )
-                        {
-                            personList.AddRange( personIds );
-                        }
+                        personIdsToUpdate = GetFamilyByHouseholdId( householdId, includeVisitors: false );
                     }
 
-                    if ( personList.Any() && !string.IsNullOrWhiteSpace( value ) )
+                    if ( personIdsToUpdate.Any() && !string.IsNullOrWhiteSpace( value ) )
                     {
                         DateTime? lastUpdated = row["LastUpdatedDate"] as DateTime?;
                         string communicationComment = row["Communication_Comment"] as string;
@@ -140,7 +134,7 @@ namespace Excavator.F1
 
                             if ( !string.IsNullOrWhiteSpace( normalizedNumber ) )
                             {
-                                foreach ( var familyPersonId in personList )
+                                foreach ( var familyPersonId in personIdsToUpdate )
                                 {
                                     bool numberExists = existingNumbers.Any( n => n.PersonId == familyPersonId && n.Number.Equals( value ) );
                                     if ( !numberExists )
@@ -172,8 +166,7 @@ namespace Excavator.F1
                         {
                             Person person = null;
 
-                            // should every person in the family get these attributes?
-                            var personId = (int)personList.FirstOrDefault();
+                            var personId = (int)personIdsToUpdate.FirstOrDefault();
                             if ( !peopleWithAttributes.ContainsKey( personId ) )
                             {
                                 // not in dictionary, get person from database
@@ -193,9 +186,9 @@ namespace Excavator.F1
                             }
 
                             // Check for an Infellowship ID/email before checking other types of email
-                            if ( type.Contains( "Infellowship" ) && !person.Attributes.ContainsKey( infellowshipLoginAttribute.Key ) )
+                            if ( type.Contains( "Infellowship" ) && !person.Attributes.ContainsKey( InfellowshipLoginAttribute.Key ) )
                             {
-                                AddPersonAttribute( infellowshipLoginAttribute, person, value );
+                                AddPersonAttribute( InfellowshipLoginAttribute, person, value );
                             }
                             else if ( value.IsEmail() )
                             {
@@ -210,9 +203,9 @@ namespace Excavator.F1
                                     lookupContext.SaveChanges( DisableAudit );
                                 }
                                 // this is a different email, assign it to SecondaryEmail
-                                else if ( !person.Email.Equals( value ) && !person.Attributes.ContainsKey( secondaryEmailAttribute.Key ) )
+                                else if ( !person.Email.Equals( value ) && !person.Attributes.ContainsKey( SecondaryEmailAttribute.Key ) )
                                 {
-                                    AddPersonAttribute( secondaryEmailAttribute, person, value );
+                                    AddPersonAttribute( SecondaryEmailAttribute, person, value );
                                 }
                             }
                             else if ( type.Contains( "Twitter" ) && !person.Attributes.ContainsKey( twitterAttribute.Key ) )
