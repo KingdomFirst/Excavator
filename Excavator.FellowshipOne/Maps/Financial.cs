@@ -409,6 +409,7 @@ namespace Excavator.F1
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
+                var test = newTransactions.Where( t => t.AuthorizedPersonAliasId != null ).ToList();
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialTransactions.AddRange( newTransactions );
                 rockContext.SaveChanges( DisableAudit );

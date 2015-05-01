@@ -371,17 +371,17 @@ namespace Excavator.F1
 
             ReportProgress( 0, "Checking for existing data..." );
             var visitorIdList = new PersonService( lookupContext ).Queryable().Where( p => p.ReviewReasonNote.Equals( FamilyVisitor ) ).OrderBy( p => p.Id ).Select( p => (int?)p.Id ).ToList();
+            var aliasIdList = new PersonAliasService( lookupContext ).Queryable().Where( p => p.ForeignId != null ).Select( pa => new { PersonAliasId = pa.Id, PersonId = pa.PersonId, IndividualId = pa.ForeignId } ).ToList();
             var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
-            var individualIdList = attributeValueService.GetByAttributeId( individualAttribute.Id ).Select( av => new { PersonId = av.EntityId, IndividualId = av.Value } ).ToList();
 
-            ImportedPeople = householdIdList.GroupJoin( individualIdList,
+            ImportedPeople = householdIdList.GroupJoin( aliasIdList,
                 household => household.PersonId,
-                individual => individual.PersonId,
-                ( household, individual ) => new ImportedPerson
+                aliases => aliases.PersonId,
+                ( household, aliases ) => new ImportedPerson
                     {
-                        PersonAliasId = household.PersonId,
+                        PersonAliasId = aliases.Select( a => a.PersonAliasId ).FirstOrDefault(),
                         HouseholdId = household.HouseholdId.AsType<int?>(),
-                        IndividualId = individual.Select( i => i.IndividualId.AsType<int?>() ).FirstOrDefault(),
+                        IndividualId = aliases.Select( a => a.IndividualId.AsType<int?>() ).FirstOrDefault(),
                         IsFamilyMember = visitorIdList.Contains( (int)household.PersonId )
                     }
                 ).ToList();
