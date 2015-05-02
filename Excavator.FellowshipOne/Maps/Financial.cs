@@ -53,8 +53,8 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? personId = GetPersonAliasId( individualId, householdId );
-                if ( personId != null )
+                var personKeys = GetPersonAliasId( individualId, householdId );
+                if ( personKeys != null && personKeys.PersonAliasId != null )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
                     string accountNumber = row["Account"] as string;
@@ -62,13 +62,13 @@ namespace Excavator.F1
                     {
                         accountNumber = accountNumber.Replace( " ", string.Empty );
                         string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
-                        if ( !importedBankAccounts.Any( a => a.PersonAliasId == personId && a.AccountNumberSecured == encodedNumber ) )
+                        if ( !importedBankAccounts.Any( a => a.PersonAliasId == personKeys.PersonAliasId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
-                            bankAccount.PersonAliasId = (int)personId;
+                            bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;
 
                             // Other Attributes (not used):
                             // Account_Type_Name
@@ -243,11 +243,16 @@ namespace Excavator.F1
                 if ( contributionId != null && !importedContributions.ContainsKey( (int)contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
-                    transaction.TransactionTypeValueId = transactionTypeContributionId;
-                    transaction.AuthorizedPersonAliasId = GetPersonAliasId( individualId, householdId );
                     transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    transaction.ProcessedByPersonAliasId = GetPersonAliasId( individualId, householdId );
+                    transaction.TransactionTypeValueId = transactionTypeContributionId;
                     transaction.ForeignId = contributionId.ToStringSafe();
+
+                    var personKeys = GetPersonAliasId( individualId, householdId, includeVisitors: false );
+                    if ( personKeys != null )
+                    {
+                        transaction.AuthorizedPersonAliasId = personKeys.PersonAliasId;
+                        transaction.ProcessedByPersonAliasId = personKeys.PersonAliasId;
+                    }
 
                     string summary = row["Memo"] as string;
                     if ( summary != null )
@@ -256,9 +261,9 @@ namespace Excavator.F1
                     }
 
                     int? batchId = row["BatchID"] as int?;
-                    if ( batchId != null && ImportedBatches.Any( b => b.Key == batchId ) )
+                    if ( batchId != null && ImportedBatches.Any( b => b.Key.Equals( batchId ) ) )
                     {
-                        transaction.BatchId = ImportedBatches.FirstOrDefault( b => b.Key == batchId ).Value;
+                        transaction.BatchId = ImportedBatches.FirstOrDefault( b => b.Key.Equals( batchId ) ).Value;
                     }
 
                     DateTime? receivedDate = row["Received_Date"] as DateTime?;
@@ -445,8 +450,8 @@ namespace Excavator.F1
                 {
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    int? personId = GetPersonAliasId( individualId, householdId, includeVisitors: false );
-                    if ( personId != null && !importedPledges.Any( p => p.PersonAliasId == personId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
+                    var personKeys = GetPersonAliasId( individualId, householdId, includeVisitors: false );
+                    if ( personKeys != null && !importedPledges.Any( p => p.PersonAliasId == personKeys.PersonAliasId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
                     {
                         var pledge = new FinancialPledge();
                         pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;

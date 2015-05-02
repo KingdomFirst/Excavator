@@ -164,9 +164,10 @@ namespace Excavator.F1
             if ( businessList.Any() )
             {
                 var groupMembers = businessList.SelectMany( gm => gm.Members );
-                ImportedPeople.AddRange( groupMembers.Select( m => new ImportedPerson
+                ImportedPeople.AddRange( groupMembers.Select( m => new PersonKeys
                 {
-                    PersonAliasId = m.Person.PrimaryAliasId,
+                    PersonAliasId = (int)m.Person.PrimaryAliasId,
+                    PersonId = m.Person.Id,
                     IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
                     HouseholdId = m.Person.AttributeValues[HouseholdIdAttribute.Key].Value.AsType<int?>(),
                     IsFamilyMember = true
@@ -228,13 +229,13 @@ namespace Excavator.F1
 
             // F1 attributes: IndividualId, HouseholdId
             // Core attributes: PreviousChurch, Position, Employer, School
-            var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "PreviousChurch" ) );
-            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "MembershipDate" ) );
-            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "FirstVisit" ) );
-            var legalNoteAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "LegalNotes" ) );
-            var employerAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Employer" ) );
-            var positionAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Position" ) );
-            var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "School" ) );
+            var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "PreviousChurch", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "MembershipDate", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "FirstVisit", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var legalNoteAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "LegalNotes", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var employerAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "Employer", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var positionAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "Position", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var schoolAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "School", StringComparison.InvariantCultureIgnoreCase ) ) );
 
             var familyList = new List<Group>();
             var visitorList = new List<Group>();
@@ -256,8 +257,8 @@ namespace Excavator.F1
                     string currentCampus = string.Empty;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    int? currentPersonAliasId = GetPersonAliasId( individualId, householdId );
-                    if ( currentPersonAliasId == null )
+                    var personKeys = GetPersonAliasId( individualId, householdId );
+                    if ( personKeys == null )
                     {
                         var person = new Person();
                         person.FirstName = row["First_Name"] as string;
@@ -649,7 +650,7 @@ namespace Excavator.F1
                 if ( familyList.Any() )
                 {
                     var familyMembers = familyList.SelectMany( gm => gm.Members );
-                    ImportedPeople.AddRange( familyMembers.Select( m => new ImportedPerson
+                    ImportedPeople.AddRange( familyMembers.Select( m => new PersonKeys
                     {
                         PersonAliasId = m.Person.PrimaryAliasId,
                         IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
@@ -662,7 +663,7 @@ namespace Excavator.F1
                 if ( visitorList.Any() )
                 {
                     var visitors = visitorList.SelectMany( gm => gm.Members );
-                    ImportedPeople.AddRange( visitors.Select( m => new ImportedPerson
+                    ImportedPeople.AddRange( visitors.Select( m => new PersonKeys
                     {
                         PersonAliasId = m.Person.PrimaryAliasId,
                         IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
@@ -714,8 +715,8 @@ namespace Excavator.F1
                 int? userId = row["UserID"] as int?;
                 if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !allUsers.ContainsKey( userName ) )
                 {
-                    int? personId = GetPersonAliasId( individualId, null );
-                    if ( personId != null )
+                    var personKeys = GetPersonAliasId( individualId, null );
+                    if ( personKeys != null )
                     {
                         DateTime? createdDate = row["UserCreatedDate"] as DateTime?;
                         string userPhone = row["UserPhone"] as string;
@@ -731,7 +732,7 @@ namespace Excavator.F1
                         user.EntityTypeId = rockAuthenticatedTypeId;
                         user.IsConfirmed = isEnabled;
                         user.UserName = userName.Trim();
-                        user.PersonId = personId;
+                        user.PersonId = personKeys.PersonId;
                         user.ForeignId = userId.ToString();
 
                         if ( isStaff == true )
@@ -739,7 +740,7 @@ namespace Excavator.F1
                             // add this user to the staff group
                             var staffMember = new GroupMember();
                             staffMember.GroupId = staffGroupId;
-                            staffMember.PersonId = (int)personId;
+                            staffMember.PersonId = personKeys.PersonId;
                             staffMember.GroupRoleId = memberGroupRoleId;
                             staffMember.CreatedDateTime = createdDate;
                             staffMember.CreatedByPersonAliasId = ImportPersonAlias.Id;
@@ -751,7 +752,7 @@ namespace Excavator.F1
                         // set user login email to primary email
                         if ( !string.IsNullOrWhiteSpace( userEmail ) && userEmail.IsEmail() )
                         {
-                            var person = personService.Queryable( includeDeceased: true ).FirstOrDefault( p => p.Id == personId );
+                            var person = personService.Queryable( includeDeceased: true ).FirstOrDefault( p => p.Id == personKeys.PersonId );
                             string secondaryEmail = string.Empty;
                             userEmail = userEmail.Trim();
                             if ( string.IsNullOrWhiteSpace( person.Email ) )

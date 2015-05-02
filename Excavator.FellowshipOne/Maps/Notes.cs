@@ -60,8 +60,8 @@ namespace Excavator.F1
                 string text = row["Note_Text"] as string;
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? personId = GetPersonAliasId( individualId, householdId );
-                if ( personId != null && !string.IsNullOrWhiteSpace( text ) )
+                var personKeys = GetPersonAliasId( individualId, householdId );
+                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) )
                 {
                     int? userId = row["NoteCreatedByUserID"] as int?;
                     if ( userId != null && importedUsers.ContainsKey( userId ) )
@@ -72,7 +72,7 @@ namespace Excavator.F1
                         var note = new Note();
                         note.CreatedByPersonAliasId = (int)importedUsers[userId];
                         note.CreatedDateTime = dateCreated;
-                        note.EntityId = personId;
+                        note.EntityId = personKeys.PersonId;
                         note.Text = text;
 
                         if ( !string.IsNullOrWhiteSpace( noteType ) )

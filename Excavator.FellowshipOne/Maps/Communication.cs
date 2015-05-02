@@ -64,14 +64,13 @@ namespace Excavator.F1
             var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
 
             // Cached Rock attributes: Facebook, Twitter, Instagram
-            var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Twitter" ) );
-            var facebookAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Facebook" ) );
-            var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key == "Instagram" ) );
+            var twitterAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "Twitter", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var facebookAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "Facebook", StringComparison.InvariantCultureIgnoreCase ) ) );
+            var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "Instagram", StringComparison.InvariantCultureIgnoreCase ) ) );
 
+            var newNumbers = new List<PhoneNumber>();
             var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
-
-            var newNumberList = new List<PhoneNumber>();
-            var peopleWithAttributes = new Dictionary<int, Person>();
+            var newPeopleAttributes = new Dictionary<int, Person>();
 
             int completed = 0;
             int totalRows = tableData.Count();
@@ -85,22 +84,22 @@ namespace Excavator.F1
                     string value = row["Communication_Value"] as string;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    var personIdsToUpdate = new List<int?>();
+                    var peopleToUpdate = new List<PersonKeys>();
 
                     if ( individualId != null )
                     {
-                        int? personId = GetPersonAliasId( individualId, householdId, includeVisitors: false );
-                        if ( personId != null )
+                        var matchingPerson = GetPersonAliasId( individualId, householdId, includeVisitors: false );
+                        if ( matchingPerson != null )
                         {
-                            personIdsToUpdate.Add( personId );
+                            peopleToUpdate.Add( matchingPerson );
                         }
                     }
                     else
                     {
-                        personIdsToUpdate = GetFamilyByHouseholdId( householdId, includeVisitors: false );
+                        peopleToUpdate = GetFamilyByHouseholdId( householdId, includeVisitors: false );
                     }
 
-                    if ( personIdsToUpdate.Any() && !string.IsNullOrWhiteSpace( value ) )
+                    if ( peopleToUpdate.Any() && !string.IsNullOrWhiteSpace( value ) )
                     {
                         DateTime? lastUpdated = row["LastUpdatedDate"] as DateTime?;
                         string communicationComment = row["Communication_Comment"] as string;
@@ -134,15 +133,15 @@ namespace Excavator.F1
 
                             if ( !string.IsNullOrWhiteSpace( normalizedNumber ) )
                             {
-                                foreach ( var familyPersonId in personIdsToUpdate )
+                                foreach ( var personKeys in peopleToUpdate )
                                 {
-                                    bool numberExists = existingNumbers.Any( n => n.PersonId == familyPersonId && n.Number.Equals( value ) );
+                                    bool numberExists = existingNumbers.Any( n => n.PersonId == personKeys.PersonId && n.Number.Equals( value ) );
                                     if ( !numberExists )
                                     {
                                         var newNumber = new PhoneNumber();
                                         newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
                                         newNumber.ModifiedDateTime = lastUpdated;
-                                        newNumber.PersonId = (int)familyPersonId;
+                                        newNumber.PersonId = (int)personKeys.PersonId;
                                         newNumber.IsMessagingEnabled = false;
                                         newNumber.CountryCode = countryCode;
                                         newNumber.IsUnlisted = !isListed;
@@ -155,7 +154,7 @@ namespace Excavator.F1
                                             .Select( v => (int?)v.Id ).FirstOrDefault();
                                         newNumber.NumberTypeValueId = matchingNumberType ?? otherNumberType;
 
-                                        newNumberList.Add( newNumber );
+                                        newNumbers.Add( newNumber );
                                         existingNumbers.Add( newNumber );
                                     }
                                 }
@@ -167,16 +166,16 @@ namespace Excavator.F1
                         {
                             Person person = null;
 
-                            var personId = (int)personIdsToUpdate.FirstOrDefault();
-                            if ( !peopleWithAttributes.ContainsKey( personId ) )
+                            var personKeys = peopleToUpdate.FirstOrDefault();
+                            if ( !newPeopleAttributes.ContainsKey( personKeys.PersonId ) )
                             {
                                 // not in dictionary, get person from database
-                                person = personService.Queryable( includeDeceased: true ).FirstOrDefault( p => p.Id == personId );
+                                person = personService.Queryable( includeDeceased: true ).FirstOrDefault( p => p.Id == personKeys.PersonId );
                             }
                             else
                             {
                                 // reuse person from dictionary
-                                person = peopleWithAttributes[personId];
+                                person = newPeopleAttributes[personKeys.PersonId];
                             }
 
                             if ( person != null )
@@ -188,10 +187,10 @@ namespace Excavator.F1
                                     person.AttributeValues = new Dictionary<string, AttributeValue>();
                                 }
 
-                                // Check for an Infellowship ID/email before checking other types of email
-                                if ( type.Contains( "InFellowship" ) && !person.Attributes.ContainsKey( InfellowshipLoginAttribute.Key ) )
+                                // Check for an InFellowship ID/email before checking other types of email
+                                if ( type.Contains( "InFellowship" ) && !person.Attributes.ContainsKey( InFellowshipLoginAttribute.Key ) )
                                 {
-                                    AddPersonAttribute( InfellowshipLoginAttribute, person, value );
+                                    AddPersonAttribute( InFellowshipLoginAttribute, person, value );
                                 }
                                 else if ( value.IsEmail() )
                                 {
@@ -224,13 +223,13 @@ namespace Excavator.F1
                                     AddPersonAttribute( instagramAttribute, person, value );
                                 }
 
-                                if ( !peopleWithAttributes.ContainsKey( personId ) )
+                                if ( !newPeopleAttributes.ContainsKey( personKeys.PersonId ) )
                                 {
-                                    peopleWithAttributes.Add( personId, person );
+                                    newPeopleAttributes.Add( personKeys.PersonId, person );
                                 }
                                 else
                                 {
-                                    peopleWithAttributes[personId] = person;
+                                    newPeopleAttributes[personKeys.PersonId] = person;
                                 }
                             }
 
@@ -244,25 +243,25 @@ namespace Excavator.F1
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {
-                            if ( newNumberList.Any() || peopleWithAttributes.Any() )
+                            if ( newNumbers.Any() || newPeopleAttributes.Any() )
                             {
-                                SaveCommunication( newNumberList, peopleWithAttributes );
+                                SaveCommunication( newNumbers, newPeopleAttributes );
                             }
 
                             // reset so context doesn't bloat
                             lookupContext = new RockContext();
                             personService = new PersonService( lookupContext );
-                            peopleWithAttributes.Clear();
-                            newNumberList.Clear();
+                            newPeopleAttributes.Clear();
+                            newNumbers.Clear();
                             ReportPartialProgress();
                         }
                     }
                 }
             }
 
-            if ( newNumberList.Any() || peopleWithAttributes.Any() )
+            if ( newNumbers.Any() || newPeopleAttributes.Any() )
             {
-                SaveCommunication( newNumberList, peopleWithAttributes );
+                SaveCommunication( newNumbers, newPeopleAttributes );
             }
 
             ReportProgress( 100, string.Format( "Finished communication import: {0:N0} records imported.", completed ) );
