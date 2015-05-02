@@ -149,6 +149,7 @@ namespace Excavator.F1
                                         newNumber.Extension = extension.Left( 20 );
                                         newNumber.Number = normalizedNumber.Left( 20 );
                                         newNumber.Description = communicationComment;
+                                        newNumber.NumberFormatted = PhoneNumber.FormattedNumber( countryCode, newNumber.Number, true );
 
                                         var matchingNumberType = definedTypePhoneType.DefinedValues.Where( v => type.StartsWith( v.Value ) )
                                             .Select( v => (int?)v.Id ).FirstOrDefault();
@@ -188,7 +189,7 @@ namespace Excavator.F1
                                 }
 
                                 // Check for an Infellowship ID/email before checking other types of email
-                                if ( type.Contains( "Infellowship" ) && !person.Attributes.ContainsKey( InfellowshipLoginAttribute.Key ) )
+                                if ( type.Contains( "InFellowship" ) && !person.Attributes.ContainsKey( InfellowshipLoginAttribute.Key ) )
                                 {
                                     AddPersonAttribute( InfellowshipLoginAttribute, person, value );
                                 }
