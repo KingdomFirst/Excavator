@@ -165,7 +165,7 @@ namespace Excavator.F1
             ImportPersonAlias = new PersonAliasService( rockContext ).Get( importPerson.Id );
             var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
-            ReportProgress( 0, "Checking for existing data..." );
+            ReportProgress( 0, "Checking for existing attributes..." );
             LoadExistingRockData();
 
             ReportProgress( 0, "Checking for table dependencies..." );
@@ -263,8 +263,6 @@ namespace Excavator.F1
             var lookupContext = new RockContext();
             var attributeValueService = new AttributeValueService( lookupContext );
             var attributeService = new AttributeService( lookupContext );
-
-            ReportProgress( 0, "Checking for existing attributes..." );
 
             IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
             TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
