@@ -419,27 +419,6 @@ namespace Excavator.F1
             {
                 return null;
             }
-            //else
-            //{
-            //    var rockContext = new RockContext();
-            //    int lookupAttributeId = individualId.HasValue ? IndividualAttributeId : HouseholdAttributeId;
-            //    string lookupValueId = individualId.HasValue ? individualId.ToString() : householdId.ToString();
-            //    var lookup = new AttributeValueService( rockContext ).Queryable()
-            //        .Where( av => av.AttributeId == lookupAttributeId && av.Value == lookupValueId );
-
-            //    var lookupPerson = lookup.FirstOrDefault();
-            //    if ( lookupPerson != null )
-            //    {
-            //        ImportedPeople.Add( new ImportedPerson()
-            //        {
-            //            PersonAliasId = lookupPerson.EntityId,
-            //            HouseholdId = householdId,
-            //            IndividualId = individualId
-            //        } );
-
-            //        return lookupPerson.EntityId;
-            //    }
-            //}
         }
 
         /// <summary>

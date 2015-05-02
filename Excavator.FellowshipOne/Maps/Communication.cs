@@ -53,7 +53,7 @@ namespace Excavator.F1
                 otherType.DefinedTypeId = definedTypePhoneType.Id;
                 otherType.Order = 0;
                 otherType.Value = "Other";
-                otherType.Description = "Imported from FellowshipOne and did not match a current phone type";
+                otherType.Description = "Imported from FellowshipOne";
                 otherType.CreatedByPersonAliasId = ImportPersonAlias.Id;
 
                 lookupContext.DefinedValues.Add( otherType );
@@ -76,7 +76,7 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying communication import ({0:N0} found, {1:N0} already exist).", totalRows, existingNumbers.Count() ) );
+            ReportProgress( 0, string.Format( "Verifying communication import ({0:N0} found, {1:N0} already exist).", totalRows, existingNumbers.Count ) );
 
             foreach ( var groupedRows in tableData.OrderByDescending( r => r["LastUpdatedDate"] ).GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
@@ -112,7 +112,7 @@ namespace Excavator.F1
                         if ( type.Contains( "Phone" ) || type.Contains( "Mobile" ) )
                         {
                             var extension = string.Empty;
-                            var countryCode = Rock.Model.PhoneNumber.DefaultCountryCode();
+                            var countryCode = PhoneNumber.DefaultCountryCode();
                             var normalizedNumber = string.Empty;
                             var countryIndex = value.IndexOf( '+' );
                             int extensionIndex = value.LastIndexOf( 'x' ) > 0 ? value.LastIndexOf( 'x' ) : value.Length;
@@ -178,56 +178,59 @@ namespace Excavator.F1
                                 person = peopleWithAttributes[personId];
                             }
 
-                            if ( person.Attributes == null || person.AttributeValues == null )
+                            if ( person != null )
                             {
-                                // make sure we have valid objects to assign to
-                                person.Attributes = new Dictionary<string, AttributeCache>();
-                                person.AttributeValues = new Dictionary<string, AttributeValue>();
-                            }
-
-                            // Check for an Infellowship ID/email before checking other types of email
-                            if ( type.Contains( "Infellowship" ) && !person.Attributes.ContainsKey( InfellowshipLoginAttribute.Key ) )
-                            {
-                                AddPersonAttribute( InfellowshipLoginAttribute, person, value );
-                            }
-                            else if ( value.IsEmail() )
-                            {
-                                // person email is empty
-                                if ( string.IsNullOrWhiteSpace( person.Email ) )
+                                if ( person.Attributes == null || person.AttributeValues == null )
                                 {
-                                    person.Email = value.Left( 75 );
-                                    person.IsEmailActive = isListed;
-                                    person.EmailPreference = isListed ? EmailPreference.EmailAllowed : EmailPreference.DoNotEmail;
-                                    person.ModifiedDateTime = lastUpdated;
-                                    person.EmailNote = communicationComment;
-                                    lookupContext.SaveChanges( DisableAudit );
+                                    // make sure we have valid objects to assign to
+                                    person.Attributes = new Dictionary<string, AttributeCache>();
+                                    person.AttributeValues = new Dictionary<string, AttributeValue>();
                                 }
-                                // this is a different email, assign it to SecondaryEmail
-                                else if ( !person.Email.Equals( value ) && !person.Attributes.ContainsKey( SecondaryEmailAttribute.Key ) )
-                                {
-                                    AddPersonAttribute( SecondaryEmailAttribute, person, value );
-                                }
-                            }
-                            else if ( type.Contains( "Twitter" ) && !person.Attributes.ContainsKey( twitterAttribute.Key ) )
-                            {
-                                AddPersonAttribute( twitterAttribute, person, value );
-                            }
-                            else if ( type.Contains( "Facebook" ) && !person.Attributes.ContainsKey( facebookAttribute.Key ) )
-                            {
-                                AddPersonAttribute( facebookAttribute, person, value );
-                            }
-                            else if ( type.Contains( "Instagram" ) && !person.Attributes.ContainsKey( instagramAttribute.Key ) )
-                            {
-                                AddPersonAttribute( instagramAttribute, person, value );
-                            }
 
-                            if ( !peopleWithAttributes.ContainsKey( personId ) )
-                            {
-                                peopleWithAttributes.Add( personId, person );
-                            }
-                            else
-                            {
-                                peopleWithAttributes[personId] = person;
+                                // Check for an Infellowship ID/email before checking other types of email
+                                if ( type.Contains( "Infellowship" ) && !person.Attributes.ContainsKey( InfellowshipLoginAttribute.Key ) )
+                                {
+                                    AddPersonAttribute( InfellowshipLoginAttribute, person, value );
+                                }
+                                else if ( value.IsEmail() )
+                                {
+                                    // person email is empty
+                                    if ( string.IsNullOrWhiteSpace( person.Email ) )
+                                    {
+                                        person.Email = value.Left( 75 );
+                                        person.IsEmailActive = isListed;
+                                        person.EmailPreference = isListed ? EmailPreference.EmailAllowed : EmailPreference.DoNotEmail;
+                                        person.ModifiedDateTime = lastUpdated;
+                                        person.EmailNote = communicationComment;
+                                        lookupContext.SaveChanges( DisableAudit );
+                                    }
+                                    // this is a different email, assign it to SecondaryEmail
+                                    else if ( !person.Email.Equals( value ) && !person.Attributes.ContainsKey( SecondaryEmailAttribute.Key ) )
+                                    {
+                                        AddPersonAttribute( SecondaryEmailAttribute, person, value );
+                                    }
+                                }
+                                else if ( type.Contains( "Twitter" ) && !person.Attributes.ContainsKey( twitterAttribute.Key ) )
+                                {
+                                    AddPersonAttribute( twitterAttribute, person, value );
+                                }
+                                else if ( type.Contains( "Facebook" ) && !person.Attributes.ContainsKey( facebookAttribute.Key ) )
+                                {
+                                    AddPersonAttribute( facebookAttribute, person, value );
+                                }
+                                else if ( type.Contains( "Instagram" ) && !person.Attributes.ContainsKey( instagramAttribute.Key ) )
+                                {
+                                    AddPersonAttribute( instagramAttribute, person, value );
+                                }
+
+                                if ( !peopleWithAttributes.ContainsKey( personId ) )
+                                {
+                                    peopleWithAttributes.Add( personId, person );
+                                }
+                                else
+                                {
+                                    peopleWithAttributes[personId] = person;
+                                }
                             }
 
                             completed++;
@@ -286,26 +289,25 @@ namespace Excavator.F1
                     foreach ( var person in updatedPersonList.Values.Where( p => p.Attributes.Any() ) )
                     {
                         // save current values before loading from the db
-                        var newPersonAttributes = person.Attributes;
-                        var newPersonValues = person.AttributeValues;
+                        var newAttributes = person.Attributes;
+                        var newValues = person.AttributeValues;
                         person.LoadAttributes( rockContext );
 
-                        foreach ( var attributeCache in newPersonAttributes.Select( a => a.Value ) )
+                        foreach ( var attributeCache in newAttributes.Select( a => a.Value ) )
                         {
                             var currentAttributeValue = person.AttributeValues[attributeCache.Key];
-                            var newAttributeValue = newPersonValues[attributeCache.Key].Value;
+                            var newAttributeValue = newValues[attributeCache.Key].Value;
                             if ( currentAttributeValue.Value != newAttributeValue && !string.IsNullOrWhiteSpace( newAttributeValue ) )
                             {
-                                // set the new value and add it to the database
+                                // set the new value and send it to the database
                                 currentAttributeValue.Value = newAttributeValue;
-                                if ( currentAttributeValue.EntityId == null )
+                                if ( currentAttributeValue.Id == 0 )
                                 {
                                     currentAttributeValue.EntityId = person.Id;
-                                    rockContext.AttributeValues.Add( currentAttributeValue );
+                                    rockContext.Entry( currentAttributeValue ).State = EntityState.Added;
                                 }
                                 else
                                 {
-                                    rockContext.AttributeValues.Attach( currentAttributeValue );
                                     rockContext.Entry( currentAttributeValue ).State = EntityState.Modified;
                                 }
                             }
