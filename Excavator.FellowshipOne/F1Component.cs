@@ -143,7 +143,7 @@ namespace Excavator.F1
                 TableNodes.Add( tableItem );
             }
 
-            return TableNodes.Count() > 0 ? true : false;
+            return TableNodes.Count > 0 ? true : false;
         }
 
         /// <summary>
