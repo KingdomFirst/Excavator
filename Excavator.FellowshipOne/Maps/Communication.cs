@@ -79,7 +79,7 @@ namespace Excavator.F1
 
             foreach ( var groupedRows in tableData.OrderByDescending( r => r["LastUpdatedDate"] ).GroupBy<Row, int?>( r => r["Household_ID"] as int? ) )
             {
-                foreach ( var row in groupedRows )
+                foreach ( var row in groupedRows.Where( r => r != null ) )
                 {
                     string value = row["Communication_Value"] as string;
                     int? individualId = row["Individual_ID"] as int?;

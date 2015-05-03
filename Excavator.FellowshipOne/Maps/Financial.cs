@@ -49,7 +49,7 @@ namespace Excavator.F1
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying check number import ({0:N0} found, {1:N0} already exist).", totalRows, importedBankAccounts.Count ) );
 
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
@@ -128,7 +128,7 @@ namespace Excavator.F1
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying batch import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedBatches.Count ) );
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? batchId = row["BatchID"] as int?;
                 if ( batchId != null && !ImportedBatches.ContainsKey( (int)batchId ) )
@@ -234,7 +234,7 @@ namespace Excavator.F1
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying contribution import ({0:N0} found, {1:N0} already exist).", totalRows, importedContributions.Count ) );
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
@@ -441,7 +441,7 @@ namespace Excavator.F1
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying pledge import ({0:N0} found).", totalRows ) );
 
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 decimal? amount = row["Total_Pledge"] as decimal?;
                 DateTime? startDate = row["Start_Date"] as DateTime?;

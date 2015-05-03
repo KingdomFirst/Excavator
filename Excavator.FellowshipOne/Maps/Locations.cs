@@ -53,7 +53,7 @@ namespace Excavator.F1
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying address import ({0:N0} found).", totalRows ) );
 
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;

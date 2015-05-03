@@ -62,7 +62,7 @@ namespace Excavator.F1
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying company import ({0:N0} found).", totalRows ) );
 
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? householdId = row["Household_ID"] as int?;
                 if ( GetPersonAliasId( null, householdId ) == null )
@@ -251,7 +251,7 @@ namespace Excavator.F1
                 var familyGroup = new Group();
                 householdCampusList.Clear();
 
-                foreach ( var row in groupedRows )
+                foreach ( var row in groupedRows.Where( r => r != null ) )
                 {
                     bool isFamilyRelationship = true;
                     string currentCampus = string.Empty;
@@ -314,9 +314,10 @@ namespace Excavator.F1
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
                         }
 
-                        string familyRole = row["Household_Position"].ToString().ToLower();
+                        string familyRole = row["Household_Position"] as string;
                         if ( familyRole != null )
                         {
+                            familyRole = familyRole.ToString().ToLower();
                             if ( familyRole == "visitor" )
                             {
                                 isFamilyRelationship = false;
@@ -328,42 +329,46 @@ namespace Excavator.F1
                             }
                         }
 
-                        string memberStatus = row["Status_Name"].ToString().ToLower();
-                        if ( memberStatus.Equals( "member" ) )
+                        string memberStatus = row["Status_Name"] as string;
+                        if ( memberStatus != null )
                         {
-                            person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
-                            person.RecordStatusValueId = recordStatusActiveId;
-                        }
-                        else if ( memberStatus.Equals( "visitor" ) )
-                        {
-                            person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
-                            person.RecordStatusValueId = recordStatusActiveId;
+                            memberStatus = memberStatus.ToString().ToLower();
+                            if ( memberStatus.Equals( "member" ) )
+                            {
+                                person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
+                                person.RecordStatusValueId = recordStatusActiveId;
+                            }
+                            else if ( memberStatus.Equals( "visitor" ) )
+                            {
+                                person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
+                                person.RecordStatusValueId = recordStatusActiveId;
 
-                            // F1 can designate visitors with member status or household position
-                            isFamilyRelationship = false;
-                        }
-                        else if ( memberStatus.Equals( "deceased" ) )
-                        {
-                            person.IsDeceased = true;
-                            person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "Deceased" )
-                                .Select( dv => dv.Id ).FirstOrDefault();
-                            person.RecordStatusValueId = recordStatusInactiveId;
-                        }
-                        else if ( memberStatus.Equals( "dropped" ) || memberStatus.StartsWith( "inactive" ) )
-                        {
-                            person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "No Activity" )
-                                .Select( dv => dv.Id ).FirstOrDefault();
-                            person.RecordStatusValueId = recordStatusInactiveId;
-                        }
-                        else
-                        {
-                            // Lookup others that may be user-defined
-                            var customConnectionType = connectionStatusTypes.Where( dv => dv.Value == memberStatus )
-                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                                // F1 can designate visitors with member status or household position
+                                isFamilyRelationship = false;
+                            }
+                            else if ( memberStatus.Equals( "deceased" ) )
+                            {
+                                person.IsDeceased = true;
+                                person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "Deceased" )
+                                    .Select( dv => dv.Id ).FirstOrDefault();
+                                person.RecordStatusValueId = recordStatusInactiveId;
+                            }
+                            else if ( memberStatus.Equals( "dropped" ) || memberStatus.StartsWith( "inactive" ) )
+                            {
+                                person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "No Activity" )
+                                    .Select( dv => dv.Id ).FirstOrDefault();
+                                person.RecordStatusValueId = recordStatusInactiveId;
+                            }
+                            else
+                            {
+                                // Lookup others that may be user-defined
+                                var customConnectionType = connectionStatusTypes.Where( dv => dv.Value == memberStatus )
+                                    .Select( dv => (int?)dv.Id ).FirstOrDefault();
 
-                            int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE ) ).Id;
-                            person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
-                            person.RecordStatusValueId = recordStatusActiveId;
+                                int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE ) ).Id;
+                                person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
+                                person.RecordStatusValueId = recordStatusActiveId;
+                            }
                         }
 
                         string campus = row["SubStatus_Name"] as string;
@@ -708,7 +713,7 @@ namespace Excavator.F1
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying user import ({0:N0} found, {1:N0} already exist).", totalRows, importedUserCount ) );
 
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? individualId = row["LinkedIndividualID"] as int?;
                 string userName = row["UserLogin"] as string;

@@ -55,7 +55,7 @@ namespace Excavator.F1
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying note import ({0:N0} found).", totalRows ) );
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 string text = row["Note_Text"] as string;
                 int? individualId = row["Individual_ID"] as int?;
