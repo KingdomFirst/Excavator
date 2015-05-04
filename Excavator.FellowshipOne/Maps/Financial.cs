@@ -245,7 +245,7 @@ namespace Excavator.F1
                     var transaction = new FinancialTransaction();
                     transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
-                    transaction.ForeignId = contributionId.ToStringSafe();
+                    transaction.ForeignId = contributionId.ToString();
 
                     var personKeys = GetPersonAliasId( individualId, householdId, includeVisitors: false );
                     if ( personKeys != null )
@@ -414,7 +414,6 @@ namespace Excavator.F1
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
-                var test = newTransactions.Where( t => t.AuthorizedPersonAliasId != null ).ToList();
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialTransactions.AddRange( newTransactions );
                 rockContext.SaveChanges( DisableAudit );
