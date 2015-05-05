@@ -57,7 +57,7 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                var personKeys = GetPersonAliasId( individualId, householdId, includeVisitors: false );
+                var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
                 if ( personKeys != null )
                 {
                     var familyGroup = groupMembershipList.Where( gm => gm.PersonId == personKeys.PersonId )

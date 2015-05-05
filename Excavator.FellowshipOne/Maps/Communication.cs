@@ -88,7 +88,7 @@ namespace Excavator.F1
 
                     if ( individualId != null )
                     {
-                        var matchingPerson = GetPersonAliasId( individualId, householdId, includeVisitors: false );
+                        var matchingPerson = GetPersonKeys( individualId, householdId, includeVisitors: false );
                         if ( matchingPerson != null )
                         {
                             peopleToUpdate.Add( matchingPerson );

@@ -65,31 +65,30 @@ namespace Excavator.F1
             foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? householdId = row["Household_ID"] as int?;
-                if ( GetPersonAliasId( null, householdId ) == null )
+                if ( GetPersonKeys( null, householdId ) == null )
                 {
                     var businessGroup = new Group();
-                    var business = new Person();
+                    var businessPerson = new Person();
 
-                    business.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    business.CreatedDateTime = row["Created_Date"] as DateTime?;
-                    business.RecordTypeValueId = businessRecordTypeId;
-                    business.ForeignId = householdId.ToString();
+                    businessPerson.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    businessPerson.CreatedDateTime = row["Created_Date"] as DateTime?;
+                    businessPerson.RecordTypeValueId = businessRecordTypeId;
 
                     var businessName = row["Household_Name"] as string;
                     if ( businessName != null )
                     {
                         businessName.Replace( "&#39;", "'" );
                         businessName.Replace( "&amp;", "&" );
-                        business.LastName = businessName.Left( 50 );
+                        businessPerson.LastName = businessName.Left( 50 );
                         businessGroup.Name = businessName.Left( 50 );
                     }
 
-                    business.Attributes = new Dictionary<string, AttributeCache>();
-                    business.AttributeValues = new Dictionary<string, AttributeValue>();
-                    AddPersonAttribute( HouseholdIdAttribute, business, householdId.ToString() );
+                    businessPerson.Attributes = new Dictionary<string, AttributeCache>();
+                    businessPerson.AttributeValues = new Dictionary<string, AttributeValue>();
+                    AddPersonAttribute( HouseholdIdAttribute, businessPerson, householdId.ToString() );
 
                     var groupMember = new GroupMember();
-                    groupMember.Person = business;
+                    groupMember.Person = businessPerson;
                     groupMember.GroupRoleId = groupRoleId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
                     businessGroup.Members.Add( groupMember );
@@ -137,10 +136,20 @@ namespace Excavator.F1
                 {
                     foreach ( var groupMember in newBusiness.Members )
                     {
+                        foreach ( var attributeCache in groupMember.Person.Attributes.Select( a => a.Value ) )
+                        {
+                            var newValue = groupMember.Person.AttributeValues[attributeCache.Key];
+                            if ( newValue != null )
+                            {
+                                newValue.EntityId = groupMember.Person.Id;
+                                rockContext.Entry( newValue ).State = EntityState.Added;
+                            }
+                        }
+
                         var person = groupMember.Person;
                         if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
                         {
-                            person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid, ForeignId = person.ForeignId } );
+                            person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
                         }
 
                         person.GivingGroupId = newBusiness.Id;
@@ -158,7 +167,7 @@ namespace Excavator.F1
                         PersonAliasId = (int)m.Person.PrimaryAliasId,
                         PersonId = m.Person.Id,
                         IndividualId = null,
-                        HouseholdId = m.Person.ForeignId.AsType<int?>(),
+                        HouseholdId = m.Group.ForeignId.AsType<int?>(),
                         IsFamilyMember = true
                     } ).ToList()
                     );
@@ -247,7 +256,7 @@ namespace Excavator.F1
                     string currentCampus = string.Empty;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    var personKeys = GetPersonAliasId( individualId, householdId );
+                    var personKeys = GetPersonKeys( individualId, householdId );
                     if ( personKeys == null )
                     {
                         var person = new Person();
@@ -708,7 +717,7 @@ namespace Excavator.F1
                 int? userId = row["UserID"] as int?;
                 if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !allUsers.ContainsKey( userName ) )
                 {
-                    var personKeys = GetPersonAliasId( individualId, null );
+                    var personKeys = GetPersonKeys( individualId, null );
                     if ( personKeys != null )
                     {
                         DateTime? createdDate = row["UserCreatedDate"] as DateTime?;

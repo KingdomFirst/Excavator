@@ -393,13 +393,13 @@ namespace Excavator.F1
         }
 
         /// <summary>
-        /// Gets the person alias identifier.
+        /// Gets the person keys.
         /// </summary>
         /// <param name="individualId">The individual identifier.</param>
         /// <param name="householdId">The household identifier.</param>
         /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
         /// <returns></returns>
-        protected static PersonKeys GetPersonAliasId( int? individualId = null, int? householdId = null, bool includeVisitors = true )
+        protected static PersonKeys GetPersonKeys( int? individualId = null, int? householdId = null, bool includeVisitors = true )
         {
             if ( individualId != null && householdId != null )
             {
@@ -427,7 +427,7 @@ namespace Excavator.F1
         /// <returns></returns>
         protected static List<PersonKeys> GetFamilyByHouseholdId( int? householdId, bool includeVisitors = true )
         {
-            return ImportedPeople.Where( p => p.HouseholdId == householdId && p.PersonAliasId != null && ( includeVisitors || p.IsFamilyMember ) ).ToList();
+            return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.IsFamilyMember ) ).ToList();
         }
 
         #endregion Methods
