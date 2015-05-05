@@ -311,30 +311,30 @@ namespace Excavator.F1
                     if ( fundName != null & amount != null )
                     {
                         int transactionAccountId;
-                        FinancialAccount parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
+                        var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
                         if ( parentAccount == null )
                         {
                             parentAccount = AddAccount( lookupContext, fundName, null, null );
                             accountList.Add( parentAccount );
                         }
 
-                        FinancialAccount childAccount = null;
                         if ( subFund != null )
                         {
                             int? campusFundId = null;
-                            // match by campus if the subfund appears to be a campus
+                            // assign a campus if the subfund is a campus fund
                             var campusFund = CampusList.FirstOrDefault( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) );
                             if ( campusFund != null )
                             {
-                                // add the fund to the campus name to make it easier to find/assign
-                                subFund = string.Format( "{0} {1}", campusFund.Name, fundName );
+                                // add campus name to easily find/assign in the view
+                                subFund = campusFund.Name;
                                 campusFundId = campusFund.Id;
                             }
 
-                            childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                            var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
                             if ( childAccount == null )
                             {
                                 // create a child account with a campusId if it was set
+                                subFund = string.Format( "{0} {1}", subFund, fundName );
                                 childAccount = AddAccount( lookupContext, subFund, campusFundId, parentAccount.Id );
                                 accountList.Add( childAccount );
                             }
@@ -468,23 +468,23 @@ namespace Excavator.F1
                                 accountList.Add( parentAccount );
                             }
 
-                            FinancialAccount childAccount = null;
                             if ( subFund != null )
                             {
                                 int? campusFundId = null;
-                                // match by campus if the subfund appears to be a campus
+                                // assign a campus if the subfund is a campus fund
                                 var campusFund = CampusList.FirstOrDefault( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) );
                                 if ( campusFund != null )
                                 {
-                                    // add the fund to the campus name to make it easier to find/assign
-                                    subFund = string.Format( "{0} {1}", campusFund.Name, fundName );
+                                    // add campus name to easily find/assign in the view
+                                    subFund = campusFund.Name;
                                     campusFundId = campusFund.Id;
                                 }
 
-                                childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                                var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
                                 if ( childAccount == null )
                                 {
                                     // create a child account with a campusId if it was set
+                                    subFund = string.Format( "{0} {1}", subFund, fundName );
                                     childAccount = AddAccount( lookupContext, subFund, campusFundId, parentAccount.Id );
                                     accountList.Add( childAccount );
                                 }

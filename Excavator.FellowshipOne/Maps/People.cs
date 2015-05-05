@@ -105,8 +105,8 @@ namespace Excavator.F1
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveCompanies( businessList );
-                        businessList.Clear();
                         ReportPartialProgress();
+                        businessList.Clear();
                     }
                 }
             }
