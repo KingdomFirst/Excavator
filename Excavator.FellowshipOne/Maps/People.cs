@@ -656,8 +656,8 @@ namespace Excavator.F1
                     ImportedPeople.AddRange( familyMembers.Select( m => new PersonKeys
                     {
                         PersonAliasId = m.Person.PrimaryAliasId,
-                        IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
-                        HouseholdId = m.Person.AttributeValues[HouseholdIdAttribute.Key].Value.AsType<int?>(),
+                        IndividualId = m.Person.ForeignId.AsType<int?>(),
+                        HouseholdId = m.Group.ForeignId.AsType<int?>(),
                         IsFamilyMember = true
                     } ).ToList()
                     );
@@ -669,8 +669,8 @@ namespace Excavator.F1
                     ImportedPeople.AddRange( visitors.Select( m => new PersonKeys
                     {
                         PersonAliasId = m.Person.PrimaryAliasId,
-                        IndividualId = m.Person.AttributeValues[IndividualIdAttribute.Key].Value.AsType<int?>(),
-                        HouseholdId = m.Person.AttributeValues[HouseholdIdAttribute.Key].Value.AsType<int?>(),
+                        IndividualId = m.Person.ForeignId.AsType<int?>(),
+                        HouseholdId = m.Group.ForeignId.AsType<int?>(),
                         IsFamilyMember = false
                     } ).ToList()
                     );
