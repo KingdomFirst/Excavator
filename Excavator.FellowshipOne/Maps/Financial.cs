@@ -325,16 +325,18 @@ namespace Excavator.F1
                             var campusFund = CampusList.FirstOrDefault( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) );
                             if ( campusFund != null )
                             {
-                                // add campus name to easily find/assign in the view
+                                // use full campus name as the subfund
                                 subFund = campusFund.Name;
                                 campusFundId = campusFund.Id;
                             }
+
+                            // add info to easily find/assign this fund in the view
+                            subFund = string.Format( "{0} {1}", subFund, fundName );
 
                             var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
                             if ( childAccount == null )
                             {
                                 // create a child account with a campusId if it was set
-                                subFund = string.Format( "{0} {1}", subFund, fundName );
                                 childAccount = AddAccount( lookupContext, subFund, campusFundId, parentAccount.Id );
                                 accountList.Add( childAccount );
                             }
