@@ -438,6 +438,7 @@ namespace Excavator.F1
                     if ( personKeys != null && !importedPledges.Any( p => p.PersonAliasId == personKeys.PersonAliasId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
                     {
                         var pledge = new FinancialPledge();
+                        pledge.PersonAliasId = personKeys.PersonAliasId;
                         pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
