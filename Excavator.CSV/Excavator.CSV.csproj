@@ -72,11 +72,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="FodyWeavers.xml">
-      <SubType>Designer</SubType>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Excavator\Excavator.csproj">
       <Project>{6c4100b7-6b6b-40d7-a150-deba50512c95}</Project>
       <Name>Excavator</Name>
