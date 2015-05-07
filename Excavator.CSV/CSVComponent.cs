@@ -35,17 +35,6 @@ namespace Excavator.CSV
     [Export( typeof( ExcavatorComponent ) )]
     partial class CSVComponent : ExcavatorComponent
     {
-        #region Constructor
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CSVComponent"/> class.
-        /// </summary>
-        public CSVComponent()
-        {
-        }
-
-        #endregion Constructor
-
         #region Fields
 
         /// <summary>
