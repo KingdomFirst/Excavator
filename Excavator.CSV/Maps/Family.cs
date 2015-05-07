@@ -28,7 +28,7 @@ namespace Excavator.CSV
             int numImportedFamilies = ImportedPeople.Select( p => p.ForeignId ).Distinct().Count();
 
             int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
-            int workLocationTypeId = DefinedValueCache.Read( new Guid( "E071472A-F805-4FC4-917A-D5E3C095C35C" ) ).Id;
+            int workLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
 
             var newGroupLocations = new Dictionary<GroupLocation, string>();
             var currentFamilyGroup = new Group();
