@@ -39,7 +39,8 @@ namespace Excavator.F1
             var lookupContext = new RockContext();
             var locationService = new LocationService( lookupContext );
 
-            List<GroupMember> groupMembershipList = new GroupMemberService( lookupContext ).Queryable().Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
+            List<GroupMember> familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable()
+                .Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
 
             var groupLocationTypeList = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ), lookupContext ).DefinedValues;
             int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
@@ -60,7 +61,7 @@ namespace Excavator.F1
                 var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
                 if ( personKeys != null )
                 {
-                    var familyGroup = groupMembershipList.Where( gm => gm.PersonId == personKeys.PersonId )
+                    var familyGroup = familyGroupMemberList.Where( gm => gm.PersonId == personKeys.PersonId )
                         .Select( gm => gm.Group ).FirstOrDefault();
 
                     if ( familyGroup != null )
