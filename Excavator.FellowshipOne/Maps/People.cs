@@ -699,7 +699,7 @@ namespace Excavator.F1
             var userLoginService = new UserLoginService( lookupContext );
             var importedUserCount = userLoginService.Queryable().Where( u => u.ForeignId != null ).Count();
 
-            var allUsers = userLoginService.Queryable().ToDictionary( t => t.UserName.Trim(), t => t.PersonId );
+            var allUsers = userLoginService.Queryable().ToDictionary( t => t.UserName.ToLower().Trim(), t => t.PersonId );
 
             var newUserLogins = new List<UserLogin>();
             var newStaffMembers = new List<GroupMember>();
@@ -715,7 +715,7 @@ namespace Excavator.F1
                 int? individualId = row["LinkedIndividualID"] as int?;
                 string userName = row["UserLogin"] as string;
                 int? userId = row["UserID"] as int?;
-                if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !allUsers.ContainsKey( userName ) )
+                if ( userId != null && individualId != null && !string.IsNullOrWhiteSpace( userName ) && !allUsers.ContainsKey( userName.ToLower().Trim() ) )
                 {
                     var personKeys = GetPersonKeys( individualId, null );
                     if ( personKeys != null )
