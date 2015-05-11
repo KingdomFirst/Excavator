@@ -383,7 +383,7 @@ namespace Excavator.F1
                         PersonId = (int)household.PersonId,
                         HouseholdId = household.HouseholdId.AsType<int?>(),
                         IndividualId = aliases.Select( a => a.IndividualId.AsType<int?>() ).FirstOrDefault(),
-                        IsFamilyMember = visitorIdList.Contains( (int)household.PersonId )
+                        IsFamilyMember = !visitorIdList.Contains( (int)household.PersonId )
                     }
                 ).ToList();
 
