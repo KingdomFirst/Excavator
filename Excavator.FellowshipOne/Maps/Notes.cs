@@ -68,6 +68,13 @@ namespace Excavator.F1
                     var note = new Note();
                     note.CreatedDateTime = dateCreated;
                     note.EntityId = personKeys.PersonId;
+
+                    text.Replace( "&#45;", "-" );
+                    text.Replace( "&amp;", "&" );
+                    text.Replace( "&nbsp;", " " );
+                    text.Replace( "&quot;", @"""" );
+                    text.Replace( "&#x0D", string.Empty );
+
                     note.Text = text;
 
                     int? userId = row["NoteCreatedByUserID"] as int?;
