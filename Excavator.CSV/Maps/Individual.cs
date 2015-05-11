@@ -347,7 +347,7 @@ namespace Excavator.CSV
                         if ( countryIndex >= 0 )
                         {
                             countryCode = numberPair.Value.Substring( countryIndex, countryIndex + 3 ).AsNumeric();
-                            normalizedNumber = numberPair.Value.Substring( countryIndex + 3, extensionIndex - 3 ).AsNumeric();
+                            normalizedNumber = numberPair.Value.Substring( countryIndex + 3, extensionIndex - 3 ).AsNumeric().TrimStart( new Char[] { '0' } );
                             extension = numberPair.Value.Substring( extensionIndex );
                         }
                         else if ( extensionIndex > 0 )
@@ -366,7 +366,7 @@ namespace Excavator.CSV
                             currentNumber.CountryCode = countryCode;
                             currentNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             currentNumber.Extension = extension.Left( 20 );
-                            currentNumber.Number = normalizedNumber.Left( 20 );
+                            currentNumber.Number = normalizedNumber.TrimStart( new Char[] { '0' } ).Left( 20 );
                             currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
                                 .Select( v => (int?)v.Id ).FirstOrDefault();
                             if ( numberPair.Key == "Mobile" )
