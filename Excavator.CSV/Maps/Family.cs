@@ -94,7 +94,26 @@ namespace Excavator.CSV
                     string famZip = row[Zip];
                     string famCountry = row[Country];
 
-                    Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
+                    Location primaryAddress = null;
+                    try
+                    {
+                        primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
+                    }
+                    catch ( ArgumentException ex )
+                    {
+                        LogException( "Location Import", string.Format( "Rock verification component not found. {0}", ex.ToString() ) );
+                        primaryAddress = new Location();
+                        primaryAddress.Street1 = famAddress;
+                        primaryAddress.Street2 = famAddress2;
+                        primaryAddress.City = famCity;
+                        primaryAddress.State = famState;
+                        primaryAddress.PostalCode = famZip;
+                        primaryAddress.Country = famCountry;
+
+                        lookupContext.Locations.Add( primaryAddress );
+                        lookupContext.SaveChanges();
+                    }
+
                     if ( primaryAddress != null )
                     {
                         var primaryLocation = new GroupLocation();
@@ -112,7 +131,26 @@ namespace Excavator.CSV
                     string famSecondZip = row[SecondaryZip];
                     string famSecondCountry = row[SecondaryCountry];
 
-                    Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
+                    Location secondaryAddress = null;
+                    try
+                    {
+                        secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
+                    }
+                    catch ( ArgumentException ex )
+                    {
+                        LogException( "Location Import", string.Format( "Rock verification component not found. {0}", ex.ToString() ) );
+                        secondaryAddress = new Location();
+                        secondaryAddress.Street1 = famSecondAddress;
+                        secondaryAddress.Street2 = famSecondAddress2;
+                        secondaryAddress.City = famSecondCity;
+                        secondaryAddress.State = famSecondState;
+                        secondaryAddress.PostalCode = famSecondZip;
+                        secondaryAddress.Country = famSecondCountry;
+
+                        lookupContext.Locations.Add( secondaryAddress );
+                        lookupContext.SaveChanges();
+                    }
+
                     if ( secondaryAddress != null )
                     {
                         var secondaryLocation = new GroupLocation();

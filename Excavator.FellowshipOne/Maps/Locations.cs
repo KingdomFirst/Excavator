@@ -75,7 +75,25 @@ namespace Excavator.F1
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
-                        Location familyAddress = locationService.Get( street1, street2, city, state, zip, country );
+                        Location familyAddress = null;
+                        try
+                        {
+                            familyAddress = locationService.Get( street1, street2, city, state, zip, country );
+                        }
+                        catch ( ArgumentException ex )
+                        {
+                            LogException( "Location Import", string.Format( "Rock verification component not found. {0}", ex.ToString() ) );
+                            familyAddress = new Location();
+                            familyAddress.Street1 = street1;
+                            familyAddress.Street2 = street2;
+                            familyAddress.City = city;
+                            familyAddress.State = state;
+                            familyAddress.PostalCode = zip;
+                            familyAddress.Country = country;
+
+                            lookupContext.Locations.Add( familyAddress );
+                            lookupContext.SaveChanges();
+                        }
 
                         if ( familyAddress != null )
                         {
