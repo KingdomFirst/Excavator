@@ -73,7 +73,11 @@ namespace Excavator.F1
                     int? userId = row["NoteCreatedByUserID"] as int?;
                     if ( userId != null && importedUsers.ContainsKey( userId ) )
                     {
-                        note.CreatedByPersonAliasId = (int)importedUsers[userId];
+                        var userKeys = ImportedPeople.FirstOrDefault( p => p.PersonId == (int)importedUsers[userId] );
+                        if ( userKeys != null )
+                        {
+                            note.CreatedByPersonAliasId = userKeys.PersonAliasId;
+                        }
                     }
 
                     int? matchingNoteTypeId = null;
