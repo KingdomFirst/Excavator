@@ -47,14 +47,14 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying check number import ({0:N0} found, {1:N0} already exist).", totalRows, importedBankAccounts.Count() ) );
+            ReportProgress( 0, string.Format( "Verifying check number import ({0:N0} found, {1:N0} already exist).", totalRows, importedBankAccounts.Count ) );
 
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? personId = GetPersonAliasId( individualId, householdId );
-                if ( personId != null )
+                var personKeys = GetPersonKeys( individualId, householdId );
+                if ( personKeys != null && personKeys.PersonAliasId != null )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
                     string accountNumber = row["Account"] as string;
@@ -62,13 +62,13 @@ namespace Excavator.F1
                     {
                         accountNumber = accountNumber.Replace( " ", string.Empty );
                         string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
-                        if ( !importedBankAccounts.Any( a => a.PersonAliasId == personId && a.AccountNumberSecured == encodedNumber ) )
+                        if ( !importedBankAccounts.Any( a => a.PersonAliasId == personKeys.PersonAliasId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
-                            bankAccount.PersonAliasId = (int)personId;
+                            bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;
 
                             // Other Attributes (not used):
                             // Account_Type_Name
@@ -127,8 +127,8 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying batch import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedBatches.Count() ) );
-            foreach ( var row in tableData )
+            ReportProgress( 0, string.Format( "Verifying batch import ({0:N0} found, {1:N0} already exist).", totalRows, ImportedBatches.Count ) );
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? batchId = row["BatchID"] as int?;
                 if ( batchId != null && !ImportedBatches.ContainsKey( (int)batchId ) )
@@ -219,8 +219,7 @@ namespace Excavator.F1
 
             var refundReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ), lookupContext ).DefinedValues;
 
-            List<FinancialPledge> pledgeList = new FinancialPledgeService( lookupContext ).Queryable().ToList();
-            List<FinancialAccount> accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
+            var accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
 
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable()
@@ -233,8 +232,8 @@ namespace Excavator.F1
             int completed = 0;
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying contribution import ({0:N0} found, {1:N0} already exist).", totalRows, importedContributions.Count() ) );
-            foreach ( var row in tableData )
+            ReportProgress( 0, string.Format( "Verifying contribution import ({0:N0} found, {1:N0} already exist).", totalRows, importedContributions.Count ) );
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
@@ -243,11 +242,16 @@ namespace Excavator.F1
                 if ( contributionId != null && !importedContributions.ContainsKey( (int)contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
-                    transaction.TransactionTypeValueId = transactionTypeContributionId;
-                    transaction.AuthorizedPersonAliasId = GetPersonAliasId( individualId, householdId );
                     transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    transaction.ProcessedByPersonAliasId = GetPersonAliasId( individualId, householdId );
-                    transaction.ForeignId = contributionId.ToStringSafe();
+                    transaction.TransactionTypeValueId = transactionTypeContributionId;
+                    transaction.ForeignId = contributionId.ToString();
+
+                    var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
+                    if ( personKeys != null )
+                    {
+                        transaction.AuthorizedPersonAliasId = personKeys.PersonAliasId;
+                        transaction.ProcessedByPersonAliasId = personKeys.PersonAliasId;
+                    }
 
                     string summary = row["Memo"] as string;
                     if ( summary != null )
@@ -256,9 +260,9 @@ namespace Excavator.F1
                     }
 
                     int? batchId = row["BatchID"] as int?;
-                    if ( batchId != null && ImportedBatches.Any( b => b.Key == batchId ) )
+                    if ( batchId != null && ImportedBatches.Any( b => b.Key.Equals( batchId ) ) )
                     {
-                        transaction.BatchId = ImportedBatches.FirstOrDefault( b => b.Key == batchId ).Value;
+                        transaction.BatchId = ImportedBatches.FirstOrDefault( b => b.Key.Equals( batchId ) ).Value;
                     }
 
                     DateTime? receivedDate = row["Received_Date"] as DateTime?;
@@ -297,71 +301,57 @@ namespace Excavator.F1
                     string checkNumber = row["Check_Number"] as string;
                     if ( checkNumber != null && checkNumber.AsType<int?>() != null )
                     {
-                        // routing & account set to zero
-                        transaction.CheckMicrEncrypted = Encryption.EncryptString( string.Format( "{0}_{1}_{2}", 0, 0, checkNumber ) );
+                        // set the transaction code to the check number
+                        transaction.TransactionCode = checkNumber;
                     }
 
                     string fundName = row["Fund_Name"] as string;
+                    string subFund = row["Sub_Fund_Name"] as string;
                     decimal? amount = row["Amount"] as decimal?;
                     if ( fundName != null & amount != null )
                     {
-                        FinancialAccount matchingAccount = null;
-                        int? parentAccountId = null;
-                        int? fundCampusId = null;
-                        fundName = fundName.Trim();
+                        int transactionAccountId;
+                        var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
+                        if ( parentAccount == null )
+                        {
+                            parentAccount = AddAccount( lookupContext, fundName, null, null );
+                            accountList.Add( parentAccount );
+                        }
 
-                        string subFund = row["Sub_Fund_Name"] as string;
                         if ( subFund != null )
                         {
-                            subFund = subFund.Trim();
-
-                            // Check if subfund was used to mark a multi-site campus
-                            fundCampusId = CampusList.Where( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) )
-                                .Select( c => (int?)c.Id ).FirstOrDefault();
-
-                            // Matched a campus, check to see if an account exists for that campus already
-                            if ( fundCampusId != null )
+                            int? campusFundId = null;
+                            // assign a campus if the subfund is a campus fund
+                            var campusFund = CampusList.FirstOrDefault( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) );
+                            if ( campusFund != null )
                             {
-                                matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName )
-                                    && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
+                                // use full campus name as the subfund
+                                subFund = campusFund.Name;
+                                campusFundId = campusFund.Id;
                             }
-                            else
+
+                            // add info to easily find/assign this fund in the view
+                            subFund = string.Format( "{0} {1}", subFund, fundName );
+
+                            var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                            if ( childAccount == null )
                             {
-                                // No campus match, look for an account that matches parent name and subfund name
-                                matchingAccount = accountList.FirstOrDefault( a => a.ParentAccountId != null && a.ParentAccount.Name.Equals( fundName ) && a.Name.Equals( subFund ) );
-
-                                if ( matchingAccount == null )
-                                {
-                                    // Check if a parent account exists already
-                                    FinancialAccount parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) );
-                                    if ( parentAccount == null )
-                                    {
-                                        parentAccount = AddAccount( lookupContext, fundName, fundCampusId, null );
-                                        accountList.Add( parentAccount );
-                                    }
-
-                                    // set data for subfund to be created
-                                    parentAccountId = parentAccount.Id;
-                                    fundName = subFund;
-                                }
+                                // create a child account with a campusId if it was set
+                                childAccount = AddAccount( lookupContext, subFund, campusFundId, parentAccount.Id );
+                                accountList.Add( childAccount );
                             }
+
+                            transactionAccountId = childAccount.Id;
                         }
                         else
                         {
-                            matchingAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
-                        }
-
-                        if ( matchingAccount == null )
-                        {
-                            // No account matches, create the new account with campus Id and parent Id if they were set
-                            matchingAccount = AddAccount( lookupContext, fundName, fundCampusId, parentAccountId );
-                            accountList.Add( matchingAccount );
+                            transactionAccountId = parentAccount.Id;
                         }
 
                         var transactionDetail = new FinancialTransactionDetail();
                         transactionDetail.Amount = (decimal)amount;
                         transactionDetail.CreatedDateTime = receivedDate;
-                        transactionDetail.AccountId = matchingAccount.Id;
+                        transactionDetail.AccountId = transactionAccountId;
                         transactionDetail.IsNonCash = isTypeNonCash;
                         transaction.TransactionDetails.Add( transactionDetail );
 
@@ -423,8 +413,8 @@ namespace Excavator.F1
         private void MapPledge( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
-            List<FinancialAccount> accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
-            List<FinancialPledge> importedPledges = new FinancialPledgeService( lookupContext ).Queryable().ToList();
+            var accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
+            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().ToList();
 
             var pledgeFrequencies = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ), lookupContext ).DefinedValues;
 
@@ -435,7 +425,7 @@ namespace Excavator.F1
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying pledge import ({0:N0} found).", totalRows ) );
 
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 decimal? amount = row["Total_Pledge"] as decimal?;
                 DateTime? startDate = row["Start_Date"] as DateTime?;
@@ -444,10 +434,11 @@ namespace Excavator.F1
                 {
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
-                    int? personId = GetPersonAliasId( individualId, householdId );
-                    if ( personId != null && !importedPledges.Any( p => p.PersonAliasId == personId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
+                    var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
+                    if ( personKeys != null && !importedPledges.Any( p => p.PersonAliasId == personKeys.PersonAliasId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
                     {
                         var pledge = new FinancialPledge();
+                        pledge.PersonAliasId = personKeys.PersonAliasId;
                         pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
@@ -456,7 +447,8 @@ namespace Excavator.F1
                         string frequency = row["Pledge_Frequency_Name"].ToString().ToLower();
                         if ( frequency != null )
                         {
-                            if ( frequency == "one time" || frequency == "as can" )
+                            frequency = frequency.ToLower();
+                            if ( frequency.Equals( "one time" ) || frequency.Equals( "as can" ) )
                             {
                                 pledge.PledgeFrequencyValueId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
                             }
@@ -472,39 +464,43 @@ namespace Excavator.F1
                         string subFund = row["Sub_Fund_Name"] as string;
                         if ( fundName != null )
                         {
-                            FinancialAccount matchingAccount = null;
-                            int? fundCampusId = null;
+                            var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
+                            if ( parentAccount == null )
+                            {
+                                parentAccount = AddAccount( lookupContext, fundName, null, null );
+                                accountList.Add( parentAccount );
+                            }
+
                             if ( subFund != null )
                             {
-                                // match by campus if the subfund appears to be a campus
-                                fundCampusId = CampusList.Where( c => c.Name.StartsWith( subFund ) || c.ShortCode == subFund )
-                                    .Select( c => (int?)c.Id ).FirstOrDefault();
+                                int? campusFundId = null;
+                                // assign a campus if the subfund is a campus fund
+                                var campusFund = CampusList.FirstOrDefault( c => subFund.StartsWith( c.Name ) || subFund.StartsWith( c.ShortCode ) );
+                                if ( campusFund != null )
+                                {
+                                    // use full campus name as the subfund
+                                    subFund = campusFund.Name;
+                                    campusFundId = campusFund.Id;
+                                }
 
-                                if ( fundCampusId != null )
+                                // add info to easily find/assign this fund in the view
+                                subFund = string.Format( "{0} {1}", subFund, fundName );
+
+                                var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                                if ( childAccount == null )
                                 {
-                                    matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.CampusId != null && a.CampusId.Equals( fundCampusId ) );
+                                    // create a child account with a campusId if it was set
+                                    childAccount = AddAccount( lookupContext, subFund, campusFundId, parentAccount.Id );
+                                    accountList.Add( childAccount );
                                 }
-                                else
-                                {
-                                    matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) && a.Name.StartsWith( subFund ) );
-                                }
+
+                                pledge.AccountId = childAccount.Id;
                             }
                             else
                             {
-                                matchingAccount = accountList.FirstOrDefault( a => a.Name.StartsWith( fundName ) );
+                                pledge.AccountId = parentAccount.Id;
                             }
-
-                            if ( matchingAccount == null )
-                            {
-                                matchingAccount = AddAccount( lookupContext, fundName, fundCampusId, null );
-                                accountList.Add( matchingAccount );
-                            }
-
-                            pledge.AccountId = matchingAccount.Id;
                         }
-
-                        // Attributes to add?
-                        // Pledge_Drive_Name
 
                         newPledges.Add( pledge );
                         completed++;
@@ -517,6 +513,7 @@ namespace Excavator.F1
                         {
                             SavePledges( newPledges );
                             ReportPartialProgress();
+                            newPledges.Clear();
                         }
                     }
                 }
@@ -552,12 +549,9 @@ namespace Excavator.F1
         /// <param name="fundName">Name of the fund.</param>
         /// <param name="fundCampusId">The fund campus identifier.</param>
         /// <returns></returns>
-        private FinancialAccount AddAccount( RockContext lookupContext, string fundName, int? fundCampusId, int? parentAccountId )
+        private static FinancialAccount AddAccount( RockContext lookupContext, string fundName, int? fundCampusId, int? parentAccountId )
         {
-            if ( lookupContext == null )
-            {
-                lookupContext = new RockContext();
-            }
+            lookupContext = lookupContext ?? new RockContext();
 
             var account = new FinancialAccount();
             account.Name = fundName;

@@ -19,9 +19,10 @@ Quartz.xml
 StyleCop.Cache
 
 #specific folders
+bak
 [Oo]bj/
 [Dd]ebug*/
 [Rr]elease*/
 /scaffolding.config
 *.mdf
-/Excavator.sln.GhostDoc.xml
+*.sln.GhostDoc.xml

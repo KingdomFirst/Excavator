@@ -90,8 +90,20 @@ namespace Excavator
 
         public ConnectionString ConnectionString
         {
-            get { return (ConnectionString)GetValue( ConnectionStringProperty ); }
-            set { SetValue( ConnectionStringProperty, value ); }
+            get
+            {
+                var currentString = (ConnectionString)GetValue( ConnectionStringProperty );
+                if ( currentString == null )
+                {
+                    currentString = new ConnectionString();
+                }
+
+                return currentString;
+            }
+            set
+            {
+                SetValue( ConnectionStringProperty, value );
+            }
         }
 
         public ObservableCollection<string> Servers
@@ -156,6 +168,7 @@ namespace Excavator
 
         public SqlConnector( SqlTasks smoTasks )
         {
+            ConnectionString.Database = string.Empty;
             _smoTasks = smoTasks;
             _dbLoader.DoWork += DbLoaderDoWork;
             _dbLoader.RunWorkerCompleted += DbLoaderRunWorkerCompleted;
@@ -482,7 +495,7 @@ namespace Excavator
                 }
                 catch ( SqlException e )
                 {
-                    databases.Add( e.Errors[0].Message.Substring( 0, 50 ) );
+                    databases.Add( e.Errors[0].Message.Take( 50 ).ToString() );
                 }
             }
 

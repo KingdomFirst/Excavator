@@ -162,7 +162,7 @@ namespace Excavator
         /// </summary>
         /// <param name="category">The category.</param>
         /// <param name="message">The message.</param>
-        protected void LogException( string category, string message )
+        public static void LogException( string category, string message )
         {
             App.LogException( category, message );
         }

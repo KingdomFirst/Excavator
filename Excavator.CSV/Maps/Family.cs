@@ -28,7 +28,7 @@ namespace Excavator.CSV
             int numImportedFamilies = ImportedPeople.Select( p => p.ForeignId ).Distinct().Count();
 
             int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
-            int workLocationTypeId = DefinedValueCache.Read( new Guid( "E071472A-F805-4FC4-917A-D5E3C095C35C" ) ).Id;
+            int workLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
 
             var newGroupLocations = new Dictionary<GroupLocation, string>();
             var currentFamilyGroup = new Group();
@@ -94,7 +94,26 @@ namespace Excavator.CSV
                     string famZip = row[Zip];
                     string famCountry = row[Country];
 
-                    Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
+                    Location primaryAddress = null;
+                    try
+                    {
+                        primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
+                    }
+                    catch ( ArgumentException ex )
+                    {
+                        LogException( "Location Import", string.Format( "Rock verification component not found. {0}", ex.ToString() ) );
+                        primaryAddress = new Location();
+                        primaryAddress.Street1 = famAddress;
+                        primaryAddress.Street2 = famAddress2;
+                        primaryAddress.City = famCity;
+                        primaryAddress.State = famState;
+                        primaryAddress.PostalCode = famZip;
+                        primaryAddress.Country = famCountry;
+
+                        lookupContext.Locations.Add( primaryAddress );
+                        lookupContext.SaveChanges();
+                    }
+
                     if ( primaryAddress != null )
                     {
                         var primaryLocation = new GroupLocation();
@@ -112,7 +131,26 @@ namespace Excavator.CSV
                     string famSecondZip = row[SecondaryZip];
                     string famSecondCountry = row[SecondaryCountry];
 
-                    Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
+                    Location secondaryAddress = null;
+                    try
+                    {
+                        secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
+                    }
+                    catch ( ArgumentException ex )
+                    {
+                        LogException( "Location Import", string.Format( "Rock verification component not found. {0}", ex.ToString() ) );
+                        secondaryAddress = new Location();
+                        secondaryAddress.Street1 = famSecondAddress;
+                        secondaryAddress.Street2 = famSecondAddress2;
+                        secondaryAddress.City = famSecondCity;
+                        secondaryAddress.State = famSecondState;
+                        secondaryAddress.PostalCode = famSecondZip;
+                        secondaryAddress.Country = famSecondCountry;
+
+                        lookupContext.Locations.Add( secondaryAddress );
+                        lookupContext.SaveChanges();
+                    }
+
                     if ( secondaryAddress != null )
                     {
                         var secondaryLocation = new GroupLocation();
@@ -211,82 +249,5 @@ namespace Excavator.CSV
                 } );
             }
         }
-
-        /// <summary>
-        /// Copy of Rock.Model.LocationService.Partial.cs\Get( address ) without the call to Verify()
-        /// </summary>
-        /// <param name="street1">A <see cref="System.String" /> representing the Address Line 1 to search by.</param>
-        /// <param name="street2">A <see cref="System.String" /> representing the Address Line 2 to search by.</param>
-        /// <param name="city">A <see cref="System.String" /> representing the City to search by.</param>
-        /// <param name="state">A <see cref="System.String" /> representing the State to search by.</param>
-        /// <param name="postalCode">A <see cref="System.String" /> representing the Zip/Postal code to search by</param>
-        /// <param name="country">The country.</param>
-        /// <returns>
-        /// The first <see cref="Rock.Model.Location" /> where an address match is found, if no match is found a new <see cref="Rock.Model.Location" /> is created and returned.
-        /// </returns>
-        //public Location GetWithoutVerify( string street1, string street2, string city, string state, string postalCode, string country )
-        //{
-        //    var rockContext = new RockContext();
-        //    var locationService = new LocationService( rockContext );
-
-        //    // Make sure it's not an empty address
-        //    if ( string.IsNullOrWhiteSpace( street1 ) &&
-        //        string.IsNullOrWhiteSpace( street2 ) &&
-        //        string.IsNullOrWhiteSpace( city ) &&
-        //        string.IsNullOrWhiteSpace( state ) &&
-        //        string.IsNullOrWhiteSpace( postalCode ) &&
-        //        string.IsNullOrWhiteSpace( country ) )
-        //    {
-        //        return null;
-        //    }
-
-        //    // First check if a location exists with the entered values
-        //    Location existingLocation = locationService.Queryable().FirstOrDefault( t =>
-        //        ( t.Street1 == street1 || ( street1 == null && t.Street1 == null ) ) &&
-        //        ( t.Street2 == street2 || ( street2 == null && t.Street2 == null ) ) &&
-        //        ( t.City == city || ( city == null && t.City == null ) ) &&
-        //        ( t.State == state || ( state == null && t.State == null ) ) &&
-        //        ( t.PostalCode == postalCode || ( postalCode == null && t.PostalCode == null ) ) &&
-        //        ( t.Country == country || ( country == null && t.Country == null ) ) );
-        //    if ( existingLocation != null )
-        //    {
-        //        return existingLocation;
-        //    }
-
-        //    // If existing location wasn't found with entered values, try standardizing the values, and
-        //    // search for an existing value again
-        //    var newLocation = new Location
-        //    {
-        //        Street1 = street1,
-        //        Street2 = street2,
-        //        City = city,
-        //        State = state,
-        //        PostalCode = postalCode,
-        //        Country = country
-        //    };
-
-        //    // Don't verify the location, this causes MEF to blow up
-        //    // Verify( newLocation, false );
-
-        //    existingLocation = locationService.Queryable().FirstOrDefault( t =>
-        //        ( t.Street1 == newLocation.Street1 || ( newLocation.Street1 == null && t.Street1 == null ) ) &&
-        //        ( t.Street2 == newLocation.Street2 || ( newLocation.Street2 == null && t.Street2 == null ) ) &&
-        //        ( t.City == newLocation.City || ( newLocation.City == null && t.City == null ) ) &&
-        //        ( t.State == newLocation.State || ( newLocation.State == null && t.State == null ) ) &&
-        //        ( t.PostalCode == newLocation.PostalCode || ( newLocation.PostalCode == null && t.PostalCode == null ) ) &&
-        //        ( t.Country == newLocation.Country || ( newLocation.Country == null && t.Country == null ) ) );
-
-        //    if ( existingLocation != null )
-        //    {
-        //        return existingLocation;
-        //    }
-
-        //    // Create a new context/service so that save does not affect calling method's context
-        //    locationService.Add( newLocation );
-        //    rockContext.SaveChanges();
-
-        //    // refetch it from the database to make sure we get a valid .Id
-        //    return locationService.Get( newLocation.Guid );
-        //}
     }
 }

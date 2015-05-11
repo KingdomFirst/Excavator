@@ -35,15 +35,14 @@ namespace Excavator.F1
         /// Maps the notes.
         /// </summary>
         /// <param name="tableData">The table data.</param>
-        private void MapNotes( IQueryable<Row> tableData )
+        public void MapNotes( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
             var categoryService = new CategoryService( lookupContext );
             var personService = new PersonService( lookupContext );
 
             var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
-            int noteTimelineTypeId = noteTypes.Where( nt => nt.Guid == new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) )
-                .Select( nt => nt.Id ).FirstOrDefault();
+            var timelineNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) );
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
                 .Where( u => u.ForeignId != null )
@@ -55,50 +54,84 @@ namespace Excavator.F1
             int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying note import ({0:N0} found).", totalRows ) );
-            foreach ( var row in tableData )
+            foreach ( var row in tableData.Where( r => r != null ) )
             {
                 string text = row["Note_Text"] as string;
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                int? personId = GetPersonAliasId( individualId, householdId );
-                if ( personId != null && !string.IsNullOrWhiteSpace( text ) )
+                var personKeys = GetPersonKeys( individualId, householdId );
+                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) )
                 {
+                    DateTime? dateCreated = row["NoteCreated"] as DateTime?;
+                    string noteType = row["Note_Type_Name"] as string;
+
+                    var note = new Note();
+                    note.CreatedDateTime = dateCreated;
+                    note.EntityId = personKeys.PersonId;
+
+                    text.Replace( "&#45;", "-" );
+                    text.Replace( "&amp;", "&" );
+                    text.Replace( "&nbsp;", " " );
+                    text.Replace( "&quot;", @"""" );
+                    text.Replace( "&#x0D", string.Empty );
+
+                    note.Text = text;
+
                     int? userId = row["NoteCreatedByUserID"] as int?;
                     if ( userId != null && importedUsers.ContainsKey( userId ) )
                     {
-                        DateTime? dateCreated = row["NoteCreated"] as DateTime?;
-                        string noteType = row["Note_Type_Name"] as string;
-
-                        var note = new Note();
-                        note.CreatedByPersonAliasId = (int)importedUsers[userId];
-                        note.CreatedDateTime = dateCreated;
-                        note.EntityId = personId;
-                        note.Text = text;
-
-                        if ( !string.IsNullOrWhiteSpace( noteType ) )
+                        var userKeys = ImportedPeople.FirstOrDefault( p => p.PersonId == (int)importedUsers[userId] );
+                        if ( userKeys != null )
                         {
-                            int? noteTypeId = noteTypes.Where( nt => nt.Name == noteType ).Select( i => (int?)i.Id ).FirstOrDefault();
-                            note.NoteTypeId = noteTypeId ?? noteTimelineTypeId;
+                            note.CreatedByPersonAliasId = userKeys.PersonAliasId;
                         }
-                        else
-                        {
-                            note.NoteTypeId = noteTimelineTypeId;
-                        }
+                    }
 
-                        noteList.Add( note );
-                        completed++;
+                    int? matchingNoteTypeId = null;
+                    if ( !noteType.StartsWith( "General", StringComparison.InvariantCultureIgnoreCase ) )
+                    {
+                        matchingNoteTypeId = noteTypes.Where( nt => nt.Name == noteType ).Select( i => (int?)i.Id ).FirstOrDefault();
+                    }
+                    else
+                    {
+                        matchingNoteTypeId = timelineNoteType.Id;
+                    }
 
-                        if ( completed % percentage < 1 )
-                        {
-                            int percentComplete = completed / percentage;
-                            ReportProgress( percentComplete, string.Format( "{0:N0} notes imported ({1}% complete).", completed, percentComplete ) );
-                        }
-                        else if ( completed % ReportingNumber < 1 )
-                        {
-                            SaveNotes( noteList );
-                            ReportPartialProgress();
-                            noteList.Clear();
-                        }
+                    if ( matchingNoteTypeId == null )
+                    {
+                        // create the note type
+                        var newNoteType = new NoteType();
+                        newNoteType.EntityTypeId = timelineNoteType.EntityTypeId;
+                        newNoteType.SourcesTypeId = timelineNoteType.SourcesTypeId;
+                        newNoteType.EntityTypeQualifierColumn = string.Empty;
+                        newNoteType.EntityTypeQualifierValue = string.Empty;
+                        newNoteType.IsSystem = false;
+                        newNoteType.Name = noteType;
+
+                        lookupContext.NoteTypes.Add( newNoteType );
+                        lookupContext.SaveChanges( DisableAudit );
+
+                        noteTypes.Add( newNoteType );
+                        note.NoteTypeId = newNoteType.Id;
+                    }
+                    else
+                    {
+                        note.NoteTypeId = (int)matchingNoteTypeId;
+                    }
+
+                    noteList.Add( note );
+                    completed++;
+
+                    if ( completed % percentage < 1 )
+                    {
+                        int percentComplete = completed / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} notes imported ({1}% complete).", completed, percentComplete ) );
+                    }
+                    else if ( completed % ReportingNumber < 1 )
+                    {
+                        SaveNotes( noteList );
+                        ReportPartialProgress();
+                        noteList.Clear();
                     }
                 }
             }
@@ -115,7 +148,7 @@ namespace Excavator.F1
         /// Saves the notes.
         /// </summary>
         /// <param name="noteList">The note list.</param>
-        private static void SaveNotes( List<Note> noteList )
+        private void SaveNotes( List<Note> noteList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>

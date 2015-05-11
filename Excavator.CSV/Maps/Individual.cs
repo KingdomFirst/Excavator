@@ -81,7 +81,8 @@ namespace Excavator.CSV
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext ).DefinedValues;
 
             // Timeline note type id
-            var noteTimelineTypeId = new NoteTypeService( lookupContext ).Get( new Guid( "7E53487C-D650-4D85-97E2-350EB8332763" ) ).Id;
+
+            var noteTimelineTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) ).Id;
 
             // School defined type
             var schoolDefinedType = DefinedTypeCache.Read( new Guid( "576FF1E2-6225-4565-A16D-230E26167A3D" ) );
@@ -191,13 +192,15 @@ namespace Excavator.CSV
                     DateTime birthDate;
                     if ( DateTime.TryParseExact( row[DateOfBirth], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate ) )
                     {
-                        person.BirthDate = birthDate;
+                        person.BirthDay = birthDate.Day;
+                        person.BirthMonth = birthDate.Month;
+                        person.BirthYear = birthDate.Year;
                     }
 
                     DateTime graduationDate;
                     if ( DateTime.TryParseExact( row[GraduationDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out graduationDate ) )
                     {
-                        person.GraduationDate = graduationDate;
+                        person.GraduationYear = graduationDate.Year;
                     }
 
                     DateTime anniversary;
@@ -344,7 +347,7 @@ namespace Excavator.CSV
                         if ( countryIndex >= 0 )
                         {
                             countryCode = numberPair.Value.Substring( countryIndex, countryIndex + 3 ).AsNumeric();
-                            normalizedNumber = numberPair.Value.Substring( countryIndex + 3, extensionIndex - 3 ).AsNumeric();
+                            normalizedNumber = numberPair.Value.Substring( countryIndex + 3, extensionIndex - 3 ).AsNumeric().TrimStart( new Char[] { '0' } );
                             extension = numberPair.Value.Substring( extensionIndex );
                         }
                         else if ( extensionIndex > 0 )
@@ -363,7 +366,7 @@ namespace Excavator.CSV
                             currentNumber.CountryCode = countryCode;
                             currentNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
                             currentNumber.Extension = extension.Left( 20 );
-                            currentNumber.Number = normalizedNumber.Left( 20 );
+                            currentNumber.Number = normalizedNumber.TrimStart( new Char[] { '0' } ).Left( 20 );
                             currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
                                 .Select( v => (int?)v.Id ).FirstOrDefault();
                             if ( numberPair.Key == "Mobile" )
