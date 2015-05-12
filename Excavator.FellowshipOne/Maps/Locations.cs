@@ -78,7 +78,7 @@ namespace Excavator.F1
                         Location familyAddress = null;
                         try
                         {
-                            familyAddress = locationService.Get( street1, street2, city, state, zip, country );
+                            familyAddress = locationService.Get( street1, street2, city, state, zip, country, false );
                         }
                         catch ( ArgumentException ex )
                         {
