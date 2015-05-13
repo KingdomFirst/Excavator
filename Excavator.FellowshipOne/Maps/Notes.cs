@@ -70,12 +70,17 @@ namespace Excavator.F1
                     note.CreatedDateTime = dateCreated;
                     note.EntityId = personKeys.PersonId;
 
-                    note.Text = Regex.Replace( text, @"\t|\&nbsp;", " " )
-                        .Replace( "&#45;", "-" )
-                        .Replace( "&amp;", "&" )
-                        .Replace( "&quot;", @"""" )
-                        .Replace( "&#x0D", string.Empty )
-                        .Trim();
+                    // These replace methods don't like being chained together
+                    text = Regex.Replace( text, @"\t|\&nbsp;", " " );
+                    text = text.Replace( "&#45;", "-" );
+                    text = text.Replace( "&lt;", "<" );
+                    text = text.Replace( "&gt;", ">" );
+                    text = text.Replace( "&amp;", "&" );
+                    text = text.Replace( "&quot;", @"""" );
+                    text = text.Replace( "&#x0D", string.Empty );
+                    text = text.Trim();
+
+                    note.Text = text;
 
                     int? userId = row["NoteCreatedByUserID"] as int?;
                     if ( userId != null && importedUsers.ContainsKey( userId ) )
