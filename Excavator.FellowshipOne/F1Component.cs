@@ -168,7 +168,7 @@ namespace Excavator.F1
             ReportProgress( 0, "Checking for existing attributes..." );
             LoadExistingRockData();
 
-            ReportProgress( 0, "Checking for table dependencies..." );
+            ReportProgress( 0, "Checking for existing people..." );
             bool isValidImport = ImportedPeople.Any() || tableList.Any( n => n.Name.Equals( "Individual_Household" ) );
 
             var tableDependencies = new List<string>();
@@ -179,69 +179,65 @@ namespace Excavator.F1
 
             if ( isValidImport )
             {
+                ReportProgress( 0, "Checking for table dependencies..." );
                 // Order tables so non-dependents are imported first
                 if ( tableList.Any( n => tableDependencies.Contains( n.Name ) ) )
                 {
                     tableList = tableList.OrderByDescending( n => tableDependencies.IndexOf( n.Name ) ).ToList();
                 }
 
+                ReportProgress( 0, "Starting data import..." );
                 var scanner = new DataScanner( Database );
                 foreach ( var table in tableList )
                 {
-                    if ( !tableDependencies.Contains( table.Name ) )
+                    switch ( table.Name )
                     {
-                        switch ( table.Name )
-                        {
-                            case "Account":
-                                MapBankAccount( scanner.ScanTable( table.Name ).AsQueryable() );
-                                break;
+                        case "Account":
+                            MapBankAccount( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
 
-                            case "Attribute":
-                                MapAttribute( scanner.ScanTable( table.Name ).AsQueryable() );
-                                break;
+                        case "Attribute":
+                            MapAttribute( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
 
-                            case "Communication":
-                                MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
-                                break;
-
-                            case "Contribution":
-                                MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
-                                break;
-
-                            case "Household_Address":
-                                MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
-                                break;
-
-                            case "Notes":
-                                MapNotes( scanner.ScanTable( table.Name ).AsQueryable() );
-                                break;
-
-                            case "Pledge":
-                                MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
-                                break;
-
-                            default:
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        if ( table.Name == "Batch" )
-                        {
+                        case "Batch":
                             MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
-                        }
-                        else if ( table.Name == "Company" )
-                        {
+                            break;
+
+                        case "Communication":
+                            MapCommunication( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Company":
                             MapCompany( scanner.ScanTable( table.Name ).AsQueryable() );
-                        }
-                        else if ( table.Name == "Individual_Household" )
-                        {
+                            break;
+
+                        case "Contribution":
+                            MapContribution( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Household_Address":
+                            MapFamilyAddress( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Individual_Household":
                             MapPerson( scanner.ScanTable( table.Name ).AsQueryable() );
-                        }
-                        else if ( table.Name == "Users" )
-                        {
+                            break;
+
+                        case "Notes":
+                            MapNotes( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Pledge":
+                            MapPledge( scanner.ScanTable( table.Name ).AsQueryable() );
+                            break;
+
+                        case "Users":
                             MapUsers( scanner.ScanTable( table.Name ).AsQueryable() );
-                        }
+                            break;
+
+                        default:
+                            break;
                     }
                 }
 
@@ -369,7 +365,6 @@ namespace Excavator.F1
             InFellowshipLoginAttribute = AttributeCache.Read( infellowshipLoginAttribute.Id );
             SecondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttribute.Id );
 
-            ReportProgress( 0, "Checking for existing people..." );
             var visitorIdList = new PersonService( lookupContext ).Queryable().Where( p => p.ReviewReasonNote.Equals( FamilyVisitor ) ).OrderBy( p => p.Id ).Select( p => (int?)p.Id ).ToList();
             var aliasIdList = new PersonAliasService( lookupContext ).Queryable().Where( p => p.ForeignId != null ).Select( pa => new { PersonAliasId = pa.Id, PersonId = pa.PersonId, IndividualId = pa.ForeignId } ).ToList();
             var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
