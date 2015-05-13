@@ -181,7 +181,7 @@ namespace Excavator.CSV
         public override int TransformData( string importUser = null )
         {
             int completed = 0;
-            ReportProgress( 0, "Starting import..." );
+            ReportProgress( 0, "Starting health checks..." );
             if ( !LoadExistingData( importUser ) )
             {
                 return -1;
@@ -190,6 +190,7 @@ namespace Excavator.CSV
             // only import things that the user checked
             List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
+            ReportProgress( 0, "Starting data import..." );
             // Person data is important, so load it first
             if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
             {

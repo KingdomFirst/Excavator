@@ -152,7 +152,7 @@ namespace Excavator.F1
         /// <returns></returns>
         public override int TransformData( string importUser = null )
         {
-            ReportProgress( 0, "Starting import..." );
+            ReportProgress( 0, "Starting health checks..." );
             var rockContext = new RockContext();
             var personService = new PersonService( rockContext );
             var importPerson = personService.GetByFullName( importUser, allowFirstNameOnly: true ).FirstOrDefault();
