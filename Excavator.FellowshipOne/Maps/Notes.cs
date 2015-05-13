@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
@@ -69,13 +70,12 @@ namespace Excavator.F1
                     note.CreatedDateTime = dateCreated;
                     note.EntityId = personKeys.PersonId;
 
-                    text.Replace( "&#45;", "-" );
-                    text.Replace( "&amp;", "&" );
-                    text.Replace( "&nbsp;", " " );
-                    text.Replace( "&quot;", @"""" );
-                    text.Replace( "&#x0D", string.Empty );
-
-                    note.Text = text;
+                    note.Text = Regex.Replace( text, @"\t|\&nbsp;", " " )
+                        .Replace( "&#45;", "-" )
+                        .Replace( "&amp;", "&" )
+                        .Replace( "&quot;", @"""" )
+                        .Replace( "&#x0D", string.Empty )
+                        .Trim();
 
                     int? userId = row["NoteCreatedByUserID"] as int?;
                     if ( userId != null && importedUsers.ContainsKey( userId ) )
