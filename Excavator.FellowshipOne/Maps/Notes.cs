@@ -43,7 +43,7 @@ namespace Excavator.F1
             var personService = new PersonService( lookupContext );
 
             var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
-            var timelineNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) );
+            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) );
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
                 .Where( u => u.ForeignId != null )
@@ -99,17 +99,21 @@ namespace Excavator.F1
                     }
                     else
                     {
-                        matchingNoteTypeId = timelineNoteType.Id;
+                        matchingNoteTypeId = personalNoteType.Id;
                     }
 
-                    if ( matchingNoteTypeId == null )
+                    if ( matchingNoteTypeId != null )
+                    {
+                        note.NoteTypeId = (int)matchingNoteTypeId;
+                    }
+                    else
                     {
                         // create the note type
                         var newNoteType = new NoteType();
-                        newNoteType.EntityTypeId = timelineNoteType.EntityTypeId;
-                        newNoteType.SourcesTypeId = timelineNoteType.SourcesTypeId;
+                        newNoteType.EntityTypeId = personalNoteType.EntityTypeId;
                         newNoteType.EntityTypeQualifierColumn = string.Empty;
                         newNoteType.EntityTypeQualifierValue = string.Empty;
+                        newNoteType.UserSelectable = true;
                         newNoteType.IsSystem = false;
                         newNoteType.Name = noteType;
 
@@ -118,10 +122,6 @@ namespace Excavator.F1
 
                         noteTypes.Add( newNoteType );
                         note.NoteTypeId = newNoteType.Id;
-                    }
-                    else
-                    {
-                        note.NoteTypeId = (int)matchingNoteTypeId;
                     }
 
                     noteList.Add( note );

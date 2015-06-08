@@ -196,10 +196,6 @@ namespace Excavator.F1
                             MapBankAccount( scanner.ScanTable( table.Name ).AsQueryable() );
                             break;
 
-                        case "Attribute":
-                            MapAttribute( scanner.ScanTable( table.Name ).AsQueryable() );
-                            break;
-
                         case "Batch":
                             MapBatch( scanner.ScanTable( table.Name ).AsQueryable() );
                             break;
