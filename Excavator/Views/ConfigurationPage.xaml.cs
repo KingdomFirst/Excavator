@@ -106,11 +106,6 @@ namespace Excavator
                     lblNoData.Visibility = Visibility.Visible;
                 }
             }
-            else
-            {
-                lblNoData.Content = "PasswordKey and DataEncryptionKey are required to import accounts.";
-                lblNoData.Visibility = Visibility.Visible;
-            }
         }
 
         #endregion Events

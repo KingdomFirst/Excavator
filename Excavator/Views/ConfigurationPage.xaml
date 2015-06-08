@@ -73,11 +73,11 @@
             Style="{StaticResource textboxStyle}">
         </TextBox>
 
-        <Label Name="lblNoData" Visibility="Hidden"
+        <Label Name="lblNoData" Visibility="Visible"
             Grid.Row="4" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
-            Style="{StaticResource labelStyleAlert}">
-            No data is currently selected.  Please select a table on the previous page.
+            Style="{StaticResource labelStyle}">
+            If you are not importing Financial Accounts, enter NO in the PasswordKey and DataEncryptionKey fields.
         </Label>
 
         <!-- Navigation -->
