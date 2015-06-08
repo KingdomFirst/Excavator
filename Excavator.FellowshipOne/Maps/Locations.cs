@@ -42,10 +42,31 @@ namespace Excavator.F1
             List<GroupMember> familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable()
                 .Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
 
-            var groupLocationTypeList = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ), lookupContext ).DefinedValues;
-            int homeGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
-            int workGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
-            int previousGroupLocationTypeId = groupLocationTypeList.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS ) ).Id;
+            var groupLocationDefinedType = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ), lookupContext );
+            int homeGroupLocationTypeId = groupLocationDefinedType.DefinedValues
+                .FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
+            int workGroupLocationTypeId = groupLocationDefinedType.DefinedValues
+                .FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
+            int previousGroupLocationTypeId = groupLocationDefinedType.DefinedValues
+                .FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS ) ).Id;
+
+            string otherGroupLocationName = "Other (Imported)";
+            int? otherGroupLocationTypeId = groupLocationDefinedType.DefinedValues
+                .Where( dv => dv.TypeName == otherGroupLocationName )
+                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+            if ( otherGroupLocationTypeId == null )
+            {
+                var otherGroupLocationType = new DefinedValue();
+                otherGroupLocationType.Value = otherGroupLocationName;
+                otherGroupLocationType.DefinedTypeId = groupLocationDefinedType.Id;
+                otherGroupLocationType.IsSystem = false;
+                otherGroupLocationType.Order = 0;
+
+                lookupContext.DefinedValues.Add( otherGroupLocationType );
+                lookupContext.SaveChanges( DisableAudit );
+
+                otherGroupLocationTypeId = otherGroupLocationType.Id;
+            }
 
             var newGroupLocations = new List<GroupLocation>();
 
@@ -103,9 +124,10 @@ namespace Excavator.F1
                             }
                             else if ( !string.IsNullOrEmpty( addressType ) )
                             {
-                                var customTypeId = groupLocationTypeList.Where( dv => dv.Value.ToLower().Equals( addressType ) )
+                                // look for existing group location types, otherwise mark as imported
+                                var customTypeId = groupLocationDefinedType.DefinedValues.Where( dv => dv.Value.ToLower().Equals( addressType ) )
                                     .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                                groupLocation.GroupLocationTypeValueId = customTypeId ?? homeGroupLocationTypeId;
+                                groupLocation.GroupLocationTypeValueId = customTypeId ?? otherGroupLocationTypeId;
                             }
 
                             newGroupLocations.Add( groupLocation );
