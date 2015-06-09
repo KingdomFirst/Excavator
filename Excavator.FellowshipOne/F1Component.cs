@@ -162,7 +162,7 @@ namespace Excavator.F1
                 importPerson = personService.Queryable().FirstOrDefault();
             }
 
-            ImportPersonAlias = new PersonAliasService( rockContext ).Get( importPerson.Id );
+            ImportPersonAlias = importPerson.PrimaryAlias;
             var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
             ReportProgress( 0, "Checking for existing attributes..." );
