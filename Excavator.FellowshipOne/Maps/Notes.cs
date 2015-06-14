@@ -43,7 +43,7 @@ namespace Excavator.F1
             var personService = new PersonService( lookupContext );
 
             var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
-            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) );
+            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) );
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
                 .Where( u => u.ForeignId != null )
@@ -113,7 +113,7 @@ namespace Excavator.F1
                         newNoteType.EntityTypeId = personalNoteType.EntityTypeId;
                         newNoteType.EntityTypeQualifierColumn = string.Empty;
                         newNoteType.EntityTypeQualifierValue = string.Empty;
-                        newNoteType.UserSelectable = true;
+                        //newNoteType.UserSelectable = true;
                         newNoteType.IsSystem = false;
                         newNoteType.Name = noteType;
 
