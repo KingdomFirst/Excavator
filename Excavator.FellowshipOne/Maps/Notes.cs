@@ -43,7 +43,7 @@ namespace Excavator.F1
             var personService = new PersonService( lookupContext );
 
             var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
-            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) );
+            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) );
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
                 .Where( u => u.ForeignId != null )
