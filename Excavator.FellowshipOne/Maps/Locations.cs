@@ -96,7 +96,7 @@ namespace Excavator.F1
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
-                        Location familyAddress = locationService.Get( street1, street2, city, state, zip, country, false );
+                        Location familyAddress = Extensions.GetWithoutVerify( street1, street2, city, state, zip, country, false );
 
                         if ( familyAddress != null )
                         {

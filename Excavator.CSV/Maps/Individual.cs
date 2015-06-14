@@ -81,7 +81,7 @@ namespace Excavator.CSV
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext ).DefinedValues;
 
             // Personal note type id
-            var personalNoteTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) ).Id;
+            var personalNoteTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) ).Id;
 
             // School defined type
             var schoolDefinedType = DefinedTypeCache.Read( new Guid( "576FF1E2-6225-4565-A16D-230E26167A3D" ) );

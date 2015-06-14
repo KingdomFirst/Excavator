@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
+using Excavator.Utility;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -94,7 +95,7 @@ namespace Excavator.CSV
                     string famZip = row[Zip];
                     string famCountry = row[Country];
 
-                    Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry, false );
+                    Location primaryAddress = Extensions.GetWithoutVerify( famAddress, famAddress2, famCity, famState, famZip, famCountry, false );
 
                     if ( primaryAddress != null )
                     {
@@ -113,7 +114,7 @@ namespace Excavator.CSV
                     string famSecondZip = row[SecondaryZip];
                     string famSecondCountry = row[SecondaryCountry];
 
-                    Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, false );
+                    Location secondaryAddress = Extensions.GetWithoutVerify( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, false );
 
                     if ( secondaryAddress != null )
                     {
