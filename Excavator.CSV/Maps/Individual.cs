@@ -80,9 +80,8 @@ namespace Excavator.CSV
             // Phone types: Home, Work, Mobile
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext ).DefinedValues;
 
-            // Timeline note type id
-
-            var noteTimelineTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) ).Id;
+            // Personal note type id
+            var personalNoteTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) ).Id;
 
             // School defined type
             var schoolDefinedType = DefinedTypeCache.Read( new Guid( "576FF1E2-6225-4565-A16D-230E26167A3D" ) );
@@ -497,7 +496,7 @@ namespace Excavator.CSV
                         newNote.CreatedDateTime = importDate;
                         newNote.Text = notePair.Value;
                         newNote.ForeignId = rowPersonId;
-                        newNote.NoteTypeId = noteTimelineTypeId;
+                        newNote.NoteTypeId = personalNoteTypeId;
                         newNote.Caption = string.Format( "{0} Note", notePair.Key );
 
                         if ( !notePair.Key.Equals( "General" ) )

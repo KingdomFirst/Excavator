@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
+using Excavator.Utility;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -94,25 +95,7 @@ namespace Excavator.CSV
                     string famZip = row[Zip];
                     string famCountry = row[Country];
 
-                    Location primaryAddress = null;
-                    try
-                    {
-                        primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry );
-                    }
-                    catch ( ArgumentException ex )
-                    {
-                        LogException( "Location Import", string.Format( "Rock verification component not found. {0}", ex.ToString() ) );
-                        primaryAddress = new Location();
-                        primaryAddress.Street1 = famAddress;
-                        primaryAddress.Street2 = famAddress2;
-                        primaryAddress.City = famCity;
-                        primaryAddress.State = famState;
-                        primaryAddress.PostalCode = famZip;
-                        primaryAddress.Country = famCountry;
-
-                        lookupContext.Locations.Add( primaryAddress );
-                        lookupContext.SaveChanges();
-                    }
+                    Location primaryAddress = Extensions.GetWithoutVerify( famAddress, famAddress2, famCity, famState, famZip, famCountry, false );
 
                     if ( primaryAddress != null )
                     {
@@ -131,25 +114,7 @@ namespace Excavator.CSV
                     string famSecondZip = row[SecondaryZip];
                     string famSecondCountry = row[SecondaryCountry];
 
-                    Location secondaryAddress = null;
-                    try
-                    {
-                        secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry );
-                    }
-                    catch ( ArgumentException ex )
-                    {
-                        LogException( "Location Import", string.Format( "Rock verification component not found. {0}", ex.ToString() ) );
-                        secondaryAddress = new Location();
-                        secondaryAddress.Street1 = famSecondAddress;
-                        secondaryAddress.Street2 = famSecondAddress2;
-                        secondaryAddress.City = famSecondCity;
-                        secondaryAddress.State = famSecondState;
-                        secondaryAddress.PostalCode = famSecondZip;
-                        secondaryAddress.Country = famSecondCountry;
-
-                        lookupContext.Locations.Add( secondaryAddress );
-                        lookupContext.SaveChanges();
-                    }
+                    Location secondaryAddress = Extensions.GetWithoutVerify( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, false );
 
                     if ( secondaryAddress != null )
                     {

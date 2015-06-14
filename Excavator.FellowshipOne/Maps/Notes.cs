@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
@@ -42,7 +43,7 @@ namespace Excavator.F1
             var personService = new PersonService( lookupContext );
 
             var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
-            var timelineNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) );
+            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) );
 
             var importedUsers = new UserLoginService( lookupContext ).Queryable()
                 .Where( u => u.ForeignId != null )
@@ -69,11 +70,15 @@ namespace Excavator.F1
                     note.CreatedDateTime = dateCreated;
                     note.EntityId = personKeys.PersonId;
 
-                    text.Replace( "&#45;", "-" );
-                    text.Replace( "&amp;", "&" );
-                    text.Replace( "&nbsp;", " " );
-                    text.Replace( "&quot;", @"""" );
-                    text.Replace( "&#x0D", string.Empty );
+                    // These replace methods don't like being chained together
+                    text = Regex.Replace( text, @"\t|\&nbsp;", " " );
+                    text = text.Replace( "&#45;", "-" );
+                    text = text.Replace( "&lt;", "<" );
+                    text = text.Replace( "&gt;", ">" );
+                    text = text.Replace( "&amp;", "&" );
+                    text = text.Replace( "&quot;", @"""" );
+                    text = text.Replace( "&#x0D", string.Empty );
+                    text = text.Trim();
 
                     note.Text = text;
 
@@ -94,17 +99,21 @@ namespace Excavator.F1
                     }
                     else
                     {
-                        matchingNoteTypeId = timelineNoteType.Id;
+                        matchingNoteTypeId = personalNoteType.Id;
                     }
 
-                    if ( matchingNoteTypeId == null )
+                    if ( matchingNoteTypeId != null )
+                    {
+                        note.NoteTypeId = (int)matchingNoteTypeId;
+                    }
+                    else
                     {
                         // create the note type
                         var newNoteType = new NoteType();
-                        newNoteType.EntityTypeId = timelineNoteType.EntityTypeId;
-                        newNoteType.SourcesTypeId = timelineNoteType.SourcesTypeId;
+                        newNoteType.EntityTypeId = personalNoteType.EntityTypeId;
                         newNoteType.EntityTypeQualifierColumn = string.Empty;
                         newNoteType.EntityTypeQualifierValue = string.Empty;
+                        //newNoteType.UserSelectable = true;
                         newNoteType.IsSystem = false;
                         newNoteType.Name = noteType;
 
@@ -113,10 +122,6 @@ namespace Excavator.F1
 
                         noteTypes.Add( newNoteType );
                         note.NoteTypeId = newNoteType.Id;
-                    }
-                    else
-                    {
-                        note.NoteTypeId = (int)matchingNoteTypeId;
                     }
 
                     noteList.Add( note );

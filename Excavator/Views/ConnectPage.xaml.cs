@@ -23,13 +23,11 @@ using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Web.UI;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using Excavator.Utility;
 using Microsoft.Win32;
 
 namespace Excavator

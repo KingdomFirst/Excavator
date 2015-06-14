@@ -181,7 +181,7 @@ namespace Excavator.CSV
         public override int TransformData( string importUser = null )
         {
             int completed = 0;
-            ReportProgress( 0, "Starting import..." );
+            ReportProgress( 0, "Starting health checks..." );
             if ( !LoadExistingData( importUser ) )
             {
                 return -1;
@@ -190,6 +190,7 @@ namespace Excavator.CSV
             // only import things that the user checked
             List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
+            ReportProgress( 0, "Starting data import..." );
             // Person data is important, so load it first
             if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
             {
@@ -236,7 +237,7 @@ namespace Excavator.CSV
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            ReportProgress( 0, "Checking your database for previously imported people..." );
+            ReportProgress( 0, "Checking for existing people..." );
 
             // Don't track groups in this context, just use it as a static reference
             ImportedPeople = lookupContext.Groups.AsNoTracking().Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignId != null ).ToList();
