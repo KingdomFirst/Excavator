@@ -168,7 +168,7 @@ namespace Excavator.CSV
                     person.ForeignId = rowPersonId;
                     person.SystemNote = string.Format( "Imported via Excavator on {0}", importDate.ToString() );
                     person.RecordTypeValueId = personRecordTypeId;
-                    person.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    person.CreatedByPersonAliasId = ImportPersonAliasId;
                     string firstName = row[FirstName];
                     string nickName = row[NickName];
                     person.FirstName = firstName;
@@ -363,7 +363,7 @@ namespace Excavator.CSV
                         {
                             var currentNumber = new PhoneNumber();
                             currentNumber.CountryCode = countryCode;
-                            currentNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            currentNumber.CreatedByPersonAliasId = ImportPersonAliasId;
                             currentNumber.Extension = extension.Left( 20 );
                             currentNumber.Number = normalizedNumber.TrimStart( new Char[] { '0' } ).Left( 20 );
                             currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
@@ -492,7 +492,7 @@ namespace Excavator.CSV
                     foreach ( var notePair in notePairs.Where( n => !string.IsNullOrWhiteSpace( n.Value ) ) )
                     {
                         var newNote = new Note();
-                        newNote.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        newNote.CreatedByPersonAliasId = ImportPersonAliasId;
                         newNote.CreatedDateTime = importDate;
                         newNote.Text = notePair.Value;
                         newNote.ForeignId = rowPersonId;
@@ -514,7 +514,7 @@ namespace Excavator.CSV
                     groupMember.GroupRoleId = groupRoleId;
                     groupMember.CreatedDateTime = importDate;
                     groupMember.ModifiedDateTime = importDate;
-                    groupMember.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    groupMember.CreatedByPersonAliasId = ImportPersonAliasId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
 
                     if ( rowFamilyId != currentFamilyGroup.ForeignId )
@@ -604,7 +604,7 @@ namespace Excavator.CSV
                 familyGroup.Name = string.Format( "Family Group {0}", rowFamilyId );
             }
 
-            familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+            familyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
             familyGroup.ForeignId = rowFamilyId.ToString();
             familyGroup.GroupTypeId = FamilyGroupTypeId;
             return familyGroup;

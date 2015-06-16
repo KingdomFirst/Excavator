@@ -59,7 +59,7 @@ namespace Excavator.CSV
                         currentFamilyGroup = new Group();
                         currentFamilyGroup.ForeignId = rowFamilyId;
                         currentFamilyGroup.Name = row[FamilyName];
-                        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentFamilyGroup.GroupTypeId = familyGroupTypeId;
                         newFamilyList.Add( currentFamilyGroup );
                     }

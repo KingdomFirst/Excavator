@@ -100,7 +100,7 @@ namespace Excavator.F1
 
                         if ( familyAddress != null )
                         {
-                            familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            familyAddress.CreatedByPersonAliasId = ImportPersonAliasId;
                             familyAddress.Name = familyGroup.Name;
                             familyAddress.IsActive = true;
 

@@ -70,7 +70,7 @@ namespace Excavator.F1
                     var businessGroup = new Group();
                     var businessPerson = new Person();
 
-                    businessPerson.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    businessPerson.CreatedByPersonAliasId = ImportPersonAliasId;
                     businessPerson.CreatedDateTime = row["Created_Date"] as DateTime?;
                     businessPerson.RecordTypeValueId = businessRecordTypeId;
 
@@ -271,7 +271,7 @@ namespace Excavator.F1
                             person.BirthYear = birthDate.Year;
                         }
 
-                        person.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        person.CreatedByPersonAliasId = ImportPersonAliasId;
                         person.RecordTypeValueId = personRecordTypeId;
                         person.ForeignId = individualId.ToString();
                         int groupRoleId = adultRoleId;
@@ -727,7 +727,7 @@ namespace Excavator.F1
 
                         var user = new UserLogin();
                         user.CreatedDateTime = createdDate;
-                        user.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        user.CreatedByPersonAliasId = ImportPersonAliasId;
                         user.EntityTypeId = rockAuthenticatedTypeId;
                         user.IsConfirmed = isEnabled;
                         user.UserName = userName.Trim();
@@ -742,7 +742,7 @@ namespace Excavator.F1
                             staffMember.PersonId = personKeys.PersonId;
                             staffMember.GroupRoleId = memberGroupRoleId;
                             staffMember.CreatedDateTime = createdDate;
-                            staffMember.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            staffMember.CreatedByPersonAliasId = ImportPersonAliasId;
                             staffMember.GroupMemberStatus = isActive ? GroupMemberStatus.Active : GroupMemberStatus.Inactive;
 
                             newStaffMembers.Add( staffMember );

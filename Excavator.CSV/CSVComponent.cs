@@ -68,7 +68,7 @@ namespace Excavator.CSV
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
-        private PersonAlias ImportPersonAlias;
+        private int? ImportPersonAliasId;
 
         /// <summary>
         /// The person entity type identifier
@@ -232,7 +232,7 @@ namespace Excavator.CSV
                 }
             }
 
-            ImportPersonAlias = new PersonAliasService( lookupContext ).Get( importPerson.Id );
+            ImportPersonAliasId = importPerson.PrimaryAliasId;
 
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;

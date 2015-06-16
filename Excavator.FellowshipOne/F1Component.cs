@@ -68,7 +68,7 @@ namespace Excavator.F1
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
-        protected static PersonAlias ImportPersonAlias;
+        protected static int? ImportPersonAliasId;
 
         /// <summary>
         /// All the people who've been imported
@@ -162,7 +162,7 @@ namespace Excavator.F1
                 importPerson = personService.Queryable().FirstOrDefault();
             }
 
-            ImportPersonAlias = importPerson.PrimaryAlias;
+            ImportPersonAliasId = importPerson.PrimaryAliasId;
             var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
 
             ReportProgress( 0, "Checking for existing attributes..." );

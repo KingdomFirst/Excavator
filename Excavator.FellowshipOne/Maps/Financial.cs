@@ -65,7 +65,7 @@ namespace Excavator.F1
                         if ( !importedBankAccounts.Any( a => a.PersonAliasId == personKeys.PersonAliasId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var bankAccount = new FinancialPersonBankAccount();
-                            bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            bankAccount.CreatedByPersonAliasId = ImportPersonAliasId;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
                             bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;
@@ -134,7 +134,7 @@ namespace Excavator.F1
                 if ( batchId != null && !ImportedBatches.ContainsKey( (int)batchId ) )
                 {
                     var batch = new FinancialBatch();
-                    batch.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    batch.CreatedByPersonAliasId = ImportPersonAliasId;
                     batch.ForeignId = batchId.ToString();
                     batch.Status = batchStatusClosed;
 
@@ -242,7 +242,7 @@ namespace Excavator.F1
                 if ( contributionId != null && !importedContributions.ContainsKey( (int)contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
-                    transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    transaction.CreatedByPersonAliasId = ImportPersonAliasId;
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
                     transaction.ForeignId = contributionId.ToString();
 
@@ -439,7 +439,7 @@ namespace Excavator.F1
                     {
                         var pledge = new FinancialPledge();
                         pledge.PersonAliasId = personKeys.PersonAliasId;
-                        pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        pledge.CreatedByPersonAliasId = ImportPersonAliasId;
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
@@ -560,7 +560,7 @@ namespace Excavator.F1
             account.IsActive = true;
             account.CampusId = fundCampusId;
             account.ParentAccountId = parentAccountId;
-            account.CreatedByPersonAliasId = ImportPersonAlias.Id;
+            account.CreatedByPersonAliasId = ImportPersonAliasId;
 
             lookupContext.FinancialAccounts.Add( account );
             lookupContext.SaveChanges( DisableAudit );

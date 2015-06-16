@@ -54,7 +54,7 @@ namespace Excavator.F1
                 otherType.Order = 0;
                 otherType.Value = "Other";
                 otherType.Description = "Imported from FellowshipOne";
-                otherType.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                otherType.CreatedByPersonAliasId = ImportPersonAliasId;
 
                 lookupContext.DefinedValues.Add( otherType );
                 lookupContext.SaveChanges( DisableAudit );
@@ -139,7 +139,7 @@ namespace Excavator.F1
                                     if ( !numberExists )
                                     {
                                         var newNumber = new PhoneNumber();
-                                        newNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                                        newNumber.CreatedByPersonAliasId = ImportPersonAliasId;
                                         newNumber.ModifiedDateTime = lastUpdated;
                                         newNumber.PersonId = (int)personKeys.PersonId;
                                         newNumber.IsMessagingEnabled = false;
