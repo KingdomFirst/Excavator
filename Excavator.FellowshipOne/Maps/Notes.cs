@@ -113,9 +113,10 @@ namespace Excavator.F1
                         newNoteType.EntityTypeId = personalNoteType.EntityTypeId;
                         newNoteType.EntityTypeQualifierColumn = string.Empty;
                         newNoteType.EntityTypeQualifierValue = string.Empty;
-                        //newNoteType.UserSelectable = true;
+                        newNoteType.UserSelectable = true;
                         newNoteType.IsSystem = false;
                         newNoteType.Name = noteType;
+                        newNoteType.Order = 0;
 
                         lookupContext.NoteTypes.Add( newNoteType );
                         lookupContext.SaveChanges( DisableAudit );
