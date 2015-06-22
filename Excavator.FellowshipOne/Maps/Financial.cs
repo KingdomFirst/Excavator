@@ -308,6 +308,7 @@ namespace Excavator.F1
                     string fundName = row["Fund_Name"] as string;
                     string subFund = row["Sub_Fund_Name"] as string;
                     decimal? amount = row["Amount"] as decimal?;
+                    decimal? statedValue = row["Stated_Value"] as decimal?;
                     if ( fundName != null & amount != null )
                     {
                         int transactionAccountId;
@@ -346,6 +347,12 @@ namespace Excavator.F1
                         else
                         {
                             transactionAccountId = parentAccount.Id;
+                        }
+
+                        if ( amount == 0 && statedValue != null && statedValue != 0 )
+                        {
+                            amount = statedValue;
+                            isTypeNonCash = true;
                         }
 
                         var transactionDetail = new FinancialTransactionDetail();
