@@ -261,6 +261,7 @@ namespace Excavator.F1
                         person.MiddleName = row["Middle_Name"] as string;
                         person.NickName = row["Goes_By"] as string ?? person.FirstName;
                         person.LastName = row["Last_Name"] as string;
+                        person.IsDeceased = false;
 
                         var DOB = row["Date_Of_Birth"] as DateTime?;
                         if ( DOB != null )
@@ -328,7 +329,7 @@ namespace Excavator.F1
                         string memberStatus = row["Status_Name"] as string;
                         if ( memberStatus != null )
                         {
-                            memberStatus = memberStatus.ToString().ToLower();
+                            memberStatus = memberStatus.ToLower();
                             if ( memberStatus.Equals( "member" ) )
                             {
                                 person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
