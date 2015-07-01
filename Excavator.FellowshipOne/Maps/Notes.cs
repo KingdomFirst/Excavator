@@ -58,10 +58,11 @@ namespace Excavator.F1
             foreach ( var row in tableData.Where( r => r != null ) )
             {
                 string text = row["Note_Text"] as string;
+                int? noteStatus = row["NoteArchived"] as int?;
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
                 var personKeys = GetPersonKeys( individualId, householdId );
-                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) )
+                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteStatus > 0 )
                 {
                     DateTime? dateCreated = row["NoteCreated"] as DateTime?;
                     string noteType = row["Note_Type_Name"] as string;
