@@ -31,7 +31,7 @@ namespace Excavator.F1
     /// <summary>
     /// Partial of F1Component that holds the People import methods
     /// </summary>
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the company.
@@ -77,8 +77,8 @@ namespace Excavator.F1
                     var businessName = row["Household_Name"] as string;
                     if ( businessName != null )
                     {
-                        businessName.Replace( "&#39;", "'" );
-                        businessName.Replace( "&amp;", "&" );
+                        businessName = businessName.Replace( "&#39;", "'" );
+                        businessName = businessName.Replace( "&amp;", "&" );
                         businessPerson.LastName = businessName.Left( 50 );
                         businessGroup.Name = businessName.Left( 50 );
                     }
@@ -130,7 +130,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.Groups.AddRange( businessList );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
 
                 foreach ( var newBusiness in businessList )
                 {
@@ -157,7 +157,7 @@ namespace Excavator.F1
                 }
 
                 rockContext.ChangeTracker.DetectChanges();
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
 
                 if ( businessList.Any() )
                 {
@@ -168,7 +168,7 @@ namespace Excavator.F1
                         PersonId = m.Person.Id,
                         IndividualId = null,
                         HouseholdId = m.Group.ForeignId.AsType<int?>(),
-                        IsFamilyMember = true
+                        FamilyRoleId = FamilyRole.Adult
                     } ).ToList()
                     );
                 }
@@ -249,7 +249,7 @@ namespace Excavator.F1
 
                 foreach ( var row in groupedRows.Where( r => r != null ) )
                 {
-                    bool isFamilyRelationship = true;
+                    var familyRoleId = FamilyRole.Adult;
                     string currentCampus = string.Empty;
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
@@ -275,7 +275,6 @@ namespace Excavator.F1
                         person.CreatedByPersonAliasId = ImportPersonAliasId;
                         person.RecordTypeValueId = personRecordTypeId;
                         person.ForeignId = individualId.ToString();
-                        int groupRoleId = adultRoleId;
 
                         var gender = row["Gender"] as string;
                         if ( gender != null )
@@ -317,12 +316,12 @@ namespace Excavator.F1
                             familyRole = familyRole.ToString().ToLower();
                             if ( familyRole == "visitor" )
                             {
-                                isFamilyRelationship = false;
+                                familyRoleId = FamilyRole.Visitor;
                             }
 
                             if ( familyRole == "child" || person.Age < 18 )
                             {
-                                groupRoleId = childRoleId;
+                                familyRoleId = FamilyRole.Child;
                             }
                         }
 
@@ -340,8 +339,8 @@ namespace Excavator.F1
                                 person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
                                 person.RecordStatusValueId = recordStatusActiveId;
 
-                                // F1 can designate visitors with member status or household position
-                                isFamilyRelationship = false;
+                                // F1 can designate visitors by member status or household position
+                                familyRoleId = FamilyRole.Visitor;
                             }
                             else if ( memberStatus.Equals( "deceased" ) )
                             {
@@ -379,6 +378,9 @@ namespace Excavator.F1
                         {
                             person.SystemNote = status_comment;
                         }
+
+                        // set a processing flag to keep visitors from receiving household info
+                        person.ReviewReasonNote = familyRoleId.ToString();
 
                         // Map F1 attributes
                         person.Attributes = new Dictionary<string, AttributeCache>();
@@ -434,18 +436,12 @@ namespace Excavator.F1
                             AddPersonAttribute( legalNoteAttribute, person, checkinNote );
                         }
 
-                        // Other Attributes to create?
-                        // former name
-                        // bar_code
-                        // member_env_code
-                        // denomination_name
-
                         var groupMember = new GroupMember();
                         groupMember.Person = person;
-                        groupMember.GroupRoleId = groupRoleId;
+                        groupMember.GroupRoleId = familyRoleId != FamilyRole.Child ? adultRoleId : childRoleId;
                         groupMember.GroupMemberStatus = GroupMemberStatus.Active;
 
-                        if ( isFamilyRelationship )
+                        if ( familyRoleId != FamilyRole.Visitor )
                         {
                             householdCampusList.Add( currentCampus );
                             familyGroup.Members.Add( groupMember );
@@ -453,9 +449,6 @@ namespace Excavator.F1
                         }
                         else
                         {
-                            // set a processing flag to keep visitors from receiving household info
-                            person.ReviewReasonNote = F1Component.FamilyVisitor;
-
                             var visitorGroup = new Group();
                             visitorGroup.Members.Add( groupMember );
                             visitorGroup.GroupTypeId = familyGroupTypeId;
@@ -531,7 +524,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.Groups.AddRange( familyList );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
 
                 foreach ( var familyGroups in familyList.GroupBy<Group, int?>( g => g.ForeignId.AsType<int?>() ) )
                 {
@@ -646,17 +639,18 @@ namespace Excavator.F1
                 }
 
                 rockContext.ChangeTracker.DetectChanges();
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
 
                 if ( familyList.Any() )
                 {
                     var familyMembers = familyList.SelectMany( gm => gm.Members );
                     ImportedPeople.AddRange( familyMembers.Select( m => new PersonKeys
                     {
-                        PersonAliasId = m.Person.PrimaryAliasId,
+                        PersonAliasId = (int)m.Person.PrimaryAliasId,
+                        PersonId = m.Person.Id,
                         IndividualId = m.Person.ForeignId.AsType<int?>(),
                         HouseholdId = m.Group.ForeignId.AsType<int?>(),
-                        IsFamilyMember = true
+                        FamilyRoleId = m.Person.ReviewReasonNote.AsType<FamilyRole>()
                     } ).ToList()
                     );
                 }
@@ -666,10 +660,11 @@ namespace Excavator.F1
                     var visitors = visitorList.SelectMany( gm => gm.Members );
                     ImportedPeople.AddRange( visitors.Select( m => new PersonKeys
                     {
-                        PersonAliasId = m.Person.PrimaryAliasId,
+                        PersonAliasId = (int)m.Person.PrimaryAliasId,
+                        PersonId = m.Person.Id,
                         IndividualId = m.Person.ForeignId.AsType<int?>(),
                         HouseholdId = m.Group.ForeignId.AsType<int?>(),
-                        IsFamilyMember = false
+                        FamilyRoleId = m.Person.ReviewReasonNote.AsType<FamilyRole>()
                     } ).ToList()
                     );
                 }
@@ -768,7 +763,7 @@ namespace Excavator.F1
                                 person.IsEmailActive = isEnabled;
                                 person.EmailPreference = EmailPreference.EmailAllowed;
                                 person.EmailNote = userTitle;
-                                lookupContext.SaveChanges( DisableAudit );
+                                lookupContext.SaveChanges( DisableAuditing );
 
                                 updatedPersonList.Add( person );
                             }
@@ -827,7 +822,7 @@ namespace Excavator.F1
                 rockContext.UserLogins.AddRange( newUserLogins );
                 rockContext.GroupMembers.AddRange( newStaffMembers );
                 rockContext.ChangeTracker.DetectChanges();
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 

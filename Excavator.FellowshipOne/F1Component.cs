@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
@@ -34,7 +35,7 @@ namespace Excavator.F1
     /// Data models and mapping methods are in the Models and Maps directories, respectively.
     /// </summary>
     [Export( typeof( ExcavatorComponent ) )]
-    partial class F1Component : ExcavatorComponent
+    public partial class F1Component : ExcavatorComponent
     {
         #region Fields
 
@@ -63,7 +64,7 @@ namespace Excavator.F1
         /// <summary>
         /// The local database
         /// </summary>
-        protected Database Database;
+        protected OrcaMDF.Core.Engine.Database Database;
 
         /// <summary>
         /// The person assigned to do the import
@@ -99,10 +100,15 @@ namespace Excavator.F1
         protected static AttributeCache SecondaryEmailAttribute;
 
         // Flag to run postprocessing audits during save
-        protected static bool DisableAudit = true;
+        protected static bool DisableAuditing = true;
 
-        // Flag to designate household visitors
-        protected const string FamilyVisitor = "1";
+        // Flag to designate household role
+        public enum FamilyRole
+        {
+            Adult = 0,
+            Child = 1,
+            Visitor = 2
+        };
 
         #endregion Fields
 
@@ -115,7 +121,7 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool LoadSchema( string fileName )
         {
-            Database = new Database( fileName );
+            Database = new OrcaMDF.Core.Engine.Database( fileName );
             TableNodes = new List<DatabaseNode>();
             var scanner = new DataScanner( Database );
             var tables = Database.Dmvs.Tables;
@@ -288,7 +294,7 @@ namespace Excavator.F1
                 householdAttribute.Order = 0;
 
                 lookupContext.Attributes.Add( householdAttribute );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
                 personAttributes.Add( householdAttribute );
             }
 
@@ -309,7 +315,7 @@ namespace Excavator.F1
                 individualAttribute.Order = 0;
 
                 lookupContext.Attributes.Add( individualAttribute );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
                 personAttributes.Add( individualAttribute );
             }
 
@@ -332,7 +338,7 @@ namespace Excavator.F1
                 lookupContext.Attributes.Add( secondaryEmailAttribute );
                 var visitInfoCategory = new CategoryService( lookupContext ).Get( visitInfoCategoryId );
                 secondaryEmailAttribute.Categories.Add( visitInfoCategory );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
             }
 
             var infellowshipLoginAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "InFellowshipLogin", StringComparison.InvariantCultureIgnoreCase ) );
@@ -353,7 +359,7 @@ namespace Excavator.F1
 
                 // don't add a category as this attribute is only used via the API
                 lookupContext.Attributes.Add( infellowshipLoginAttribute );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
             }
 
             IndividualIdAttribute = AttributeCache.Read( individualAttribute.Id );
@@ -361,9 +367,19 @@ namespace Excavator.F1
             InFellowshipLoginAttribute = AttributeCache.Read( infellowshipLoginAttribute.Id );
             SecondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttribute.Id );
 
-            var visitorIdList = new PersonService( lookupContext ).Queryable().Where( p => p.ReviewReasonNote.Equals( FamilyVisitor ) ).OrderBy( p => p.Id ).Select( p => (int?)p.Id ).ToList();
-            var aliasIdList = new PersonAliasService( lookupContext ).Queryable().Where( p => p.ForeignId != null ).Select( pa => new { PersonAliasId = pa.Id, PersonId = pa.PersonId, IndividualId = pa.ForeignId } ).ToList();
-            var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
+            var currentDate = DateTime.Now;
+            var aliasIdList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
+                .Select( pa => new { 
+                    PersonAliasId = pa.Id, 
+                    PersonId = pa.PersonId,
+                    IndividualId = pa.ForeignId, 
+                    FamilyRole = pa.Person.ReviewReasonNote
+                } ).ToList();
+            var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).AsNoTracking()
+                .Select( av => new { 
+                    PersonId = (int)av.EntityId, 
+                    HouseholdId = av.Value 
+                } ).ToList();
 
             ImportedPeople = householdIdList.GroupJoin( aliasIdList,
                 household => household.PersonId,
@@ -371,10 +387,10 @@ namespace Excavator.F1
                 ( household, aliases ) => new PersonKeys
                     {
                         PersonAliasId = aliases.Select( a => a.PersonAliasId ).FirstOrDefault(),
-                        PersonId = (int)household.PersonId,
-                        HouseholdId = household.HouseholdId.AsType<int?>(),
+                        PersonId = household.PersonId,
                         IndividualId = aliases.Select( a => a.IndividualId.AsType<int?>() ).FirstOrDefault(),
-                        IsFamilyMember = !visitorIdList.Contains( (int)household.PersonId )
+                        HouseholdId = household.HouseholdId.AsType<int?>(),
+                        FamilyRoleId = aliases.Select( a => a.FamilyRole.AsType<FamilyRole>() ).FirstOrDefault()
                     }
                 ).ToList();
 
@@ -398,11 +414,15 @@ namespace Excavator.F1
             }
             else if ( individualId != null )
             {
-                return ImportedPeople.Where( p => p.IndividualId == individualId && ( includeVisitors || p.IsFamilyMember ) ).FirstOrDefault();
+                return ImportedPeople.Where( p => p.IndividualId == individualId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) ).FirstOrDefault();
             }
             else if ( householdId != null )
             {
-                return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.IsFamilyMember ) ).FirstOrDefault();
+                var asdf = ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) )
+                    .OrderBy( p => p.FamilyRoleId )
+                    .FirstOrDefault();
+
+                return asdf;
             }
             else
             {
@@ -418,7 +438,7 @@ namespace Excavator.F1
         /// <returns></returns>
         protected static List<PersonKeys> GetFamilyByHouseholdId( int? householdId, bool includeVisitors = true )
         {
-            return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.IsFamilyMember ) ).ToList();
+            return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) ).ToList();
         }
 
         #endregion Methods
@@ -430,12 +450,12 @@ namespace Excavator.F1
     public class PersonKeys
     {
         /// <summary>
-        /// Stores the Rock.PersonAliasId
+        /// Stores the Rock PersonAliasId
         /// </summary>
-        public int? PersonAliasId;
+        public int PersonAliasId;
 
         /// <summary>
-        /// Stores the Rock.PersonId
+        /// Stores the Rock PersonId
         /// </summary>
         public int PersonId;
 
@@ -450,8 +470,8 @@ namespace Excavator.F1
         public int? HouseholdId;
 
         /// <summary>
-        /// Stores whether the person was part of the family
+        /// Stores how the person is connected to the family
         /// </summary>
-        public bool IsFamilyMember;
+        public F1Component.FamilyRole FamilyRoleId;
     }
 }
