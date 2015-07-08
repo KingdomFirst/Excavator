@@ -31,7 +31,7 @@ namespace Excavator.F1
     /// <summary>
     /// Partial of F1Component that holds the Email/Phone # import methods
     /// </summary>
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the communication data.
@@ -57,7 +57,7 @@ namespace Excavator.F1
                 otherType.CreatedByPersonAliasId = ImportPersonAliasId;
 
                 lookupContext.DefinedValues.Add( otherType );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
             }
 
             // Look up existing Person attributes
@@ -202,7 +202,7 @@ namespace Excavator.F1
                                         person.EmailPreference = isListed ? EmailPreference.EmailAllowed : EmailPreference.DoNotEmail;
                                         person.ModifiedDateTime = lastUpdated;
                                         person.EmailNote = communicationComment;
-                                        lookupContext.SaveChanges( DisableAudit );
+                                        lookupContext.SaveChanges( DisableAuditing );
                                     }
                                     // this is a different email, assign it to SecondaryEmail
                                     else if ( !person.Email.Equals( value ) && !person.Attributes.ContainsKey( SecondaryEmailAttribute.Key ) )
@@ -316,7 +316,7 @@ namespace Excavator.F1
                 }
 
                 rockContext.ChangeTracker.DetectChanges();
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
     }

@@ -27,7 +27,7 @@ using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the family address.
@@ -63,7 +63,7 @@ namespace Excavator.F1
                 otherGroupLocationType.Order = 0;
 
                 lookupContext.DefinedValues.Add( otherGroupLocationType );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
 
                 otherGroupLocationTypeId = otherGroupLocationType.Id;
             }
@@ -173,7 +173,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.GroupLocations.AddRange( newGroupLocations );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
     }

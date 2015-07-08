@@ -30,7 +30,7 @@ namespace Excavator.F1
     /// <summary>
     /// Partial of F1Component that holds the Notes import
     /// </summary>
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the notes.
@@ -79,9 +79,8 @@ namespace Excavator.F1
                     text = text.Replace( "&amp;", "&" );
                     text = text.Replace( "&quot;", @"""" );
                     text = text.Replace( "&#x0D", string.Empty );
-                    text = text.Trim();
 
-                    note.Text = text;
+                    note.Text = text.Trim();
 
                     int? userId = row["NoteCreatedByUserID"] as int?;
                     if ( userId != null && importedUsers.ContainsKey( userId ) )
@@ -120,7 +119,7 @@ namespace Excavator.F1
                         newNoteType.Order = 0;
 
                         lookupContext.NoteTypes.Add( newNoteType );
-                        lookupContext.SaveChanges( DisableAudit );
+                        lookupContext.SaveChanges( DisableAuditing );
 
                         noteTypes.Add( newNoteType );
                         note.NoteTypeId = newNoteType.Id;
@@ -162,7 +161,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.Notes.AddRange( noteList );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
     }
