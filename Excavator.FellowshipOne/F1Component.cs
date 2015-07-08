@@ -88,8 +88,8 @@ namespace Excavator.F1
 
         // Existing entity types
 
-        protected static int IntegerFieldTypeId;
         protected static int TextFieldTypeId;
+        protected static int IntegerFieldTypeId;        
         protected static int PersonEntityTypeId;
 
         // Custom attribute types
@@ -105,7 +105,7 @@ namespace Excavator.F1
         // Flag to designate household role
         public enum FamilyRole
         {
-            Adult = 0,
+            Adult = 0,            
             Child = 1,
             Visitor = 2
         };
@@ -390,7 +390,7 @@ namespace Excavator.F1
                         PersonId = household.PersonId,
                         IndividualId = aliases.Select( a => a.IndividualId.AsType<int?>() ).FirstOrDefault(),
                         HouseholdId = household.HouseholdId.AsType<int?>(),
-                        FamilyRoleId = aliases.Select( a => a.FamilyRole.AsType<FamilyRole>() ).FirstOrDefault()
+                        FamilyRoleId = aliases.Select( a => a.FamilyRole.ConvertToEnum<FamilyRole>() ).FirstOrDefault()
                     }
                 ).ToList();
 
@@ -418,11 +418,9 @@ namespace Excavator.F1
             }
             else if ( householdId != null )
             {
-                var asdf = ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) )
-                    .OrderBy( p => p.FamilyRoleId )
+                return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) )
+                    .OrderBy( p => (int)p.FamilyRoleId )
                     .FirstOrDefault();
-
-                return asdf;
             }
             else
             {

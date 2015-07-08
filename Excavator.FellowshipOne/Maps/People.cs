@@ -650,7 +650,7 @@ namespace Excavator.F1
                         PersonId = m.Person.Id,
                         IndividualId = m.Person.ForeignId.AsType<int?>(),
                         HouseholdId = m.Group.ForeignId.AsType<int?>(),
-                        FamilyRoleId = m.Person.ReviewReasonNote.AsType<FamilyRole>()
+                        FamilyRoleId = m.Person.ReviewReasonNote.ConvertToEnum<FamilyRole>()
                     } ).ToList()
                     );
                 }
@@ -664,7 +664,7 @@ namespace Excavator.F1
                         PersonId = m.Person.Id,
                         IndividualId = m.Person.ForeignId.AsType<int?>(),
                         HouseholdId = m.Group.ForeignId.AsType<int?>(),
-                        FamilyRoleId = m.Person.ReviewReasonNote.AsType<FamilyRole>()
+                        FamilyRoleId = m.Person.ReviewReasonNote.ConvertToEnum<FamilyRole>()
                     } ).ToList()
                     );
                 }
