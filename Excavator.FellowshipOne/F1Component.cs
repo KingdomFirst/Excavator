@@ -408,13 +408,9 @@ namespace Excavator.F1
         /// <returns></returns>
         protected static PersonKeys GetPersonKeys( int? individualId = null, int? householdId = null, bool includeVisitors = true )
         {
-            if ( individualId != null && householdId != null )
+            if ( individualId != null )
             {
-                return ImportedPeople.Where( p => p.IndividualId == individualId && p.HouseholdId == householdId ).FirstOrDefault();
-            }
-            else if ( individualId != null )
-            {
-                return ImportedPeople.Where( p => p.IndividualId == individualId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) ).FirstOrDefault();
+                return ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId );
             }
             else if ( householdId != null )
             {

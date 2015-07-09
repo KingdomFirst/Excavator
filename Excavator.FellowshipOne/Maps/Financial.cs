@@ -31,7 +31,7 @@ namespace Excavator.F1
     /// <summary>
     /// Partial of F1Component that holds the Financial import methods
     /// </summary>
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the account data.
@@ -54,7 +54,7 @@ namespace Excavator.F1
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
                 var personKeys = GetPersonKeys( individualId, householdId );
-                if ( personKeys != null && personKeys.PersonAliasId != null )
+                if ( personKeys != null && personKeys.PersonAliasId > 0 )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
                     string accountNumber = row["Account"] as string;
@@ -110,7 +110,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -197,7 +197,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialBatches.AddRange( newBatches );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -246,8 +246,8 @@ namespace Excavator.F1
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
                     transaction.ForeignId = contributionId.ToString();
 
-                    var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
-                    if ( personKeys != null )
+                    var personKeys = GetPersonKeys( individualId, householdId );
+                    if ( personKeys != null && personKeys.PersonAliasId > 0 )
                     {
                         transaction.AuthorizedPersonAliasId = personKeys.PersonAliasId;
                         transaction.ProcessedByPersonAliasId = personKeys.PersonAliasId;
@@ -408,7 +408,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialTransactions.AddRange( newTransactions );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -441,8 +441,9 @@ namespace Excavator.F1
                 {
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
+
                     var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
-                    if ( personKeys != null && !importedPledges.Any( p => p.PersonAliasId == personKeys.PersonAliasId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
+                    if ( personKeys != null && personKeys.PersonAliasId > 0 )
                     {
                         var pledge = new FinancialPledge();
                         pledge.PersonAliasId = personKeys.PersonAliasId;
@@ -545,7 +546,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialPledges.AddRange( newPledges );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -570,7 +571,7 @@ namespace Excavator.F1
             account.CreatedByPersonAliasId = ImportPersonAliasId;
 
             lookupContext.FinancialAccounts.Add( account );
-            lookupContext.SaveChanges( DisableAudit );
+            lookupContext.SaveChanges( DisableAuditing );
 
             return account;
         }
