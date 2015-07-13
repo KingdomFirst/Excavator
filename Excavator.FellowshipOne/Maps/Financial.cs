@@ -17,13 +17,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using Excavator.Utility;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
-using Rock.Security;
 using Rock.Web.Cache;
 
 namespace Excavator.F1
@@ -41,7 +40,7 @@ namespace Excavator.F1
         private void MapBankAccount( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
-            var importedBankAccounts = new FinancialPersonBankAccountService( lookupContext ).Queryable().ToList();
+            var importedBankAccounts = new FinancialPersonBankAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
             var newBankAccounts = new List<FinancialPersonBankAccount>();
 
             int completed = 0;
@@ -69,9 +68,6 @@ namespace Excavator.F1
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
                             bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;
-
-                            // Other Attributes (not used):
-                            // Account_Type_Name
 
                             newBankAccounts.Add( bankAccount );
                             completed++;
@@ -219,10 +215,10 @@ namespace Excavator.F1
 
             var refundReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ), lookupContext ).DefinedValues;
 
-            var accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
+            var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
 
             // Get all imported contributions
-            var importedContributions = new FinancialTransactionService( lookupContext ).Queryable()
+            var importedContributions = new FinancialTransactionService( lookupContext ).Queryable().AsNoTracking()
                .Where( c => c.ForeignId != null )
                .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
 
@@ -420,10 +416,11 @@ namespace Excavator.F1
         private void MapPledge( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
-            var accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
-            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().ToList();
+            var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking().ToList();
 
             var pledgeFrequencies = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ), lookupContext ).DefinedValues;
+            int oneTimePledgeFrequencyId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
 
             var newPledges = new List<FinancialPledge>();
 
@@ -458,7 +455,7 @@ namespace Excavator.F1
                             frequency = frequency.ToLower();
                             if ( frequency.Equals( "one time" ) || frequency.Equals( "as can" ) )
                             {
-                                pledge.PledgeFrequencyValueId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
+                                pledge.PledgeFrequencyValueId = oneTimePledgeFrequencyId;
                             }
                             else
                             {

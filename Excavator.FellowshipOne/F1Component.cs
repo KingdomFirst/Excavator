@@ -17,9 +17,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.Data.Entity;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.Engine;
@@ -89,7 +88,7 @@ namespace Excavator.F1
         // Existing entity types
 
         protected static int TextFieldTypeId;
-        protected static int IntegerFieldTypeId;        
+        protected static int IntegerFieldTypeId;
         protected static int PersonEntityTypeId;
 
         // Custom attribute types
@@ -105,7 +104,7 @@ namespace Excavator.F1
         // Flag to designate household role
         public enum FamilyRole
         {
-            Adult = 0,            
+            Adult = 0,
             Child = 1,
             Visitor = 2
         };
@@ -165,7 +164,7 @@ namespace Excavator.F1
 
             if ( importPerson == null )
             {
-                importPerson = personService.Queryable().FirstOrDefault();
+                importPerson = personService.Queryable().AsNoTracking().FirstOrDefault();
             }
 
             ImportPersonAliasId = importPerson.PrimaryAliasId;
@@ -275,7 +274,7 @@ namespace Excavator.F1
                 .Where( c => c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
 
             // Look up and create attributes for F1 unique identifiers if they don't exist
-            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).AsNoTracking().ToList();
 
             var householdAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "F1HouseholdId", StringComparison.InvariantCultureIgnoreCase ) );
             if ( householdAttribute == null )
@@ -369,16 +368,18 @@ namespace Excavator.F1
 
             var currentDate = DateTime.Now;
             var aliasIdList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
-                .Select( pa => new { 
-                    PersonAliasId = pa.Id, 
+                .Select( pa => new
+                {
+                    PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId, 
+                    IndividualId = pa.ForeignId,
                     FamilyRole = pa.Person.ReviewReasonNote
                 } ).ToList();
             var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).AsNoTracking()
-                .Select( av => new { 
-                    PersonId = (int)av.EntityId, 
-                    HouseholdId = av.Value 
+                .Select( av => new
+                {
+                    PersonId = (int)av.EntityId,
+                    HouseholdId = av.Value
                 } ).ToList();
 
             ImportedPeople = householdIdList.GroupJoin( aliasIdList,
@@ -390,11 +391,11 @@ namespace Excavator.F1
                         PersonId = household.PersonId,
                         IndividualId = aliases.Select( a => a.IndividualId.AsType<int?>() ).FirstOrDefault(),
                         HouseholdId = household.HouseholdId.AsType<int?>(),
-                        FamilyRoleId = aliases.Select( a => a.FamilyRole.ConvertToEnum<FamilyRole>() ).FirstOrDefault()
+                        FamilyRoleId = aliases.Select( a => a.FamilyRole.ConvertToEnum<FamilyRole>( 0 ) ).FirstOrDefault()
                     }
                 ).ToList();
 
-            ImportedBatches = new FinancialBatchService( lookupContext ).Queryable()
+            ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
                 .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
         }

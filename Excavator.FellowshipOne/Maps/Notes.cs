@@ -17,13 +17,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
@@ -42,10 +42,10 @@ namespace Excavator.F1
             var categoryService = new CategoryService( lookupContext );
             var personService = new PersonService( lookupContext );
 
-            var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
+            var noteTypes = new NoteTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
             var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) );
 
-            var importedUsers = new UserLoginService( lookupContext ).Queryable()
+            var importedUsers = new UserLoginService( lookupContext ).Queryable().AsNoTracking()
                 .Where( u => u.ForeignId != null )
                 .ToDictionary( t => t.ForeignId.AsType<int?>(), t => t.PersonId );
 

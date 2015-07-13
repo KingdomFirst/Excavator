@@ -17,10 +17,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.MetaData;
-using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -39,7 +39,7 @@ namespace Excavator.F1
             var lookupContext = new RockContext();
             var locationService = new LocationService( lookupContext );
 
-            List<GroupMember> familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable()
+            List<GroupMember> familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable().AsNoTracking()
                 .Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
 
             var groupLocationDefinedType = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ), lookupContext );

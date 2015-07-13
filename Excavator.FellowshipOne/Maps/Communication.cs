@@ -69,7 +69,7 @@ namespace Excavator.F1
             var instagramAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "Instagram", StringComparison.InvariantCultureIgnoreCase ) ) );
 
             var newNumbers = new List<PhoneNumber>();
-            var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().ToList();
+            var existingNumbers = new PhoneNumberService( lookupContext ).Queryable().AsNoTracking().ToList();
             var newPeopleAttributes = new Dictionary<int, Person>();
 
             int completed = 0;

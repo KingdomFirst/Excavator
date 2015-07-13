@@ -51,7 +51,7 @@ namespace Excavator.F1
             // Record type: Business
             int? businessRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS ), lookupContext ).Id;
 
-            // Group role: TBD
+            // Group role: Adult
             int groupRoleId = new GroupTypeRoleService( lookupContext ).Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
 
             // Group type: Family
@@ -146,13 +146,12 @@ namespace Excavator.F1
                             }
                         }
 
-                        var person = groupMember.Person;
-                        if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                        if ( !groupMember.Person.Aliases.Any( a => a.AliasPersonId == groupMember.Person.Id ) )
                         {
-                            person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid } );
+                            groupMember.Person.Aliases.Add( new PersonAlias { AliasPersonId = groupMember.Person.Id, AliasPersonGuid = groupMember.Person.Guid } );
                         }
 
-                        person.GivingGroupId = newBusiness.Id;
+                        groupMember.Person.GivingGroupId = newBusiness.Id;
                     }
                 }
 
@@ -190,14 +189,19 @@ namespace Excavator.F1
 
             // Connection statuses: Member, Visitor, Attendee, etc
             var connectionStatusTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS ), lookupContext ).DefinedValues;
+            int memberStatusId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
+            int visitorStatusId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
+            int attendeeStatusId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE ) ).Id;
 
-            // Record status reasons: No Activity, Moved, Deceased, etc
+            // Record statuses/reasons: Active, Inactive, Pending, Deceased, etc
+            var recordStatuses = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS ) ).DefinedValues;
             var recordStatusReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS_REASON ), lookupContext ).DefinedValues;
 
-            // Record statuses: Active, Inactive, Pending
-            int? recordStatusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ), lookupContext ).Id;
-            int? recordStatusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ), lookupContext ).Id;
-            int? recordStatusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ), lookupContext ).Id;
+            int recordStatusActiveId = recordStatuses.FirstOrDefault( r => r.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
+            int recordStatusInactiveId = recordStatuses.FirstOrDefault( r => r.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
+            int recordStatusPendingId = recordStatuses.FirstOrDefault( r => r.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
+            int statusReasonDeceasedId = recordStatusReasons.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_REASON_DECEASED ) ).Id;
+            int statusReasonNoActivityId = recordStatusReasons.Where( dv => dv.Value == "No Activity" ).Select( dv => dv.Id ).FirstOrDefault();
 
             // Record type: Person
             int? personRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON ), lookupContext ).Id;
@@ -221,7 +225,7 @@ namespace Excavator.F1
             int familyGroupTypeId = new GroupTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).Id;
 
             // Look up additional Person attributes (existing)
-            var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            var personAttributes = new AttributeService( lookupContext ).GetByEntityTypeId( PersonEntityTypeId ).AsNoTracking().ToList();
 
             // F1 attributes: IndividualId, HouseholdId
             // Core attributes: PreviousChurch, Position, Employer, School
@@ -331,12 +335,12 @@ namespace Excavator.F1
                             memberStatus = memberStatus.ToLower();
                             if ( memberStatus.Equals( "member" ) )
                             {
-                                person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ) ).Id;
+                                person.ConnectionStatusValueId = memberStatusId;
                                 person.RecordStatusValueId = recordStatusActiveId;
                             }
                             else if ( memberStatus.Equals( "visitor" ) )
                             {
-                                person.ConnectionStatusValueId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ) ).Id;
+                                person.ConnectionStatusValueId = visitorStatusId;
                                 person.RecordStatusValueId = recordStatusActiveId;
 
                                 // F1 can designate visitors by member status or household position
@@ -345,14 +349,12 @@ namespace Excavator.F1
                             else if ( memberStatus.Equals( "deceased" ) )
                             {
                                 person.IsDeceased = true;
-                                person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "Deceased" )
-                                    .Select( dv => dv.Id ).FirstOrDefault();
+                                person.RecordStatusReasonValueId = statusReasonDeceasedId;
                                 person.RecordStatusValueId = recordStatusInactiveId;
                             }
                             else if ( memberStatus.Equals( "dropped" ) || memberStatus.StartsWith( "inactive" ) )
                             {
-                                person.RecordStatusReasonValueId = recordStatusReasons.Where( dv => dv.Value == "No Activity" )
-                                    .Select( dv => dv.Id ).FirstOrDefault();
+                                person.RecordStatusReasonValueId = statusReasonNoActivityId;
                                 person.RecordStatusValueId = recordStatusInactiveId;
                             }
                             else
@@ -361,8 +363,7 @@ namespace Excavator.F1
                                 var customConnectionType = connectionStatusTypes.Where( dv => dv.Value == memberStatus )
                                     .Select( dv => (int?)dv.Id ).FirstOrDefault();
 
-                                int attendeeId = connectionStatusTypes.FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE ) ).Id;
-                                person.ConnectionStatusValueId = customConnectionType ?? attendeeId;
+                                person.ConnectionStatusValueId = customConnectionType ?? attendeeStatusId;
                                 person.RecordStatusValueId = recordStatusActiveId;
                             }
                         }
@@ -533,16 +534,14 @@ namespace Excavator.F1
                     {
                         foreach ( var groupMember in newFamilyGroup.Members )
                         {
-                            var person = groupMember.Person;
-
                             // save current values before loading from the db
-                            var newPersonAttributes = person.Attributes;
-                            var newPersonValues = person.AttributeValues;
-                            person.LoadAttributes( rockContext );
+                            var newPersonAttributes = groupMember.Person.Attributes;
+                            var newPersonValues = groupMember.Person.AttributeValues;
+                            groupMember.Person.LoadAttributes( rockContext );
 
                             foreach ( var attributeCache in newPersonAttributes.Select( a => a.Value ) )
                             {
-                                var currentAttributeValue = person.AttributeValues[attributeCache.Key];
+                                var currentAttributeValue = groupMember.Person.AttributeValues[attributeCache.Key];
                                 var newAttributeValue = newPersonValues[attributeCache.Key].Value;
                                 if ( currentAttributeValue.Value != newAttributeValue && !string.IsNullOrWhiteSpace( newAttributeValue ) )
                                 {
@@ -550,7 +549,7 @@ namespace Excavator.F1
                                     currentAttributeValue.Value = newAttributeValue;
                                     if ( currentAttributeValue.Id == 0 )
                                     {
-                                        currentAttributeValue.EntityId = person.Id;
+                                        currentAttributeValue.EntityId = groupMember.Person.Id;
                                         rockContext.Entry( currentAttributeValue ).State = EntityState.Added;
                                     }
                                     else
@@ -560,28 +559,33 @@ namespace Excavator.F1
                                 }
                             }
 
-                            if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                            if ( !groupMember.Person.Aliases.Any( a => a.AliasPersonId == groupMember.Person.Id ) )
                             {
-                                person.Aliases.Add( new PersonAlias { AliasPersonId = person.Id, AliasPersonGuid = person.Guid, ForeignId = person.ForeignId } );
+                                groupMember.Person.Aliases.Add( new PersonAlias
+                                {
+                                    AliasPersonId = groupMember.Person.Id,
+                                    AliasPersonGuid = groupMember.Person.Guid,
+                                    ForeignId = groupMember.Person.ForeignId
+                                } );
                             }
 
                             if ( groupMember.GroupRoleId != childRoleId )
                             {
-                                person.GivingGroupId = newFamilyGroup.Id;
+                                groupMember.Person.GivingGroupId = newFamilyGroup.Id;
                             }
 
                             if ( visitorsExist )
                             {
                                 // Retrieve or create the group this person is an owner of
                                 var ownerGroup = groupMemberService.Queryable()
-                                    .Where( m => m.PersonId == person.Id && m.GroupRoleId == ownerRole.Id )
+                                    .Where( m => m.PersonId == groupMember.Person.Id && m.GroupRoleId == ownerRole.Id )
                                     .Select( m => m.Group )
                                     .FirstOrDefault();
 
                                 if ( ownerGroup == null )
                                 {
                                     var ownerGroupMember = new GroupMember();
-                                    ownerGroupMember.PersonId = person.Id;
+                                    ownerGroupMember.PersonId = groupMember.Person.Id;
                                     ownerGroupMember.GroupRoleId = ownerRole.Id;
 
                                     ownerGroup = new Group();
@@ -593,7 +597,7 @@ namespace Excavator.F1
 
                                 // if this is a visitor, then add relationships to the family member(s)
                                 if ( visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
-                                        .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.ForeignId ) ) ) )
+                                        .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( groupMember.Person.ForeignId ) ) ) )
                                 {
                                     var familyMembers = familyGroups.Except( visitorList ).SelectMany( g => g.Members );
                                     foreach ( var familyMember in familyMembers.Select( m => m.Person ) )
@@ -603,7 +607,7 @@ namespace Excavator.F1
                                         invitedByMember.GroupRoleId = invitedByRoleId;
                                         ownerGroup.Members.Add( invitedByMember );
 
-                                        if ( person.Age < 18 && familyMember.Age > 18 )
+                                        if ( groupMember.Person.Age < 18 && familyMember.Age > 18 )
                                         {
                                             var allowCheckinMember = new GroupMember();
                                             allowCheckinMember.PersonId = familyMember.Id;
@@ -624,7 +628,7 @@ namespace Excavator.F1
                                         ownerGroup.Members.Add( inviteeMember );
 
                                         // if visitor can be checked in and this person is considered an adult
-                                        if ( visitor.Age < 18 && person.Age > 18 )
+                                        if ( visitor.Age < 18 && groupMember.Person.Age > 18 )
                                         {
                                             var canCheckInMember = new GroupMember();
                                             canCheckInMember.PersonId = visitor.Id;
@@ -690,9 +694,10 @@ namespace Excavator.F1
                 .Select( r => r.Id ).FirstOrDefault();
 
             var userLoginService = new UserLoginService( lookupContext );
-            var importedUserCount = userLoginService.Queryable().Where( u => u.ForeignId != null ).Count();
+            var importedUserCount = userLoginService.Queryable().Count( u => u.ForeignId != null );
 
-            var allUsers = userLoginService.Queryable().ToDictionary( t => t.UserName.ToLower().Trim(), t => t.PersonId );
+            var allUsers = userLoginService.Queryable().AsNoTracking()
+                .ToDictionary( t => t.UserName.ToLower().Trim(), t => t.PersonId );
 
             var newUserLogins = new List<UserLogin>();
             var newStaffMembers = new List<GroupMember>();
