@@ -34,6 +34,7 @@ namespace Excavator.CSV
         {
             FAMILY,
             INDIVIDUAL,
+            METRICS,
             NONE
         };
 

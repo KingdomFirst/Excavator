@@ -79,7 +79,7 @@ namespace Excavator.CSV
                             familyCampus.IsSystem = false;
                             familyCampus.Name = campusName;
                             lookupContext.Campuses.Add( familyCampus );
-                            lookupContext.SaveChanges( true );
+                            lookupContext.SaveChanges( DisableAuditing );
                             CampusList.Add( familyCampus );
                         }
 
@@ -183,7 +183,7 @@ namespace Excavator.CSV
                 rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
                 } );
 
                 // Add these new families to the global list
@@ -209,7 +209,7 @@ namespace Excavator.CSV
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.GroupLocations.AddRange( newGroupLocations.Keys );
                     rockContext.ChangeTracker.DetectChanges();
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
                 } );
             }
         }

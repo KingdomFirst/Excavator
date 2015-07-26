@@ -129,7 +129,7 @@ namespace Excavator.CSV
                 }
 
                 lookupContext.Attributes.AddRange( newAttributes );
-                lookupContext.SaveChanges( true );
+                lookupContext.SaveChanges( DisableAuditing );
                 personAttributes.AddRange( newAttributes );
             }
 
@@ -641,7 +641,7 @@ namespace Excavator.CSV
                 rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
 
                     ImportedPeople.AddRange( newFamilyList );
 
@@ -761,7 +761,7 @@ namespace Excavator.CSV
 
                     // Save notes and all changes
                     rockContext.Notes.AddRange( newNoteList );
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
                 } );
             }
         }

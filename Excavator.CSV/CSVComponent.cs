@@ -86,6 +86,11 @@ namespace Excavator.CSV
         private List<Group> ImportedPeople;
 
         /// <summary>
+        /// A global flag whether to run postprocessing audits during save
+        /// </summary>
+        protected static bool DisableAuditing = true;
+
+        /// <summary>
         /// The list of current campuses
         /// </summary>
         private List<Campus> CampusList;
@@ -206,6 +211,10 @@ namespace Excavator.CSV
                 else if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
                 {
                     completed += LoadFamily( csvData );
+                }
+                else if ( csvData.RecordType == CsvDataModel.RockDataType.METRICS )
+                {
+                    completed += LoadMetrics( csvData );
                 }
             } //read all files
 
@@ -378,6 +387,20 @@ namespace Excavator.CSV
         private const int SecondaryState = 13;
         private const int SecondaryZip = 14;
         private const int SecondaryCountry = 15;
+
+        #endregion Family Constants
+
+        #region Metrics Constants
+
+        /*
+         * Definition for the Metrics.csv import file:
+         */
+
+        private const int MetricCampus = 0;
+        private const int MetricName = 1;
+        private const int MetricValue = 2;
+        private const int MetricService = 3;
+        private const int MetricLabel = 4;
 
         #endregion Family Constants
     }
