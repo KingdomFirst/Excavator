@@ -68,24 +68,27 @@ namespace Excavator.CSV
                 {
                     decimal? value = row[MetricValue].AsDecimalOrNull();
                     DateTime? valueDate = row[MetricService].AsDateTime();
+                    var metricCategoryId = defaultMetricCategory.Id;
 
                     // create the category if it doesn't exist
-                    Category existingMetricCategory = null;
+                    Category newMetricCategory = null;
                     if ( !string.IsNullOrEmpty( metricCategory ) )
                     {
-                        existingMetricCategory = metricCategories.FirstOrDefault( c => c.Name == metricCategory );
-                        if ( existingMetricCategory == null )
+                        newMetricCategory = metricCategories.FirstOrDefault( c => c.Name == metricCategory );
+                        if ( newMetricCategory == null )
                         {
-                            existingMetricCategory = new Category();
-                            existingMetricCategory.Name = "Metrics";
-                            existingMetricCategory.IsSystem = false;
-                            existingMetricCategory.EntityTypeId = metricEntityTypeId;
-                            existingMetricCategory.EntityTypeQualifierColumn = string.Empty;
-                            existingMetricCategory.EntityTypeQualifierValue = string.Empty;
+                            newMetricCategory = new Category();
+                            newMetricCategory.Name = "Metrics";
+                            newMetricCategory.IsSystem = false;
+                            newMetricCategory.EntityTypeId = metricEntityTypeId;
+                            newMetricCategory.EntityTypeQualifierColumn = string.Empty;
+                            newMetricCategory.EntityTypeQualifierValue = string.Empty;
 
-                            categoryService.Add( existingMetricCategory );
+                            categoryService.Add( newMetricCategory );
                             lookupContext.SaveChangesAsync();
                         }
+
+                        metricCategoryId = newMetricCategory.Id;
                     }
 
                     // create metric if it doesn't exist
@@ -93,7 +96,6 @@ namespace Excavator.CSV
                     if ( currentMetric == null )
                     {
                         currentMetric = new Metric();
-
                         currentMetric.Title = metricName;
                         currentMetric.IsSystem = false;
                         currentMetric.IsCumulative = false;
@@ -101,14 +103,13 @@ namespace Excavator.CSV
                         currentMetric.Subtitle = string.Format( "{0} imported on {1}", metricName, importDate );
                         currentMetric.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentMetric.CreatedDateTime = importDate;
+                        currentMetric.MetricCategories.Add( new MetricCategory { CategoryId = metricCategoryId } );
 
                         metricService.Add( currentMetric );
                         lookupContext.SaveChangesAsync();
 
                         currentMetrics.Add( currentMetric );
                     }
-
-                    //currentMetric.MetricCategories.Add( new MetricCategory() );
 
                     // create values for this metric
                     var metricValue = new MetricValue();
