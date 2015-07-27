@@ -18,7 +18,7 @@ namespace Excavator.CSV
         /// Loads the family data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
-        private int LoadFamily( CsvDataModel csvData )
+        private int LoadFamily( CSVInstance csvData )
         {
             // Required variables
             var lookupContext = new RockContext();

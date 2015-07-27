@@ -39,7 +39,7 @@ namespace Excavator.CSV
         /// Loads the individual data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
-        private int LoadIndividuals( CsvDataModel csvData )
+        private int LoadIndividuals( CSVInstance csvData )
         {
             var lookupContext = new RockContext();
             var groupTypeRoleService = new GroupTypeRoleService( lookupContext );

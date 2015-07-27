@@ -400,7 +400,7 @@ namespace Excavator.CSV
         private const int MetricName = 1;
         private const int MetricValue = 2;
         private const int MetricService = 3;
-        private const int MetricLabel = 4;
+        private const int MetricCategory = 4;
 
         #endregion Family Constants
     }
