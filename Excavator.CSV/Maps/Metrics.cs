@@ -27,8 +27,10 @@ namespace Excavator.CSV
             var metricSourceTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.METRIC_SOURCE_TYPE ) ).DefinedValues;
             var metricManualSource = metricSourceTypes.FirstOrDefault( m => m.Guid == new Guid( Rock.SystemGuid.DefinedValue.METRIC_SOURCE_VALUE_TYPE_MANUAL ) );
 
-            var metricEntityTypeId = EntityTypeCache.Read<Rock.Model.Metric>( false, lookupContext ).Id;
+            var metricEntityTypeId = EntityTypeCache.Read<Rock.Model.MetricCategory>( false, lookupContext ).Id;
+            var campusEntityTypeId = EntityTypeCache.Read<Rock.Model.Campus>( false, lookupContext ).Id;
 
+            var campuses = CampusCache.All( lookupContext );
             var currentMetrics = metricService.Queryable().AsNoTracking().ToList();
             var metricCategories = categoryService.Queryable().AsNoTracking()
                 .Where( c => c.EntityType.Guid == new Guid( Rock.SystemGuid.EntityType.METRICCATEGORY ) ).ToList();
@@ -45,7 +47,7 @@ namespace Excavator.CSV
                 defaultMetricCategory.EntityTypeQualifierValue = string.Empty;
 
                 categoryService.Add( defaultMetricCategory );
-                lookupContext.SaveChangesAsync();
+                lookupContext.SaveChanges();
             }
 
             var metricValues = new List<MetricValue>();
@@ -60,7 +62,7 @@ namespace Excavator.CSV
             // Uses a look-ahead enumerator: this call will move to the next record immediately
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
-                string campus = row[MetricCampus];
+                string metricCampus = row[MetricCampus];
                 string metricName = row[MetricName];
                 string metricCategory = row[MetricCategory];
 
@@ -85,7 +87,7 @@ namespace Excavator.CSV
                             newMetricCategory.EntityTypeQualifierValue = string.Empty;
 
                             categoryService.Add( newMetricCategory );
-                            lookupContext.SaveChangesAsync();
+                            lookupContext.SaveChanges();
                         }
 
                         metricCategoryId = newMetricCategory.Id;
@@ -95,10 +97,23 @@ namespace Excavator.CSV
                     currentMetric = currentMetrics.FirstOrDefault( m => m.Title == metricName );
                     if ( currentMetric == null )
                     {
+                        if ( valueDate.HasValue )
+                        {
+                            var timeFrame = (DateTime)valueDate;
+                            if ( timeFrame.TimeOfDay.TotalSeconds > 0 )
+                            {
+                                metricName = string.Format( "{0} {1}", timeFrame.ToString( "HH:mm" ), metricName );
+                            }
+                        }
+
                         currentMetric = new Metric();
                         currentMetric.Title = metricName;
                         currentMetric.IsSystem = false;
                         currentMetric.IsCumulative = false;
+                        currentMetric.SourceSql = string.Empty;
+                        currentMetric.Description = string.Empty;
+                        currentMetric.IconCssClass = string.Empty;
+                        currentMetric.EntityTypeId = campusEntityTypeId;
                         currentMetric.SourceValueTypeId = metricManualSource.Id;
                         currentMetric.Subtitle = string.Format( "{0} imported on {1}", metricName, importDate );
                         currentMetric.CreatedByPersonAliasId = ImportPersonAliasId;
@@ -106,18 +121,24 @@ namespace Excavator.CSV
                         currentMetric.MetricCategories.Add( new MetricCategory { CategoryId = metricCategoryId } );
 
                         metricService.Add( currentMetric );
-                        lookupContext.SaveChangesAsync();
+                        lookupContext.SaveChanges();
 
                         currentMetrics.Add( currentMetric );
                     }
+
+                    var campusId = campuses.Where( c => c.Name == metricCampus || c.ShortCode == metricCampus )
+                        .Select( c => (int?)c.Id ).FirstOrDefault();
 
                     // create values for this metric
                     var metricValue = new MetricValue();
                     metricValue.MetricValueType = MetricValueType.Measure;
                     metricValue.CreatedByPersonAliasId = ImportPersonAliasId;
-                    metricValue.MetricId = currentMetric.Id;
                     metricValue.CreatedDateTime = importDate;
                     metricValue.MetricValueDateTime = valueDate;
+                    metricValue.MetricId = currentMetric.Id;
+                    metricValue.EntityId = campusId;
+                    metricValue.Note = string.Empty;
+                    metricValue.XValue = string.Empty;
                     metricValue.YValue = value;
                     metricValues.Add( metricValue );
 
@@ -148,7 +169,7 @@ namespace Excavator.CSV
             lookupContext.SaveChanges();
             lookupContext.Dispose();
 
-            ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added or updated.", completed ) );
+            ReportProgress( 0, string.Format( "Finished metrics import: {0:N0} metrics added or updated.", completed ) );
             return completed;
         }
 
