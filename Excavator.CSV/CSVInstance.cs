@@ -25,7 +25,7 @@ namespace Excavator.CSV
     /// multiple csv files may be necessary to upload so this class will be used internally
     /// in place of the Database/List<TableNode></TableNode> which is defined in the base class
     /// </summary>
-    public class CsvDataModel
+    public class CSVInstance
     {
         /// <summary>
         /// Available Rock data types
@@ -69,10 +69,10 @@ namespace Excavator.CSV
         public string FileName { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CsvDataModel"/> class.
+        /// Initializes a new instance of the <see cref="CSVInstance"/> class.
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
-        public CsvDataModel( string fileName )
+        public CSVInstance( string fileName )
         {
             RecordType = RockDataType.FAMILY; //default to family, import changes based on filename.
 

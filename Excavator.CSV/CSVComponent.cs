@@ -63,7 +63,7 @@ namespace Excavator.CSV
         /// The local data store, contains Database and TableNode list
         /// because multiple files can be uploaded
         /// </summary>
-        private List<CsvDataModel> CsvDataToImport { get; set; }
+        private List<CSVInstance> CsvDataToImport { get; set; }
 
         /// <summary>
         /// The person assigned to do the import
@@ -115,13 +115,13 @@ namespace Excavator.CSV
 
             if ( CsvDataToImport == null )
             {
-                CsvDataToImport = new List<CsvDataModel>();
+                CsvDataToImport = new List<CSVInstance>();
                 TableNodes = new List<DatabaseNode>();
             }
 
             //a local tableNode object, which will track this one of multiple CSV files that may be imported
             List<DatabaseNode> tableNodes = new List<DatabaseNode>();
-            CsvDataToImport.Add( new CsvDataModel( fileName ) { TableNodes = tableNodes, RecordType = GetRecordTypeFromFilename( fileName ) } );
+            CsvDataToImport.Add( new CSVInstance( fileName ) { TableNodes = tableNodes, RecordType = GetRecordTypeFromFilename( fileName ) } );
 
             var tableItem = new DatabaseNode();
             tableItem.Name = Path.GetFileNameWithoutExtension( fileName );
@@ -193,26 +193,26 @@ namespace Excavator.CSV
             }
 
             // only import things that the user checked
-            List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
+            List<CSVInstance> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
             ReportProgress( 0, "Starting data import..." );
             // Person data is important, so load it first
-            if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
+            if ( selectedCsvData.Any( d => d.RecordType == CSVInstance.RockDataType.INDIVIDUAL ) )
             {
-                selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ).ToList();
+                selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CSVInstance.RockDataType.INDIVIDUAL ).ToList();
             }
 
             foreach ( var csvData in selectedCsvData )
             {
-                if ( csvData.RecordType == CsvDataModel.RockDataType.INDIVIDUAL )
+                if ( csvData.RecordType == CSVInstance.RockDataType.INDIVIDUAL )
                 {
                     completed += LoadIndividuals( csvData );
                 }
-                else if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
+                else if ( csvData.RecordType == CSVInstance.RockDataType.FAMILY )
                 {
                     completed += LoadFamily( csvData );
                 }
-                else if ( csvData.RecordType == CsvDataModel.RockDataType.METRICS )
+                else if ( csvData.RecordType == CSVInstance.RockDataType.METRICS )
                 {
                     completed += LoadMetrics( csvData );
                 }
@@ -276,7 +276,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
         /// <returns></returns>
-        private bool FileTypeMatches( CsvDataModel.RockDataType filetype, string name )
+        private bool FileTypeMatches( CSVInstance.RockDataType filetype, string name )
         {
             if ( name.ToUpper().StartsWith( filetype.ToString() ) )
             {
@@ -293,7 +293,7 @@ namespace Excavator.CSV
         private bool FileIsKnown( string fileName )
         {
             string name = GetFileRootName( fileName );
-            foreach ( var filetype in Extensions.Get<CsvDataModel.RockDataType>() )
+            foreach ( var filetype in Extensions.Get<CSVInstance.RockDataType>() )
             {
                 if ( FileTypeMatches( filetype, name ) )
                 {
@@ -309,10 +309,10 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <returns></returns>
-        private CsvDataModel.RockDataType GetRecordTypeFromFilename( string filename )
+        private CSVInstance.RockDataType GetRecordTypeFromFilename( string filename )
         {
             string name = GetFileRootName( filename );
-            foreach ( var filetype in Extensions.Get<CsvDataModel.RockDataType>() )
+            foreach ( var filetype in Extensions.Get<CSVInstance.RockDataType>() )
             {
                 if ( FileTypeMatches( filetype, name ) )
                 {
@@ -320,7 +320,7 @@ namespace Excavator.CSV
                 }
             }
 
-            return CsvDataModel.RockDataType.NONE;
+            return CSVInstance.RockDataType.NONE;
         }
 
         #endregion File Processing Methods
