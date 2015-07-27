@@ -5,6 +5,7 @@ using System.Linq;
 using Rock;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 
 namespace Excavator.CSV
 {
@@ -17,13 +18,36 @@ namespace Excavator.CSV
         /// Loads the family data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
-        private int LoadMetrics( CsvDataModel csvData )
+        private int LoadMetrics( CSVInstance csvData )
         {
             // Required variables
             var lookupContext = new RockContext();
             var metricService = new MetricService( lookupContext );
+            var categoryService = new CategoryService( lookupContext );
+            var metricSourceTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.METRIC_SOURCE_TYPE ) ).DefinedValues;
+            var metricManualSource = metricSourceTypes.FirstOrDefault( m => m.Guid == new Guid( Rock.SystemGuid.DefinedValue.METRIC_SOURCE_VALUE_TYPE_MANUAL ) );
 
-            var allMetrics = metricService.Queryable().AsNoTracking().ToList();
+            var metricEntityTypeId = EntityTypeCache.Read<Rock.Model.Metric>( false, lookupContext ).Id;
+
+            var currentMetrics = metricService.Queryable().AsNoTracking().ToList();
+            var metricCategories = categoryService.Queryable().AsNoTracking()
+                .Where( c => c.EntityType.Guid == new Guid( Rock.SystemGuid.EntityType.METRICCATEGORY ) ).ToList();
+
+            var defaultMetricCategory = metricCategories.FirstOrDefault( c => c.Name == "Metrics" );
+
+            if ( defaultMetricCategory == null )
+            {
+                defaultMetricCategory = new Category();
+                defaultMetricCategory.Name = "Metrics";
+                defaultMetricCategory.IsSystem = false;
+                defaultMetricCategory.EntityTypeId = metricEntityTypeId;
+                defaultMetricCategory.EntityTypeQualifierColumn = string.Empty;
+                defaultMetricCategory.EntityTypeQualifierValue = string.Empty;
+
+                categoryService.Add( defaultMetricCategory );
+                lookupContext.SaveChangesAsync();
+            }
+
             var metricValues = new List<MetricValue>();
 
             var importDate = DateTime.Now;
@@ -38,40 +62,62 @@ namespace Excavator.CSV
             {
                 string campus = row[MetricCampus];
                 string metricName = row[MetricName];
+                string metricCategory = row[MetricCategory];
 
                 if ( metricName != null )
                 {
-                    currentMetric = allMetrics.FirstOrDefault( m => m.Title == metricName );
+                    decimal? value = row[MetricValue].AsDecimalOrNull();
+                    DateTime? valueDate = row[MetricService].AsDateTime();
+
+                    // create the category if it doesn't exist
+                    Category existingMetricCategory = null;
+                    if ( !string.IsNullOrEmpty( metricCategory ) )
+                    {
+                        existingMetricCategory = metricCategories.FirstOrDefault( c => c.Name == metricCategory );
+                        if ( existingMetricCategory == null )
+                        {
+                            existingMetricCategory = new Category();
+                            existingMetricCategory.Name = "Metrics";
+                            existingMetricCategory.IsSystem = false;
+                            existingMetricCategory.EntityTypeId = metricEntityTypeId;
+                            existingMetricCategory.EntityTypeQualifierColumn = string.Empty;
+                            existingMetricCategory.EntityTypeQualifierValue = string.Empty;
+
+                            categoryService.Add( existingMetricCategory );
+                            lookupContext.SaveChangesAsync();
+                        }
+                    }
+
+                    // create metric if it doesn't exist
+                    currentMetric = currentMetrics.FirstOrDefault( m => m.Title == metricName );
                     if ( currentMetric == null )
                     {
                         currentMetric = new Metric();
+
                         currentMetric.Title = metricName;
                         currentMetric.IsSystem = false;
-                        currentMetric.Subtitle = string.Format( "{0} imported on {1}", metricName, importDate );
                         currentMetric.IsCumulative = false;
+                        currentMetric.SourceValueTypeId = metricManualSource.Id;
+                        currentMetric.Subtitle = string.Format( "{0} imported on {1}", metricName, importDate );
                         currentMetric.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentMetric.CreatedDateTime = importDate;
 
                         metricService.Add( currentMetric );
                         lookupContext.SaveChangesAsync();
 
-                        allMetrics.Add( currentMetric );
+                        currentMetrics.Add( currentMetric );
                     }
 
-                    string value = row[MetricValue];
-                    DateTime? valueDate = row[MetricService].AsDateTime();
-                    string eventLabel = row[MetricLabel];
+                    //currentMetric.MetricCategories.Add( new MetricCategory() );
 
-                    // save event label as the metric category?
-
+                    // create values for this metric
                     var metricValue = new MetricValue();
                     metricValue.MetricValueType = MetricValueType.Measure;
                     metricValue.CreatedByPersonAliasId = ImportPersonAliasId;
                     metricValue.MetricId = currentMetric.Id;
                     metricValue.CreatedDateTime = importDate;
                     metricValue.MetricValueDateTime = valueDate;
-                    metricValue.XValue = value;
-
+                    metricValue.YValue = value;
                     metricValues.Add( metricValue );
 
                     completed++;
