@@ -66,7 +66,7 @@ namespace Excavator.CSV
                 string metricName = row[MetricName];
                 string metricCategory = row[MetricCategory];
 
-                if ( metricName != null )
+                if ( !string.IsNullOrEmpty( metricName ) )
                 {
                     decimal? value = row[MetricValue].AsDecimalOrNull();
                     DateTime? valueDate = row[MetricService].AsDateTime();
