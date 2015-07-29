@@ -48,6 +48,8 @@ namespace Excavator.CSV
 
                 lookupContext.Categories.Add( defaultMetricCategory );
                 lookupContext.SaveChanges();
+
+                metricCategories.Add( defaultMetricCategory );
             }
 
             var metricValues = new List<MetricValue>();
@@ -105,7 +107,7 @@ namespace Excavator.CSV
                     }
 
                     // create metric if it doesn't exist
-                    currentMetric = allMetrics.FirstOrDefault( m => m.Title == metricName );
+                    currentMetric = allMetrics.FirstOrDefault( m => m.Title == metricName && m.MetricCategories.Any( c => c.CategoryId == metricCategoryId ) );
                     if ( currentMetric == null )
                     {
                         currentMetric = new Metric();
@@ -125,8 +127,6 @@ namespace Excavator.CSV
                         lookupContext.Metrics.Add( currentMetric );
                         lookupContext.SaveChanges();
 
-                        // complete a batch on metrics instead of metric values
-                        completed++;
                         allMetrics.Add( currentMetric );
                     }
 
@@ -146,7 +146,7 @@ namespace Excavator.CSV
                     metricValue.YValue = value;
                     metricValues.Add( metricValue );
 
-                    // normally we'd complete a batch of metric values, but they're overly abundant
+                    completed++;
                     if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} metrics imported.", completed ) );
