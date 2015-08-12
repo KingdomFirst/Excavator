@@ -32,12 +32,12 @@ namespace Excavator
     /// <summary>
     /// DatabaseNode is an abstraction of a table and any contained columns
     /// </summary>
-    public class DatabaseNode : INotifyPropertyChanged
+    public class DataNode : INotifyPropertyChanged
     {
         #region Fields
 
-        private ObservableCollection<DatabaseNode> _columns;
-        private ObservableCollection<DatabaseNode> _table;
+        private ObservableCollection<DataNode> _columns;
+        private ObservableCollection<DataNode> _table;
         private bool? _isChecked;
         private Type _nodeType;
         private string _name;
@@ -142,7 +142,7 @@ namespace Excavator
         /// <value>
         /// The child nodes.
         /// </value>
-        public ObservableCollection<DatabaseNode> Columns
+        public ObservableCollection<DataNode> Columns
         {
             get
             {
@@ -156,7 +156,7 @@ namespace Excavator
         /// <value>
         /// The parent node.
         /// </value>
-        public ObservableCollection<DatabaseNode> Table
+        public ObservableCollection<DataNode> Table
         {
             get
             {
@@ -169,14 +169,14 @@ namespace Excavator
         #region Constructor
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DatabaseNode"/> class.
+        /// Initializes a new instance of the <see cref="DataNode"/> class.
         /// </summary>
-        public DatabaseNode()
+        public DataNode()
         {
             _isChecked = true;
             _id = Guid.NewGuid().ToString().ToUpper();
-            _columns = new ObservableCollection<DatabaseNode>();
-            _table = new ObservableCollection<DatabaseNode>();
+            _columns = new ObservableCollection<DataNode>();
+            _table = new ObservableCollection<DataNode>();
         }
 
         #endregion Constructor
@@ -218,9 +218,9 @@ namespace Excavator
         /// </summary>
         /// <param name="items">The items.</param>
         /// <param name="isChecked">The is checked.</param>
-        private void SetParent( ObservableCollection<DatabaseNode> items, bool? isChecked )
+        private void SetParent( ObservableCollection<DataNode> items, bool? isChecked )
         {
-            foreach ( DatabaseNode item in items )
+            foreach ( DataNode item in items )
             {
                 item.Checked = isChecked;
                 if ( item.Columns.Count != 0 )
@@ -235,7 +235,7 @@ namespace Excavator
         /// </summary>
         /// <param name="items">The items.</param>
         /// <param name="countCheck">The count check.</param>
-        private void SetChild( ObservableCollection<DatabaseNode> items, int countCheck )
+        private void SetChild( ObservableCollection<DataNode> items, int countCheck )
         {
             bool complete = false;
             foreach ( var item in items )

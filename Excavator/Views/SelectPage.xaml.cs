@@ -45,12 +45,12 @@ namespace Excavator
             if ( parameter != null )
             {
                 excavator = parameter;
-                if ( excavator.TableNodes.Count > 0 )
+                if ( excavator.DataNodes.Count > 0 )
                 {
-                    excavator.TableNodes[0].Checked = true; //preview on load
-                    PreviewData( excavator.TableNodes[0].Id );
+                    excavator.DataNodes[0].Checked = true; //preview on load
+                    PreviewData( excavator.DataNodes[0].Id );
                 }
-                treeView.ItemsSource = new ObservableCollection<DatabaseNode>( excavator.TableNodes );
+                treeView.ItemsSource = new ObservableCollection<DataNode>( excavator.DataNodes );
             }
             else
             {
@@ -113,7 +113,7 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnSelectAll_Click( object sender, RoutedEventArgs e )
         {
-            foreach ( var node in excavator.TableNodes )
+            foreach ( var node in excavator.DataNodes )
             {
                 node.Checked = true;
             }
@@ -126,7 +126,7 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnUnselectAll_Click( object sender, RoutedEventArgs e )
         {
-            foreach ( var node in excavator.TableNodes )
+            foreach ( var node in excavator.DataNodes )
             {
                 node.Checked = false;
             }

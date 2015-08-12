@@ -121,15 +121,15 @@ namespace Excavator.F1
         /// <returns></returns>
         public override bool LoadSchema( string fileName )
         {
-            Database = new OrcaMDF.Core.Engine.Database( fileName );
-            TableNodes = new List<DatabaseNode>();
+            Database = new Database( fileName );
+            DataNodes = new List<DataNode>();
             var scanner = new DataScanner( Database );
             var tables = Database.Dmvs.Tables;
 
             foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
             {
                 var rows = scanner.ScanTable( table.Name );
-                var tableItem = new DatabaseNode();
+                var tableItem = new DataNode();
                 tableItem.Name = table.Name;
 
                 var rowData = rows.FirstOrDefault();
@@ -137,7 +137,7 @@ namespace Excavator.F1
                 {
                     foreach ( var column in rowData.Columns )
                     {
-                        var childItem = new DatabaseNode();
+                        var childItem = new DataNode();
                         childItem.Name = column.Name;
                         childItem.NodeType = Extensions.GetSQLType( column.Type );
                         childItem.Value = rowData[column] ?? DBNull.Value;
@@ -146,10 +146,10 @@ namespace Excavator.F1
                     }
                 }
 
-                TableNodes.Add( tableItem );
+                DataNodes.Add( tableItem );
             }
 
-            return TableNodes.Count > 0 ? true : false;
+            return DataNodes.Count > 0 ? true : false;
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace Excavator.F1
             }
 
             ImportPersonAliasId = importPerson.PrimaryAliasId;
-            var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
+            var tableList = DataNodes.Where( n => n.Checked != false ).ToList();
 
             ReportProgress( 0, "Checking for existing attributes..." );
             LoadExistingRockData();

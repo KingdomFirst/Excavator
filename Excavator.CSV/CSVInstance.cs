@@ -53,7 +53,7 @@ namespace Excavator.CSV
         /// <summary>
         /// Holds a reference to the loaded nodes
         /// </summary>
-        public List<DatabaseNode> TableNodes;
+        public List<DataNode> TableNodes;
 
         /// <summary>
         /// The local database

@@ -64,7 +64,7 @@ namespace Excavator
         /// <summary>
         /// Holds a reference to the loaded nodes
         /// </summary>
-        public List<DatabaseNode> TableNodes;
+        public List<DataNode> DataNodes;
 
         #endregion Fields
 
@@ -94,7 +94,7 @@ namespace Excavator
         /// <returns></returns>
         public DataTable PreviewData( string nodeId )
         {
-            var node = TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+            var node = DataNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
             if ( node != null && node.Columns.Any() )
             {
                 var dataTable = new DataTable();

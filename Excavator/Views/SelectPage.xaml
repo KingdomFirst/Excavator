@@ -9,7 +9,7 @@
 
     <Page.Resources>
         <!-- DatabaseNode TreeView -->
-        <HierarchicalDataTemplate DataType="{x:Type local:DatabaseNode}" ItemsSource="{Binding Columns}">
+        <HierarchicalDataTemplate DataType="{x:Type local:DataNode}" ItemsSource="{Binding Columns}">
             <StackPanel Orientation="Horizontal">
                 <CheckBox IsChecked="{Binding Checked}" Uid="{Binding Id}"
                     PreviewMouseLeftButtonDown="Checkbox_OnClick" />

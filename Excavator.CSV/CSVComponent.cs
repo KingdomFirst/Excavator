@@ -116,14 +116,14 @@ namespace Excavator.CSV
             if ( CsvDataToImport == null )
             {
                 CsvDataToImport = new List<CSVInstance>();
-                TableNodes = new List<DatabaseNode>();
+                DataNodes = new List<DataNode>();
             }
 
             //a local tableNode object, which will track this one of multiple CSV files that may be imported
-            List<DatabaseNode> tableNodes = new List<DatabaseNode>();
+            var tableNodes = new List<DataNode>();
             CsvDataToImport.Add( new CSVInstance( fileName ) { TableNodes = tableNodes, RecordType = GetRecordTypeFromFilename( fileName ) } );
 
-            var tableItem = new DatabaseNode();
+            var tableItem = new DataNode();
             tableItem.Name = Path.GetFileNameWithoutExtension( fileName );
             int currentIndex = 0;
 
@@ -132,7 +132,7 @@ namespace Excavator.CSV
             {
                 foreach ( var columnName in dbPreview.GetFieldHeaders() )
                 {
-                    var childItem = new DatabaseNode();
+                    var childItem = new DataNode();
                     childItem.Name = columnName;
                     childItem.NodeType = typeof( string );
                     childItem.Value = firstRow[currentIndex] ?? string.Empty;
@@ -142,7 +142,7 @@ namespace Excavator.CSV
                 }
 
                 tableNodes.Add( tableItem );
-                TableNodes.Add( tableItem ); //this is to maintain compatibility with the base Excavator object.
+                DataNodes.Add( tableItem ); //this is to maintain compatibility with the base Excavator object.
             }
 
             return tableNodes.Count() > 0 ? true : false;
