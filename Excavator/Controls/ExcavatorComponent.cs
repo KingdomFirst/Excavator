@@ -117,10 +117,11 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Transforms and saves the data from the dataset.
+        /// Transforms the data.
         /// </summary>
+        /// <param name="settings">The settings.</param>
         /// <returns></returns>
-        public abstract int TransformData( string importUser = null );
+        public abstract int TransformData( Dictionary<string, string> settings );
 
         #endregion Methods
 

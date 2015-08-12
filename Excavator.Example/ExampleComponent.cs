@@ -95,14 +95,14 @@ namespace Excavator.Example
         public override bool LoadSchema( string fileName )
         {
             Database = new Database( fileName );
-            TableNodes = new List<DatabaseNode>();
+            DataNodes = new List<DataNode>();
             var scanner = new DataScanner( Database );
             var tables = Database.Dmvs.Tables;
 
             foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
             {
                 var rows = scanner.ScanTable( table.Name );
-                var tableItem = new DatabaseNode();
+                var tableItem = new DataNode();
                 tableItem.Name = table.Name;
                 tableItem.NodeType = typeof( object );
 
@@ -111,7 +111,7 @@ namespace Excavator.Example
                 {
                     foreach ( var column in rowData.Columns )
                     {
-                        var childItem = new DatabaseNode();
+                        var childItem = new DataNode();
                         childItem.Name = column.Name;
                         childItem.NodeType = Extensions.GetSQLType( column.Type );
                         childItem.Table.Add( tableItem );
@@ -120,17 +120,19 @@ namespace Excavator.Example
                     }
                 }
 
-                TableNodes.Add( tableItem );
+                DataNodes.Add( tableItem );
             }
 
-            return TableNodes.Count() > 0 ? true : false;
+            return DataNodes.Count() > 0 ? true : false;
         }
 
         /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
-        public override int TransformData( string importUser = null )
+        public override int TransformData( Dictionary<string, string> settings )
         {
+            var importUser = settings["ImportUser"];
+
             // Report progress to the main thread so it can update the UI
             ReportProgress( 0, "Starting import..." );
 
@@ -141,7 +143,7 @@ namespace Excavator.Example
             var scanner = new DataScanner( Database );
 
             // List of tables the user would like to import
-            var tableList = TableNodes.Where( n => n.Checked != false ).Select( n => n.Name ).ToList();
+            var tableList = DataNodes.Where( n => n.Checked != false ).Select( n => n.Name ).ToList();
 
             // Supplies a lazy-loaded database queryable
             var tableData = scanner.ScanTable( "TableName" ).AsQueryable();

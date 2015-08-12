@@ -156,8 +156,10 @@ namespace Excavator.F1
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public override int TransformData( string importUser = null )
+        public override int TransformData( Dictionary<string, string> settings )
         {
+            var importUser = settings["ImportUser"];
+
             ReportProgress( 0, "Starting health checks..." );
             var rockContext = new RockContext();
             var personService = new PersonService( rockContext );

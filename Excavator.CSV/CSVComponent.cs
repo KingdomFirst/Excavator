@@ -183,8 +183,10 @@ namespace Excavator.CSV
         /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
-        public override int TransformData( string importUser = null )
+        public override int TransformData( Dictionary<string, string> settings )
         {
+            var importUser = settings["ImportUser"];
+
             int completed = 0;
             ReportProgress( 0, "Starting health checks..." );
             if ( !LoadExistingData( importUser ) )
