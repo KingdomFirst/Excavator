@@ -20,6 +20,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.Engine;
@@ -47,7 +49,7 @@ namespace Excavator.Example
         /// </value>
         public override string FullName
         {
-            get { return "Binary Files"; }
+            get { return "Binary File"; }
         }
 
         /// <summary>
@@ -64,15 +66,15 @@ namespace Excavator.Example
         /// <summary>
         /// The local database
         /// </summary>
-        public Database Database;
+        public ZipArchive ArchiveFolder;
 
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
         protected static int? ImportPersonAliasId;
 
-        // Flag to set postprocessing audits on save
-        private static bool DisableAudit = true;
+        // Flag to run postprocessing audits during save
+        protected static bool DisableAuditing = true;
 
         // Report progress when a multiple of this number has been imported
         private static int ReportingNumber = 100;
@@ -88,43 +90,34 @@ namespace Excavator.Example
         /// <returns></returns>
         public override bool LoadSchema( string fileName )
         {
-            Database = new Database( fileName );
-            TableNodes = new List<DatabaseNode>();
-            var scanner = new DataScanner( Database );
-            var tables = Database.Dmvs.Tables;
+            ArchiveFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
+            DataNodes = new List<DataNode>();
 
-            foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
+            foreach ( var document in ArchiveFolder.Entries.Take( 10 ) )
             {
-                var rows = scanner.ScanTable( table.Name );
-                var tableItem = new DatabaseNode();
-                tableItem.Name = table.Name;
-                tableItem.NodeType = typeof( object );
-
-                var rowData = rows.FirstOrDefault();
-                if ( rowData != null )
+                if ( document != null )
                 {
-                    foreach ( var column in rowData.Columns )
-                    {
-                        var childItem = new DatabaseNode();
-                        childItem.Name = column.Name;
-                        childItem.NodeType = Extensions.GetSQLType( column.Type );
-                        childItem.Table.Add( tableItem );
-                        tableItem.Columns.Add( childItem );
-                        tableItem.Value = rowData[column] ?? DBNull.Value;
-                    }
-                }
+                    var dataItem = new DataNode();
+                    dataItem.Name = document.Name;
+                    var extension = document.FullName.Substring( document.FullName.Length - 3, 3 );
+                    dataItem.NodeType = typeof( object );
 
-                TableNodes.Add( tableItem );
+                    // not sure hwo to preview the actual data here?
+                    dataItem.Value = document.Archive.Entries.FirstOrDefault();
+                    DataNodes.Add( dataItem );
+                }
             }
 
-            return TableNodes.Count() > 0 ? true : false;
+            return DataNodes.Count() > 0 ? true : false;
         }
 
         /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
-        public override int TransformData( string importUser = null )
+        public override int TransformData( Dictionary<string, string> settings )
         {
+            var importUser = settings["ImportUser"];
+
             // Report progress to the main thread so it can update the UI
             ReportProgress( 0, "Starting import..." );
 
@@ -132,7 +125,7 @@ namespace Excavator.Example
             var rockContext = new RockContext();
 
             // Connects to the source database (already loaded in memory by the UI)
-            var scanner = new DataScanner( Database );
+            //var scanner = new ZipArchive( Database );
 
             // Report the final imported count
             ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", 100 ) );
@@ -150,10 +143,21 @@ namespace Excavator.Example
             rockContext.WrapTransaction( () =>
             {
                 rockContext.People.AddRange( newPersonList );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
         #endregion Methods
     }
+
+    /// <summary>
+    /// Available Binary File types
+    /// </summary>
+    public enum BinaryFileType
+    {
+        DOCUMENTS,
+        PROFILES,
+        CHECKS,
+        NONE
+    };
 }
