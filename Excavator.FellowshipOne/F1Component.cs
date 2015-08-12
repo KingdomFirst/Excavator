@@ -26,6 +26,7 @@ using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using Database = OrcaMDF.Core.Engine.Database;
 
 namespace Excavator.F1
 {
@@ -63,7 +64,7 @@ namespace Excavator.F1
         /// <summary>
         /// The local database
         /// </summary>
-        protected OrcaMDF.Core.Engine.Database Database;
+        protected Database Database;
 
         /// <summary>
         /// The person assigned to do the import
