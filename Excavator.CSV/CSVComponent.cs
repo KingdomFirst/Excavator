@@ -86,11 +86,6 @@ namespace Excavator.CSV
         private List<Group> ImportedPeople;
 
         /// <summary>
-        /// A global flag whether to run postprocessing audits during save
-        /// </summary>
-        protected static bool DisableAuditing = true;
-
-        /// <summary>
         /// The list of current campuses
         /// </summary>
         private List<Campus> CampusList;

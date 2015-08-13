@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,9 +14,10 @@ namespace Excavator.BinaryFile
     /// </summary>
     public partial class BinaryFileComponent
     {
-        public void MapPeople( Dictionary<string, string> settings )
+        public void MapPeople( DataNode zipFile )
         {
-            //var storageLocation = FileTypes.
+            var asdf = ConfigurationManager.AppSettings;
+            var storageLocation = FileTypes;
         }
     }
 }

@@ -24,7 +24,6 @@ using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Web;
 using Excavator.Utility;
 using OrcaMDF.Core.Engine;
 using Rock;
@@ -84,12 +83,6 @@ namespace Excavator.BinaryFile
         /// </summary>
         protected static int? ImportPersonAliasId;
 
-        // Flag to run postprocessing audits during save
-        protected static bool DisableAuditing = true;
-
-        // Report progress when a multiple of this number has been imported
-        private static int ReportingNumber = 100;
-
         #endregion Fields
 
         #region Methods
@@ -111,7 +104,7 @@ namespace Excavator.BinaryFile
             zipFile.FileNodes = new List<DataNode>();
 
             var tableItem = new DataNode();
-            tableItem.Name = fileName;
+            tableItem.Name = Path.GetFileNameWithoutExtension( fileName );
 
             foreach ( var document in zipFile.ArchiveFolder.Entries.Take( 50 ) )
             {
@@ -121,9 +114,7 @@ namespace Excavator.BinaryFile
                     dataItem.Name = document.Name;
                     var extension = document.FullName.Substring( document.FullName.Length - 3, 3 );
                     dataItem.NodeType = typeof( string );
-
-                    // not sure how to preview the actual data here?
-                    dataItem.Value = document.Archive.Entries.FirstOrDefault();
+                    //dataItem.Value = document.Name;
                     tableItem.Children.Add( dataItem );
                 }
             }
@@ -158,7 +149,7 @@ namespace Excavator.BinaryFile
             {
                 if ( file.Name.StartsWith( "People" ) )
                 {
-                    MapPeople( settings );
+                    MapPeople( file );
                 }
             }
 

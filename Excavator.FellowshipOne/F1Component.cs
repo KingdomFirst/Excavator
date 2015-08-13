@@ -99,9 +99,6 @@ namespace Excavator.F1
         protected static AttributeCache InFellowshipLoginAttribute;
         protected static AttributeCache SecondaryEmailAttribute;
 
-        // Flag to run postprocessing audits during save
-        protected static bool DisableAuditing = true;
-
         // Flag to designate household role
         public enum FamilyRole
         {

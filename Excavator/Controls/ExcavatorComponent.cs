@@ -66,6 +66,9 @@ namespace Excavator
         /// </summary>
         public List<DataNode> DataNodes;
 
+        // Flag to set postprocessing audits on save
+        public static bool DisableAuditing = true;
+
         #endregion Fields
 
         #region Methods
@@ -82,7 +85,7 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Loads the database into memory and fills a TableNode instance.
+        /// Loads the database into memory and fills a DataNode instance.
         /// </summary>
         /// <returns></returns>
         public abstract bool LoadSchema( string fileName );

@@ -75,12 +75,6 @@ namespace Excavator.Example
         /// </summary>
         private PersonAlias ImportPersonAlias;
 
-        // Flag to set postprocessing audits on save
-        private static bool DisableAudit = true;
-
-        // Report progress when a multiple of this number has been imported
-        private static int ReportingNumber = 100;
-
 #pragma warning restore
 
         #endregion Fields
@@ -169,7 +163,7 @@ namespace Excavator.Example
                     rockContext.People.Add( person );
 
                     // Save the data to the database
-                    rockContext.SaveChanges( DisableAudit );
+                    rockContext.SaveChanges( DisableAuditing );
                 } );
 
                 completed++;
@@ -222,7 +216,7 @@ namespace Excavator.Example
             rockContext.WrapTransaction( () =>
             {
                 rockContext.People.AddRange( newPersonList );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
