@@ -62,7 +62,7 @@ namespace Excavator
         public int ReportingNumber = 100;
 
         /// <summary>
-        /// Holds a reference to the loaded nodes
+        /// Holds a reference to the data nodes loaded in memory
         /// </summary>
         public List<DataNode> DataNodes;
 
@@ -94,17 +94,17 @@ namespace Excavator
         /// <returns></returns>
         public DataTable PreviewData( string nodeId )
         {
-            var node = DataNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-            if ( node != null && node.Columns.Any() )
+            var node = DataNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+            if ( node != null && node.Children.Any() )
             {
                 var dataTable = new DataTable();
-                foreach ( var column in node.Columns )
+                foreach ( var column in node.Children )
                 {
                     dataTable.Columns.Add( column.Name, column.NodeType );
                 }
 
                 var rowPreview = dataTable.NewRow();
-                foreach ( var column in node.Columns )
+                foreach ( var column in node.Children )
                 {
                     rowPreview[column.Name] = column.Value ?? DBNull.Value;
                 }

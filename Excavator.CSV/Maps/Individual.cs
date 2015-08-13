@@ -101,7 +101,7 @@ namespace Excavator.CSV
                     .Where( c => c.Name == "Visit Information" ).FirstOrDefault();
 
             // Look for custom attributes in the Individual file
-            var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
+            var allFields = csvData.TableNodes.FirstOrDefault().Children.Select( ( node, index ) => new { node = node, index = index } ).ToList();
             Dictionary<int, string> customAttributes = allFields
                 .Where( f => f.index > SecurityNote )
                 .ToDictionary( f => f.index, f => f.node.Name.RemoveWhitespace() );

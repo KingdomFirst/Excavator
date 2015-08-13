@@ -136,8 +136,8 @@ namespace Excavator.CSV
                     childItem.Name = columnName;
                     childItem.NodeType = typeof( string );
                     childItem.Value = firstRow[currentIndex] ?? string.Empty;
-                    childItem.Table.Add( tableItem );
-                    tableItem.Columns.Add( childItem );
+                    childItem.Parent.Add( tableItem );
+                    tableItem.Children.Add( childItem );
                     currentIndex++;
                 }
 
@@ -157,18 +157,18 @@ namespace Excavator.CSV
         {
             foreach ( var dataNode in CsvDataToImport )
             {
-                var node = dataNode.TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-                if ( node != null && node.Columns.Any() )
+                var node = dataNode.TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+                if ( node != null && node.Children.Any() )
                 {
                     var dataTable = new DataTable();
                     dataTable.Columns.Add( "File", typeof( string ) );
-                    foreach ( var column in node.Columns )
+                    foreach ( var column in node.Children )
                     {
                         dataTable.Columns.Add( column.Name, column.NodeType );
                     }
 
                     var rowPreview = dataTable.NewRow();
-                    foreach ( var column in node.Columns )
+                    foreach ( var column in node.Children )
                     {
                         rowPreview[column.Name] = column.Value ?? DBNull.Value;
                     }

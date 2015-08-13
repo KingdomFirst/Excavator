@@ -36,8 +36,8 @@ namespace Excavator
     {
         #region Fields
 
-        private ObservableCollection<DataNode> _columns;
-        private ObservableCollection<DataNode> _table;
+        private ObservableCollection<DataNode> _children;
+        private ObservableCollection<DataNode> _parent;
         private bool? _isChecked;
         private Type _nodeType;
         private string _name;
@@ -142,11 +142,11 @@ namespace Excavator
         /// <value>
         /// The child nodes.
         /// </value>
-        public ObservableCollection<DataNode> Columns
+        public ObservableCollection<DataNode> Children
         {
             get
             {
-                return _columns;
+                return _children;
             }
         }
 
@@ -156,11 +156,11 @@ namespace Excavator
         /// <value>
         /// The parent node.
         /// </value>
-        public ObservableCollection<DataNode> Table
+        public ObservableCollection<DataNode> Parent
         {
             get
             {
-                return _table;
+                return _parent;
             }
         }
 
@@ -175,8 +175,8 @@ namespace Excavator
         {
             _isChecked = true;
             _id = Guid.NewGuid().ToString().ToUpper();
-            _columns = new ObservableCollection<DataNode>();
-            _table = new ObservableCollection<DataNode>();
+            _children = new ObservableCollection<DataNode>();
+            _parent = new ObservableCollection<DataNode>();
         }
 
         #endregion Constructor
@@ -202,13 +202,13 @@ namespace Excavator
             int countCheck = 0;
             if ( propertyName == "Checked" )
             {
-                if ( Id == SelectedId.Id && Table.Count == 0 && Columns.Count != 0 )
+                if ( Id == SelectedId.Id && Parent.Count == 0 && Children.Count != 0 )
                 {
-                    SetParent( Columns, Checked );
+                    SetParent( Children, Checked );
                 }
-                if ( Id == SelectedId.Id && Table.Count > 0 && Columns.Count == 0 )
+                if ( Id == SelectedId.Id && Parent.Count > 0 && Children.Count == 0 )
                 {
-                    SetChild( Table, countCheck );
+                    SetChild( Parent, countCheck );
                 }
             }
         }
@@ -223,9 +223,9 @@ namespace Excavator
             foreach ( DataNode item in items )
             {
                 item.Checked = isChecked;
-                if ( item.Columns.Count != 0 )
+                if ( item.Children.Count != 0 )
                 {
-                    SetParent( item.Columns, isChecked );
+                    SetParent( item.Children, isChecked );
                 }
             }
         }
@@ -240,7 +240,7 @@ namespace Excavator
             bool complete = false;
             foreach ( var item in items )
             {
-                foreach ( var column in item.Columns )
+                foreach ( var column in item.Children )
                 {
                     if ( column.Checked == true || column.Checked == null )
                     {
@@ -250,7 +250,7 @@ namespace Excavator
                     }
                 }
 
-                if ( countCheck != item.Columns.Count && countCheck != 0 )
+                if ( countCheck != item.Children.Count && countCheck != 0 )
                 {
                     item.Checked = null;
                 }
@@ -258,18 +258,18 @@ namespace Excavator
                 {
                     item.Checked = false;
                 }
-                else if ( countCheck == item.Columns.Count && complete )
+                else if ( countCheck == item.Children.Count && complete )
                 {
                     item.Checked = null;
                 }
-                else if ( countCheck == item.Columns.Count && !complete )
+                else if ( countCheck == item.Children.Count && !complete )
                 {
                     item.Checked = true;
                 }
 
-                if ( item.Table.Count != 0 )
+                if ( item.Parent.Count != 0 )
                 {
-                    SetChild( item.Table, 0 );
+                    SetChild( item.Parent, 0 );
                 }
             }
         }

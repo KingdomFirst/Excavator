@@ -141,8 +141,8 @@ namespace Excavator.F1
                         childItem.Name = column.Name;
                         childItem.NodeType = Extensions.GetSQLType( column.Type );
                         childItem.Value = rowData[column] ?? DBNull.Value;
-                        childItem.Table.Add( tableItem );
-                        tableItem.Columns.Add( childItem );
+                        childItem.Parent.Add( tableItem );
+                        tableItem.Children.Add( childItem );
                     }
                 }
 

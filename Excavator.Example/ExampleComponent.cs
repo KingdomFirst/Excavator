@@ -114,8 +114,8 @@ namespace Excavator.Example
                         var childItem = new DataNode();
                         childItem.Name = column.Name;
                         childItem.NodeType = Extensions.GetSQLType( column.Type );
-                        childItem.Table.Add( tableItem );
-                        tableItem.Columns.Add( childItem );
+                        childItem.Parent.Add( tableItem );
+                        tableItem.Children.Add( childItem );
                         tableItem.Value = rowData[column] ?? DBNull.Value;
                     }
                 }
