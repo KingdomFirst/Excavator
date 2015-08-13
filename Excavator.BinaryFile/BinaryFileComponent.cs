@@ -25,7 +25,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using Excavator.Utility;
-using OrcaMDF.Core.Engine;
 using Rock;
 using Rock.Data;
 using Rock.Model;
@@ -71,7 +70,15 @@ namespace Excavator.BinaryFile
         /// <value>
         /// The files to import.
         /// </value>
-        private List<BinaryFile> FilesToImport { get; set; }
+        private List<BinaryInstance> FilesToImport { get; set; }
+
+        /// <summary>
+        /// All the people who've been imported
+        /// </summary>
+        protected static List<PersonKeys> ImportedPeople;
+
+        // StorageEntity attribute
+        //protected static AttributeCache ;
 
         /// <summary>
         /// The file types
@@ -96,11 +103,11 @@ namespace Excavator.BinaryFile
         {
             if ( FilesToImport == null )
             {
-                FilesToImport = new List<BinaryFile>();
+                FilesToImport = new List<BinaryInstance>();
                 DataNodes = new List<DataNode>();
             }
 
-            var zipFile = new BinaryFile( fileName );
+            var zipFile = new BinaryInstance( fileName );
             zipFile.FileNodes = new List<DataNode>();
 
             var tableItem = new DataNode();
@@ -114,7 +121,7 @@ namespace Excavator.BinaryFile
                     dataItem.Name = document.Name;
                     var extension = document.FullName.Substring( document.FullName.Length - 3, 3 );
                     dataItem.NodeType = typeof( string );
-                    //dataItem.Value = document.Name;
+                    dataItem.Value = document.Archive;
                     tableItem.Children.Add( dataItem );
                 }
             }
@@ -142,19 +149,20 @@ namespace Excavator.BinaryFile
                 importPerson = personService.Queryable().AsNoTracking().FirstOrDefault();
             }
 
+            ReportProgress( 0, "Checking for existing attributes..." );
+            LoadExistingRockData( rockContext );
+
             ImportPersonAliasId = importPerson.PrimaryAliasId;
             var fileList = DataNodes.Where( n => n.Checked != false ).ToList();
 
             foreach ( var file in fileList )
             {
+                // #TODO: rewrite this with an interface that's not hardcoded
                 if ( file.Name.StartsWith( "People" ) )
                 {
                     MapPeople( file );
                 }
             }
-
-            ReportProgress( 0, "Checking for existing attributes..." );
-            LoadExistingRockData( rockContext );
 
             // Report the final imported count
             ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", 100 ) );
@@ -162,40 +170,55 @@ namespace Excavator.BinaryFile
         }
 
         /// <summary>
-        /// Saves the model.
-        /// </summary>
-        /// <param name="rockContext">The rock context.</param>
-        /// <param name="newPersonList">The new person list.</param>
-        private static void SaveModel( List<Person> newPersonList )
-        {
-            var rockContext = new RockContext();
-            rockContext.WrapTransaction( () =>
-            {
-                rockContext.People.AddRange( newPersonList );
-                rockContext.SaveChanges( DisableAuditing );
-            } );
-        }
-
-        /// <summary>
         /// Loads Rock data that's used globally by the transform
         /// </summary>
-        private void LoadExistingRockData( RockContext rockContext = null )
+        private void LoadExistingRockData( RockContext lookupContext = null )
         {
-            rockContext = rockContext ?? new RockContext();
+            lookupContext = lookupContext ?? new RockContext();
 
-            FileTypes = new BinaryFileTypeService( rockContext ).Queryable().AsNoTracking().ToList();
+            FileTypes = new BinaryFileTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
 
             // load attributes to get the default storage location
             foreach ( var type in FileTypes )
             {
-                type.LoadAttributes( rockContext );
+                type.LoadAttributes( lookupContext );
+            }
+
+            var personAliasIds = new PersonAliasService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var ImportedPeople = personAliasIds.Select( pa => new PersonKeys()
+                {
+                    PersonAliasId = pa.Id,
+                    PersonId = pa.PersonId,
+                    IndividualId = pa.ForeignId.AsType<int?>(),
+                } ).ToList();
+        }
+
+        /// <summary>
+        /// Gets the person keys.
+        /// </summary>
+        /// <param name="individualId">The individual identifier.</param>
+        /// <param name="householdId">The household identifier.</param>
+        /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
+        /// <returns></returns>
+        protected static PersonKeys GetPersonKeys( int? individualId = null )
+        {
+            if ( individualId != null )
+            {
+                return ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId );
+            }
+            else
+            {
+                return null;
             }
         }
 
         #endregion Methods
     }
 
-    public class BinaryFile
+    /// <summary>
+    ///
+    /// </summary>
+    public class BinaryInstance
     {
         /// <summary>
         /// Holds a reference to the loaded nodes
@@ -219,10 +242,36 @@ namespace Excavator.BinaryFile
         /// Initializes a new instance of the <see cref="CSVInstance"/> class.
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
-        public BinaryFile( string fileName )
+        public BinaryInstance( string fileName )
         {
             FileName = fileName;
             ArchiveFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
         }
+    }
+
+    /// <summary>
+    /// Helper class to store references to people that've been imported
+    /// </summary>
+    public class PersonKeys
+    {
+        /// <summary>
+        /// Stores the Rock PersonAliasId
+        /// </summary>
+        public int PersonAliasId;
+
+        /// <summary>
+        /// Stores the Rock PersonId
+        /// </summary>
+        public int PersonId;
+
+        /// <summary>
+        /// Stores the F1 Individual Id
+        /// </summary>
+        public int? IndividualId;
+
+        /// <summary>
+        /// Stores the F1 Household Id
+        /// </summary>
+        public int? HouseholdId;
     }
 }
