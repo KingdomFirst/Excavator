@@ -20,16 +20,19 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
+using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Web;
 using Excavator.Utility;
 using OrcaMDF.Core.Engine;
+using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 
-namespace Excavator.Example
+namespace Excavator.BinaryFile
 {
     /// <summary>
     /// This example extends the base Excavator class to consume a database model.
@@ -64,9 +67,17 @@ namespace Excavator.Example
         }
 
         /// <summary>
-        /// The local database
+        /// Gets or sets the files to import.
         /// </summary>
-        public ZipArchive ArchiveFolder;
+        /// <value>
+        /// The files to import.
+        /// </value>
+        private List<BinaryFile> FilesToImport { get; set; }
+
+        /// <summary>
+        /// The file types
+        /// </summary>
+        protected List<BinaryFileType> FileTypes;
 
         /// <summary>
         /// The person assigned to do the import
@@ -90,23 +101,35 @@ namespace Excavator.Example
         /// <returns></returns>
         public override bool LoadSchema( string fileName )
         {
-            ArchiveFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
-            DataNodes = new List<DataNode>();
+            if ( FilesToImport == null )
+            {
+                FilesToImport = new List<BinaryFile>();
+                DataNodes = new List<DataNode>();
+            }
 
-            foreach ( var document in ArchiveFolder.Entries.Take( 10 ) )
+            var zipFile = new BinaryFile( fileName );
+            zipFile.TableNodes = new List<DataNode>();
+
+            var tableItem = new DataNode();
+            tableItem.Name = fileName;
+
+            foreach ( var document in zipFile.ArchiveFolder.Entries.Take( 50 ) )
             {
                 if ( document != null )
                 {
                     var dataItem = new DataNode();
                     dataItem.Name = document.Name;
                     var extension = document.FullName.Substring( document.FullName.Length - 3, 3 );
-                    dataItem.NodeType = typeof( object );
+                    dataItem.NodeType = typeof( string );
 
-                    // not sure hwo to preview the actual data here?
+                    // not sure how to preview the actual data here?
                     dataItem.Value = document.Archive.Entries.FirstOrDefault();
-                    DataNodes.Add( dataItem );
+                    tableItem.Children.Add( dataItem );
                 }
             }
+
+            DataNodes.Add( tableItem );
+            FilesToImport.Add( zipFile );
 
             return DataNodes.Count() > 0 ? true : false;
         }
@@ -118,14 +141,29 @@ namespace Excavator.Example
         {
             var importUser = settings["ImportUser"];
 
-            // Report progress to the main thread so it can update the UI
-            ReportProgress( 0, "Starting import..." );
-
-            // Instantiate the object model service
+            ReportProgress( 0, "Starting health checks..." );
             var rockContext = new RockContext();
+            var personService = new PersonService( rockContext );
+            var importPerson = personService.GetByFullName( importUser, allowFirstNameOnly: true ).FirstOrDefault();
 
-            // Connects to the source database (already loaded in memory by the UI)
-            //var scanner = new ZipArchive( Database );
+            if ( importPerson == null )
+            {
+                importPerson = personService.Queryable().AsNoTracking().FirstOrDefault();
+            }
+
+            ImportPersonAliasId = importPerson.PrimaryAliasId;
+            var fileList = DataNodes.Where( n => n.Checked != false ).ToList();
+
+            foreach ( var file in fileList )
+            {
+                if ( file.Name.StartsWith( "People" ) )
+                {
+                    MapPeople( settings );
+                }
+            }
+
+            ReportProgress( 0, "Checking for existing attributes..." );
+            LoadExistingRockData( rockContext );
 
             // Report the final imported count
             ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", 100 ) );
@@ -147,17 +185,53 @@ namespace Excavator.Example
             } );
         }
 
+        /// <summary>
+        /// Loads Rock data that's used globally by the transform
+        /// </summary>
+        private void LoadExistingRockData( RockContext rockContext = null )
+        {
+            rockContext = rockContext ?? new RockContext();
+
+            FileTypes = new BinaryFileTypeService( rockContext ).Queryable().AsNoTracking().ToList();
+
+            // load attributes to get the default storage location
+            foreach ( var type in FileTypes )
+            {
+                type.LoadAttributes( rockContext );
+            }
+        }
+
         #endregion Methods
     }
 
-    /// <summary>
-    /// Available Binary File types
-    /// </summary>
-    public enum BinaryFileType
+    public class BinaryFile
     {
-        DOCUMENTS,
-        PROFILES,
-        CHECKS,
-        NONE
-    };
+        /// <summary>
+        /// Holds a reference to the loaded nodes
+        /// </summary>
+        public List<DataNode> TableNodes;
+
+        /// <summary>
+        /// The local database
+        /// </summary>
+        public ZipArchive ArchiveFolder;
+
+        /// <summary>
+        /// Gets or sets the name of the file.
+        /// </summary>
+        /// <value>
+        /// The name of the file.
+        /// </value>
+        public string FileName { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CSVInstance"/> class.
+        /// </summary>
+        /// <param name="fileName">Name of the file.</param>
+        public BinaryFile( string fileName )
+        {
+            FileName = fileName;
+            ArchiveFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
+        }
+    }
 }
