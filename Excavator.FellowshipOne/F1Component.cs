@@ -366,7 +366,6 @@ namespace Excavator.F1
             InFellowshipLoginAttribute = AttributeCache.Read( infellowshipLoginAttribute.Id );
             SecondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttribute.Id );
 
-            var currentDate = DateTime.Now;
             var aliasIdList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
                 .Select( pa => new
                 {
