@@ -108,7 +108,7 @@ namespace Excavator.BinaryFile
             }
 
             var zipFile = new BinaryFile( fileName );
-            zipFile.TableNodes = new List<DataNode>();
+            zipFile.FileNodes = new List<DataNode>();
 
             var tableItem = new DataNode();
             tableItem.Name = fileName;
@@ -209,7 +209,7 @@ namespace Excavator.BinaryFile
         /// <summary>
         /// Holds a reference to the loaded nodes
         /// </summary>
-        public List<DataNode> TableNodes;
+        public List<DataNode> FileNodes;
 
         /// <summary>
         /// The local database
