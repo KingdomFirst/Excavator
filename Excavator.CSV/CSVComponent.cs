@@ -148,7 +148,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="tableName">Name of the table to preview.</param>
         /// <returns></returns>
-        public new DataTable PreviewData( string nodeId )
+        public override DataTable PreviewData( string nodeId )
         {
             foreach ( var dataNode in CsvDataToImport )
             {

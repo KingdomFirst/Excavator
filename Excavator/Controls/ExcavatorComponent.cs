@@ -95,7 +95,7 @@ namespace Excavator
         /// </summary>
         /// <param name="tableName">Name of the table to preview.</param>
         /// <returns></returns>
-        public DataTable PreviewData( string nodeId )
+        public virtual DataTable PreviewData( string nodeId )
         {
             var node = DataNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
             if ( node != null && node.Children.Any() )
