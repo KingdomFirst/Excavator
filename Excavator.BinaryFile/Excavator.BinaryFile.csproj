@@ -64,7 +64,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BinaryFileComponent.cs" />
-    <Compile Include="Maps\People.cs" />
+    <Compile Include="Maps\MinistryDocument.cs" />
+    <Compile Include="Maps\TransactionImage.cs" />
+    <Compile Include="Maps\PersonImage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

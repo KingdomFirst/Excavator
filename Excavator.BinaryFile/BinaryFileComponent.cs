@@ -20,10 +20,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
+using System.Data;
 using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
+using Excavator.BinaryFile;
 using Excavator.Utility;
 using Rock;
 using Rock.Data;
@@ -38,7 +41,7 @@ namespace Excavator.BinaryFile
     /// Data models and mapping methods can be in other partial classes.
     /// </summary>
     [Export( typeof( ExcavatorComponent ) )]
-    partial class BinaryFileComponent : ExcavatorComponent
+    public class BinaryFileComponent : ExcavatorComponent
     {
         #region Fields
 
@@ -70,7 +73,7 @@ namespace Excavator.BinaryFile
         /// <value>
         /// The files to import.
         /// </value>
-        private List<BinaryInstance> FilesToImport { get; set; }
+        private List<BinaryInstance> BinaryInstances { get; set; }
 
         /// <summary>
         /// All the people who've been imported
@@ -101,35 +104,69 @@ namespace Excavator.BinaryFile
         /// <returns></returns>
         public override bool LoadSchema( string fileName )
         {
-            if ( FilesToImport == null )
+            if ( BinaryInstances == null )
             {
-                FilesToImport = new List<BinaryInstance>();
+                BinaryInstances = new List<BinaryInstance>();
                 DataNodes = new List<DataNode>();
             }
 
-            var zipFile = new BinaryInstance( fileName );
-            zipFile.FileNodes = new List<DataNode>();
+            var folderItem = new DataNode();
+            var previewInstance = new BinaryInstance( fileName );
+            folderItem.Name = Path.GetFileNameWithoutExtension( fileName );
 
-            var tableItem = new DataNode();
-            tableItem.Name = Path.GetFileNameWithoutExtension( fileName );
-
-            foreach ( var document in zipFile.ArchiveFolder.Entries.Take( 50 ) )
+            foreach ( var document in previewInstance.ArchiveFolder.Entries.Take( 50 ) )
             {
                 if ( document != null )
                 {
-                    var dataItem = new DataNode();
-                    dataItem.Name = document.Name;
-                    var extension = document.FullName.Substring( document.FullName.Length - 3, 3 );
-                    dataItem.NodeType = typeof( string );
-                    dataItem.Value = document.Archive;
-                    tableItem.Children.Add( dataItem );
+                    var entryItem = new DataNode();
+                    entryItem.Name = document.Name;
+                    string content = new StreamReader( document.Open() ).ReadToEnd();
+                    entryItem.Value = Encoding.UTF8.GetBytes( content ) ?? null;
+                    entryItem.NodeType = typeof( byte[] );
+                    entryItem.Parent.Add( folderItem );
+                    folderItem.Children.Add( entryItem );
+
+                    //var extension = document.FullName.Substring( document.FullName.Length - 3, 3 );
                 }
             }
 
-            DataNodes.Add( tableItem );
-            FilesToImport.Add( zipFile );
+            previewInstance.FileNodes.Add( folderItem );
+            DataNodes.Add( folderItem );
+            BinaryInstances.Add( previewInstance );
 
             return DataNodes.Count() > 0 ? true : false;
+        }
+
+        /// <summary>
+        /// Previews the data. Overrides base class because we have potential for more than one imported file
+        /// </summary>
+        /// <param name="tableName">Name of the table to preview.</param>
+        /// <returns></returns>
+        public override DataTable PreviewData( string nodeId )
+        {
+            foreach ( var instance in BinaryInstances )
+            {
+                var node = instance.FileNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+                if ( node != null && node.Children.Any() )
+                {
+                    var dataTable = new DataTable();
+                    dataTable.Columns.Add( "File", typeof( string ) );
+                    foreach ( var column in node.Children )
+                    {
+                        dataTable.Columns.Add( column.Name, column.NodeType );
+                    }
+
+                    var rowPreview = dataTable.NewRow();
+                    foreach ( var column in node.Children )
+                    {
+                        rowPreview[column.Name] = column.Value ?? DBNull.Value;
+                    }
+
+                    dataTable.Rows.Add( rowPreview );
+                    return dataTable;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -149,19 +186,20 @@ namespace Excavator.BinaryFile
                 importPerson = personService.Queryable().AsNoTracking().FirstOrDefault();
             }
 
+            ImportPersonAliasId = importPerson.PrimaryAliasId;
             ReportProgress( 0, "Checking for existing attributes..." );
             LoadExistingRockData( rockContext );
 
-            ImportPersonAliasId = importPerson.PrimaryAliasId;
-            var fileList = DataNodes.Where( n => n.Checked != false ).ToList();
+            // only import things that the user checked
+            var selectedFiles = BinaryInstances.Where( c => c.FileNodes.Any( n => n.Checked != false ) ).ToList();
 
-            foreach ( var file in fileList )
+            foreach ( var file in selectedFiles )
             {
-                // #TODO: rewrite this with an interface that's not hardcoded
-                if ( file.Name.StartsWith( "People" ) )
-                {
-                    MapPeople( file );
-                }
+                //IMap adapter = IMapAdapterFactory.GetAdapter( file );
+                //if ( adapter != null )
+                //{
+                //    adapter.Map( file.Value as ZipArchive );
+                //}
             }
 
             // Report the final imported count
@@ -215,6 +253,45 @@ namespace Excavator.BinaryFile
         #endregion Methods
     }
 
+    public interface IMap
+    {
+        void Map( ZipArchive zipData );
+    }
+
+    public static class IMapAdapterFactory
+    {
+        public static IMap GetAdapter( string fileName )
+        {
+            IMap adapter = null;
+
+            var fileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueConfigurationCollection;
+
+            // ensure we have a file matching an adapter type
+            if ( fileTypes != null && fileTypes.AllKeys.Any( k => fileName.StartsWith( k ) ) )
+            {
+                var interfaceType = typeof( IMap );
+                var typeInstances = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany( s => s.GetTypes() )
+                    .Where( p => interfaceType.IsAssignableFrom( p ) );
+
+                if ( fileName.StartsWith( "Person" ) )
+                {
+                    adapter = new PersonImage();
+                }
+                else if ( fileName.StartsWith( "Transaction" ) )
+                {
+                    adapter = new TransactionImage();
+                }
+                else
+                {
+                    adapter = new MinistryDocument();
+                }
+            }
+
+            return adapter;
+        }
+    }
+
     /// <summary>
     ///
     /// </summary>
@@ -245,6 +322,7 @@ namespace Excavator.BinaryFile
         public BinaryInstance( string fileName )
         {
             FileName = fileName;
+            FileNodes = new List<DataNode>();
             ArchiveFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
         }
     }
