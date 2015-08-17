@@ -148,32 +148,32 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="tableName">Name of the table to preview.</param>
         /// <returns></returns>
-        public override DataTable PreviewData( string nodeId )
-        {
-            foreach ( var dataNode in CsvDataToImport )
-            {
-                var node = dataNode.TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-                if ( node != null && node.Children.Any() )
-                {
-                    var dataTable = new DataTable();
-                    dataTable.Columns.Add( "File", typeof( string ) );
-                    foreach ( var column in node.Children )
-                    {
-                        dataTable.Columns.Add( column.Name, column.NodeType );
-                    }
+        //public override DataTable PreviewData( string nodeId )
+        //{
+        //    foreach ( var dataNode in CsvDataToImport )
+        //    {
+        //        var node = dataNode.TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+        //        if ( node != null && node.Children.Any() )
+        //        {
+        //            var dataTable = new DataTable();
+        //            dataTable.Columns.Add( "File", typeof( string ) );
+        //            foreach ( var column in node.Children )
+        //            {
+        //                dataTable.Columns.Add( column.Name, column.NodeType );
+        //            }
 
-                    var rowPreview = dataTable.NewRow();
-                    foreach ( var column in node.Children )
-                    {
-                        rowPreview[column.Name] = column.Value ?? DBNull.Value;
-                    }
+        //            var rowPreview = dataTable.NewRow();
+        //            foreach ( var column in node.Children )
+        //            {
+        //                rowPreview[column.Name] = column.Value ?? DBNull.Value;
+        //            }
 
-                    dataTable.Rows.Add( rowPreview );
-                    return dataTable;
-                }
-            }
-            return null;
-        }
+        //            dataTable.Rows.Add( rowPreview );
+        //            return dataTable;
+        //        }
+        //    }
+        //    return null;
+        //}
 
         /// <summary>
         /// Transforms the data from the dataset.

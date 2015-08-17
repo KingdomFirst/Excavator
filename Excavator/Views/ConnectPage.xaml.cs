@@ -157,7 +157,7 @@ namespace Excavator
             }
         }
 
-        private ExcavatorComponent _SelectedImportType = null;
+        private ExcavatorComponent _selectedImportType = null;
 
         /// <summary>
         /// Gets or sets the type of the selected import.
@@ -169,13 +169,13 @@ namespace Excavator
         {
             get
             {
-                return _SelectedImportType;
+                return _selectedImportType;
             }
             set
             {
-                if ( _SelectedImportType == value )
+                if ( _selectedImportType == value )
                     return;
-                _SelectedImportType = value;
+                _selectedImportType = value;
                 RaisePropertyChanged( "SelectedImportType" );
             }
         }
