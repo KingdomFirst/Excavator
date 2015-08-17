@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Rock;
 using Rock.Data;
 using Rock.Model;
@@ -18,9 +18,9 @@ namespace Excavator.BinaryFile
     /// <summary>
     /// Partial of BinaryFile import that holds a Person map
     /// </summary>
-    public partial class BinaryFileComponent
+    public class PersonImage : BinaryFileComponent, IMap
     {
-        public void MapPeople( DataNode zipFile )
+        public void Map( ZipArchive folder )
         {
             var lookupContext = new RockContext();
             var settings = ConfigurationManager.AppSettings;
@@ -50,11 +50,11 @@ namespace Excavator.BinaryFile
             int completed = 0;
             var newFileList = new List<Rock.Model.BinaryFile>();
 
-            int totalRows = zipFile.Children.Count;
+            int totalRows = folder.Entries.Count;
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying files import ({0:N0} found.", totalRows ) );
 
-            foreach ( var file in zipFile.Children )
+            foreach ( var file in folder.Entries )
             {
                 var foreignId = file.Name.AsType<int?>();
                 var personKeys = GetPersonKeys( foreignId );
@@ -69,7 +69,10 @@ namespace Excavator.BinaryFile
                     //rockFile.StorageEntityTypeId = fileSystemProvider.Id;
 
                     rockFile.DatabaseData = new BinaryFileData();
-                    rockFile.DatabaseData.Content = file.Value as byte[];
+                    string content = new StreamReader( file.Open() ).ReadToEnd();
+
+                    byte[] m_Bytes = System.Text.Encoding.UTF8.GetBytes( content );
+                    rockFile.DatabaseData.Content = m_Bytes;
                     rockFile.MimeType = "image/jpeg";
 
                     newFileList.Add( rockFile );
