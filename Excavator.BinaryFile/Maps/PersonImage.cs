@@ -18,7 +18,7 @@ namespace Excavator.BinaryFile
     /// <summary>
     /// Partial of BinaryFile import that holds a Person map
     /// </summary>
-    public class PersonImage : BinaryFileComponent, IMap
+    public class PersonImage : BinaryFileComponent, IBinaryFile
     {
         public void Map( ZipArchive folder )
         {

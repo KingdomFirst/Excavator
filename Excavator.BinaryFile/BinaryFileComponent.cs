@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
@@ -26,6 +27,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Excavator;
 using Excavator.BinaryFile;
 using Excavator.Utility;
 using Rock;
@@ -119,7 +121,7 @@ namespace Excavator.BinaryFile
                 if ( document != null )
                 {
                     var entryItem = new DataNode();
-                    entryItem.Name = document.Name;
+                    entryItem.Name = document.FullName;
                     string content = new StreamReader( document.Open() ).ReadToEnd();
                     entryItem.Value = Encoding.UTF8.GetBytes( content ) ?? null;
                     entryItem.NodeType = typeof( byte[] );
@@ -142,32 +144,32 @@ namespace Excavator.BinaryFile
         /// </summary>
         /// <param name="tableName">Name of the table to preview.</param>
         /// <returns></returns>
-        public override DataTable PreviewData( string nodeId )
-        {
-            foreach ( var instance in BinaryInstances )
-            {
-                var node = instance.FileNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-                if ( node != null && node.Children.Any() )
-                {
-                    var dataTable = new DataTable();
-                    dataTable.Columns.Add( "File", typeof( string ) );
-                    foreach ( var column in node.Children )
-                    {
-                        dataTable.Columns.Add( column.Name, column.NodeType );
-                    }
+        //public override DataTable PreviewData( string nodeId )
+        //{
+        //    foreach ( var instance in BinaryInstances )
+        //    {
+        //        var node = instance.FileNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+        //        if ( node != null && node.Children.Any() )
+        //        {
+        //            var dataTable = new DataTable();
+        //            dataTable.Columns.Add( "File", typeof( string ) );
+        //            foreach ( var column in node.Children )
+        //            {
+        //                dataTable.Columns.Add( column.Name, column.NodeType );
+        //            }
 
-                    var rowPreview = dataTable.NewRow();
-                    foreach ( var column in node.Children )
-                    {
-                        rowPreview[column.Name] = column.Value ?? DBNull.Value;
-                    }
+        //            var rowPreview = dataTable.NewRow();
+        //            foreach ( var column in node.Children )
+        //            {
+        //                rowPreview[column.Name] = column.Value ?? DBNull.Value;
+        //            }
 
-                    dataTable.Rows.Add( rowPreview );
-                    return dataTable;
-                }
-            }
-            return null;
-        }
+        //            dataTable.Rows.Add( rowPreview );
+        //            return dataTable;
+        //        }
+        //    }
+        //    return null;
+        //}
 
         /// <summary>
         /// Transforms the data from the dataset.
@@ -195,11 +197,16 @@ namespace Excavator.BinaryFile
 
             foreach ( var file in selectedFiles )
             {
-                //IMap adapter = IMapAdapterFactory.GetAdapter( file );
-                //if ( adapter != null )
-                //{
-                //    adapter.Map( file.Value as ZipArchive );
-                //}
+                var commonName = Path.GetFileNameWithoutExtension( file.FileName );
+                IBinaryFile worker = IMapAdapterFactory.GetAdapter( commonName );
+                if ( worker != null )
+                {
+                    worker.Map( file.ArchiveFolder );
+                }
+                else
+                {
+                    LogException( "Binary File Import", string.Format( "Unknown File: {0} does not start with the name of a known data map.", file.FileName ) );
+                }
             }
 
             // Report the final imported count
@@ -253,47 +260,51 @@ namespace Excavator.BinaryFile
         #endregion Methods
     }
 
-    public interface IMap
+    #region Helper Classes
+
+    /// <summary>
+    /// Generic map interface
+    /// </summary>
+    public interface IBinaryFile
     {
         void Map( ZipArchive zipData );
     }
 
+    /// <summary>
+    /// Adapter helper method to call the write object map
+    /// </summary>
     public static class IMapAdapterFactory
     {
-        public static IMap GetAdapter( string fileName )
+        public static IBinaryFile GetAdapter( string fileName )
         {
-            IMap adapter = null;
+            IBinaryFile adapter = null;
 
-            var fileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueConfigurationCollection;
+            var configFileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
 
-            // ensure we have a file matching an adapter type
-            if ( fileTypes != null && fileTypes.AllKeys.Any( k => fileName.StartsWith( k ) ) )
+            // ensure we have a file matching a config type
+            //if ( configFileTypes != null && configFileTypes.AllKeys.Any( k => fileName.StartsWith( k.RemoveWhitespace() ) ) )
+            //{
+            var iBinaryFileType = typeof( IBinaryFile );
+            var mappedFileTypes = iBinaryFileType.Assembly.ExportedTypes
+                .Where( p => iBinaryFileType.IsAssignableFrom( p ) && !p.IsInterface );
+            var selectedType = mappedFileTypes.FirstOrDefault( t => fileName.StartsWith( t.Name.RemoveWhitespace() ) );
+            if ( selectedType != null )
             {
-                var interfaceType = typeof( IMap );
-                var typeInstances = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany( s => s.GetTypes() )
-                    .Where( p => interfaceType.IsAssignableFrom( p ) );
-
-                if ( fileName.StartsWith( "Person" ) )
-                {
-                    adapter = new PersonImage();
-                }
-                else if ( fileName.StartsWith( "Transaction" ) )
-                {
-                    adapter = new TransactionImage();
-                }
-                else
-                {
-                    adapter = new MinistryDocument();
-                }
+                adapter = (IBinaryFile)Activator.CreateInstance( selectedType );
             }
+            else
+            {
+                adapter = new MinistryDocument();
+            }
+
+            //}
 
             return adapter;
         }
     }
 
     /// <summary>
-    ///
+    /// Holds a reference to one of the zip files (probably not necessary?)
     /// </summary>
     public class BinaryInstance
     {
@@ -352,4 +363,6 @@ namespace Excavator.BinaryFile
         /// </summary>
         public int? HouseholdId;
     }
+
+    #endregion
 }
