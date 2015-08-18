@@ -74,8 +74,11 @@ namespace Excavator.BinaryFile
         /// </summary>
         protected static List<PersonKeys> ImportedPeople;
 
-        // StorageEntity attribute
-        //protected static AttributeCache ;
+        // Database StorageEntity Type
+        protected static int? DatabaseStorageTypeId;
+
+        // File System StorageEntity Type
+        protected static int? FileSystemStorageTypeId;
 
         /// <summary>
         /// The file types
@@ -154,17 +157,17 @@ namespace Excavator.BinaryFile
 
             foreach ( var file in selectedFiles )
             {
-                var actualFileName = Path.GetFileNameWithoutExtension( file.Name );
+                var nameWithoutPath = Path.GetFileNameWithoutExtension( file.Name );
+                var archiveFolder = new ZipArchive( new FileStream( file.Name, FileMode.Open ) );
 
-                IBinaryFile worker = IMapAdapterFactory.GetAdapter( actualFileName );
+                IBinaryFile worker = IMapAdapterFactory.GetAdapter( nameWithoutPath );
                 if ( worker != null )
                 {
-                    var folder = new ZipArchive( new FileStream( file.Name, FileMode.Open ) );
-                    worker.Map( folder );
+                    worker.Map( archiveFolder );
                 }
                 else
                 {
-                    LogException( "Binary File", string.Format( "Unknown File: {0} does not start with the name of a known data map.", actualFileName ) );
+                    LogException( "Binary File", string.Format( "Unknown File: {0} does not start with the name of a known data map.", nameWithoutPath ) );
                 }
             }
 
@@ -181,6 +184,9 @@ namespace Excavator.BinaryFile
             lookupContext = lookupContext ?? new RockContext();
 
             FileTypes = new BinaryFileTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
+
+            DatabaseStorageTypeId = EntityTypeCache.GetId( typeof( Rock.Storage.Provider.Database ) );
+            FileSystemStorageTypeId = EntityTypeCache.GetId( typeof( Rock.Storage.Provider.FileSystem ) );
 
             // load attributes to get the default storage location
             foreach ( var type in FileTypes )
