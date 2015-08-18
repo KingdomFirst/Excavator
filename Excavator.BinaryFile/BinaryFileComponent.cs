@@ -70,14 +70,6 @@ namespace Excavator.BinaryFile
         }
 
         /// <summary>
-        /// Gets or sets the files to import.
-        /// </summary>
-        /// <value>
-        /// The files to import.
-        /// </value>
-        private List<BinaryInstance> BinaryInstances { get; set; }
-
-        /// <summary>
         /// All the people who've been imported
         /// </summary>
         protected static List<PersonKeys> ImportedPeople;
@@ -106,17 +98,16 @@ namespace Excavator.BinaryFile
         /// <returns></returns>
         public override bool LoadSchema( string fileName )
         {
-            if ( BinaryInstances == null )
+            if ( DataNodes == null )
             {
-                BinaryInstances = new List<BinaryInstance>();
                 DataNodes = new List<DataNode>();
             }
 
             var folderItem = new DataNode();
-            var previewInstance = new BinaryInstance( fileName );
+            var previewFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
             folderItem.Name = Path.GetFileNameWithoutExtension( fileName );
 
-            foreach ( var document in previewInstance.ArchiveFolder.Entries.Take( 50 ) )
+            foreach ( var document in previewFolder.Entries.Take( 50 ) )
             {
                 if ( document != null )
                 {
@@ -132,44 +123,10 @@ namespace Excavator.BinaryFile
                 }
             }
 
-            previewInstance.FileNodes.Add( folderItem );
             DataNodes.Add( folderItem );
-            BinaryInstances.Add( previewInstance );
 
             return DataNodes.Count() > 0 ? true : false;
         }
-
-        /// <summary>
-        /// Previews the data. Overrides base class because we have potential for more than one imported file
-        /// </summary>
-        /// <param name="tableName">Name of the table to preview.</param>
-        /// <returns></returns>
-        //public override DataTable PreviewData( string nodeId )
-        //{
-        //    foreach ( var instance in BinaryInstances )
-        //    {
-        //        var node = instance.FileNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-        //        if ( node != null && node.Children.Any() )
-        //        {
-        //            var dataTable = new DataTable();
-        //            dataTable.Columns.Add( "File", typeof( string ) );
-        //            foreach ( var column in node.Children )
-        //            {
-        //                dataTable.Columns.Add( column.Name, column.NodeType );
-        //            }
-
-        //            var rowPreview = dataTable.NewRow();
-        //            foreach ( var column in node.Children )
-        //            {
-        //                rowPreview[column.Name] = column.Value ?? DBNull.Value;
-        //            }
-
-        //            dataTable.Rows.Add( rowPreview );
-        //            return dataTable;
-        //        }
-        //    }
-        //    return null;
-        //}
 
         /// <summary>
         /// Transforms the data from the dataset.
@@ -193,19 +150,21 @@ namespace Excavator.BinaryFile
             LoadExistingRockData( rockContext );
 
             // only import things that the user checked
-            var selectedFiles = BinaryInstances.Where( c => c.FileNodes.Any( n => n.Checked != false ) ).ToList();
+            var selectedFiles = DataNodes.Where( n => n.Checked != false ).ToList();
 
             foreach ( var file in selectedFiles )
             {
-                var commonName = Path.GetFileNameWithoutExtension( file.FileName );
-                IBinaryFile worker = IMapAdapterFactory.GetAdapter( commonName );
+                var actualFileName = Path.GetFileNameWithoutExtension( file.Name );
+
+                IBinaryFile worker = IMapAdapterFactory.GetAdapter( actualFileName );
                 if ( worker != null )
                 {
-                    worker.Map( file.ArchiveFolder );
+                    var folder = new ZipArchive( new FileStream( file.Name, FileMode.Open ) );
+                    worker.Map( folder );
                 }
                 else
                 {
-                    LogException( "Binary File Import", string.Format( "Unknown File: {0} does not start with the name of a known data map.", file.FileName ) );
+                    LogException( "Binary File", string.Format( "Unknown File: {0} does not start with the name of a known data map.", actualFileName ) );
                 }
             }
 
@@ -300,41 +259,6 @@ namespace Excavator.BinaryFile
             //}
 
             return adapter;
-        }
-    }
-
-    /// <summary>
-    /// Holds a reference to one of the zip files (probably not necessary?)
-    /// </summary>
-    public class BinaryInstance
-    {
-        /// <summary>
-        /// Holds a reference to the loaded nodes
-        /// </summary>
-        public List<DataNode> FileNodes;
-
-        /// <summary>
-        /// The local database
-        /// </summary>
-        public ZipArchive ArchiveFolder;
-
-        /// <summary>
-        /// Gets or sets the name of the file.
-        /// </summary>
-        /// <value>
-        /// The name of the file.
-        /// </value>
-        public string FileName { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CSVInstance"/> class.
-        /// </summary>
-        /// <param name="fileName">Name of the file.</param>
-        public BinaryInstance( string fileName )
-        {
-            FileName = fileName;
-            FileNodes = new List<DataNode>();
-            ArchiveFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
         }
     }
 
