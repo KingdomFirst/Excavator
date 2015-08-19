@@ -36,7 +36,7 @@ namespace Excavator.BinaryFile
             foreach ( var file in folder.Entries )
             {
                 var foreignId = file.Name.AsType<int?>();
-                var personKeys = ImportedPeople.FirstOrDefault( p => p.ForeignId == foreignId );
+                var personKeys = GetPersonKeys( foreignId );
                 if ( personKeys != null )
                 {
                     var rockFile = new Rock.Model.BinaryFile();

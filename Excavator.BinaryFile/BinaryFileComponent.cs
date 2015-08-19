@@ -244,6 +244,23 @@ namespace Excavator.BinaryFile
                 .ToList();
         }
 
+        /// <summary>
+        /// Gets the person keys.
+        /// </summary>
+        /// <param name="foreignId">The foreign identifier.</param>
+        /// <returns></returns>
+        protected static PersonKeys GetPersonKeys( int? foreignId = null )
+        {
+            if ( foreignId != null )
+            {
+                return ImportedPeople.FirstOrDefault( p => p.ForeignId == foreignId );
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         #endregion Methods
     }
 
