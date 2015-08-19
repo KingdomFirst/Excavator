@@ -41,6 +41,7 @@ namespace Excavator
         private bool? _isChecked;
         private Type _nodeType;
         private string _name;
+        private string _path;
         private string _id;
         private object _value;
 
@@ -115,6 +116,24 @@ namespace Excavator
             set
             {
                 _nodeType = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the path.
+        /// </summary>
+        /// <value>
+        /// The text.
+        /// </value>
+        public string Path
+        {
+            get
+            {
+                return _path;
+            }
+            set
+            {
+                _path = value;
             }
         }
 

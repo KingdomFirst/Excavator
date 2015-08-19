@@ -112,6 +112,7 @@ namespace Excavator.BinaryFile
             var folderItem = new DataNode();
             var previewFolder = new ZipArchive( new FileStream( fileName, FileMode.Open ) );
             folderItem.Name = Path.GetFileNameWithoutExtension( fileName );
+            folderItem.Path = fileName;
 
             foreach ( var document in previewFolder.Entries.Take( 50 ) )
             {
@@ -158,17 +159,16 @@ namespace Excavator.BinaryFile
 
             foreach ( var file in selectedFiles )
             {
-                var nameWithoutPath = Path.GetFileNameWithoutExtension( file.Name );
-                var archiveFolder = new ZipArchive( new FileStream( file.Name, FileMode.Open ) );
+                var archiveFolder = new ZipArchive( new FileStream( file.Path, FileMode.Open ) );
 
-                IBinaryFile worker = IMapAdapterFactory.GetAdapter( nameWithoutPath );
+                IBinaryFile worker = IMapAdapterFactory.GetAdapter( file.Name );
                 if ( worker != null )
                 {
                     worker.Map( archiveFolder );
                 }
                 else
                 {
-                    LogException( "Binary File", string.Format( "Unknown File: {0} does not start with the name of a known data map.", nameWithoutPath ) );
+                    LogException( "Binary File", string.Format( "Unknown File: {0} does not start with the name of a known data map.", file.Name ) );
                 }
             }
 
@@ -184,13 +184,48 @@ namespace Excavator.BinaryFile
         {
             lookupContext = lookupContext ?? new RockContext();
 
-            FileTypes = new BinaryFileTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
-
-            // core-specified guid for setting file root path
+            // core-specified attribute guid for set;ting file root path
             RootPathAttribute = AttributeCache.Read( new Guid( "3CAFA34D-9208-439B-A046-CB727FB729DE" ) );
 
             DatabaseStorageTypeId = EntityTypeCache.GetId( typeof( Rock.Storage.Provider.Database ) );
             FileSystemStorageTypeId = EntityTypeCache.GetId( typeof( Rock.Storage.Provider.FileSystem ) );
+            FileTypes = new BinaryFileTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
+
+            // get all the types we'll be importing
+            var binaryTypeSettings = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
+
+            // create any custom types defined in settings that don't exist yet
+            foreach ( var typeKey in binaryTypeSettings.AllKeys )
+            {
+                var newFileType = FileTypes.FirstOrDefault( f => f.Name == typeKey );
+                if ( newFileType == null )
+                {
+                    newFileType = new BinaryFileType();
+                    newFileType.Name = typeKey;
+                    newFileType.Description = typeKey;
+                    newFileType.AllowCaching = true;
+
+                    var typeValue = binaryTypeSettings[typeKey];
+                    if ( typeValue != null )
+                    {
+                        newFileType.StorageEntityTypeId = typeValue.Equals( "Database" ) ? DatabaseStorageTypeId : FileSystemStorageTypeId;
+                        newFileType.Attributes = new Dictionary<string, AttributeCache>();
+                        newFileType.AttributeValues = new Dictionary<string, AttributeValue>();
+
+                        newFileType.Attributes.Add( RootPathAttribute.Key, RootPathAttribute );
+                        newFileType.AttributeValues.Add( RootPathAttribute.Key, new AttributeValue()
+                        {
+                            AttributeId = RootPathAttribute.Id,
+                            Value = typeValue
+                        } );
+                    }
+
+                    lookupContext.BinaryFileTypes.Add( newFileType );
+                    lookupContext.SaveChanges();
+
+                    FileTypes.Add( newFileType );
+                }
+            }
 
             // load attributes to get the default storage location
             foreach ( var type in FileTypes )
@@ -198,32 +233,15 @@ namespace Excavator.BinaryFile
                 type.LoadAttributes( lookupContext );
             }
 
-            var personAliasIds = new PersonAliasService( lookupContext ).Queryable().AsNoTracking().ToList();
-            var ImportedPeople = personAliasIds.Select( pa => new PersonKeys()
+            // get a list of all the imported people keys
+            var personAliasList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var ImportedPeople = personAliasList.Select( pa => new PersonKeys()
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId.AsType<int?>(),
-                } ).ToList();
-        }
-
-        /// <summary>
-        /// Gets the person keys.
-        /// </summary>
-        /// <param name="individualId">The individual identifier.</param>
-        /// <param name="householdId">The household identifier.</param>
-        /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
-        /// <returns></returns>
-        protected static PersonKeys GetPersonKeys( int? individualId = null )
-        {
-            if ( individualId != null )
-            {
-                return ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId );
-            }
-            else
-            {
-                return null;
-            }
+                    ForeignId = pa.ForeignId.AsType<int?>(),
+                } )
+                .ToList();
         }
 
         #endregion Methods
@@ -250,7 +268,7 @@ namespace Excavator.BinaryFile
 
             var configFileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
 
-            // ensure we have a file matching a config type
+            // ensure the file matches a config type?
             //if ( configFileTypes != null && configFileTypes.AllKeys.Any( k => fileName.StartsWith( k.RemoveWhitespace() ) ) )
             //{
             var iBinaryFileType = typeof( IBinaryFile );
@@ -490,7 +508,7 @@ namespace Excavator.BinaryFile
     }
 
     /// <summary>
-    /// Helper class to store references to people that've been imported
+    /// Helper class to reference to people that've been imported
     /// </summary>
     public class PersonKeys
     {
@@ -505,14 +523,9 @@ namespace Excavator.BinaryFile
         public int PersonId;
 
         /// <summary>
-        /// Stores the F1 Individual Id
+        /// Stores the ForeignId
         /// </summary>
-        public int? IndividualId;
-
-        /// <summary>
-        /// Stores the F1 Household Id
-        /// </summary>
-        public int? HouseholdId;
+        public int? ForeignId;
     }
 
     #endregion
