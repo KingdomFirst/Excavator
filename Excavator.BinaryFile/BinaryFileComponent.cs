@@ -152,7 +152,7 @@ namespace Excavator.BinaryFile
 
             ImportPersonAliasId = importPerson.PrimaryAliasId;
             ReportProgress( 0, "Checking for existing attributes..." );
-            LoadExistingRockData( rockContext );
+            LoadRockData( rockContext );
 
             // only import things that the user checked
             var selectedFiles = DataNodes.Where( n => n.Checked != false ).ToList();
@@ -164,7 +164,7 @@ namespace Excavator.BinaryFile
                 IBinaryFile worker = IMapAdapterFactory.GetAdapter( file.Name );
                 if ( worker != null )
                 {
-                    worker.Map( archiveFolder );
+                    worker.Map( archiveFolder, FileTypes.FirstOrDefault( t => file.Name.RemoveWhitespace().StartsWith( t.Name.RemoveWhitespace() ) ) );
                 }
                 else
                 {
@@ -180,7 +180,7 @@ namespace Excavator.BinaryFile
         /// <summary>
         /// Loads Rock data that's used globally by the transform
         /// </summary>
-        private void LoadExistingRockData( RockContext lookupContext = null )
+        private void LoadRockData( RockContext lookupContext = null )
         {
             lookupContext = lookupContext ?? new RockContext();
 
@@ -254,7 +254,7 @@ namespace Excavator.BinaryFile
     /// </summary>
     public interface IBinaryFile
     {
-        void Map( ZipArchive zipData );
+        void Map( ZipArchive zipData, BinaryFileType fileType );
     }
 
     /// <summary>

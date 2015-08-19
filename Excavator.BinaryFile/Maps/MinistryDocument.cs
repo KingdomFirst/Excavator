@@ -20,35 +20,15 @@ namespace Excavator.BinaryFile
     /// </summary>
     public class MinistryDocument : BinaryFileComponent, IBinaryFile
     {
-        public void Map( ZipArchive folder )
+        /// <summary>
+        /// Maps the specified folder.
+        /// </summary>
+        /// <param name="folder">The folder.</param>
+        /// <param name="personImageFileType">Type of the person image file.</param>
+        public void Map( ZipArchive folder, BinaryFileType fileType )
         {
-            var lookupContext = new RockContext();
-            var settings = ConfigurationManager.AppSettings;
-            //var archiveFolder = zipFile.Value as ZipArchive;
-
-            var fileSystemProvider = EntityTypeCache.Read( Rock.SystemGuid.EntityType.STORAGE_PROVIDER_FILESYSTEM.AsGuid(), lookupContext );
-
-            var fileType = FileTypes.FirstOrDefault( f => f.Name == "Person Image" );
-            if ( fileType == null )
-            {
-                var fileTypeService = new BinaryFileTypeService( lookupContext );
-
-                fileType = new BinaryFileType();
-                fileType.Name = "Person Image";
-
-                fileType.Attributes = new Dictionary<string, AttributeCache>();
-                fileType.AttributeValues = new Dictionary<string, AttributeValue>();
-
-                // add default file location to attribute values here
-
-                fileTypeService.Add( fileType );
-                lookupContext.SaveChanges();
-
-                FileTypes.Add( fileType );
-            }
-
             int completed = 0;
-            var newFileList = new List<Rock.Model.BinaryFile>();
+            var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
 
             int totalRows = folder.Entries.Count;
             int percentage = ( totalRows - 1 ) / 100 + 1;
@@ -57,25 +37,32 @@ namespace Excavator.BinaryFile
             foreach ( var file in folder.Entries )
             {
                 var foreignId = file.Name.AsType<int?>();
-                var personKeys = GetPersonKeys( foreignId );
+                var personKeys = ImportedPeople.FirstOrDefault( p => p.ForeignId == foreignId );
                 if ( personKeys != null )
                 {
                     var rockFile = new Rock.Model.BinaryFile();
                     rockFile.IsSystem = false;
                     rockFile.IsTemporary = false;
                     rockFile.FileName = file.Name;
+                    rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.BinaryFileTypeId = fileType.Id;
-                    //rockFile.StorageEntityTypeId = fileSystemProvider.Id;
 
                     rockFile.DatabaseData = new BinaryFileData();
                     string content = new StreamReader( file.Open() ).ReadToEnd();
 
                     byte[] m_Bytes = System.Text.Encoding.UTF8.GetBytes( content );
                     rockFile.DatabaseData.Content = m_Bytes;
-                    rockFile.MimeType = "image/jpeg";
+                    rockFile.MimeType = MIMEFinder.GetMIMEType( file.Name );
 
-                    newFileList.Add( rockFile );
+                    // only import the most recent profile photo
+                    var existingPhoto = newFileList[personKeys.PersonId];
+                    if ( existingPhoto == null || existingPhoto.CreatedDateTime < rockFile.CreatedDateTime )
+                    {
+                        newFileList.Add( personKeys.PersonId, rockFile );
+                    }
+
+                    newFileList.Add( personKeys.PersonId, rockFile );
                     completed++;
 
                     if ( completed % percentage < 1 )
@@ -87,10 +74,8 @@ namespace Excavator.BinaryFile
                     {
                         SaveFiles( newFileList );
 
-                        // Reset context
+                        // Reset list
                         newFileList.Clear();
-                        lookupContext = new RockContext();
-
                         ReportPartialProgress();
                     }
                 }
@@ -108,12 +93,19 @@ namespace Excavator.BinaryFile
         /// Saves the files.
         /// </summary>
         /// <param name="newFileList">The new file list.</param>
-        private static void SaveFiles( List<Rock.Model.BinaryFile> newFileList )
+        private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
-                rockContext.BinaryFiles.AddRange( newFileList.AsEnumerable() );
+                rockContext.BinaryFiles.AddRange( newFileList.Values );
+                rockContext.SaveChanges( DisableAuditing );
+
+                foreach ( var entry in newFileList )
+                {
+                    rockContext.People.FirstOrDefault( p => p.Id == entry.Key ).PhotoId = entry.Value.Id;
+                }
+
                 rockContext.SaveChanges( DisableAuditing );
             } );
         }
