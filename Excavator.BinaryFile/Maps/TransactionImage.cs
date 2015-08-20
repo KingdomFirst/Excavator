@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
@@ -37,7 +38,7 @@ namespace Excavator.BinaryFile
             foreach ( var file in folder.Entries )
             {
                 var foreignId = file.Name.AsType<int?>();
-                var personKeys = GetPersonKeys( foreignId );
+                PersonKeys personKeys = null;
                 if ( personKeys != null )
                 {
                     var rockFile = new Rock.Model.BinaryFile();
@@ -53,7 +54,7 @@ namespace Excavator.BinaryFile
 
                     byte[] m_Bytes = System.Text.Encoding.UTF8.GetBytes( content );
                     rockFile.DatabaseData.Content = m_Bytes;
-                    rockFile.MimeType = MIMEFinder.GetMIMEType( file.Name );
+                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
 
                     // only import the most recent profile photo
                     var existingPhoto = newFileList[personKeys.PersonId];

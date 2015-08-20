@@ -2,17 +2,20 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Data.Entity;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
+using Rock.Storage;
 using Rock.Web.Cache;
 
-namespace Excavator.BinaryFile
+namespace Excavator.BinaryFile.PersonImage
 {
     /// <summary>
     /// Partial of BinaryFile import that holds a Person map
@@ -23,10 +26,18 @@ namespace Excavator.BinaryFile
         /// Maps the specified folder.
         /// </summary>
         /// <param name="folder">The folder.</param>
-        /// <param name="personImageFileType">Type of the person image file.</param>
-        public void Map( ZipArchive folder, BinaryFileType personImageFileType )
+        /// <param name="fileType">Type of the person image file.</param>
+        public void Map( ZipArchive folder, BinaryFileType fileType )
         {
             int completed = 0;
+
+            // check for existing photo?
+            //var lookupContext = new RockContext();
+            //var existingFileList = new PersonService( lookupContext ).Queryable().AsNoTracking()
+            //    .ToDictionary( p => p.Id, f => f.Photo );
+
+            var globalAttributesCache = GlobalAttributesCache.Read();
+
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
 
             int totalRows = folder.Entries.Count;
@@ -35,35 +46,50 @@ namespace Excavator.BinaryFile
 
             foreach ( var file in folder.Entries )
             {
-                var foreignId = file.Name.AsType<int?>();
-                var personKeys = GetPersonKeys( foreignId );
+                var fileExtension = Path.GetExtension( file.Name );
+                if ( BinaryFileComponent.FileTypeBlackList.Contains( fileExtension ) )
+                {
+                    LogException( "Binary File Import", string.Format( "{0} filetype not allowed ({1})", fileExtension, file.Name ) );
+                    continue;
+                }
+
+                var personForeignId = Path.GetFileNameWithoutExtension( file.Name ).AsType<int?>();
+                var personKeys = BinaryFileComponent.ImportedPeople.FirstOrDefault( p => p.IndividualId == personForeignId );
                 if ( personKeys != null )
                 {
                     var rockFile = new Rock.Model.BinaryFile();
                     rockFile.IsSystem = false;
                     rockFile.IsTemporary = false;
                     rockFile.FileName = file.Name;
+                    rockFile.BinaryFileTypeId = fileType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
-                    rockFile.BinaryFileTypeId = personImageFileType.Id;
+                    rockFile.SetStorageEntityTypeId( fileType.StorageEntityTypeId );
+                    rockFile.StorageEntitySettings = fileType.AttributeValues
+                        .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson();
 
                     rockFile.DatabaseData = new BinaryFileData();
                     string content = new StreamReader( file.Open() ).ReadToEnd();
 
                     byte[] m_Bytes = System.Text.Encoding.UTF8.GetBytes( content );
                     rockFile.DatabaseData.Content = m_Bytes;
-                    rockFile.MimeType = MIMEFinder.GetMIMEType( file.Name );
+                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
 
                     // only import the most recent profile photo
-                    var existingPhoto = newFileList[personKeys.PersonId];
-                    if ( existingPhoto == null || existingPhoto.CreatedDateTime < rockFile.CreatedDateTime )
+                    if ( newFileList.ContainsKey( personKeys.PersonId ) )
+                    {
+                        var existingPhoto = newFileList[personKeys.PersonId];
+                        if ( existingPhoto == null || existingPhoto.CreatedDateTime < rockFile.CreatedDateTime )
+                        {
+                            newFileList.Add( personKeys.PersonId, rockFile );
+                        }
+                    }
+                    else
                     {
                         newFileList.Add( personKeys.PersonId, rockFile );
                     }
 
-                    newFileList.Add( personKeys.PersonId, rockFile );
                     completed++;
-
                     if ( completed % percentage < 1 )
                     {
                         int percentComplete = completed / percentage;
@@ -102,6 +128,12 @@ namespace Excavator.BinaryFile
 
                 foreach ( var entry in newFileList )
                 {
+                    // set the path now that we have a guid -- this is normally set by
+                    // the MEF storage component which we don't have access to
+                    var accessType = entry.Value.MimeType.StartsWith( "image" ) ? "Image" : "File";
+                    entry.Value.Path = string.Format( "~/Get{0}.ashx?guid={1}", accessType, entry.Value.Guid );
+
+                    // associate the person with this file
                     rockContext.People.FirstOrDefault( p => p.Id == entry.Key ).PhotoId = entry.Value.Id;
                 }
 
