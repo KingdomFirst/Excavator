@@ -99,14 +99,6 @@ namespace Excavator.F1
         protected static AttributeCache InFellowshipLoginAttribute;
         protected static AttributeCache SecondaryEmailAttribute;
 
-        // Flag to designate household role
-        public enum FamilyRole
-        {
-            Adult = 0,
-            Child = 1,
-            Visitor = 2
-        };
-
         #endregion Fields
 
         #region Methods
@@ -436,36 +428,5 @@ namespace Excavator.F1
         }
 
         #endregion Methods
-    }
-
-    /// <summary>
-    /// Helper class to store references to people that've been imported
-    /// </summary>
-    public class PersonKeys
-    {
-        /// <summary>
-        /// Stores the Rock PersonAliasId
-        /// </summary>
-        public int PersonAliasId;
-
-        /// <summary>
-        /// Stores the Rock PersonId
-        /// </summary>
-        public int PersonId;
-
-        /// <summary>
-        /// Stores the F1 Individual Id
-        /// </summary>
-        public int? IndividualId;
-
-        /// <summary>
-        /// Stores the F1 Household Id
-        /// </summary>
-        public int? HouseholdId;
-
-        /// <summary>
-        /// Stores how the person is connected to the family
-        /// </summary>
-        public F1Component.FamilyRole FamilyRoleId;
     }
 }

@@ -404,4 +404,43 @@ namespace Excavator.Utility
             {"zip", "application/zip"}
         };
     }
+
+    // Flag to designate household role
+    public enum FamilyRole
+    {
+        Adult = 0,
+        Child = 1,
+        Visitor = 2
+    };
+
+    /// <summary>
+    /// Helper class to store references to people that've been imported
+    /// </summary>
+    public class PersonKeys
+    {
+        /// <summary>
+        /// Stores the Rock PersonAliasId
+        /// </summary>
+        public int PersonAliasId;
+
+        /// <summary>
+        /// Stores the Rock PersonId
+        /// </summary>
+        public int PersonId;
+
+        /// <summary>
+        /// Stores a Individual (Foreign) Id
+        /// </summary>
+        public int? IndividualId;
+
+        /// <summary>
+        /// Stores a Household (Group) Id
+        /// </summary>
+        public int? HouseholdId;
+
+        /// <summary>
+        /// Stores how the person is connected to the family
+        /// </summary>
+        public FamilyRole FamilyRoleId;
+    }
 }
