@@ -12,6 +12,7 @@ using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
+using Rock.Storage;
 using Rock.Web.Cache;
 
 namespace Excavator.BinaryFile
@@ -104,14 +105,24 @@ namespace Excavator.BinaryFile
         /// <param name="newFileList">The new file list.</param>
         private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList )
         {
+            ProviderComponent storageProvider = null;
+
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
                 rockContext.BinaryFiles.AddRange( newFileList.Values );
-                rockContext.SaveChanges( DisableAuditing );
+                rockContext.SaveChanges();
 
                 foreach ( var entry in newFileList )
                 {
+                    var entityType = EntityTypeCache.Read( entry.Value.StorageEntityTypeId.Value );
+                    if ( storageProvider == null && entry.Value.StorageEntityTypeId != null )
+                    {
+                        storageProvider = ProviderContainer.GetComponent( entityType.Name );
+                    }
+
+                    storageProvider.SaveContent( entry.Value );
+
                     // set the path now that we have a guid -- this is normally set
                     // by the MEF storage component (which we don't have access to)
                     var accessType = entry.Value.MimeType.StartsWith( "image" ) ? "Image" : "File";
