@@ -443,4 +443,25 @@ namespace Excavator.Utility
         /// </summary>
         public FamilyRole FamilyRoleId;
     }
+
+    /// <summary>
+    /// Helper class to store document keys
+    /// </summary>
+    public class DocumentKeys
+    {
+        /// <summary>
+        /// Stores the Rock PersonId
+        /// </summary>
+        public int PersonId;
+
+        /// <summary>
+        /// Stores the attribute linked to this document
+        /// </summary>
+        public int AttributeId;
+
+        /// <summary>
+        /// Stores the actual document
+        /// </summary>
+        public BinaryFile File;
+    }
 }
