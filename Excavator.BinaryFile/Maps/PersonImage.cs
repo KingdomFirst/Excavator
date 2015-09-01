@@ -18,7 +18,7 @@ using Rock.Web.Cache;
 namespace Excavator.BinaryFile.PersonImage
 {
     /// <summary>
-    /// Partial of BinaryFile import that holds a Person map
+    /// Maps Person Images
     /// </summary>
     public class PersonImage : BinaryFileComponent, IBinaryFile
     {
@@ -29,17 +29,16 @@ namespace Excavator.BinaryFile.PersonImage
         /// <param name="fileType">Type of the person image file.</param>
         public void Map( ZipArchive folder, BinaryFileType fileType )
         {
-            int completed = 0;
+            // check for existing images
+            var lookupContext = new RockContext();
+            var existingImageList = new PersonService( lookupContext ).Queryable().AsNoTracking()
+                .Where( p => p.Photo != null )
+                .ToDictionary( p => p.Id, p => p.Photo.CreatedDateTime );
 
-            // check for existing photo?
-            //var lookupContext = new RockContext();
-            //var existingFileList = new PersonService( lookupContext ).Queryable().AsNoTracking()
-            //    .ToDictionary( p => p.Id, f => f.Photo );
-
-            var globalAttributesCache = GlobalAttributesCache.Read();
-
+            var emptyJsonObject = "{}";
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
 
+            int completed = 0;
             int totalRows = folder.Entries.Count;
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying files import ({0:N0} found.", totalRows ) );
@@ -57,35 +56,27 @@ namespace Excavator.BinaryFile.PersonImage
                 var personKeys = BinaryFileComponent.ImportedPeople.FirstOrDefault( p => p.IndividualId == personForeignId );
                 if ( personKeys != null )
                 {
-                    var rockFile = new Rock.Model.BinaryFile();
-                    rockFile.IsSystem = false;
-                    rockFile.IsTemporary = false;
-                    rockFile.FileName = file.Name;
-                    rockFile.BinaryFileTypeId = fileType.Id;
-                    rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
-                    rockFile.Description = string.Format( "Imported as {0}", file.Name );
-                    rockFile.SetStorageEntityTypeId( fileType.StorageEntityTypeId );
-                    rockFile.StorageEntitySettings = fileType.AttributeValues
-                        .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson();
-
-                    rockFile.DatabaseData = new BinaryFileData();
-                    string content = new StreamReader( file.Open() ).ReadToEnd();
-
-                    byte[] m_Bytes = System.Text.Encoding.UTF8.GetBytes( content );
-                    rockFile.DatabaseData.Content = m_Bytes;
-                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
-
                     // only import the most recent profile photo
-                    if ( newFileList.ContainsKey( personKeys.PersonId ) )
+
+                    if ( !existingImageList.ContainsKey( personKeys.PersonId ) || existingImageList[personKeys.PersonId].Value < file.LastWriteTime.DateTime )
                     {
-                        var existingPhoto = newFileList[personKeys.PersonId];
-                        if ( existingPhoto == null || existingPhoto.CreatedDateTime < rockFile.CreatedDateTime )
-                        {
-                            newFileList.Add( personKeys.PersonId, rockFile );
-                        }
-                    }
-                    else
-                    {
+                        var rockFile = new Rock.Model.BinaryFile();
+                        rockFile.IsSystem = false;
+                        rockFile.IsTemporary = false;
+                        rockFile.FileName = file.Name;
+                        rockFile.BinaryFileTypeId = fileType.Id;
+                        rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
+                        rockFile.Description = string.Format( "Imported as {0}", file.Name );
+                        rockFile.SetStorageEntityTypeId( fileType.StorageEntityTypeId );
+                        rockFile.StorageEntitySettings = fileType.AttributeValues
+                            .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ?? emptyJsonObject;
+
+                        rockFile.DatabaseData = new BinaryFileData();
+                        string content = new StreamReader( file.Open() ).ReadToEnd();
+
+                        byte[] m_Bytes = System.Text.Encoding.UTF8.GetBytes( content );
+                        rockFile.DatabaseData.Content = m_Bytes;
+                        rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                         newFileList.Add( personKeys.PersonId, rockFile );
                     }
 
@@ -99,7 +90,13 @@ namespace Excavator.BinaryFile.PersonImage
                     {
                         SaveFiles( newFileList );
 
-                        // Reset list
+                        // add image keys to master list
+                        foreach ( var newFile in newFileList )
+                        {
+                            existingImageList.AddOrReplace( newFile.Key, newFile.Value.CreatedDateTime );
+                        }
+
+                        // Reset batch list
                         newFileList.Clear();
                         ReportPartialProgress();
                     }
@@ -128,8 +125,8 @@ namespace Excavator.BinaryFile.PersonImage
 
                 foreach ( var entry in newFileList )
                 {
-                    // set the path now that we have a guid -- this is normally set by
-                    // the MEF storage component which we don't have access to
+                    // set the path now that we have a guid -- this is normally set
+                    // by the MEF storage component (which we don't have access to)
                     var accessType = entry.Value.MimeType.StartsWith( "image" ) ? "Image" : "File";
                     entry.Value.Path = string.Format( "~/Get{0}.ashx?guid={1}", accessType, entry.Value.Guid );
 
