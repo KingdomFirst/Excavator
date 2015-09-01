@@ -138,6 +138,7 @@ namespace Excavator.BinaryFile
         public override int TransformData( Dictionary<string, string> settings )
         {
             var importUser = settings["ImportUser"];
+            int totalCount = 0;
 
             ReportProgress( 0, "Starting health checks..." );
             var rockContext = new RockContext();
@@ -164,6 +165,7 @@ namespace Excavator.BinaryFile
                 if ( worker != null )
                 {
                     worker.Map( archiveFolder, specificFileType ?? defaultFileType );
+                    totalCount += archiveFolder.Entries.Count;
                 }
                 else
                 {
@@ -172,8 +174,8 @@ namespace Excavator.BinaryFile
             }
 
             // Report the final imported count
-            ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", 100 ) );
-            return 0;
+            ReportProgress( 100, string.Format( "Completed import: {0:N0} records imported.", totalCount ) );
+            return totalCount;
         }
 
         /// <summary>
