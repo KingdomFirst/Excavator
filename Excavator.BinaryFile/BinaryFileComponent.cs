@@ -154,20 +154,20 @@ namespace Excavator.BinaryFile
             LoadRockData( rockContext );
 
             // only import things that the user checked
-            var selectedFiles = DataNodes.Where( n => n.Checked != false ).ToList();
-
-            foreach ( var file in selectedFiles )
+            foreach ( var selectedFile in DataNodes.Where( n => n.Checked != false ) )
             {
-                var archiveFolder = new ZipArchive( new FileStream( file.Path, FileMode.Open ) );
+                var defaultFileType = FileTypes.FirstOrDefault( f => f.Name == "Default" );
+                var specificFileType = FileTypes.FirstOrDefault( t => selectedFile.Name.RemoveWhitespace().StartsWith( t.Name.RemoveWhitespace() ) );
 
-                IBinaryFile worker = IMapAdapterFactory.GetAdapter( file.Name );
+                var archiveFolder = new ZipArchive( new FileStream( selectedFile.Path, FileMode.Open ) );
+                IBinaryFile worker = IMapAdapterFactory.GetAdapter( selectedFile.Name );
                 if ( worker != null )
                 {
-                    worker.Map( archiveFolder, FileTypes.FirstOrDefault( t => file.Name.RemoveWhitespace().StartsWith( t.Name.RemoveWhitespace() ) ) );
+                    worker.Map( archiveFolder, specificFileType ?? defaultFileType );
                 }
                 else
                 {
-                    LogException( "Binary File", string.Format( "Unknown File: {0} does not start with the name of a known data map.", file.Name ) );
+                    LogException( "Binary File", string.Format( "Unknown File: {0} does not start with the name of a known data map.", selectedFile.Name ) );
                 }
             }
 
@@ -274,9 +274,7 @@ namespace Excavator.BinaryFile
 
             var configFileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
 
-            // ensure the file matches a config type?
-            //if ( configFileTypes != null && configFileTypes.AllKeys.Any( k => fileName.StartsWith( k.RemoveWhitespace() ) ) )
-            //{
+            // by default will assume a ministry document
             var iBinaryFileType = typeof( IBinaryFile );
             var mappedFileTypes = iBinaryFileType.Assembly.ExportedTypes
                 .Where( p => iBinaryFileType.IsAssignableFrom( p ) && !p.IsInterface );
@@ -289,8 +287,6 @@ namespace Excavator.BinaryFile
             {
                 adapter = new MinistryDocument();
             }
-
-            //}
 
             return adapter;
         }
