@@ -272,21 +272,24 @@ namespace Excavator.F1
                     string contributionType = row["Contribution_Type_Name"].ToString().ToLower();
                     if ( contributionType != null )
                     {
+                        transaction.FinancialPaymentDetail = new FinancialPaymentDetail();
+
                         if ( contributionType == "ach" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeACH;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeACH;
                         }
                         else if ( contributionType == "cash" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeCash;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeCash;
                         }
                         else if ( contributionType == "check" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeCheck;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeCheck;
                         }
                         else if ( contributionType == "credit card" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeCreditCard;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeCreditCard;
+                            // set FTD.CreditCardTypeValueId once we have access to that column
                         }
                         else
                         {
