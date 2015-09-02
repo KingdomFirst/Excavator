@@ -33,7 +33,9 @@ using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
+using Rock.Storage.Provider;
 using Rock.Web.Cache;
+using Database = Rock.Storage.Provider.Database;
 
 namespace Excavator.BinaryFile
 {
@@ -69,6 +71,16 @@ namespace Excavator.BinaryFile
 
         /// All the people who've been imported
         protected static List<PersonKeys> ImportedPeople;
+
+        /// <summary>
+        /// The database provider
+        /// </summary>
+        protected static Database DatabaseProvider;
+
+        /// <summary>
+        /// The filesystem provider
+        /// </summary>
+        protected static FileSystem FileSystemProvider;
 
         // Database StorageEntity Type
         protected static int? DatabaseStorageTypeId;
@@ -184,6 +196,10 @@ namespace Excavator.BinaryFile
         private void LoadRockData( RockContext lookupContext = null )
         {
             lookupContext = lookupContext ?? new RockContext();
+
+            // initialize file providers
+            DatabaseProvider = new Rock.Storage.Provider.Database();
+            FileSystemProvider = new Rock.Storage.Provider.FileSystem();
 
             // core-specified attribute guid for setting file root path
             RootPathAttribute = AttributeCache.Read( new Guid( "3CAFA34D-9208-439B-A046-CB727FB729DE" ) );
