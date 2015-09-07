@@ -131,7 +131,7 @@ namespace Excavator.F1
                 {
                     var batch = new FinancialBatch();
                     batch.CreatedByPersonAliasId = ImportPersonAliasId;
-                    batch.ForeignId = batchId.ToString();
+                    batch.ForeignId = batchId;
                     batch.Status = batchStatusClosed;
 
                     string name = row["BatchName"] as string;
@@ -166,7 +166,7 @@ namespace Excavator.F1
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveFinancialBatches( newBatches );
-                        newBatches.ForEach( b => ImportedBatches.Add( b.ForeignId.AsType<int>(), (int?)b.Id ) );
+                        newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -176,7 +176,7 @@ namespace Excavator.F1
             if ( newBatches.Any() )
             {
                 SaveFinancialBatches( newBatches );
-                newBatches.ForEach( b => ImportedBatches.Add( b.ForeignId.AsType<int>(), (int?)b.Id ) );
+                newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -220,7 +220,7 @@ namespace Excavator.F1
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable().AsNoTracking()
                .Where( c => c.ForeignId != null )
-               .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
+               .ToDictionary( t => t.ForeignId, t => (int?)t.Id );
 
             // List for batching new contributions
             var newTransactions = new List<FinancialTransaction>();
@@ -240,7 +240,7 @@ namespace Excavator.F1
                     var transaction = new FinancialTransaction();
                     transaction.CreatedByPersonAliasId = ImportPersonAliasId;
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
-                    transaction.ForeignId = contributionId.ToString();
+                    transaction.ForeignId = contributionId;
 
                     var personKeys = GetPersonKeys( individualId, householdId );
                     if ( personKeys != null && personKeys.PersonAliasId > 0 )

@@ -380,7 +380,7 @@ namespace Excavator.F1
                     {
                         PersonAliasId = aliases.Select( a => a.PersonAliasId ).FirstOrDefault(),
                         PersonId = household.PersonId,
-                        IndividualId = aliases.Select( a => a.IndividualId.AsType<int?>() ).FirstOrDefault(),
+                        IndividualId = aliases.Select( a => a.IndividualId ).FirstOrDefault(),
                         HouseholdId = household.HouseholdId.AsType<int?>(),
                         FamilyRoleId = aliases.Select( a => a.FamilyRole.ConvertToEnum<FamilyRole>( 0 ) ).FirstOrDefault()
                     }
@@ -388,7 +388,7 @@ namespace Excavator.F1
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
-                .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
+                .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
         }
 
         /// <summary>

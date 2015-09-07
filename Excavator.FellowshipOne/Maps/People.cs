@@ -93,7 +93,7 @@ namespace Excavator.F1
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
                     businessGroup.Members.Add( groupMember );
                     businessGroup.GroupTypeId = familyGroupTypeId;
-                    businessGroup.ForeignId = householdId.ToString();
+                    businessGroup.ForeignId = householdId;
                     businessList.Add( businessGroup );
 
                     completed++;
@@ -166,7 +166,7 @@ namespace Excavator.F1
                         PersonAliasId = (int)m.Person.PrimaryAliasId,
                         PersonId = m.Person.Id,
                         IndividualId = null,
-                        HouseholdId = m.Group.ForeignId.AsType<int?>(),
+                        HouseholdId = m.Group.ForeignId,
                         FamilyRoleId = FamilyRole.Adult
                     } ).ToList()
                     );
@@ -278,7 +278,7 @@ namespace Excavator.F1
 
                         person.CreatedByPersonAliasId = ImportPersonAliasId;
                         person.RecordTypeValueId = personRecordTypeId;
-                        person.ForeignId = individualId.ToString();
+                        person.ForeignId = individualId;
 
                         var gender = row["Gender"] as string;
                         if ( gender != null )
@@ -446,14 +446,14 @@ namespace Excavator.F1
                         {
                             householdCampusList.Add( currentCampus );
                             familyGroup.Members.Add( groupMember );
-                            familyGroup.ForeignId = householdId.ToString();
+                            familyGroup.ForeignId = householdId;
                         }
                         else
                         {
                             var visitorGroup = new Group();
                             visitorGroup.Members.Add( groupMember );
                             visitorGroup.GroupTypeId = familyGroupTypeId;
-                            visitorGroup.ForeignId = householdId.ToString();
+                            visitorGroup.ForeignId = householdId;
                             visitorGroup.Name = person.LastName + " Family";
                             visitorGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( currentCampus ) || c.ShortCode == currentCampus )
                                 .Select( c => (int?)c.Id ).FirstOrDefault();
@@ -527,7 +527,7 @@ namespace Excavator.F1
                 rockContext.Groups.AddRange( familyList );
                 rockContext.SaveChanges( DisableAuditing );
 
-                foreach ( var familyGroups in familyList.GroupBy<Group, int?>( g => g.ForeignId.AsType<int?>() ) )
+                foreach ( var familyGroups in familyList.GroupBy<Group, int?>( g => g.ForeignId ) )
                 {
                     bool visitorsExist = familyGroups.Count() > 1;
                     foreach ( var newFamilyGroup in familyGroups )
@@ -652,8 +652,8 @@ namespace Excavator.F1
                     {
                         PersonAliasId = (int)m.Person.PrimaryAliasId,
                         PersonId = m.Person.Id,
-                        IndividualId = m.Person.ForeignId.AsType<int?>(),
-                        HouseholdId = m.Group.ForeignId.AsType<int?>(),
+                        IndividualId = m.Person.ForeignId,
+                        HouseholdId = m.Group.ForeignId,
                         FamilyRoleId = m.Person.ReviewReasonNote.ConvertToEnum<FamilyRole>()
                     } ).ToList()
                     );
@@ -666,8 +666,8 @@ namespace Excavator.F1
                     {
                         PersonAliasId = (int)m.Person.PrimaryAliasId,
                         PersonId = m.Person.Id,
-                        IndividualId = m.Person.ForeignId.AsType<int?>(),
-                        HouseholdId = m.Group.ForeignId.AsType<int?>(),
+                        IndividualId = m.Person.ForeignId,
+                        HouseholdId = m.Group.ForeignId,
                         FamilyRoleId = m.Person.ReviewReasonNote.ConvertToEnum<FamilyRole>()
                     } ).ToList()
                     );
@@ -733,7 +733,7 @@ namespace Excavator.F1
                         user.IsConfirmed = isEnabled;
                         user.UserName = userName.Trim();
                         user.PersonId = personKeys.PersonId;
-                        user.ForeignId = userId.ToString();
+                        user.ForeignId = userId;
 
                         if ( isStaff == true )
                         {

@@ -153,8 +153,8 @@ namespace Excavator.CSV
                 int groupRoleId = adultRoleId;
                 bool isFamilyRelationship = true;
 
-                string rowFamilyId = row[FamilyId];
-                string rowPersonId = row[PersonId];
+                int? rowFamilyId = row[FamilyId].AsType<int?>();
+                int? rowPersonId = row[PersonId].AsType<int?>();
                 string rowFamilyName = row[FamilyName];
 
                 // Check that this person isn't already in our data
@@ -591,7 +591,7 @@ namespace Excavator.CSV
         /// <param name="rowFamilyName">Name of the row family.</param>
         /// <param name="rowFamilyId">The row family identifier.</param>
         /// <returns></returns>
-        private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyId )
+        private Group CreateFamilyGroup( string rowFamilyName, int? rowFamilyId )
         {
             var familyGroup = new Group();
             if ( !string.IsNullOrWhiteSpace( rowFamilyName ) )
@@ -604,8 +604,8 @@ namespace Excavator.CSV
             }
 
             familyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
-            familyGroup.ForeignId = rowFamilyId.ToString();
             familyGroup.GroupTypeId = FamilyGroupTypeId;
+            familyGroup.ForeignId = rowFamilyId;
             return familyGroup;
         }
 
@@ -645,7 +645,7 @@ namespace Excavator.CSV
 
                     ImportedPeople.AddRange( newFamilyList );
 
-                    foreach ( var familyGroups in newFamilyList.GroupBy<Group, string>( g => g.ForeignId ) )
+                    foreach ( var familyGroups in newFamilyList.GroupBy<Group, int>( g => (int)g.ForeignId ) )
                     {
                         bool visitorsExist = visitorList.Any() && familyGroups.Any();
                         foreach ( var newFamilyGroup in familyGroups )

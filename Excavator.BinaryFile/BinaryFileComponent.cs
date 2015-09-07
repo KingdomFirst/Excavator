@@ -264,7 +264,7 @@ namespace Excavator.BinaryFile
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId.AsType<int?>(),
+                    IndividualId = pa.ForeignId,
                 } ).ToList();
         }
 

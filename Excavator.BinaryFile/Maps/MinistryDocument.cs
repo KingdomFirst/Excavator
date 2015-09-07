@@ -12,6 +12,7 @@ using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
+using Rock.Storage;
 using Rock.Web.Cache;
 
 namespace Excavator.BinaryFile
@@ -70,17 +71,14 @@ namespace Excavator.BinaryFile
                     rockFile.FileName = file.Name;
                     rockFile.BinaryFileTypeId = ministryFileType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
+                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( ministryFileType.StorageEntityTypeId );
                     rockFile.StorageEntitySettings = ministryFileType.AttributeValues
                         .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ?? emptyJsonObject;
 
-                    rockFile.DatabaseData = new BinaryFileData();
-                    string content = new StreamReader( file.Open() ).ReadToEnd();
-
-                    byte[] m_Bytes = System.Text.Encoding.UTF8.GetBytes( content );
-                    rockFile.DatabaseData.Content = m_Bytes;
-                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
+                    var fileContent = new StreamReader( file.Open() ).ReadToEnd();
+                    rockFile.ContentStream = new MemoryStream( Encoding.UTF8.GetBytes( fileContent ) );
 
                     var attributePattern = "[A-Za-z]+";
                     var attributeName = Regex.Match( parsedFileName[3], attributePattern );
@@ -149,14 +147,26 @@ namespace Excavator.BinaryFile
             rockContext.WrapTransaction( () =>
             {
                 rockContext.BinaryFiles.AddRange( newFileList.Select( f => f.File ) );
-                rockContext.SaveChanges( DisableAuditing );
+                rockContext.SaveChanges();
 
                 foreach ( var entry in newFileList )
                 {
-                    // set the path now that we have a guid -- this is normally set
-                    // by the MEF storage component (which we don't have access to)
-                    var accessType = entry.File.MimeType.StartsWith( "image" ) ? "Image" : "File";
-                    entry.File.Path = string.Format( "~/Get{0}.ashx?guid={1}", accessType, entry.File.Guid );
+                    if ( entry.File != null )
+                    {
+                        var storageProvider = entry.File.StorageEntityTypeId == DatabaseProvider.EntityType.Id
+                            ? (ProviderComponent)DatabaseProvider
+                            : (ProviderComponent)FileSystemProvider;
+
+                        if ( storageProvider != null )
+                        {
+                            storageProvider.SaveContent( entry.File );
+                            entry.File.Path = storageProvider.GetPath( entry.File );
+                        }
+                        else
+                        {
+                            LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                        }
+                    }
 
                     // set person attribute value to this binary file guid
                     var attributeValue = rockContext.AttributeValues.FirstOrDefault( p => p.AttributeId == entry.AttributeId && p.EntityId == entry.PersonId );
