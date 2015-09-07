@@ -133,6 +133,17 @@ namespace Excavator.Utility
             return Regex.IsMatch( email, @"^(?!((http|https)://|www.))[\w\.\'_%-]+(\+[\w-]*)?@([\w-]+\.)+[\w-]+$" );
         }
 
+        /// <summary>
+        /// Gets the location without a verify.
+        /// </summary>
+        /// <param name="street1">The street1.</param>
+        /// <param name="street2">The street2.</param>
+        /// <param name="city">The city.</param>
+        /// <param name="state">The state.</param>
+        /// <param name="postalCode">The postal code.</param>
+        /// <param name="country">The country.</param>
+        /// <param name="verifyLocation">if set to <c>true</c> [verify location].</param>
+        /// <returns></returns>
         public static Location GetWithoutVerify( string street1, string street2, string city, string state, string postalCode, string country, bool verifyLocation = false )
         {
             var rockContext = new RockContext();
