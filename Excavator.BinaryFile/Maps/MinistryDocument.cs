@@ -1,12 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration;
-using System.Data.Entity;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using Excavator.Utility;
 using Rock;
@@ -36,6 +31,10 @@ namespace Excavator.BinaryFile
             var existingAttributes = new AttributeService( lookupContext ).GetByFieldTypeId( binaryFieldTypeId )
                 .Where( a => a.EntityTypeId == personEntityTypeId )
                 .ToDictionary( a => a.Name, a => a.Id );
+
+            var storageProvider = ministryFileType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
+                ? (ProviderComponent)DatabaseProvider
+                : (ProviderComponent)FileSystemProvider;
 
             var emptyJsonObject = "{}";
             var newFileList = new List<DocumentKeys>();
@@ -77,8 +76,13 @@ namespace Excavator.BinaryFile
                     rockFile.StorageEntitySettings = ministryFileType.AttributeValues
                         .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ?? emptyJsonObject;
 
-                    var fileContent = new StreamReader( file.Open() ).ReadToEnd();
-                    rockFile.ContentStream = new MemoryStream( Encoding.UTF8.GetBytes( fileContent ) );
+                    // use base stream instead of file stream to keep the byte[]
+                    // NOTE: if byte[] converts to a string it will corrupt the stream
+                    using ( var fileContent = new StreamReader( file.Open() ) )
+                    {
+                        var baseStream = fileContent.BaseStream.ReadBytesToEnd();
+                        rockFile.ContentStream = new MemoryStream( baseStream );
+                    }
 
                     var attributePattern = "[A-Za-z]+";
                     var attributeName = Regex.Match( parsedFileName[3], attributePattern );
@@ -120,7 +124,7 @@ namespace Excavator.BinaryFile
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        SaveFiles( newFileList );
+                        SaveFiles( newFileList, storageProvider );
 
                         // Reset list
                         newFileList.Clear();
@@ -131,7 +135,7 @@ namespace Excavator.BinaryFile
 
             if ( newFileList.Any() )
             {
-                SaveFiles( newFileList );
+                SaveFiles( newFileList, storageProvider );
             }
 
             ReportProgress( 100, string.Format( "Finished files import: {0:N0} addresses imported.", completed ) );
@@ -141,7 +145,7 @@ namespace Excavator.BinaryFile
         /// Saves the files.
         /// </summary>
         /// <param name="newFileList">The new file list.</param>
-        private static void SaveFiles( List<DocumentKeys> newFileList )
+        private static void SaveFiles( List<DocumentKeys> newFileList, ProviderComponent storageProvider )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
@@ -153,10 +157,6 @@ namespace Excavator.BinaryFile
                 {
                     if ( entry.File != null )
                     {
-                        var storageProvider = entry.File.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                            ? (ProviderComponent)DatabaseProvider
-                            : (ProviderComponent)FileSystemProvider;
-
                         if ( storageProvider != null )
                         {
                             storageProvider.SaveContent( entry.File );

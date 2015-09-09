@@ -1,20 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration;
+﻿using System.Collections.Generic;
 using System.Data.Entity;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Storage;
-using Rock.Storage.Provider;
-using Rock.Web.Cache;
 
 namespace Excavator.BinaryFile
 {
@@ -37,6 +30,10 @@ namespace Excavator.BinaryFile
             var transactionIdList = new FinancialTransactionService( lookupContext )
                 .Queryable().AsNoTracking().Where( t => t.ForeignId != null )
                 .ToDictionary( t => (int)t.ForeignId, t => t.Id );
+
+            var storageProvider = transactionImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
+                ? (ProviderComponent)DatabaseProvider
+                : (ProviderComponent)FileSystemProvider;
 
             int completed = 0;
             int totalRows = folder.Entries.Count;
@@ -67,8 +64,14 @@ namespace Excavator.BinaryFile
                     rockFile.StorageEntitySettings = transactionImageType.AttributeValues
                         .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ?? emptyJsonObject;
 
-                    var fileContent = new StreamReader( file.Open() ).ReadToEnd();
-                    rockFile.ContentStream = new MemoryStream( Encoding.UTF8.GetBytes( fileContent ) );
+                    // use base stream instead of file stream to keep the byte[]
+                    // NOTE: if byte[] converts to a string it will corrupt the stream
+                    using ( var fileContent = new StreamReader( file.Open() ) )
+                    {
+                        var baseStream = fileContent.BaseStream.ReadBytesToEnd();
+                        rockFile.ContentStream = new MemoryStream( baseStream );
+                    }
+
                     newFileList.Add( transactionIdList[(int)transactionId], rockFile );
 
                     completed++;
@@ -79,7 +82,7 @@ namespace Excavator.BinaryFile
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        SaveFiles( newFileList );
+                        SaveFiles( newFileList, storageProvider );
 
                         // Reset list
                         newFileList.Clear();
@@ -90,7 +93,7 @@ namespace Excavator.BinaryFile
 
             if ( newFileList.Any() )
             {
-                SaveFiles( newFileList );
+                SaveFiles( newFileList, storageProvider );
             }
 
             ReportProgress( 100, string.Format( "Finished files import: {0:N0} addresses imported.", completed ) );
@@ -100,7 +103,7 @@ namespace Excavator.BinaryFile
         /// Saves the files.
         /// </summary>
         /// <param name="newFileList">The new file list.</param>
-        private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList )
+        private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList, ProviderComponent storageProvider )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
@@ -112,10 +115,6 @@ namespace Excavator.BinaryFile
                 {
                     if ( entry.Value != null )
                     {
-                        var storageProvider = entry.Value.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                            ? (ProviderComponent)DatabaseProvider
-                            : (ProviderComponent)FileSystemProvider;
-
                         if ( storageProvider != null )
                         {
                             storageProvider.SaveContent( entry.Value );

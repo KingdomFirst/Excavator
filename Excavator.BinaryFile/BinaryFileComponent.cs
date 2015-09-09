@@ -18,17 +18,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
-using System.Data;
 using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using Excavator;
-using Excavator.BinaryFile;
 using Excavator.Utility;
 using Rock;
 using Rock.Data;
