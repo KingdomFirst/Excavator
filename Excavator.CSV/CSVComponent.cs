@@ -193,6 +193,7 @@ namespace Excavator.CSV
             List<CSVInstance> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
             ReportProgress( 0, "Starting data import..." );
+
             // Person data is important, so load it first
             if ( selectedCsvData.Any( d => d.RecordType == CSVInstance.RockDataType.INDIVIDUAL ) )
             {
@@ -246,7 +247,8 @@ namespace Excavator.CSV
             ReportProgress( 0, "Checking for existing people..." );
 
             // Don't track groups in this context, just use it as a static reference
-            ImportedPeople = lookupContext.Groups.AsNoTracking().Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignId != null ).ToList();
+            ImportedPeople = lookupContext.Groups.AsNoTracking()
+                .Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignKey != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 

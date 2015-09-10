@@ -31,14 +31,14 @@ namespace Excavator.CSV
             int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
 
-            var newGroupLocations = new Dictionary<GroupLocation, int>();
+            var newGroupLocations = new Dictionary<GroupLocation, string>();
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
             var updatedFamilyList = new List<Group>();
 
             var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
-            string currentFamilyId = string.Empty;
+            string currentFamilyKey = string.Empty;
             var importDate = DateTime.Now;
             int completed = 0;
 
@@ -48,18 +48,18 @@ namespace Excavator.CSV
             // Uses a look-ahead enumerator: this call will move to the next record immediately
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
-                //int? rowFamilyId = row[FamilyId] as int?;
                 string rowFamilyKey = row[FamilyId];
-                int? rowFamilyId = rowFamilyKey.AsType<int?>();
+                //int? rowFamilyId = rowFamilyKey.AsType<int?>();
                 string rowFamilyName = row[FamilyName];
 
-                if ( rowFamilyId != null && rowFamilyId != currentFamilyGroup.ForeignId )
+                if ( rowFamilyKey != null && rowFamilyKey != currentFamilyGroup.ForeignKey )
                 {
-                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
+                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignKey == rowFamilyKey );
                     if ( currentFamilyGroup == null )
                     {
                         currentFamilyGroup = new Group();
-                        currentFamilyGroup.ForeignId = rowFamilyId;
+                        currentFamilyGroup.ForeignKey = rowFamilyKey;
+                        //currentFamilyGroup.ForeignId = rowFamilyId;
                         currentFamilyGroup.Name = row[FamilyName];
                         currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentFamilyGroup.GroupTypeId = familyGroupTypeId;
@@ -106,7 +106,7 @@ namespace Excavator.CSV
                         primaryLocation.IsMailingLocation = true;
                         primaryLocation.IsMappedLocation = true;
                         primaryLocation.GroupLocationTypeValueId = homeLocationTypeId;
-                        newGroupLocations.Add( primaryLocation, (int)rowFamilyId );
+                        newGroupLocations.Add( primaryLocation, rowFamilyKey );
                     }
 
                     string famSecondAddress = row[SecondaryAddress];
@@ -125,7 +125,7 @@ namespace Excavator.CSV
                         secondaryLocation.IsMailingLocation = true;
                         secondaryLocation.IsMappedLocation = true;
                         secondaryLocation.GroupLocationTypeValueId = workLocationTypeId;
-                        newGroupLocations.Add( secondaryLocation, (int)rowFamilyId );
+                        newGroupLocations.Add( secondaryLocation, rowFamilyKey );
                     }
 
                     DateTime createdDateValue;
@@ -176,7 +176,7 @@ namespace Excavator.CSV
         /// <summary>
         /// Saves all family changes.
         /// </summary>
-        private void SaveFamilies( List<Group> newFamilyList, Dictionary<GroupLocation, int> newGroupLocations )
+        private void SaveFamilies( List<Group> newFamilyList, Dictionary<GroupLocation, string> newGroupLocations )
         {
             var rockContext = new RockContext();
 
@@ -196,10 +196,10 @@ namespace Excavator.CSV
             // Now save locations
             if ( newGroupLocations.Any() )
             {
-                // Add updated family id to locations
+                // Set updated family id on locations
                 foreach ( var locationPair in newGroupLocations )
                 {
-                    int? familyGroupId = ImportedPeople.Where( g => g.ForeignId == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
+                    int? familyGroupId = ImportedPeople.Where( g => g.ForeignKey == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
                     if ( familyGroupId != null )
                     {
                         locationPair.Key.GroupId = (int)familyGroupId;
