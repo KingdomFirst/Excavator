@@ -765,7 +765,7 @@ namespace Excavator.F1
                             if ( person != null && string.IsNullOrWhiteSpace( person.Email ) )
                             {
                                 person.Email = userEmail.Left( 75 );
-                                person.IsEmailActive = isEnabled;
+                                person.IsEmailActive = (bool)( isEnabled ?? true );
                                 person.EmailPreference = EmailPreference.EmailAllowed;
                                 person.EmailNote = userTitle;
                                 lookupContext.SaveChanges( DisableAuditing );
