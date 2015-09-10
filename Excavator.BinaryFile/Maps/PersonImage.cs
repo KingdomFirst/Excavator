@@ -73,8 +73,7 @@ namespace Excavator.BinaryFile.PersonImage
                         // NOTE: if byte[] converts to a string it will corrupt the stream
                         using ( var fileContent = new StreamReader( file.Open() ) )
                         {
-                            var baseStream = fileContent.BaseStream.ReadBytesToEnd();
-                            rockFile.ContentStream = new MemoryStream( baseStream );
+                            rockFile.ContentStream = new MemoryStream( fileContent.BaseStream.ReadBytesToEnd() );
                         }
 
                         newFileList.Add( personKeys.PersonId, rockFile );

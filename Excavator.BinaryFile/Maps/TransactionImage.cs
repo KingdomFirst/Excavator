@@ -68,8 +68,7 @@ namespace Excavator.BinaryFile
                     // NOTE: if byte[] converts to a string it will corrupt the stream
                     using ( var fileContent = new StreamReader( file.Open() ) )
                     {
-                        var baseStream = fileContent.BaseStream.ReadBytesToEnd();
-                        rockFile.ContentStream = new MemoryStream( baseStream );
+                        rockFile.ContentStream = new MemoryStream( fileContent.BaseStream.ReadBytesToEnd() );
                     }
 
                     newFileList.Add( transactionIdList[(int)transactionId], rockFile );
