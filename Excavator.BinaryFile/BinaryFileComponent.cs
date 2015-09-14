@@ -228,6 +228,7 @@ namespace Excavator.BinaryFile
                     var typeValue = binaryTypeSettings[typeKey];
                     if ( typeValue != null )
                     {
+                        // #TODO: support additional storage types (like AWS?)
                         newFileType.StorageEntityTypeId = typeValue.Equals( "Database" ) ? DatabaseStorageTypeId : FileSystemStorageTypeId;
                         newFileType.Attributes = new Dictionary<string, AttributeCache>();
                         newFileType.AttributeValues = new Dictionary<string, AttributeValue>();
@@ -247,10 +248,16 @@ namespace Excavator.BinaryFile
                 }
             }
 
-            // load attributes to get the default storage location
-            foreach ( var type in FileTypes )
+            // load attributes on file system types to get the default storage location
+            foreach ( var type in FileTypes.Where( t => t.StorageEntityTypeId == FileSystemStorageTypeId ) )
             {
                 type.LoadAttributes( lookupContext );
+
+                // override the configured storage location since we can't handle relative paths
+                if ( binaryTypeSettings.AllKeys.Any( k => type.Name.Equals( k ) ) )
+                {
+                    type.AttributeValues["RootPath"].Value = binaryTypeSettings[type.Name];
+                }
             }
 
             // get a list of all the imported people keys
