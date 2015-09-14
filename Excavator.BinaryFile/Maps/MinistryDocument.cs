@@ -26,9 +26,9 @@ namespace Excavator.BinaryFile
         {
             var lookupContext = new RockContext();
             var personEntityTypeId = EntityTypeCache.GetId<Person>();
-            var binaryFieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.BINARY_FILE.AsGuid(), lookupContext ).Id;
+            var fileFieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.FILE.AsGuid(), lookupContext ).Id;
 
-            var existingAttributes = new AttributeService( lookupContext ).GetByFieldTypeId( binaryFieldTypeId )
+            var existingAttributes = new AttributeService( lookupContext ).GetByFieldTypeId( fileFieldTypeId )
                 .Where( a => a.EntityTypeId == personEntityTypeId )
                 .ToDictionary( a => a.Name, a => a.Id );
 
@@ -73,8 +73,13 @@ namespace Excavator.BinaryFile
                     rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( ministryFileType.StorageEntityTypeId );
-                    rockFile.StorageEntitySettings = ministryFileType.AttributeValues
-                        .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ?? emptyJsonObject;
+                    rockFile.StorageEntitySettings = emptyJsonObject;
+
+                    if ( ministryFileType.AttributeValues.Any() )
+                    {
+                        rockFile.StorageEntitySettings = ministryFileType.AttributeValues
+                            .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson();
+                    }
 
                     // use base stream instead of file stream to keep the byte[]
                     // NOTE: if byte[] converts to a string it will corrupt the stream
@@ -88,19 +93,25 @@ namespace Excavator.BinaryFile
                     if ( !existingAttributes.ContainsKey( attributeName.Value ) )
                     {
                         var newAttribute = new Attribute();
-                        newAttribute.FieldTypeId = binaryFieldTypeId;
+                        newAttribute.FieldTypeId = fileFieldTypeId;
                         newAttribute.EntityTypeId = personEntityTypeId;
                         newAttribute.EntityTypeQualifierColumn = string.Empty;
                         newAttribute.EntityTypeQualifierValue = string.Empty;
                         newAttribute.Key = attributeName.Value.RemoveWhitespace();
                         newAttribute.Name = attributeName.Value;
-                        newAttribute.Description = attributeName.Value + " created by Binary File import";
+                        newAttribute.Description = attributeName.Value + " created by binary file import";
                         newAttribute.IsGridColumn = false;
                         newAttribute.IsMultiValue = false;
                         newAttribute.IsRequired = false;
                         newAttribute.AllowSearch = false;
                         newAttribute.IsSystem = false;
                         newAttribute.Order = 0;
+
+                        newAttribute.AttributeQualifiers.Add( new AttributeQualifier()
+                        {
+                            Key = "binaryFileType",
+                            Value = ministryFileType.Guid.ToString()
+                        } );
 
                         lookupContext.Attributes.Add( newAttribute );
                         lookupContext.SaveChanges();

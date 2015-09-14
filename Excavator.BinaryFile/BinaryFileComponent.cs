@@ -221,6 +221,7 @@ namespace Excavator.BinaryFile
                 if ( newFileType == null )
                 {
                     newFileType = new BinaryFileType();
+                    lookupContext.BinaryFileTypes.Add( newFileType );
                     newFileType.Name = typeKey;
                     newFileType.Description = typeKey;
                     newFileType.AllowCaching = true;
@@ -233,17 +234,24 @@ namespace Excavator.BinaryFile
                         newFileType.Attributes = new Dictionary<string, AttributeCache>();
                         newFileType.AttributeValues = new Dictionary<string, AttributeValue>();
 
-                        newFileType.Attributes.Add( RootPathAttribute.Key, RootPathAttribute );
-                        newFileType.AttributeValues.Add( RootPathAttribute.Key, new AttributeValue()
+                        // save changes to binary type to get an ID
+                        lookupContext.SaveChanges();
+
+                        var newRootPath = new AttributeValue()
                         {
                             AttributeId = RootPathAttribute.Id,
+                            EntityId = newFileType.Id,
                             Value = typeValue
-                        } );
+                        };
+
+                        newFileType.Attributes.Add( RootPathAttribute.Key, RootPathAttribute );
+                        newFileType.AttributeValues.Add( RootPathAttribute.Key, newRootPath );
+
+                        // save attribute values with the current type ID
+                        lookupContext.AttributeValues.Add( newRootPath );
                     }
 
-                    lookupContext.BinaryFileTypes.Add( newFileType );
                     lookupContext.SaveChanges();
-
                     FileTypes.Add( newFileType );
                 }
             }
