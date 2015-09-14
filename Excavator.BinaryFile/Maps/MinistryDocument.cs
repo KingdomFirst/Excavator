@@ -30,7 +30,7 @@ namespace Excavator.BinaryFile
 
             var existingAttributes = new AttributeService( lookupContext ).GetByFieldTypeId( fileFieldTypeId )
                 .Where( a => a.EntityTypeId == personEntityTypeId )
-                .ToDictionary( a => a.Name, a => a.Id );
+                .ToDictionary( a => a.Key, a => a.Id );
 
             var storageProvider = ministryFileType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
                 ? (ProviderComponent)DatabaseProvider
@@ -90,14 +90,15 @@ namespace Excavator.BinaryFile
 
                     var attributePattern = "[A-Za-z]+";
                     var attributeName = Regex.Match( parsedFileName[3], attributePattern );
-                    if ( !existingAttributes.ContainsKey( attributeName.Value ) )
+                    var attributeKey = attributeName.Value.RemoveWhitespace();
+                    if ( !existingAttributes.ContainsKey( attributeKey ) )
                     {
                         var newAttribute = new Attribute();
                         newAttribute.FieldTypeId = fileFieldTypeId;
                         newAttribute.EntityTypeId = personEntityTypeId;
                         newAttribute.EntityTypeQualifierColumn = string.Empty;
                         newAttribute.EntityTypeQualifierValue = string.Empty;
-                        newAttribute.Key = attributeName.Value.RemoveWhitespace();
+                        newAttribute.Key = attributeKey;
                         newAttribute.Name = attributeName.Value;
                         newAttribute.Description = attributeName.Value + " created by binary file import";
                         newAttribute.IsGridColumn = false;
@@ -116,13 +117,13 @@ namespace Excavator.BinaryFile
                         lookupContext.Attributes.Add( newAttribute );
                         lookupContext.SaveChanges();
 
-                        existingAttributes.Add( newAttribute.Name, newAttribute.Id );
+                        existingAttributes.Add( newAttribute.Key, newAttribute.Id );
                     }
 
                     newFileList.Add( new DocumentKeys()
                     {
                         PersonId = personKeys.PersonId,
-                        AttributeId = existingAttributes[attributeName.Value],
+                        AttributeId = existingAttributes[attributeKey],
                         File = rockFile
                     } );
 
