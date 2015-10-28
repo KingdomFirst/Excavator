@@ -28,6 +28,17 @@ using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
+    public class People : F1Component, IFellowshipOne
+    {
+        /// <summary>
+        /// Maps the specified table data.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        public void Map( IQueryable<Row> tableData )
+        {
+        }
+    }
+
     /// <summary>
     /// Partial of F1Component that holds the People import methods
     /// </summary>
