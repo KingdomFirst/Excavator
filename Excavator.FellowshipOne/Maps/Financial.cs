@@ -368,7 +368,7 @@ namespace Excavator.F1
                             transactionRefund.RefundReasonSummary = summary;
                             transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Value.Contains( summary ) )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                            transaction.Refund = transactionRefund;
+                            transaction.Refunds.Add( transactionRefund );
                         }
                     }
 
