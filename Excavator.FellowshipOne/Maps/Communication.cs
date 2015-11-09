@@ -145,7 +145,7 @@ namespace Excavator.F1
                                         newNumber.IsMessagingEnabled = false;
                                         newNumber.CountryCode = countryCode;
                                         newNumber.IsUnlisted = !isListed;
-                                        newNumber.Extension = extension.Left( 20 );
+                                        newNumber.Extension = extension.Left( 20 ) ?? string.Empty;
                                         newNumber.Number = normalizedNumber.Left( 20 );
                                         newNumber.Description = communicationComment;
                                         newNumber.NumberFormatted = PhoneNumber.FormattedNumber( countryCode, newNumber.Number, true );
