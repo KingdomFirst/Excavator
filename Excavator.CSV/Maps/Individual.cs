@@ -153,11 +153,11 @@ namespace Excavator.CSV
                 int groupRoleId = adultRoleId;
                 bool isFamilyRelationship = true;
 
+                string rowFamilyName = row[FamilyName];
                 string rowFamilyKey = row[FamilyId];
                 string rowPersonKey = row[PersonId];
-                //int? rowFamilyId = rowFamilyKey.AsType<int?>();
-                //int? rowPersonId = rowPersonKey.AsType<int?>();
-                string rowFamilyName = row[FamilyName];
+                int? rowFamilyId = rowFamilyKey.AsType<int?>();
+                int? rowPersonId = rowPersonKey.AsType<int?>();
 
                 // Check that this person isn't already in our data
                 var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignKey == rowPersonKey ) );
@@ -167,7 +167,7 @@ namespace Excavator.CSV
 
                     var person = new Person();
                     person.ForeignKey = rowPersonKey;
-                    //person.ForeignId = rowPersonId;
+                    person.ForeignId = rowPersonId;
                     person.SystemNote = string.Format( "Imported via Excavator on {0}", importDate.ToString() );
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAliasId;
@@ -392,7 +392,7 @@ namespace Excavator.CSV
 
                     // Map Person attributes
                     person.Attributes = new Dictionary<string, AttributeCache>();
-                    person.AttributeValues = new Dictionary<string, AttributeValue>();
+                    person.AttributeValues = new Dictionary<string, AttributeValueCache>();
 
                     bool isEmailActive;
                     switch ( row[IsEmailActive].Trim().ToLower() )
@@ -499,6 +499,7 @@ namespace Excavator.CSV
                         newNote.CreatedDateTime = importDate;
                         newNote.Text = notePair.Value;
                         newNote.ForeignKey = rowPersonKey;
+                        newNote.ForeignId = rowPersonId;
                         newNote.Caption = string.Format( "{0} Note", notePair.Key );
 
                         if ( !notePair.Key.Equals( "General" ) )
@@ -609,6 +610,7 @@ namespace Excavator.CSV
             familyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
             familyGroup.GroupTypeId = FamilyGroupTypeId;
             familyGroup.ForeignKey = rowFamilyKey;
+            familyGroup.ForeignId = rowFamilyKey.AsType<int?>();
             return familyGroup;
         }
 
@@ -623,7 +625,7 @@ namespace Excavator.CSV
             if ( !string.IsNullOrWhiteSpace( attributeValue ) )
             {
                 person.Attributes.Add( attribute.Key, attribute );
-                person.AttributeValues.Add( attribute.Key, new AttributeValue()
+                person.AttributeValues.Add( attribute.Key, new AttributeValueCache()
                 {
                     AttributeId = attribute.Id,
                     Value = attributeValue
@@ -665,12 +667,23 @@ namespace Excavator.CSV
                                 // Set attributes on this person
                                 foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                                 {
+                                    var existingValue = rockContext.AttributeValues.FirstOrDefault( v => v.Attribute.Key == attributeCache.Key && v.EntityId == person.Id );
                                     var newAttributeValue = person.AttributeValues[attributeCache.Key];
 
-                                    if ( newAttributeValue != null )
+                                    // set the new value and add it to the database
+                                    if ( existingValue == null )
                                     {
-                                        newAttributeValue.EntityId = person.Id;
-                                        rockContext.AttributeValues.Add( newAttributeValue );
+                                        existingValue = new AttributeValue();
+                                        existingValue.AttributeId = newAttributeValue.AttributeId;
+                                        existingValue.EntityId = person.Id;
+                                        existingValue.Value = newAttributeValue.Value;
+
+                                        rockContext.AttributeValues.Add( existingValue );
+                                    }
+                                    else
+                                    {
+                                        existingValue.Value = newAttributeValue.Value;
+                                        rockContext.Entry( existingValue ).State = EntityState.Modified;
                                     }
                                 }
 
@@ -681,7 +694,8 @@ namespace Excavator.CSV
                                     {
                                         AliasPersonId = person.Id,
                                         AliasPersonGuid = person.Guid,
-                                        ForeignKey = person.ForeignKey
+                                        ForeignKey = person.ForeignKey,
+                                        ForeignId = person.ForeignId
                                     } );
                                 }
 

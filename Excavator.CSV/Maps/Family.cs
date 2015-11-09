@@ -49,7 +49,7 @@ namespace Excavator.CSV
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
                 string rowFamilyKey = row[FamilyId];
-                //int? rowFamilyId = rowFamilyKey.AsType<int?>();
+                int? rowFamilyId = rowFamilyKey.AsType<int?>();
                 string rowFamilyName = row[FamilyName];
 
                 if ( rowFamilyKey != null && rowFamilyKey != currentFamilyGroup.ForeignKey )
@@ -59,7 +59,7 @@ namespace Excavator.CSV
                     {
                         currentFamilyGroup = new Group();
                         currentFamilyGroup.ForeignKey = rowFamilyKey;
-                        //currentFamilyGroup.ForeignId = rowFamilyId;
+                        currentFamilyGroup.ForeignId = rowFamilyId;
                         currentFamilyGroup.Name = row[FamilyName];
                         currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentFamilyGroup.GroupTypeId = familyGroupTypeId;
