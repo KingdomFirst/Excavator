@@ -184,7 +184,7 @@ namespace Excavator.F1
                                 {
                                     // make sure we have valid objects to assign to
                                     person.Attributes = new Dictionary<string, AttributeCache>();
-                                    person.AttributeValues = new Dictionary<string, AttributeValue>();
+                                    person.AttributeValues = new Dictionary<string, AttributeValueCache>();
                                 }
 
                                 // Check for an InFellowship ID/email before checking other types of email
@@ -288,28 +288,28 @@ namespace Excavator.F1
                 {
                     foreach ( var person in updatedPersonList.Values.Where( p => p.Attributes.Any() ) )
                     {
-                        // save current values before loading from the db
-                        var newAttributes = person.Attributes;
-                        var newValues = person.AttributeValues;
-                        person.LoadAttributes( rockContext );
+                        // don't call LoadAttributes, it only rewrites existing cache objects
+                        // person.LoadAttributes( rockContext );
 
-                        foreach ( var attributeCache in newAttributes.Select( a => a.Value ) )
+                        foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                         {
-                            var currentAttributeValue = person.AttributeValues[attributeCache.Key];
-                            var newAttributeValue = newValues[attributeCache.Key].Value;
-                            if ( currentAttributeValue.Value != newAttributeValue && !string.IsNullOrWhiteSpace( newAttributeValue ) )
+                            var existingValue = rockContext.AttributeValues.FirstOrDefault( v => v.Attribute.Key == attributeCache.Key && v.EntityId == person.Id );
+                            var newAttributeValue = person.AttributeValues[attributeCache.Key];
+
+                            // set the new value and add it to the database
+                            if ( existingValue == null )
                             {
-                                // set the new value and send it to the database
-                                currentAttributeValue.Value = newAttributeValue;
-                                if ( currentAttributeValue.Id == 0 )
-                                {
-                                    currentAttributeValue.EntityId = person.Id;
-                                    rockContext.Entry( currentAttributeValue ).State = EntityState.Added;
-                                }
-                                else
-                                {
-                                    rockContext.Entry( currentAttributeValue ).State = EntityState.Modified;
-                                }
+                                existingValue = new AttributeValue();
+                                existingValue.AttributeId = newAttributeValue.AttributeId;
+                                existingValue.EntityId = person.Id;
+                                existingValue.Value = newAttributeValue.Value;
+
+                                rockContext.AttributeValues.Add( existingValue );
+                            }
+                            else
+                            {
+                                existingValue.Value = newAttributeValue.Value;
+                                rockContext.Entry( existingValue ).State = EntityState.Modified;
                             }
                         }
                     }
