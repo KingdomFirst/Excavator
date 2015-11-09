@@ -232,7 +232,7 @@ namespace Excavator.BinaryFile
                         // #TODO: support additional storage types (like AWS?)
                         newFileType.StorageEntityTypeId = typeValue.Equals( "Database" ) ? DatabaseStorageTypeId : FileSystemStorageTypeId;
                         newFileType.Attributes = new Dictionary<string, AttributeCache>();
-                        newFileType.AttributeValues = new Dictionary<string, AttributeValue>();
+                        newFileType.AttributeValues = new Dictionary<string, AttributeValueCache>();
 
                         // save changes to binary type to get an ID
                         lookupContext.SaveChanges();
@@ -245,7 +245,7 @@ namespace Excavator.BinaryFile
                         };
 
                         newFileType.Attributes.Add( RootPathAttribute.Key, RootPathAttribute );
-                        newFileType.AttributeValues.Add( RootPathAttribute.Key, newRootPath );
+                        newFileType.AttributeValues.Add( RootPathAttribute.Key, new AttributeValueCache( newRootPath ) );
 
                         // save attribute values with the current type ID
                         lookupContext.AttributeValues.Add( newRootPath );
