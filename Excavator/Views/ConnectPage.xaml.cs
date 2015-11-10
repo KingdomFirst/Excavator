@@ -350,37 +350,47 @@ namespace Excavator
             contentPanel.Children.Add( modalBorder );
 
             var connectWindow = new Window();
-            connectWindow.Content = contentPanel;
-            connectWindow.Owner = Window.GetWindow( this );
-            connectWindow.ShowInTaskbar = false;
-            connectWindow.Background = (Brush)FindResource( "windowBackground" );
-            connectWindow.WindowStyle = WindowStyle.None;
-            connectWindow.ResizeMode = ResizeMode.NoResize;
-            connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
-            connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            var windowConnected = connectWindow.ShowDialog() ?? false;
 
-            if ( CurrentConnection.Database.Contains( "failed" ) )
+            try
             {
-                CurrentConnection.Database = string.Empty;
+                
+                connectWindow.Content = contentPanel;
+                connectWindow.Owner = Window.GetWindow( this );
+                connectWindow.ShowInTaskbar = false;
+                connectWindow.Background = (Brush)FindResource( "windowBackground" );
+                connectWindow.WindowStyle = WindowStyle.None;
+                connectWindow.ResizeMode = ResizeMode.NoResize;
+                connectWindow.SizeToContent = SizeToContent.WidthAndHeight;
+                connectWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                var windowConnected = connectWindow.ShowDialog() ?? false;
+
+                if ( CurrentConnection.Database.Contains( "failed" ) )
+                {
+                    CurrentConnection.Database = string.Empty;
+                }
+
+                // Undo graphical effects
+                this.OpacityMask = null;
+                this.Effect = null;
+                RaisePropertyChanged( "OkToProceed" );
+                RaisePropertyChanged( "ConnectionDescribed" );
+
+                if ( windowConnected && CurrentConnection != null && CurrentConnection.IsValid() )
+                {
+                    lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
+                    DbConnectMsg = "Successfully connected to the Rock database.";
+                }
+                else
+                {
+                    lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
+                    DbConnectMsg = "Could not validate database connection.";
+                }
+            }
+            catch (Exception ex )
+            {
+                App.LogException( "Connect", ex.ToString() );
             }
 
-            // Undo graphical effects
-            this.OpacityMask = null;
-            this.Effect = null;
-            RaisePropertyChanged( "OkToProceed" );
-            RaisePropertyChanged( "ConnectionDescribed" );
-
-            if ( windowConnected && CurrentConnection != null && CurrentConnection.IsValid() )
-            {
-                lblDbConnect.Style = (Style)FindResource( "labelStyleSuccess" );
-                DbConnectMsg = "Successfully connected to the Rock database.";
-            }
-            else
-            {
-                lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                DbConnectMsg = "Could not validate database connection.";
-            }
 
             lblDbConnect.Visibility = Visibility.Visible;
         }
