@@ -49,7 +49,7 @@ namespace Excavator.CSV
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
                 string rowFamilyKey = row[FamilyId];
-                //int? rowFamilyId = rowFamilyKey.AsType<int?>();
+                int? rowFamilyId = rowFamilyKey.AsType<int?>();
                 string rowFamilyName = row[FamilyName];
 
                 if ( rowFamilyKey != null && rowFamilyKey != currentFamilyGroup.ForeignKey )
@@ -59,7 +59,7 @@ namespace Excavator.CSV
                     {
                         currentFamilyGroup = new Group();
                         currentFamilyGroup.ForeignKey = rowFamilyKey;
-                        //currentFamilyGroup.ForeignId = rowFamilyId;
+                        currentFamilyGroup.ForeignId = rowFamilyId;
                         currentFamilyGroup.Name = row[FamilyName];
                         currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentFamilyGroup.GroupTypeId = familyGroupTypeId;
@@ -97,7 +97,7 @@ namespace Excavator.CSV
                     string famZip = row[Zip];
                     string famCountry = row[Country];
 
-                    Location primaryAddress = Extensions.GetWithoutVerify( famAddress, famAddress2, famCity, famState, famZip, famCountry, false );
+                    Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry, verifyLocation: false );
 
                     if ( primaryAddress != null )
                     {
@@ -116,7 +116,7 @@ namespace Excavator.CSV
                     string famSecondZip = row[SecondaryZip];
                     string famSecondCountry = row[SecondaryCountry];
 
-                    Location secondaryAddress = Extensions.GetWithoutVerify( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, false );
+                    Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, verifyLocation: false );
 
                     if ( secondaryAddress != null )
                     {

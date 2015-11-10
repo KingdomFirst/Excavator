@@ -77,7 +77,7 @@
             Grid.Row="4" HorizontalAlignment="Center"
             Grid.ColumnSpan="2" VerticalAlignment="Center"
             Style="{StaticResource labelStyle}">
-            If you are not importing Financial Accounts, enter NO in the PasswordKey and DataEncryptionKey fields.
+            If you are not importing Financial Accounts, enter N/A in the PasswordKey and DataEncryptionKey fields.
         </Label>
 
         <!-- Navigation -->

@@ -28,6 +28,36 @@ using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
+    public class People : F1Component, IFellowshipOne
+    {
+
+        RockContext lookupContext = new RockContext();
+        List<Group> businessList = new List<Group>();
+
+        // Record status: Active, Inactive, Pending
+        int? statusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
+        int? statusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
+        int? statusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
+
+        // Record type: Business
+        int? businessRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS ) ).Id;
+
+        // Group role: Adult
+        //int groupRoleId = new GroupTypeRoleService( lookupContext ).Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
+
+        // Group type: Family
+        int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+
+
+        /// <summary>
+        /// Maps the specified table data.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        public void Map( IQueryable<Row> tableData )
+        {
+        }
+    }
+
     /// <summary>
     /// Partial of F1Component that holds the People import methods
     /// </summary>
@@ -84,7 +114,7 @@ namespace Excavator.F1
                     }
 
                     businessPerson.Attributes = new Dictionary<string, AttributeCache>();
-                    businessPerson.AttributeValues = new Dictionary<string, AttributeValue>();
+                    businessPerson.AttributeValues = new Dictionary<string, AttributeValueCache>();
                     AddPersonAttribute( HouseholdIdAttribute, businessPerson, householdId.ToString() );
 
                     var groupMember = new GroupMember();
@@ -136,13 +166,28 @@ namespace Excavator.F1
                 {
                     foreach ( var groupMember in newBusiness.Members )
                     {
+                        // don't call LoadAttributes, it only rewrites existing cache objects
+                        // groupMember.Person.LoadAttributes( rockContext );
+
                         foreach ( var attributeCache in groupMember.Person.Attributes.Select( a => a.Value ) )
                         {
-                            var newValue = groupMember.Person.AttributeValues[attributeCache.Key];
-                            if ( newValue != null )
+                            var existingValue = rockContext.AttributeValues.FirstOrDefault( v => v.Attribute.Key == attributeCache.Key && v.EntityId == groupMember.Person.Id );
+                            var newAttributeValue = groupMember.Person.AttributeValues[attributeCache.Key];
+
+                            // set the new value and add it to the database
+                            if ( existingValue == null )
                             {
-                                newValue.EntityId = groupMember.Person.Id;
-                                rockContext.Entry( newValue ).State = EntityState.Added;
+                                existingValue = new AttributeValue();
+                                existingValue.AttributeId = newAttributeValue.AttributeId;
+                                existingValue.EntityId = groupMember.Person.Id;
+                                existingValue.Value = newAttributeValue.Value;
+
+                                rockContext.AttributeValues.Add( existingValue );
+                            }
+                            else
+                            {
+                                existingValue.Value = newAttributeValue.Value;
+                                rockContext.Entry( existingValue ).State = EntityState.Modified;
                             }
                         }
 
@@ -279,6 +324,7 @@ namespace Excavator.F1
                         person.CreatedByPersonAliasId = ImportPersonAliasId;
                         person.RecordTypeValueId = personRecordTypeId;
                         person.ForeignId = individualId;
+                        person.ForeignKey = individualId.ToString();
 
                         var gender = row["Gender"] as string;
                         if ( gender != null )
@@ -385,7 +431,7 @@ namespace Excavator.F1
 
                         // Map F1 attributes
                         person.Attributes = new Dictionary<string, AttributeCache>();
-                        person.AttributeValues = new Dictionary<string, AttributeValue>();
+                        person.AttributeValues = new Dictionary<string, AttributeValueCache>();
 
                         // IndividualId already defined in scope
                         AddPersonAttribute( IndividualIdAttribute, person, individualId.ToString() );
@@ -534,28 +580,28 @@ namespace Excavator.F1
                     {
                         foreach ( var groupMember in newFamilyGroup.Members )
                         {
-                            // save current values before loading from the db
-                            var newPersonAttributes = groupMember.Person.Attributes;
-                            var newPersonValues = groupMember.Person.AttributeValues;
-                            groupMember.Person.LoadAttributes( rockContext );
+                            // don't call LoadAttributes, it only rewrites existing cache objects
+                            // groupMember.Person.LoadAttributes( rockContext );
 
-                            foreach ( var attributeCache in newPersonAttributes.Select( a => a.Value ) )
+                            foreach ( var attributeCache in groupMember.Person.Attributes.Select( a => a.Value ) )
                             {
-                                var currentAttributeValue = groupMember.Person.AttributeValues[attributeCache.Key];
-                                var newAttributeValue = newPersonValues[attributeCache.Key].Value;
-                                if ( currentAttributeValue.Value != newAttributeValue && !string.IsNullOrWhiteSpace( newAttributeValue ) )
+                                var existingValue = rockContext.AttributeValues.FirstOrDefault( v => v.Attribute.Key == attributeCache.Key && v.EntityId == groupMember.Person.Id );
+                                var newAttributeValue = groupMember.Person.AttributeValues[attributeCache.Key];
+
+                                // set the new value and add it to the database
+                                if ( existingValue == null )
                                 {
-                                    // set the new value and add it to the database
-                                    currentAttributeValue.Value = newAttributeValue;
-                                    if ( currentAttributeValue.Id == 0 )
-                                    {
-                                        currentAttributeValue.EntityId = groupMember.Person.Id;
-                                        rockContext.Entry( currentAttributeValue ).State = EntityState.Added;
-                                    }
-                                    else
-                                    {
-                                        rockContext.Entry( currentAttributeValue ).State = EntityState.Modified;
-                                    }
+                                    existingValue = new AttributeValue();
+                                    existingValue.AttributeId = newAttributeValue.AttributeId;
+                                    existingValue.EntityId = groupMember.Person.Id;
+                                    existingValue.Value = newAttributeValue.Value;
+
+                                    rockContext.AttributeValues.Add( existingValue );
+                                }
+                                else
+                                {
+                                    existingValue.Value = newAttributeValue.Value;
+                                    rockContext.Entry( existingValue ).State = EntityState.Modified;
                                 }
                             }
 
@@ -565,7 +611,8 @@ namespace Excavator.F1
                                 {
                                     AliasPersonId = groupMember.Person.Id,
                                     AliasPersonGuid = groupMember.Person.Guid,
-                                    ForeignId = groupMember.Person.ForeignId
+                                    ForeignId = groupMember.Person.ForeignId,
+                                    ForeignKey = groupMember.Person.ForeignKey
                                 } );
                             }
 
@@ -841,8 +888,9 @@ namespace Excavator.F1
         {
             if ( !string.IsNullOrWhiteSpace( value ) )
             {
+                
                 person.Attributes.Add( attribute.Key, attribute );
-                person.AttributeValues.Add( attribute.Key, new AttributeValue()
+                person.AttributeValues.Add( attribute.Key, new AttributeValueCache()
                 {
                     AttributeId = attribute.Id,
                     Value = value

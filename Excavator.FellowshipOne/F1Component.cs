@@ -22,6 +22,7 @@ using System.Data.Entity;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.Engine;
+using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
@@ -429,4 +430,45 @@ namespace Excavator.F1
 
         #endregion Methods
     }
+
+    #region Helper Classes
+
+    /// <summary>
+    /// Generic map interface
+    /// </summary>
+    public interface IFellowshipOne
+    {
+        void Map( IQueryable<Row> tableData );
+    }
+
+    /// <summary>
+    /// Adapter helper method to call the right object Map()
+    /// </summary>
+    public static class IMapAdapterFactory
+    {
+        public static IFellowshipOne GetAdapter( string fileName )
+        {
+            IFellowshipOne adapter = null;
+
+            //var configFileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
+
+            // by default will assume a ministry document
+            //var iBinaryFileType = typeof( IBinaryFile );
+            //var mappedFileTypes = iBinaryFileType.Assembly.ExportedTypes
+            //    .Where( p => iBinaryFileType.IsAssignableFrom( p ) && !p.IsInterface );
+            //var selectedType = mappedFileTypes.FirstOrDefault( t => fileName.StartsWith( t.Name.RemoveWhitespace() ) );
+            //if ( selectedType != null )
+            //{
+            //    adapter = (IBinaryFile)Activator.CreateInstance( selectedType );
+            //}
+            //else
+            //{
+            //    adapter = new MinistryDocument();
+            //}
+
+            return adapter;
+        }
+    }
+
+    #endregion
 }
