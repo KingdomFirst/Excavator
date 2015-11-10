@@ -17,13 +17,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using Excavator.Utility;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
-using Rock.Security;
 using Rock.Web.Cache;
 
 namespace Excavator.F1
@@ -31,7 +30,7 @@ namespace Excavator.F1
     /// <summary>
     /// Partial of F1Component that holds the Financial import methods
     /// </summary>
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the account data.
@@ -41,7 +40,7 @@ namespace Excavator.F1
         private void MapBankAccount( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
-            var importedBankAccounts = new FinancialPersonBankAccountService( lookupContext ).Queryable().ToList();
+            var importedBankAccounts = new FinancialPersonBankAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
             var newBankAccounts = new List<FinancialPersonBankAccount>();
 
             int completed = 0;
@@ -54,7 +53,7 @@ namespace Excavator.F1
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
                 var personKeys = GetPersonKeys( individualId, householdId );
-                if ( personKeys != null && personKeys.PersonAliasId != null )
+                if ( personKeys != null && personKeys.PersonAliasId > 0 )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
                     string accountNumber = row["Account"] as string;
@@ -65,13 +64,10 @@ namespace Excavator.F1
                         if ( !importedBankAccounts.Any( a => a.PersonAliasId == personKeys.PersonAliasId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var bankAccount = new FinancialPersonBankAccount();
-                            bankAccount.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            bankAccount.CreatedByPersonAliasId = ImportPersonAliasId;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
                             bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;
-
-                            // Other Attributes (not used):
-                            // Account_Type_Name
 
                             newBankAccounts.Add( bankAccount );
                             completed++;
@@ -110,7 +106,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialPersonBankAccounts.AddRange( newBankAccounts );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -134,8 +130,8 @@ namespace Excavator.F1
                 if ( batchId != null && !ImportedBatches.ContainsKey( (int)batchId ) )
                 {
                     var batch = new FinancialBatch();
-                    batch.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                    batch.ForeignId = batchId.ToString();
+                    batch.CreatedByPersonAliasId = ImportPersonAliasId;
+                    batch.ForeignId = batchId;
                     batch.Status = batchStatusClosed;
 
                     string name = row["BatchName"] as string;
@@ -170,7 +166,7 @@ namespace Excavator.F1
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveFinancialBatches( newBatches );
-                        newBatches.ForEach( b => ImportedBatches.Add( b.ForeignId.AsType<int>(), (int?)b.Id ) );
+                        newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -180,7 +176,7 @@ namespace Excavator.F1
             if ( newBatches.Any() )
             {
                 SaveFinancialBatches( newBatches );
-                newBatches.ForEach( b => ImportedBatches.Add( b.ForeignId.AsType<int>(), (int?)b.Id ) );
+                newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -197,7 +193,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialBatches.AddRange( newBatches );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -219,12 +215,12 @@ namespace Excavator.F1
 
             var refundReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ), lookupContext ).DefinedValues;
 
-            var accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
+            var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
 
             // Get all imported contributions
-            var importedContributions = new FinancialTransactionService( lookupContext ).Queryable()
+            var importedContributions = new FinancialTransactionService( lookupContext ).Queryable().AsNoTracking()
                .Where( c => c.ForeignId != null )
-               .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
+               .ToDictionary( t => t.ForeignId, t => (int?)t.Id );
 
             // List for batching new contributions
             var newTransactions = new List<FinancialTransaction>();
@@ -242,12 +238,12 @@ namespace Excavator.F1
                 if ( contributionId != null && !importedContributions.ContainsKey( (int)contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
-                    transaction.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    transaction.CreatedByPersonAliasId = ImportPersonAliasId;
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
-                    transaction.ForeignId = contributionId.ToString();
+                    transaction.ForeignId = contributionId;
 
-                    var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
-                    if ( personKeys != null )
+                    var personKeys = GetPersonKeys( individualId, householdId );
+                    if ( personKeys != null && personKeys.PersonAliasId > 0 )
                     {
                         transaction.AuthorizedPersonAliasId = personKeys.PersonAliasId;
                         transaction.ProcessedByPersonAliasId = personKeys.PersonAliasId;
@@ -276,21 +272,24 @@ namespace Excavator.F1
                     string contributionType = row["Contribution_Type_Name"].ToString().ToLower();
                     if ( contributionType != null )
                     {
+                        transaction.FinancialPaymentDetail = new FinancialPaymentDetail();
+
                         if ( contributionType == "ach" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeACH;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeACH;
                         }
                         else if ( contributionType == "cash" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeCash;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeCash;
                         }
                         else if ( contributionType == "check" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeCheck;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeCheck;
                         }
                         else if ( contributionType == "credit card" )
                         {
-                            transaction.CurrencyTypeValueId = currencyTypeCreditCard;
+                            transaction.FinancialPaymentDetail.CurrencyTypeValueId = currencyTypeCreditCard;
+                            // set FTD.CreditCardTypeValueId once we have access to that column
                         }
                         else
                         {
@@ -308,6 +307,7 @@ namespace Excavator.F1
                     string fundName = row["Fund_Name"] as string;
                     string subFund = row["Sub_Fund_Name"] as string;
                     decimal? amount = row["Amount"] as decimal?;
+                    decimal? statedValue = row["Stated_Value"] as decimal?;
                     if ( fundName != null & amount != null )
                     {
                         int transactionAccountId;
@@ -348,6 +348,12 @@ namespace Excavator.F1
                             transactionAccountId = parentAccount.Id;
                         }
 
+                        if ( amount == 0 && statedValue != null && statedValue != 0 )
+                        {
+                            amount = statedValue;
+                            isTypeNonCash = true;
+                        }
+
                         var transactionDetail = new FinancialTransactionDetail();
                         transactionDetail.Amount = (decimal)amount;
                         transactionDetail.CreatedDateTime = receivedDate;
@@ -362,7 +368,7 @@ namespace Excavator.F1
                             transactionRefund.RefundReasonSummary = summary;
                             transactionRefund.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Value.Contains( summary ) )
                                 .Select( dv => (int?)dv.Id ).FirstOrDefault();
-                            transaction.Refund = transactionRefund;
+                            transaction.Refunds.Add( transactionRefund );
                         }
                     }
 
@@ -401,7 +407,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialTransactions.AddRange( newTransactions );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -413,10 +419,11 @@ namespace Excavator.F1
         private void MapPledge( IQueryable<Row> tableData )
         {
             var lookupContext = new RockContext();
-            var accountList = new FinancialAccountService( lookupContext ).Queryable().ToList();
-            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().ToList();
+            var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking().ToList();
 
             var pledgeFrequencies = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ), lookupContext ).DefinedValues;
+            int oneTimePledgeFrequencyId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
 
             var newPledges = new List<FinancialPledge>();
 
@@ -434,12 +441,13 @@ namespace Excavator.F1
                 {
                     int? individualId = row["Individual_ID"] as int?;
                     int? householdId = row["Household_ID"] as int?;
+
                     var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
-                    if ( personKeys != null && !importedPledges.Any( p => p.PersonAliasId == personKeys.PersonAliasId && p.TotalAmount == amount && p.StartDate.Equals( startDate ) ) )
+                    if ( personKeys != null && personKeys.PersonAliasId > 0 )
                     {
                         var pledge = new FinancialPledge();
                         pledge.PersonAliasId = personKeys.PersonAliasId;
-                        pledge.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        pledge.CreatedByPersonAliasId = ImportPersonAliasId;
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
@@ -450,7 +458,7 @@ namespace Excavator.F1
                             frequency = frequency.ToLower();
                             if ( frequency.Equals( "one time" ) || frequency.Equals( "as can" ) )
                             {
-                                pledge.PledgeFrequencyValueId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
+                                pledge.PledgeFrequencyValueId = oneTimePledgeFrequencyId;
                             }
                             else
                             {
@@ -538,7 +546,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.FinancialPledges.AddRange( newPledges );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
 
@@ -560,10 +568,10 @@ namespace Excavator.F1
             account.IsActive = true;
             account.CampusId = fundCampusId;
             account.ParentAccountId = parentAccountId;
-            account.CreatedByPersonAliasId = ImportPersonAlias.Id;
+            account.CreatedByPersonAliasId = ImportPersonAliasId;
 
             lookupContext.FinancialAccounts.Add( account );
-            lookupContext.SaveChanges( DisableAudit );
+            lookupContext.SaveChanges( DisableAuditing );
 
             return account;
         }

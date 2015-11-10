@@ -16,14 +16,12 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Navigation;
-using Excavator.Utility;
 
 namespace Excavator
 {
@@ -117,15 +115,12 @@ namespace Excavator
         /// <exception cref="System.NotImplementedException"></exception>
         private void bwImportData_DoWork( object sender, DoWorkEventArgs e )
         {
-            var importUser = ConfigurationManager.AppSettings["ImportUser"];
-            if ( String.IsNullOrEmpty( importUser ) )
-            {
-                importUser = "Admin";
-            }
+            var settings = ConfigurationManager.AppSettings.AllKeys
+                .ToDictionary( t => t.ToString(), t => ConfigurationManager.AppSettings[t].ToString() );
 
             try
             {
-                e.Result = excavator.TransformData( importUser );
+                e.Result = excavator.TransformData( settings );
             }
             catch ( Exception ex )
             {

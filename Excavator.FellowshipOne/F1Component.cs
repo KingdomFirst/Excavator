@@ -17,15 +17,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.Data.Entity;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.Engine;
+using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using Database = OrcaMDF.Core.Engine.Database;
 
 namespace Excavator.F1
 {
@@ -34,7 +36,7 @@ namespace Excavator.F1
     /// Data models and mapping methods are in the Models and Maps directories, respectively.
     /// </summary>
     [Export( typeof( ExcavatorComponent ) )]
-    partial class F1Component : ExcavatorComponent
+    public partial class F1Component : ExcavatorComponent
     {
         #region Fields
 
@@ -68,7 +70,7 @@ namespace Excavator.F1
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
-        protected static PersonAlias ImportPersonAlias;
+        protected static int? ImportPersonAliasId;
 
         /// <summary>
         /// All the people who've been imported
@@ -87,8 +89,8 @@ namespace Excavator.F1
 
         // Existing entity types
 
-        protected static int IntegerFieldTypeId;
         protected static int TextFieldTypeId;
+        protected static int IntegerFieldTypeId;
         protected static int PersonEntityTypeId;
 
         // Custom attribute types
@@ -97,12 +99,6 @@ namespace Excavator.F1
         protected static AttributeCache HouseholdIdAttribute;
         protected static AttributeCache InFellowshipLoginAttribute;
         protected static AttributeCache SecondaryEmailAttribute;
-
-        // Flag to run postprocessing audits during save
-        protected static bool DisableAudit = true;
-
-        // Flag to designate household visitors
-        protected const string FamilyVisitor = "1";
 
         #endregion Fields
 
@@ -116,14 +112,14 @@ namespace Excavator.F1
         public override bool LoadSchema( string fileName )
         {
             Database = new Database( fileName );
-            TableNodes = new List<DatabaseNode>();
+            DataNodes = new List<DataNode>();
             var scanner = new DataScanner( Database );
             var tables = Database.Dmvs.Tables;
 
             foreach ( var table in tables.Where( t => !t.IsMSShipped ).OrderBy( t => t.Name ) )
             {
                 var rows = scanner.ScanTable( table.Name );
-                var tableItem = new DatabaseNode();
+                var tableItem = new DataNode();
                 tableItem.Name = table.Name;
 
                 var rowData = rows.FirstOrDefault();
@@ -131,27 +127,29 @@ namespace Excavator.F1
                 {
                     foreach ( var column in rowData.Columns )
                     {
-                        var childItem = new DatabaseNode();
+                        var childItem = new DataNode();
                         childItem.Name = column.Name;
                         childItem.NodeType = Extensions.GetSQLType( column.Type );
                         childItem.Value = rowData[column] ?? DBNull.Value;
-                        childItem.Table.Add( tableItem );
-                        tableItem.Columns.Add( childItem );
+                        childItem.Parent.Add( tableItem );
+                        tableItem.Children.Add( childItem );
                     }
                 }
 
-                TableNodes.Add( tableItem );
+                DataNodes.Add( tableItem );
             }
 
-            return TableNodes.Count > 0 ? true : false;
+            return DataNodes.Count > 0 ? true : false;
         }
 
         /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
         /// <returns></returns>
-        public override int TransformData( string importUser = null )
+        public override int TransformData( Dictionary<string, string> settings )
         {
+            var importUser = settings["ImportUser"];
+
             ReportProgress( 0, "Starting health checks..." );
             var rockContext = new RockContext();
             var personService = new PersonService( rockContext );
@@ -159,11 +157,11 @@ namespace Excavator.F1
 
             if ( importPerson == null )
             {
-                importPerson = personService.Queryable().FirstOrDefault();
+                importPerson = personService.Queryable().AsNoTracking().FirstOrDefault();
             }
 
-            ImportPersonAlias = importPerson.PrimaryAlias;
-            var tableList = TableNodes.Where( n => n.Checked != false ).ToList();
+            ImportPersonAliasId = importPerson.PrimaryAliasId;
+            var tableList = DataNodes.Where( n => n.Checked != false ).ToList();
 
             ReportProgress( 0, "Checking for existing attributes..." );
             LoadExistingRockData();
@@ -269,7 +267,7 @@ namespace Excavator.F1
                 .Where( c => c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
 
             // Look up and create attributes for F1 unique identifiers if they don't exist
-            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).ToList();
+            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).AsNoTracking().ToList();
 
             var householdAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "F1HouseholdId", StringComparison.InvariantCultureIgnoreCase ) );
             if ( householdAttribute == null )
@@ -288,7 +286,7 @@ namespace Excavator.F1
                 householdAttribute.Order = 0;
 
                 lookupContext.Attributes.Add( householdAttribute );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
                 personAttributes.Add( householdAttribute );
             }
 
@@ -309,7 +307,7 @@ namespace Excavator.F1
                 individualAttribute.Order = 0;
 
                 lookupContext.Attributes.Add( individualAttribute );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
                 personAttributes.Add( individualAttribute );
             }
 
@@ -332,7 +330,7 @@ namespace Excavator.F1
                 lookupContext.Attributes.Add( secondaryEmailAttribute );
                 var visitInfoCategory = new CategoryService( lookupContext ).Get( visitInfoCategoryId );
                 secondaryEmailAttribute.Categories.Add( visitInfoCategory );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
             }
 
             var infellowshipLoginAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "InFellowshipLogin", StringComparison.InvariantCultureIgnoreCase ) );
@@ -353,7 +351,7 @@ namespace Excavator.F1
 
                 // don't add a category as this attribute is only used via the API
                 lookupContext.Attributes.Add( infellowshipLoginAttribute );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
             }
 
             IndividualIdAttribute = AttributeCache.Read( individualAttribute.Id );
@@ -361,9 +359,20 @@ namespace Excavator.F1
             InFellowshipLoginAttribute = AttributeCache.Read( infellowshipLoginAttribute.Id );
             SecondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttribute.Id );
 
-            var visitorIdList = new PersonService( lookupContext ).Queryable().Where( p => p.ReviewReasonNote.Equals( FamilyVisitor ) ).OrderBy( p => p.Id ).Select( p => (int?)p.Id ).ToList();
-            var aliasIdList = new PersonAliasService( lookupContext ).Queryable().Where( p => p.ForeignId != null ).Select( pa => new { PersonAliasId = pa.Id, PersonId = pa.PersonId, IndividualId = pa.ForeignId } ).ToList();
-            var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).Select( av => new { PersonId = av.EntityId, HouseholdId = av.Value } ).ToList();
+            var aliasIdList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
+                .Select( pa => new
+                {
+                    PersonAliasId = pa.Id,
+                    PersonId = pa.PersonId,
+                    IndividualId = pa.ForeignId,
+                    FamilyRole = pa.Person.ReviewReasonNote
+                } ).ToList();
+            var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).AsNoTracking()
+                .Select( av => new
+                {
+                    PersonId = (int)av.EntityId,
+                    HouseholdId = av.Value
+                } ).ToList();
 
             ImportedPeople = householdIdList.GroupJoin( aliasIdList,
                 household => household.PersonId,
@@ -371,16 +380,16 @@ namespace Excavator.F1
                 ( household, aliases ) => new PersonKeys
                     {
                         PersonAliasId = aliases.Select( a => a.PersonAliasId ).FirstOrDefault(),
-                        PersonId = (int)household.PersonId,
+                        PersonId = household.PersonId,
+                        IndividualId = aliases.Select( a => a.IndividualId ).FirstOrDefault(),
                         HouseholdId = household.HouseholdId.AsType<int?>(),
-                        IndividualId = aliases.Select( a => a.IndividualId.AsType<int?>() ).FirstOrDefault(),
-                        IsFamilyMember = !visitorIdList.Contains( (int)household.PersonId )
+                        FamilyRoleId = aliases.Select( a => a.FamilyRole.ConvertToEnum<FamilyRole>( 0 ) ).FirstOrDefault()
                     }
                 ).ToList();
 
-            ImportedBatches = new FinancialBatchService( lookupContext ).Queryable()
+            ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
-                .ToDictionary( t => t.ForeignId.AsType<int>(), t => (int?)t.Id );
+                .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
         }
 
         /// <summary>
@@ -392,17 +401,15 @@ namespace Excavator.F1
         /// <returns></returns>
         protected static PersonKeys GetPersonKeys( int? individualId = null, int? householdId = null, bool includeVisitors = true )
         {
-            if ( individualId != null && householdId != null )
+            if ( individualId != null )
             {
-                return ImportedPeople.Where( p => p.IndividualId == individualId && p.HouseholdId == householdId ).FirstOrDefault();
-            }
-            else if ( individualId != null )
-            {
-                return ImportedPeople.Where( p => p.IndividualId == individualId && ( includeVisitors || p.IsFamilyMember ) ).FirstOrDefault();
+                return ImportedPeople.FirstOrDefault( p => p.IndividualId == individualId );
             }
             else if ( householdId != null )
             {
-                return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.IsFamilyMember ) ).FirstOrDefault();
+                return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) )
+                    .OrderBy( p => (int)p.FamilyRoleId )
+                    .FirstOrDefault();
             }
             else
             {
@@ -418,40 +425,50 @@ namespace Excavator.F1
         /// <returns></returns>
         protected static List<PersonKeys> GetFamilyByHouseholdId( int? householdId, bool includeVisitors = true )
         {
-            return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.IsFamilyMember ) ).ToList();
+            return ImportedPeople.Where( p => p.HouseholdId == householdId && ( includeVisitors || p.FamilyRoleId != FamilyRole.Visitor ) ).ToList();
         }
 
         #endregion Methods
     }
 
+    #region Helper Classes
+
     /// <summary>
-    /// Helper class to store references to people that've been imported
+    /// Generic map interface
     /// </summary>
-    public class PersonKeys
+    public interface IFellowshipOne
     {
-        /// <summary>
-        /// Stores the Rock.PersonAliasId
-        /// </summary>
-        public int? PersonAliasId;
-
-        /// <summary>
-        /// Stores the Rock.PersonId
-        /// </summary>
-        public int PersonId;
-
-        /// <summary>
-        /// Stores the F1 Individual Id
-        /// </summary>
-        public int? IndividualId;
-
-        /// <summary>
-        /// Stores the F1 Household Id
-        /// </summary>
-        public int? HouseholdId;
-
-        /// <summary>
-        /// Stores whether the person was part of the family
-        /// </summary>
-        public bool IsFamilyMember;
+        void Map( IQueryable<Row> tableData );
     }
+
+    /// <summary>
+    /// Adapter helper method to call the right object Map()
+    /// </summary>
+    public static class IMapAdapterFactory
+    {
+        public static IFellowshipOne GetAdapter( string fileName )
+        {
+            IFellowshipOne adapter = null;
+
+            //var configFileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
+
+            // by default will assume a ministry document
+            //var iBinaryFileType = typeof( IBinaryFile );
+            //var mappedFileTypes = iBinaryFileType.Assembly.ExportedTypes
+            //    .Where( p => iBinaryFileType.IsAssignableFrom( p ) && !p.IsInterface );
+            //var selectedType = mappedFileTypes.FirstOrDefault( t => fileName.StartsWith( t.Name.RemoveWhitespace() ) );
+            //if ( selectedType != null )
+            //{
+            //    adapter = (IBinaryFile)Activator.CreateInstance( selectedType );
+            //}
+            //else
+            //{
+            //    adapter = new MinistryDocument();
+            //}
+
+            return adapter;
+        }
+    }
+
+    #endregion
 }

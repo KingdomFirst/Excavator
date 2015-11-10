@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
 using Excavator.Utility;
+using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -19,7 +19,7 @@ namespace Excavator.CSV
         /// Loads the family data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
-        private int LoadFamily( CsvDataModel csvData )
+        private int LoadFamily( CSVInstance csvData )
         {
             // Required variables
             var lookupContext = new RockContext();
@@ -38,7 +38,7 @@ namespace Excavator.CSV
 
             var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
-            string currentFamilyId = string.Empty;
+            string currentFamilyKey = string.Empty;
             var importDate = DateTime.Now;
             int completed = 0;
 
@@ -48,18 +48,20 @@ namespace Excavator.CSV
             // Uses a look-ahead enumerator: this call will move to the next record immediately
             while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
-                string rowFamilyId = row[FamilyId];
+                string rowFamilyKey = row[FamilyId];
+                int? rowFamilyId = rowFamilyKey.AsType<int?>();
                 string rowFamilyName = row[FamilyName];
 
-                if ( !string.IsNullOrWhiteSpace( rowFamilyId ) && rowFamilyId != currentFamilyGroup.ForeignId )
+                if ( rowFamilyKey != null && rowFamilyKey != currentFamilyGroup.ForeignKey )
                 {
-                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
+                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignKey == rowFamilyKey );
                     if ( currentFamilyGroup == null )
                     {
                         currentFamilyGroup = new Group();
+                        currentFamilyGroup.ForeignKey = rowFamilyKey;
                         currentFamilyGroup.ForeignId = rowFamilyId;
                         currentFamilyGroup.Name = row[FamilyName];
-                        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentFamilyGroup.GroupTypeId = familyGroupTypeId;
                         newFamilyList.Add( currentFamilyGroup );
                     }
@@ -80,7 +82,7 @@ namespace Excavator.CSV
                             familyCampus.IsSystem = false;
                             familyCampus.Name = campusName;
                             lookupContext.Campuses.Add( familyCampus );
-                            lookupContext.SaveChanges( true );
+                            lookupContext.SaveChanges( DisableAuditing );
                             CampusList.Add( familyCampus );
                         }
 
@@ -95,7 +97,7 @@ namespace Excavator.CSV
                     string famZip = row[Zip];
                     string famCountry = row[Country];
 
-                    Location primaryAddress = Extensions.GetWithoutVerify( famAddress, famAddress2, famCity, famState, famZip, famCountry, false );
+                    Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry, verifyLocation: false );
 
                     if ( primaryAddress != null )
                     {
@@ -104,7 +106,7 @@ namespace Excavator.CSV
                         primaryLocation.IsMailingLocation = true;
                         primaryLocation.IsMappedLocation = true;
                         primaryLocation.GroupLocationTypeValueId = homeLocationTypeId;
-                        newGroupLocations.Add( primaryLocation, rowFamilyId );
+                        newGroupLocations.Add( primaryLocation, rowFamilyKey );
                     }
 
                     string famSecondAddress = row[SecondaryAddress];
@@ -114,7 +116,7 @@ namespace Excavator.CSV
                     string famSecondZip = row[SecondaryZip];
                     string famSecondCountry = row[SecondaryCountry];
 
-                    Location secondaryAddress = Extensions.GetWithoutVerify( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, false );
+                    Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, verifyLocation: false );
 
                     if ( secondaryAddress != null )
                     {
@@ -123,7 +125,7 @@ namespace Excavator.CSV
                         secondaryLocation.IsMailingLocation = true;
                         secondaryLocation.IsMappedLocation = true;
                         secondaryLocation.GroupLocationTypeValueId = workLocationTypeId;
-                        newGroupLocations.Add( secondaryLocation, rowFamilyId );
+                        newGroupLocations.Add( secondaryLocation, rowFamilyKey );
                     }
 
                     DateTime createdDateValue;
@@ -184,7 +186,7 @@ namespace Excavator.CSV
                 rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
                 } );
 
                 // Add these new families to the global list
@@ -194,10 +196,10 @@ namespace Excavator.CSV
             // Now save locations
             if ( newGroupLocations.Any() )
             {
-                // Add updated family id to locations
+                // Set updated family id on locations
                 foreach ( var locationPair in newGroupLocations )
                 {
-                    int? familyGroupId = ImportedPeople.Where( g => g.ForeignId == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
+                    int? familyGroupId = ImportedPeople.Where( g => g.ForeignKey == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
                     if ( familyGroupId != null )
                     {
                         locationPair.Key.GroupId = (int)familyGroupId;
@@ -210,7 +212,7 @@ namespace Excavator.CSV
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.GroupLocations.AddRange( newGroupLocations.Keys );
                     rockContext.ChangeTracker.DetectChanges();
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
                 } );
             }
         }

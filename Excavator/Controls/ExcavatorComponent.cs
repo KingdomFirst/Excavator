@@ -62,9 +62,12 @@ namespace Excavator
         public int ReportingNumber = 100;
 
         /// <summary>
-        /// Holds a reference to the loaded nodes
+        /// Holds a reference to the data nodes loaded in memory
         /// </summary>
-        public List<DatabaseNode> TableNodes;
+        public List<DataNode> DataNodes;
+
+        // Flag to set postprocessing audits on save
+        public static bool DisableAuditing = true;
 
         #endregion Fields
 
@@ -82,7 +85,7 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Loads the database into memory and fills a TableNode instance.
+        /// Loads the database into memory and fills a DataNode instance.
         /// </summary>
         /// <returns></returns>
         public abstract bool LoadSchema( string fileName );
@@ -92,19 +95,19 @@ namespace Excavator
         /// </summary>
         /// <param name="tableName">Name of the table to preview.</param>
         /// <returns></returns>
-        public DataTable PreviewData( string nodeId )
+        public virtual DataTable PreviewData( string nodeId )
         {
-            var node = TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-            if ( node != null && node.Columns.Any() )
+            var node = DataNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+            if ( node != null && node.Children.Any() )
             {
                 var dataTable = new DataTable();
-                foreach ( var column in node.Columns )
+                foreach ( var column in node.Children )
                 {
                     dataTable.Columns.Add( column.Name, column.NodeType );
                 }
 
                 var rowPreview = dataTable.NewRow();
-                foreach ( var column in node.Columns )
+                foreach ( var column in node.Children )
                 {
                     rowPreview[column.Name] = column.Value ?? DBNull.Value;
                 }
@@ -117,10 +120,11 @@ namespace Excavator
         }
 
         /// <summary>
-        /// Transforms and saves the data from the dataset.
+        /// Transforms the data.
         /// </summary>
+        /// <param name="settings">The settings.</param>
         /// <returns></returns>
-        public abstract int TransformData( string importUser = null );
+        public abstract int TransformData( Dictionary<string, string> settings );
 
         #endregion Methods
 

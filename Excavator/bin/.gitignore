@@ -5,15 +5,5 @@
 
 
 #Specific files
-EntityFramework.dll
-EntityFramework.SqlServer.dll
-System.Net.Http.Formatting.xml
-System.Web.Http.WebHost.xml
-System.Web.Http.xml
-System.Net.Http.Formatting.dll
-System.Web.Http.dll
-System.Web.Http.WebHost.dll
 *.xml
 *.dll.config
-
-/Excavator.sln.GhostDoc.xml
