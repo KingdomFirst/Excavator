@@ -1,5 +1,6 @@
 #specific folders
 *
 !.gitignore
+!Rock
 !Rock/*
 !repositories.config
