@@ -311,49 +311,47 @@ namespace Excavator
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void btnConnect_Click( object sender, RoutedEventArgs e )
         {
-            sqlConnector = new SqlConnector();
-            var modalBorder = new Border();
-            var connectPanel = new StackPanel();
-            var buttonPanel = new StackPanel();
-
-            // set UI effects
-            modalBorder.BorderBrush = (Brush)FindResource( "headerBackground" );
-            modalBorder.CornerRadius = new CornerRadius( 5 );
-            modalBorder.BorderThickness = new Thickness( 5 );
-            modalBorder.Padding = new Thickness( 5 );
-            buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
-            buttonPanel.Orientation = Orientation.Horizontal;
-            this.OpacityMask = new SolidColorBrush( Colors.White );
-            this.Effect = new BlurEffect();
-
-            sqlConnector.ConnectionString = CurrentConnection;
-            connectPanel.Children.Add( sqlConnector );
-
-            var okBtn = new Button();
-            okBtn.Content = "Ok";
-            okBtn.IsDefault = true;
-            okBtn.Margin = new Thickness( 0, 0, 5, 0 );
-            okBtn.Click += btnOk_Click;
-            okBtn.Style = (Style)FindResource( "buttonStylePrimary" );
-
-            var cancelBtn = new Button();
-            cancelBtn.Content = "Cancel";
-            cancelBtn.IsCancel = true;
-            cancelBtn.Style = (Style)FindResource( "buttonStyle" );
-
-            buttonPanel.Children.Add( okBtn );
-            buttonPanel.Children.Add( cancelBtn );
-            connectPanel.Children.Add( buttonPanel );
-            modalBorder.Child = connectPanel;
-
-            var contentPanel = new StackPanel();
-            contentPanel.Children.Add( modalBorder );
-
-            var connectWindow = new Window();
-
             try
             {
-                
+                sqlConnector = new SqlConnector();
+                var modalBorder = new Border();
+                var connectPanel = new StackPanel();
+                var buttonPanel = new StackPanel();
+
+                // set UI effects
+                modalBorder.BorderBrush = (Brush)FindResource( "headerBackground" );
+                modalBorder.CornerRadius = new CornerRadius( 5 );
+                modalBorder.BorderThickness = new Thickness( 5 );
+                modalBorder.Padding = new Thickness( 5 );
+                buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
+                buttonPanel.Orientation = Orientation.Horizontal;
+                this.OpacityMask = new SolidColorBrush( Colors.White );
+                this.Effect = new BlurEffect();
+
+                sqlConnector.ConnectionString = CurrentConnection;
+                connectPanel.Children.Add( sqlConnector );
+
+                var okBtn = new Button();
+                okBtn.Content = "Ok";
+                okBtn.IsDefault = true;
+                okBtn.Margin = new Thickness( 0, 0, 5, 0 );
+                okBtn.Click += btnOk_Click;
+                okBtn.Style = (Style)FindResource( "buttonStylePrimary" );
+
+                var cancelBtn = new Button();
+                cancelBtn.Content = "Cancel";
+                cancelBtn.IsCancel = true;
+                cancelBtn.Style = (Style)FindResource( "buttonStyle" );
+
+                buttonPanel.Children.Add( okBtn );
+                buttonPanel.Children.Add( cancelBtn );
+                connectPanel.Children.Add( buttonPanel );
+                modalBorder.Child = connectPanel;
+
+                var contentPanel = new StackPanel();
+                contentPanel.Children.Add( modalBorder );
+
+                var connectWindow = new Window();
                 connectWindow.Content = contentPanel;
                 connectWindow.Owner = Window.GetWindow( this );
                 connectWindow.ShowInTaskbar = false;
