@@ -54,7 +54,6 @@ namespace Excavator.CSV
 
             var metricValues = new List<MetricValue>();
 
-            var importDate = DateTime.Now;
             Metric currentMetric = null;
             int completed = 0;
 
@@ -121,7 +120,7 @@ namespace Excavator.CSV
                         currentMetric.EntityTypeId = campusEntityTypeId;
                         currentMetric.SourceValueTypeId = metricManualSource.Id;
                         currentMetric.CreatedByPersonAliasId = ImportPersonAliasId;
-                        currentMetric.CreatedDateTime = importDate;
+                        currentMetric.CreatedDateTime = ImportDateTime;
                         currentMetric.MetricCategories.Add( new MetricCategory { CategoryId = metricCategoryId } );
 
                         lookupContext.Metrics.Add( currentMetric );
@@ -137,7 +136,7 @@ namespace Excavator.CSV
                     var metricValue = new MetricValue();
                     metricValue.MetricValueType = MetricValueType.Measure;
                     metricValue.CreatedByPersonAliasId = ImportPersonAliasId;
-                    metricValue.CreatedDateTime = importDate;
+                    metricValue.CreatedDateTime = ImportDateTime;
                     metricValue.MetricValueDateTime = valueDate;
                     metricValue.MetricId = currentMetric.Id;
                     metricValue.EntityId = campusId;

@@ -140,8 +140,7 @@ namespace Excavator.CSV
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
             var newNoteList = new List<Note>();
-            var importDate = DateTime.Now;
-
+            
             int completed = 0;
             int newFamilies = 0;
             ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignKey != null ) ) ) );
@@ -168,7 +167,7 @@ namespace Excavator.CSV
                     var person = new Person();
                     person.ForeignKey = rowPersonKey;
                     person.ForeignId = rowPersonId;
-                    person.SystemNote = string.Format( "Imported via Excavator on {0}", importDate.ToString() );
+                    person.SystemNote = string.Format( "Imported via Excavator on {0}", ImportDateTime );
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAliasId;
                     string firstName = row[FirstName];
@@ -182,12 +181,12 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
                     {
                         person.CreatedDateTime = createdDateValue;
-                        person.ModifiedDateTime = importDate;
+                        person.ModifiedDateTime = ImportDateTime;
                     }
                     else
                     {
-                        person.CreatedDateTime = importDate;
-                        person.ModifiedDateTime = importDate;
+                        person.CreatedDateTime = ImportDateTime;
+                        person.ModifiedDateTime = ImportDateTime;
                     }
 
                     DateTime birthDate;
@@ -496,7 +495,7 @@ namespace Excavator.CSV
                         var newNote = new Note();
                         newNote.NoteTypeId = personalNoteTypeId;
                         newNote.CreatedByPersonAliasId = ImportPersonAliasId;
-                        newNote.CreatedDateTime = importDate;
+                        newNote.CreatedDateTime = ImportDateTime;
                         newNote.Text = notePair.Value;
                         newNote.ForeignKey = rowPersonKey;
                         newNote.ForeignId = rowPersonId;
@@ -515,8 +514,8 @@ namespace Excavator.CSV
                     var groupMember = new GroupMember();
                     groupMember.Person = person;
                     groupMember.GroupRoleId = groupRoleId;
-                    groupMember.CreatedDateTime = importDate;
-                    groupMember.ModifiedDateTime = importDate;
+                    groupMember.CreatedDateTime = ImportDateTime;
+                    groupMember.ModifiedDateTime = ImportDateTime;
                     groupMember.CreatedByPersonAliasId = ImportPersonAliasId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
 

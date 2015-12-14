@@ -39,7 +39,6 @@ namespace Excavator.CSV
             var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             string currentFamilyKey = string.Empty;
-            var importDate = DateTime.Now;
             int completed = 0;
 
             ReportProgress( 0, string.Format( "Starting family import ({0:N0} already exist).", numImportedFamilies ) );
@@ -132,12 +131,12 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
                     {
                         currentFamilyGroup.CreatedDateTime = createdDateValue;
-                        currentFamilyGroup.ModifiedDateTime = importDate;
+                        currentFamilyGroup.ModifiedDateTime = ImportDateTime;
                     }
                     else
                     {
-                        currentFamilyGroup.CreatedDateTime = importDate;
-                        currentFamilyGroup.ModifiedDateTime = importDate;
+                        currentFamilyGroup.CreatedDateTime = ImportDateTime;
+                        currentFamilyGroup.ModifiedDateTime = ImportDateTime;
                     }
 
                     completed++;

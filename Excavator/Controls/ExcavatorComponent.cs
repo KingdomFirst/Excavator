@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using Rock;
 
 namespace Excavator
 {
@@ -58,7 +59,9 @@ namespace Excavator
             get;
         }
 
-        // Report progress when a multiple of this number has been imported
+        /// <summary>
+        /// Report progress when a multiple of this number has been imported
+        /// </summary>
         public int ReportingNumber = 100;
 
         /// <summary>
@@ -66,8 +69,15 @@ namespace Excavator
         /// </summary>
         public List<DataNode> DataNodes;
 
-        // Flag to set postprocessing audits on save
+        /// <summary>
+        /// Flag to set postprocessing audits on save
+        /// </summary>
         public static bool DisableAuditing = true;
+
+        /// <summary>
+        /// Gets the import date and time
+        /// </summary>
+        public static DateTime ImportDateTime = RockDateTime.Now;
 
         #endregion Fields
 
