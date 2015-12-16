@@ -132,6 +132,7 @@ namespace Excavator.F1
                     batch.CreatedByPersonAliasId = ImportPersonAliasId;
                     batch.ForeignKey = batchId.ToString();
                     batch.ForeignId = batchId;
+                    batch.Note = string.Empty;
                     batch.Status = batchStatusClosed;
                     batch.AccountingSystemCode = string.Empty;
 
