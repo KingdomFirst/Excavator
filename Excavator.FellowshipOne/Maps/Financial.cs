@@ -230,8 +230,6 @@ namespace Excavator.F1
 
             var refundReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ), lookupContext ).DefinedValues;
 
-            var paymentDetailList = new FinancialPaymentDetailService( lookupContext ).Queryable().AsNoTracking().ToList();
-
             var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
 
             int? defaultBatchId = null;
@@ -243,7 +241,7 @@ namespace Excavator.F1
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable().AsNoTracking()
                .Where( c => c.ForeignId != null )
-               .ToDictionary( t => t.ForeignId, t => (int?)t.Id );
+               .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
 
             // List for batching new contributions
             var newTransactions = new List<FinancialTransaction>();
@@ -334,31 +332,18 @@ namespace Excavator.F1
                             isTypeNonCash = true;
                         }
 
-                        // lookup or create a payment detail based on payment type
-                        var paymentDetail = paymentDetailList.FirstOrDefault( d => d.ModifiedByPersonAliasId != null
-                            && d.ModifiedByPersonAliasId == giverAliasId
-                            && d.CurrencyTypeValueId == paymentCurrencyTypeId
-                            && d.CreditCardTypeValueId == creditCardTypeId
-                            && d.AccountNumberMasked == cardLastFour );
-                        if ( paymentDetail == null )
-                        {
-                            paymentDetail = new FinancialPaymentDetail();
-                            paymentDetail.CreatedDateTime = receivedDate;
-                            paymentDetail.CreatedByPersonAliasId = giverAliasId;
-                            paymentDetail.ModifiedDateTime = ImportDateTime;
-                            paymentDetail.ModifiedByPersonAliasId = giverAliasId;
-                            paymentDetail.CurrencyTypeValueId = paymentCurrencyTypeId;
-                            paymentDetail.CreditCardTypeValueId = creditCardTypeId;
-                            paymentDetail.AccountNumberMasked = cardLastFour;
-                            paymentDetail.ForeignKey = contributionId.ToString();
-                            paymentDetail.ForeignId = contributionId;
+                        var paymentDetail = new FinancialPaymentDetail();
+                        paymentDetail.CreatedDateTime = receivedDate;
+                        paymentDetail.CreatedByPersonAliasId = giverAliasId;
+                        paymentDetail.ModifiedDateTime = ImportDateTime;
+                        paymentDetail.ModifiedByPersonAliasId = giverAliasId;
+                        paymentDetail.CurrencyTypeValueId = paymentCurrencyTypeId;
+                        paymentDetail.CreditCardTypeValueId = creditCardTypeId;
+                        paymentDetail.AccountNumberMasked = cardLastFour;
+                        paymentDetail.ForeignKey = contributionId.ToString();
+                        paymentDetail.ForeignId = contributionId;
 
-                            lookupContext.FinancialPaymentDetails.Add( paymentDetail );
-                            lookupContext.SaveChanges( DisableAuditing );
-                            paymentDetailList.Add( paymentDetail );
-                        }
-
-                        transaction.FinancialPaymentDetailId = paymentDetail.Id;
+                        transaction.FinancialPaymentDetail = paymentDetail;
                     }
 
                     string checkNumber = row["Check_Number"] as string;
@@ -446,8 +431,7 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        SaveContributions( newTransactions );
-                        lookupContext = new RockContext();
+                        SaveContributions( newTransactions );                        
                         newTransactions.Clear();
                         ReportPartialProgress();
                     }
