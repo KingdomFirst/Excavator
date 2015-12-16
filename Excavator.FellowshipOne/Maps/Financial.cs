@@ -130,8 +130,10 @@ namespace Excavator.F1
                 {
                     var batch = new FinancialBatch();
                     batch.CreatedByPersonAliasId = ImportPersonAliasId;
+                    batch.ForeignKey = batchId.ToString();
                     batch.ForeignId = batchId;
                     batch.Status = batchStatusClosed;
+                    batch.AccountingSystemCode = string.Empty;
 
                     string name = row["BatchName"] as string;
                     if ( name != null )
@@ -262,6 +264,7 @@ namespace Excavator.F1
                     transaction.CreatedByPersonAliasId = ImportPersonAliasId;
                     transaction.ModifiedByPersonAliasId = ImportPersonAliasId;
                     transaction.TransactionTypeValueId = transactionTypeContributionId;
+                    transaction.ForeignKey = contributionId.ToString();
                     transaction.ForeignId = contributionId;
 
                     int? giverAliasId = null;
