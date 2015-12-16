@@ -123,6 +123,7 @@ namespace Excavator.F1
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
                     businessGroup.Members.Add( groupMember );
                     businessGroup.GroupTypeId = familyGroupTypeId;
+                    businessGroup.ForeignKey = householdId.ToString();
                     businessGroup.ForeignId = householdId;
                     businessList.Add( businessGroup );
 
@@ -323,8 +324,8 @@ namespace Excavator.F1
 
                         person.CreatedByPersonAliasId = ImportPersonAliasId;
                         person.RecordTypeValueId = personRecordTypeId;
-                        person.ForeignId = individualId;
                         person.ForeignKey = individualId.ToString();
+                        person.ForeignId = individualId;
 
                         var gender = row["Gender"] as string;
                         if ( gender != null )
@@ -492,6 +493,7 @@ namespace Excavator.F1
                         {
                             householdCampusList.Add( currentCampus );
                             familyGroup.Members.Add( groupMember );
+                            familyGroup.ForeignKey = householdId.ToString();
                             familyGroup.ForeignId = householdId;
                         }
                         else
@@ -499,6 +501,7 @@ namespace Excavator.F1
                             var visitorGroup = new Group();
                             visitorGroup.Members.Add( groupMember );
                             visitorGroup.GroupTypeId = familyGroupTypeId;
+                            visitorGroup.ForeignKey = householdId.ToString();
                             visitorGroup.ForeignId = householdId;
                             visitorGroup.Name = person.LastName + " Family";
                             visitorGroup.CampusId = CampusList.Where( c => c.Name.StartsWith( currentCampus ) || c.ShortCode == currentCampus )
@@ -780,6 +783,7 @@ namespace Excavator.F1
                         user.IsConfirmed = isEnabled;
                         user.UserName = userName.Trim();
                         user.PersonId = personKeys.PersonId;
+                        user.ForeignKey = userId.ToString();
                         user.ForeignId = userId;
 
                         if ( isStaff == true )
