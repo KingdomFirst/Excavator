@@ -688,6 +688,54 @@ namespace Excavator.F1
                                     }
                                 }
                             }
+
+                            // Add known relationship group
+                            var knownRelationshipGroupType = GroupTypeCache.Read( Rock.SystemGuid.GroupType.GROUPTYPE_KNOWN_RELATIONSHIPS );
+
+                            var knownGroup = groupMemberService.Queryable()
+                                .Where( m => 
+                                    m.PersonId == groupMember.Person.Id 
+                                    && m.GroupRoleId == allowCheckInByRoleId
+                                    && m.Group.GroupTypeId == knownRelationshipGroupType.Id )
+                                .Select( m => m.Group )
+                                .FirstOrDefault();
+
+                            if ( knownGroup == null )
+                            {
+                                var knownGroupMember = new GroupMember();
+                                knownGroupMember.PersonId = groupMember.Person.Id;
+                                knownGroupMember.GroupRoleId = allowCheckInByRoleId;
+
+                                knownGroup = new Group();
+                                knownGroup.Name = knownRelationshipGroupType.Name;
+                                knownGroup.GroupTypeId = canCheckInRoleId;
+                                knownGroup.Members.Add( knownGroupMember );
+                                rockContext.Groups.Add( knownGroup );
+                            }
+
+                            // Add implied relationship group
+                            var impliedRelationshipGroupType = GroupTypeCache.Read( Rock.SystemGuid.GroupType.GROUPTYPE_IMPLIED_RELATIONSHIPS );
+
+                            var impliedGroup = groupMemberService.Queryable()
+                                .Where( m =>
+                                    m.PersonId == groupMember.Person.Id
+                                    && m.GroupRoleId == ownerRole.Id
+                                    && m.Group.GroupTypeId == impliedRelationshipGroupType.Id )
+                                .Select( m => m.Group )
+                                .FirstOrDefault();
+
+                            if ( impliedGroup == null )
+                            {
+                                var impliedGroupMember = new GroupMember();
+                                impliedGroupMember.PersonId = groupMember.Person.Id;
+                                impliedGroupMember.GroupRoleId = allowCheckInByRoleId;
+
+                                impliedGroup = new Group();
+                                impliedGroup.Name = impliedRelationshipGroupType.Name;
+                                impliedGroup.GroupTypeId = ownerRole.Id;
+                                impliedGroup.Members.Add( impliedGroupMember );
+                                rockContext.Groups.Add( impliedGroup );
+                            }
                         }
                     }
                 }
