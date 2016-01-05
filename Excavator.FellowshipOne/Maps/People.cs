@@ -708,7 +708,7 @@ namespace Excavator.F1
 
                                 knownGroup = new Group();
                                 knownGroup.Name = knownRelationshipGroupType.Name;
-                                knownGroup.GroupTypeId = canCheckInRoleId;
+                                knownGroup.GroupTypeId = knownRelationshipGroupType.Id;
                                 knownGroup.Members.Add( knownGroupMember );
                                 rockContext.Groups.Add( knownGroup );
                             }
@@ -728,11 +728,11 @@ namespace Excavator.F1
                             {
                                 var impliedGroupMember = new GroupMember();
                                 impliedGroupMember.PersonId = groupMember.Person.Id;
-                                impliedGroupMember.GroupRoleId = allowCheckInByRoleId;
+                                impliedGroupMember.GroupRoleId = ownerRole.Id;
 
                                 impliedGroup = new Group();
                                 impliedGroup.Name = impliedRelationshipGroupType.Name;
-                                impliedGroup.GroupTypeId = ownerRole.Id;
+                                impliedGroup.GroupTypeId = impliedRelationshipGroupType.Id;
                                 impliedGroup.Members.Add( impliedGroupMember );
                                 rockContext.Groups.Add( impliedGroup );
                             }
