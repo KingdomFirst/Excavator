@@ -901,5 +901,37 @@ namespace Excavator.F1
                 } );
             }
         }
+
+        /// <summary>
+        /// Adds the user login.
+        /// </summary>
+        /// <param name="authProviderEntityTypeId">The id of the auth provider entity type.</param>
+        /// <param name="person">The person.</param>
+        /// <param name="value">The value, probably an email.</param>
+        protected static void AddUserLogin( int? authProviderEntityTypeId, Person person, string value )
+        {
+            // Make sure we can create a valid userlogin
+            if ( !authProviderEntityTypeId.HasValue || string.IsNullOrWhiteSpace(value) )
+            {
+                return;
+            }
+
+            // Check for an existing userlogin
+            if ( person.Users.Any( u => u.EntityTypeId == authProviderEntityTypeId.Value && u.UserName == value ) )
+            {
+                return;
+            }
+
+            // Add a userlogin
+            var rockContext = new RockContext();
+            var userLoginService = new UserLoginService( rockContext );
+            var userLogin = new UserLogin { 
+                UserName = value,
+                EntityTypeId = authProviderEntityTypeId.Value
+            };
+            person.Users.Add( userLogin );
+            userLoginService.Add( userLogin );
+            rockContext.SaveChanges( DisableAuditing );
+        }
     }
 }
