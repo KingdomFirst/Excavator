@@ -915,16 +915,17 @@ namespace Excavator.F1
             {
                 return;
             }
+        
+            var rockContext = new RockContext();
+            var userLoginService = new UserLoginService( rockContext );
 
-            // Check for an existing userlogin
-            if ( person.Users.Any( u => u.EntityTypeId == authProviderEntityTypeId.Value && u.UserName == value ) )
+            // Check for an existing userlogin, must be unique for the DB
+            if ( userLoginService.Queryable().Any( u => u.UserName == value ) )
             {
                 return;
             }
 
             // Add a userlogin
-            var rockContext = new RockContext();
-            var userLoginService = new UserLoginService( rockContext );
             var userLogin = new UserLogin { 
                 UserName = value,
                 EntityTypeId = authProviderEntityTypeId.Value
