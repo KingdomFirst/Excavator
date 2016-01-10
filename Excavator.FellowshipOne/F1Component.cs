@@ -92,6 +92,7 @@ namespace Excavator.F1
         protected static int TextFieldTypeId;
         protected static int IntegerFieldTypeId;
         protected static int PersonEntityTypeId;
+        protected static int? AuthProviderEntityTypeId;
 
         // Custom attribute types
 
@@ -358,6 +359,11 @@ namespace Excavator.F1
             HouseholdIdAttribute = AttributeCache.Read( householdAttribute.Id );
             InFellowshipLoginAttribute = AttributeCache.Read( infellowshipLoginAttribute.Id );
             SecondaryEmailAttribute = AttributeCache.Read( secondaryEmailAttribute.Id );
+
+            // Set AuthProviderEntityTypeId if Apollos/Infellowship provider exists
+            var f1AuthProvider = "cc.newspring.F1.Security.Authentication.F1Migrator";
+            var cache = EntityTypeCache.Read( f1AuthProvider );
+            AuthProviderEntityTypeId = cache == null ? (int?)null : cache.Id;
 
             var aliasIdList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
                 .Select( pa => new

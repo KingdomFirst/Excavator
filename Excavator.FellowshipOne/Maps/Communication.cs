@@ -191,6 +191,7 @@ namespace Excavator.F1
                                 if ( type.Contains( "InFellowship" ) && !person.Attributes.ContainsKey( InFellowshipLoginAttribute.Key ) )
                                 {
                                     AddPersonAttribute( InFellowshipLoginAttribute, person, value );
+                                    AddUserLogin( AuthProviderEntityTypeId, person, value );
                                 }
                                 else if ( value.IsEmail() )
                                 {
