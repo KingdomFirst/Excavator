@@ -52,7 +52,7 @@ namespace Excavator.F1
             var noteList = new List<Note>();
 
             int completed = 0;
-            int totalRows = 0;//tableData.Count();
+            int totalRows = tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying note import ({0:N0} found).", totalRows ) );
             foreach ( var row in tableData.Where( r => r != null ) )
