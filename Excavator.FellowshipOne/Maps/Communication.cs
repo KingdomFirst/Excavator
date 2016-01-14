@@ -188,7 +188,9 @@ namespace Excavator.F1
                                 }
 
                                 // Check for an InFellowship ID/email before checking other types of email
-                                if ( type.Contains( "InFellowship" ) && !person.Attributes.ContainsKey( InFellowshipLoginAttribute.Key ) )
+                                var isLoginValue = type.IndexOf( "InFellowship", StringComparison.OrdinalIgnoreCase ) >= 0;
+                                var personAlreadyHasLogin = person.Attributes.ContainsKey( InFellowshipLoginAttribute.Key );
+                                if ( isLoginValue && !personAlreadyHasLogin )
                                 {
                                     AddPersonAttribute( InFellowshipLoginAttribute, person, value );
                                     AddUserLogin( AuthProviderEntityTypeId, person, value );
