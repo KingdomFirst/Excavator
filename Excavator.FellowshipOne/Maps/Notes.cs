@@ -52,17 +52,24 @@ namespace Excavator.F1
             var noteList = new List<Note>();
 
             int completed = 0;
-            int totalRows = tableData.Count();
+            int totalRows = 0;//tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying note import ({0:N0} found).", totalRows ) );
             foreach ( var row in tableData.Where( r => r != null ) )
             {
                 string text = row["Note_Text"] as string;
-                var noteActive = row["NoteArchived"] as Boolean?;
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
+                var noteTypeActive = row["NoteTypeActive"] as Boolean?;
+
+                bool? noteInactive = false;
+                if ( row.Columns.FirstOrDefault( v => v.Name.Equals( "IsInactive" ) ) != null )
+                {
+                    noteInactive = row["IsInactive"] as Boolean?;
+                }
+
                 var personKeys = GetPersonKeys( individualId, householdId );
-                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteActive == false )
+                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteInactive != true )
                 {
                     DateTime? dateCreated = row["NoteCreated"] as DateTime?;
                     string noteType = row["Note_Type_Name"] as string;
