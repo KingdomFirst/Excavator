@@ -370,7 +370,7 @@ namespace Excavator.F1
                                 familyRoleId = FamilyRole.Visitor;
                             }
 
-                            if ( familyRole == "child" || person.Age < 18 )
+                            else if ( familyRole == "child" || person.Age < 18 )
                             {
                                 familyRoleId = FamilyRole.Child;
                             }
