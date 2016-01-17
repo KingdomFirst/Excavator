@@ -52,7 +52,7 @@ namespace Excavator.F1
             var noteList = new List<Note>();
 
             int completed = 0;
-            int totalRows = tableData.Count();
+            int totalRows = 0;// tableData.Count();
             int percentage = ( totalRows - 1 ) / 100 + 1;
             ReportProgress( 0, string.Format( "Verifying note import ({0:N0} found).", totalRows ) );
             foreach ( var row in tableData.Where( r => r != null ) )
@@ -62,14 +62,21 @@ namespace Excavator.F1
                 int? householdId = row["Household_ID"] as int?;
                 var noteTypeActive = row["NoteTypeActive"] as Boolean?;
 
-                bool? noteInactive = false;
+                bool noteArchived = false;
                 if ( row.Columns.FirstOrDefault( v => v.Name.Equals( "IsInactive" ) ) != null )
                 {
-                    noteInactive = row["IsInactive"] as Boolean?;
+                    /* =====================================================================
+                    *  the NoteArchived column *should* work, but OrcaMDF won't read it...
+                    *  instead check for a manually added column: IsInactive int null
+                    *       var noteActive = row["NoteArchived"] as Boolean?;
+                    *       if ( noteActive == null ) throw new NullReferenceException();
+                    /* ===================================================================== */
+                    var rowInactiveValue = row["IsInactive"] as int?;
+                    noteArchived = rowInactiveValue.Equals( 1 );
                 }
 
                 var personKeys = GetPersonKeys( individualId, householdId );
-                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteInactive != true )
+                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteTypeActive == true && !noteArchived )
                 {
                     DateTime? dateCreated = row["NoteCreated"] as DateTime?;
                     string noteType = row["Note_Type_Name"] as string;
