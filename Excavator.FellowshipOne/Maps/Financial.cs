@@ -231,6 +231,10 @@ namespace Excavator.F1
 
             var creditCardTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CREDIT_CARD_TYPE ) ).DefinedValues;
 
+            int sourceTypeOnsite = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_ONSITE_COLLECTION ), lookupContext ).Id;
+            int sourceTypeWebsite = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_WEBSITE ), lookupContext ).Id;
+            int sourceTypeKiosk = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_KIOSK ), lookupContext ).Id;
+
             var refundReasons = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_REFUND_REASON ), lookupContext ).DefinedValues;
 
             var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
@@ -309,12 +313,12 @@ namespace Excavator.F1
                     string contributionType = row["Contribution_Type_Name"].ToStringSafe().ToLower();
                     if ( contributionType != null )
                     {
+                        // set default source to onsite, exceptions listed below
+                        transaction.SourceTypeValueId = sourceTypeOnsite;
+
                         int? paymentCurrencyTypeId = null, creditCardTypeId = null;
-                        if ( contributionType == "ach" )
-                        {
-                            paymentCurrencyTypeId = currencyTypeACH;
-                        }
-                        else if ( contributionType == "cash" )
+
+                        if ( contributionType == "cash" )
                         {
                             paymentCurrencyTypeId = currencyTypeCash;
                         }
@@ -322,9 +326,15 @@ namespace Excavator.F1
                         {
                             paymentCurrencyTypeId = currencyTypeCheck;
                         }
+                        else if ( contributionType == "ach" )
+                        {
+                            paymentCurrencyTypeId = currencyTypeACH;
+                            transaction.SourceTypeValueId = sourceTypeWebsite;
+                        }
                         else if ( contributionType == "credit card" )
                         {
                             paymentCurrencyTypeId = currencyTypeCreditCard;
+                            transaction.SourceTypeValueId = sourceTypeWebsite;
 
                             if ( cardType != null )
                             {
@@ -351,10 +361,15 @@ namespace Excavator.F1
                     }
 
                     string checkNumber = row["Check_Number"] as string;
+                    // if the check number is valid, put it in the transaction code
                     if ( checkNumber != null && checkNumber.AsType<int?>() != null )
                     {
-                        // set the transaction code to the check number
                         transaction.TransactionCode = checkNumber;
+                    }
+                    // check for SecureGive kiosk transactions
+                    else if ( checkNumber.StartsWith( "SG" ) )
+                    {
+                        transaction.SourceTypeValueId = sourceTypeKiosk;
                     }
 
                     string fundName = row["Fund_Name"] as string;
