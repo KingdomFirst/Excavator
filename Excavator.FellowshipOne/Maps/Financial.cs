@@ -224,10 +224,23 @@ namespace Excavator.F1
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
             var transactionTypeContributionId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ), lookupContext ).Id;
 
-            int currencyTypeACH = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ), lookupContext ).Id;
-            int currencyTypeCash = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ), lookupContext ).Id;
-            int currencyTypeCheck = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ), lookupContext ).Id;
-            int currencyTypeCreditCard = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ), lookupContext ).Id;
+            var currencyTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CURRENCY_TYPE ) ).DefinedValues;
+            int currencyTypeACH = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) ) ).Id;
+            int currencyTypeCash = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ) ).Id;
+            int currencyTypeCheck = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ) ).Id;
+            int currencyTypeCreditCard = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ) ).Id;
+            int? currencyTypeNonCash = currencyTypes.Where( dv => dv.Value.Equals( "Non-Cash" ) ).Select( dv => (int?)dv.Id ).FirstOrDefault();
+            if ( currencyTypeNonCash == null )
+            {
+                var newTenderNonCash = new DefinedValue();
+                newTenderNonCash.Value = "Non-Cash";
+                newTenderNonCash.Description = "Non-Cash";
+                newTenderNonCash.DefinedType = new DefinedType { Guid = new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CURRENCY_TYPE ) };
+                lookupContext.DefinedValues.Add( newTenderNonCash );
+                lookupContext.SaveChanges();
+
+                currencyTypeNonCash = newTenderNonCash.Id;
+            }
 
             var creditCardTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CREDIT_CARD_TYPE ) ).DefinedValues;
 
@@ -307,7 +320,6 @@ namespace Excavator.F1
                         transaction.ModifiedDateTime = ImportDateTime;
                     }
 
-                    bool isTypeNonCash = false;
                     string cardType = row["Card_Type"] as string;
                     string cardLastFour = row["Last_Four"] as string;
                     string contributionType = row["Contribution_Type_Name"].ToStringSafe().ToLower();
@@ -343,7 +355,7 @@ namespace Excavator.F1
                         }
                         else
                         {
-                            isTypeNonCash = true;
+                            paymentCurrencyTypeId = currencyTypeNonCash;
                         }
 
                         var paymentDetail = new FinancialPaymentDetail();
@@ -421,14 +433,12 @@ namespace Excavator.F1
                         if ( amount == 0 && statedValue != null && statedValue != 0 )
                         {
                             amount = statedValue;
-                            isTypeNonCash = true;
                         }
 
                         var transactionDetail = new FinancialTransactionDetail();
                         transactionDetail.Amount = (decimal)amount;
                         transactionDetail.CreatedDateTime = receivedDate;
                         transactionDetail.AccountId = transactionAccountId;
-                        transactionDetail.IsNonCash = isTypeNonCash;
                         transaction.TransactionDetails.Add( transactionDetail );
 
                         if ( amount < 0 )
