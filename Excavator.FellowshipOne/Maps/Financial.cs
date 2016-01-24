@@ -224,18 +224,18 @@ namespace Excavator.F1
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
             var transactionTypeContributionId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION ), lookupContext ).Id;
 
-            var currencyTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CURRENCY_TYPE ) ).DefinedValues;
-            int currencyTypeACH = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) ) ).Id;
-            int currencyTypeCash = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ) ).Id;
-            int currencyTypeCheck = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ) ).Id;
-            int currencyTypeCreditCard = currencyTypes.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ) ).Id;
-            int? currencyTypeNonCash = currencyTypes.Where( dv => dv.Value.Equals( "Non-Cash" ) ).Select( dv => (int?)dv.Id ).FirstOrDefault();
+            var currencyTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CURRENCY_TYPE ) );
+            int currencyTypeACH = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) ) ).Id;
+            int currencyTypeCash = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ) ).Id;
+            int currencyTypeCheck = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ) ).Id;
+            int currencyTypeCreditCard = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ) ).Id;
+            int? currencyTypeNonCash = currencyTypes.DefinedValues.Where( dv => dv.Value.Equals( "Non-Cash" ) ).Select( dv => (int?)dv.Id ).FirstOrDefault();
             if ( currencyTypeNonCash == null )
             {
                 var newTenderNonCash = new DefinedValue();
                 newTenderNonCash.Value = "Non-Cash";
                 newTenderNonCash.Description = "Non-Cash";
-                newTenderNonCash.DefinedType = new DefinedType { Guid = new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CURRENCY_TYPE ) };
+                newTenderNonCash.DefinedTypeId = currencyTypes.Id;
                 lookupContext.DefinedValues.Add( newTenderNonCash );
                 lookupContext.SaveChanges();
 
@@ -374,12 +374,12 @@ namespace Excavator.F1
 
                     string checkNumber = row["Check_Number"] as string;
                     // if the check number is valid, put it in the transaction code
-                    if ( checkNumber != null && checkNumber.AsType<int?>() != null )
+                    if ( checkNumber.AsType<int?>() != null )
                     {
                         transaction.TransactionCode = checkNumber;
                     }
                     // check for SecureGive kiosk transactions
-                    else if ( checkNumber.StartsWith( "SG" ) )
+                    else if ( !string.IsNullOrEmpty( checkNumber ) && checkNumber.StartsWith( "SG" ) )
                     {
                         transaction.SourceTypeValueId = sourceTypeKiosk;
                     }
