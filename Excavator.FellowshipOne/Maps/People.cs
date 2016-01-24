@@ -48,7 +48,6 @@ namespace Excavator.F1
         // Group type: Family
         int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-
         /// <summary>
         /// Maps the specified table data.
         /// </summary>
@@ -75,8 +74,6 @@ namespace Excavator.F1
 
             // Record status: Active, Inactive, Pending
             int? statusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ), lookupContext ).Id;
-            int? statusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ), lookupContext ).Id;
-            int? statusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ), lookupContext ).Id;
 
             // Record type: Business
             int? businessRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS ), lookupContext ).Id;
@@ -103,6 +100,7 @@ namespace Excavator.F1
                     businessPerson.CreatedByPersonAliasId = ImportPersonAliasId;
                     businessPerson.CreatedDateTime = row["Created_Date"] as DateTime?;
                     businessPerson.RecordTypeValueId = businessRecordTypeId;
+                    businessPerson.RecordStatusValueId = statusActiveId;
 
                     var businessName = row["Household_Name"] as string;
                     if ( businessName != null )
@@ -369,7 +367,6 @@ namespace Excavator.F1
                             {
                                 familyRoleId = FamilyRole.Visitor;
                             }
-
                             else if ( familyRole == "child" || person.Age < 18 )
                             {
                                 familyRoleId = FamilyRole.Child;
@@ -693,8 +690,8 @@ namespace Excavator.F1
                             var knownRelationshipGroupType = GroupTypeCache.Read( Rock.SystemGuid.GroupType.GROUPTYPE_KNOWN_RELATIONSHIPS );
 
                             var knownGroup = groupMemberService.Queryable()
-                                .Where( m => 
-                                    m.PersonId == groupMember.Person.Id 
+                                .Where( m =>
+                                    m.PersonId == groupMember.Person.Id
                                     && m.GroupRoleId == allowCheckInByRoleId
                                     && m.Group.GroupTypeId == knownRelationshipGroupType.Id )
                                 .Select( m => m.Group )
@@ -940,7 +937,6 @@ namespace Excavator.F1
         {
             if ( !string.IsNullOrWhiteSpace( value ) )
             {
-                
                 person.Attributes.Add( attribute.Key, attribute );
                 person.AttributeValues.Add( attribute.Key, new AttributeValueCache()
                 {
@@ -959,11 +955,11 @@ namespace Excavator.F1
         protected static void AddUserLogin( int? authProviderEntityTypeId, Person person, string value )
         {
             // Make sure we can create a valid userlogin
-            if ( !authProviderEntityTypeId.HasValue || string.IsNullOrWhiteSpace(value) )
+            if ( !authProviderEntityTypeId.HasValue || string.IsNullOrWhiteSpace( value ) )
             {
                 return;
             }
-        
+
             var rockContext = new RockContext();
             var userLoginService = new UserLoginService( rockContext );
 
@@ -974,7 +970,8 @@ namespace Excavator.F1
             }
 
             // Add a userlogin
-            var userLogin = new UserLogin { 
+            var userLogin = new UserLogin
+            {
                 UserName = value,
                 EntityTypeId = authProviderEntityTypeId.Value
             };
