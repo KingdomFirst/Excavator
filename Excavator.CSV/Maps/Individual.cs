@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
-using System.Web;
 using Excavator.Utility;
 using Rock;
 using Rock.Data;
@@ -40,7 +39,7 @@ namespace Excavator.CSV
         /// Loads the individual data.
         /// </summary>
         /// <param name="csvData">The CSV data.</param>
-        private int LoadIndividuals( CsvDataModel csvData )
+        private int LoadIndividuals( CSVInstance csvData )
         {
             var lookupContext = new RockContext();
             var groupTypeRoleService = new GroupTypeRoleService( lookupContext );
@@ -81,7 +80,7 @@ namespace Excavator.CSV
             var numberTypeValues = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE ), lookupContext ).DefinedValues;
 
             // Personal note type id
-            var personalNoteTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) ).Id;
+            var personalNoteTypeId = new NoteTypeService( lookupContext ).Get( new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) ).Id;
 
             // School defined type
             var schoolDefinedType = DefinedTypeCache.Read( new Guid( "576FF1E2-6225-4565-A16D-230E26167A3D" ) );
@@ -102,7 +101,7 @@ namespace Excavator.CSV
                     .Where( c => c.Name == "Visit Information" ).FirstOrDefault();
 
             // Look for custom attributes in the Individual file
-            var allFields = csvData.TableNodes.FirstOrDefault().Columns.Select( ( node, index ) => new { node = node, index = index } ).ToList();
+            var allFields = csvData.TableNodes.FirstOrDefault().Children.Select( ( node, index ) => new { node = node, index = index } ).ToList();
             Dictionary<int, string> customAttributes = allFields
                 .Where( f => f.index > SecurityNote )
                 .ToDictionary( f => f.index, f => f.node.Name.RemoveWhitespace() );
@@ -130,7 +129,7 @@ namespace Excavator.CSV
                 }
 
                 lookupContext.Attributes.AddRange( newAttributes );
-                lookupContext.SaveChanges( true );
+                lookupContext.SaveChanges( DisableAuditing );
                 personAttributes.AddRange( newAttributes );
             }
 
@@ -141,11 +140,10 @@ namespace Excavator.CSV
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
             var newNoteList = new List<Note>();
-            var importDate = DateTime.Now;
-
+            
             int completed = 0;
             int newFamilies = 0;
-            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignId != null ) ) ) );
+            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignKey != null ) ) ) );
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
@@ -154,21 +152,24 @@ namespace Excavator.CSV
                 int groupRoleId = adultRoleId;
                 bool isFamilyRelationship = true;
 
-                string rowFamilyId = row[FamilyId];
-                string rowPersonId = row[PersonId];
                 string rowFamilyName = row[FamilyName];
+                string rowFamilyKey = row[FamilyId];
+                string rowPersonKey = row[PersonId];
+                int? rowFamilyId = rowFamilyKey.AsType<int?>();
+                int? rowPersonId = rowPersonKey.AsType<int?>();
 
                 // Check that this person isn't already in our data
-                var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignId == rowPersonId ) );
+                var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignKey == rowPersonKey ) );
                 if ( !personExists )
                 {
                     #region person create
 
                     var person = new Person();
+                    person.ForeignKey = rowPersonKey;
                     person.ForeignId = rowPersonId;
-                    person.SystemNote = string.Format( "Imported via Excavator on {0}", importDate.ToString() );
+                    person.SystemNote = string.Format( "Imported via Excavator on {0}", ImportDateTime );
                     person.RecordTypeValueId = personRecordTypeId;
-                    person.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    person.CreatedByPersonAliasId = ImportPersonAliasId;
                     string firstName = row[FirstName];
                     string nickName = row[NickName];
                     person.FirstName = firstName;
@@ -180,12 +181,12 @@ namespace Excavator.CSV
                     if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
                     {
                         person.CreatedDateTime = createdDateValue;
-                        person.ModifiedDateTime = importDate;
+                        person.ModifiedDateTime = ImportDateTime;
                     }
                     else
                     {
-                        person.CreatedDateTime = importDate;
-                        person.ModifiedDateTime = importDate;
+                        person.CreatedDateTime = ImportDateTime;
+                        person.ModifiedDateTime = ImportDateTime;
                     }
 
                     DateTime birthDate;
@@ -363,7 +364,7 @@ namespace Excavator.CSV
                         {
                             var currentNumber = new PhoneNumber();
                             currentNumber.CountryCode = countryCode;
-                            currentNumber.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            currentNumber.CreatedByPersonAliasId = ImportPersonAliasId;
                             currentNumber.Extension = extension.Left( 20 );
                             currentNumber.Number = normalizedNumber.TrimStart( new Char[] { '0' } ).Left( 20 );
                             currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
@@ -390,7 +391,7 @@ namespace Excavator.CSV
 
                     // Map Person attributes
                     person.Attributes = new Dictionary<string, AttributeCache>();
-                    person.AttributeValues = new Dictionary<string, AttributeValue>();
+                    person.AttributeValues = new Dictionary<string, AttributeValueCache>();
 
                     bool isEmailActive;
                     switch ( row[IsEmailActive].Trim().ToLower() )
@@ -431,7 +432,7 @@ namespace Excavator.CSV
                         }
                         else
                         {
-                            LogException( "InvalidPrimaryEmail", string.Format( "PersonId: {0} - Email: {1}", rowPersonId, primaryEmail ) );
+                            LogException( "InvalidPrimaryEmail", string.Format( "PersonId: {0} - Email: {1}", rowPersonKey, primaryEmail ) );
                         }
                     }
 
@@ -492,11 +493,12 @@ namespace Excavator.CSV
                     foreach ( var notePair in notePairs.Where( n => !string.IsNullOrWhiteSpace( n.Value ) ) )
                     {
                         var newNote = new Note();
-                        newNote.CreatedByPersonAliasId = ImportPersonAlias.Id;
-                        newNote.CreatedDateTime = importDate;
-                        newNote.Text = notePair.Value;
-                        newNote.ForeignId = rowPersonId;
                         newNote.NoteTypeId = personalNoteTypeId;
+                        newNote.CreatedByPersonAliasId = ImportPersonAliasId;
+                        newNote.CreatedDateTime = ImportDateTime;
+                        newNote.Text = notePair.Value;
+                        newNote.ForeignKey = rowPersonKey;
+                        newNote.ForeignId = rowPersonId;
                         newNote.Caption = string.Format( "{0} Note", notePair.Key );
 
                         if ( !notePair.Key.Equals( "General" ) )
@@ -512,18 +514,18 @@ namespace Excavator.CSV
                     var groupMember = new GroupMember();
                     groupMember.Person = person;
                     groupMember.GroupRoleId = groupRoleId;
-                    groupMember.CreatedDateTime = importDate;
-                    groupMember.ModifiedDateTime = importDate;
-                    groupMember.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                    groupMember.CreatedDateTime = ImportDateTime;
+                    groupMember.ModifiedDateTime = ImportDateTime;
+                    groupMember.CreatedByPersonAliasId = ImportPersonAliasId;
                     groupMember.GroupMemberStatus = GroupMemberStatus.Active;
 
-                    if ( rowFamilyId != currentFamilyGroup.ForeignId )
+                    if ( rowFamilyKey != currentFamilyGroup.ForeignKey )
                     {
                         // person not part of the previous family, see if that family exists or create a new one
-                        currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignId == rowFamilyId );
+                        currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignKey == rowFamilyKey );
                         if ( currentFamilyGroup == null )
                         {
-                            currentFamilyGroup = CreateFamilyGroup( row[FamilyName], rowFamilyId );
+                            currentFamilyGroup = CreateFamilyGroup( row[FamilyName], rowFamilyKey );
                             newFamilyList.Add( currentFamilyGroup );
                             newFamilies++;
                         }
@@ -544,7 +546,7 @@ namespace Excavator.CSV
                         }
                         else
                         {
-                            var visitorFamily = CreateFamilyGroup( person.LastName + " Family", rowFamilyId );
+                            var visitorFamily = CreateFamilyGroup( person.LastName + " Family", rowFamilyKey );
                             visitorFamily.Members.Add( groupMember );
                             newFamilyList.Add( visitorFamily );
                             newVisitorList.Add( visitorFamily );
@@ -590,9 +592,9 @@ namespace Excavator.CSV
         /// Creates the family group.
         /// </summary>
         /// <param name="rowFamilyName">Name of the row family.</param>
-        /// <param name="rowFamilyId">The row family identifier.</param>
+        /// <param name="rowFamilyKey">The row family identifier.</param>
         /// <returns></returns>
-        private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyId )
+        private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyKey )
         {
             var familyGroup = new Group();
             if ( !string.IsNullOrWhiteSpace( rowFamilyName ) )
@@ -601,12 +603,13 @@ namespace Excavator.CSV
             }
             else
             {
-                familyGroup.Name = string.Format( "Family Group {0}", rowFamilyId );
+                familyGroup.Name = string.Format( "Family Group {0}", rowFamilyKey );
             }
 
-            familyGroup.CreatedByPersonAliasId = ImportPersonAlias.Id;
-            familyGroup.ForeignId = rowFamilyId.ToString();
+            familyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
             familyGroup.GroupTypeId = FamilyGroupTypeId;
+            familyGroup.ForeignKey = rowFamilyKey;
+            familyGroup.ForeignId = rowFamilyKey.AsType<int?>();
             return familyGroup;
         }
 
@@ -621,7 +624,7 @@ namespace Excavator.CSV
             if ( !string.IsNullOrWhiteSpace( attributeValue ) )
             {
                 person.Attributes.Add( attribute.Key, attribute );
-                person.AttributeValues.Add( attribute.Key, new AttributeValue()
+                person.AttributeValues.Add( attribute.Key, new AttributeValueCache()
                 {
                     AttributeId = attribute.Id,
                     Value = attributeValue
@@ -642,11 +645,11 @@ namespace Excavator.CSV
                 rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
 
                     ImportedPeople.AddRange( newFamilyList );
 
-                    foreach ( var familyGroups in newFamilyList.GroupBy<Group, string>( g => g.ForeignId ) )
+                    foreach ( var familyGroups in newFamilyList.GroupBy<Group, string>( g => g.ForeignKey ) )
                     {
                         bool visitorsExist = visitorList.Any() && familyGroups.Any();
                         foreach ( var newFamilyGroup in familyGroups )
@@ -654,21 +657,32 @@ namespace Excavator.CSV
                             foreach ( var person in newFamilyGroup.Members.Select( m => m.Person ) )
                             {
                                 // Set notes on this person
-                                if ( newNoteList.Any( n => n.ForeignId == person.ForeignId ) )
+                                if ( newNoteList.Any( n => n.ForeignKey == person.ForeignKey ) )
                                 {
-                                    newNoteList.Where( n => n.ForeignId == person.ForeignId ).ToList()
+                                    newNoteList.Where( n => n.ForeignKey == person.ForeignKey ).ToList()
                                         .ForEach( n => n.EntityId = person.Id );
                                 }
 
                                 // Set attributes on this person
                                 foreach ( var attributeCache in person.Attributes.Select( a => a.Value ) )
                                 {
+                                    var existingValue = rockContext.AttributeValues.FirstOrDefault( v => v.Attribute.Key == attributeCache.Key && v.EntityId == person.Id );
                                     var newAttributeValue = person.AttributeValues[attributeCache.Key];
 
-                                    if ( newAttributeValue != null )
+                                    // set the new value and add it to the database
+                                    if ( existingValue == null )
                                     {
-                                        newAttributeValue.EntityId = person.Id;
-                                        rockContext.AttributeValues.Add( newAttributeValue );
+                                        existingValue = new AttributeValue();
+                                        existingValue.AttributeId = newAttributeValue.AttributeId;
+                                        existingValue.EntityId = person.Id;
+                                        existingValue.Value = newAttributeValue.Value;
+
+                                        rockContext.AttributeValues.Add( existingValue );
+                                    }
+                                    else
+                                    {
+                                        existingValue.Value = newAttributeValue.Value;
+                                        rockContext.Entry( existingValue ).State = EntityState.Modified;
                                     }
                                 }
 
@@ -679,6 +693,7 @@ namespace Excavator.CSV
                                     {
                                         AliasPersonId = person.Id,
                                         AliasPersonGuid = person.Guid,
+                                        ForeignKey = person.ForeignKey,
                                         ForeignId = person.ForeignId
                                     } );
                                 }
@@ -712,8 +727,8 @@ namespace Excavator.CSV
                                     }
 
                                     // Visitor, add relationships to the family members
-                                    if ( visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId )
-                                            .Any( v => v.Members.Any( m => m.Person.ForeignId.Equals( person.ForeignId ) ) ) )
+                                    if ( visitorList.Where( v => v.ForeignKey == newFamilyGroup.ForeignKey )
+                                            .Any( v => v.Members.Any( m => m.Person.ForeignKey.Equals( person.ForeignKey ) ) ) )
                                     {
                                         var familyMembers = familyGroups.Except( visitorList ).SelectMany( g => g.Members );
                                         foreach ( var familyMember in familyMembers )
@@ -736,7 +751,7 @@ namespace Excavator.CSV
                                     }
                                     else
                                     {   // Family member, add relationships to the visitor(s)
-                                        var familyVisitors = visitorList.Where( v => v.ForeignId == newFamilyGroup.ForeignId ).SelectMany( g => g.Members ).ToList();
+                                        var familyVisitors = visitorList.Where( v => v.ForeignKey == newFamilyGroup.ForeignKey ).SelectMany( g => g.Members ).ToList();
                                         foreach ( var visitor in familyVisitors )
                                         {
                                             // Add invited visitor relationship
@@ -762,7 +777,7 @@ namespace Excavator.CSV
 
                     // Save notes and all changes
                     rockContext.Notes.AddRange( newNoteList );
-                    rockContext.SaveChanges( true );
+                    rockContext.SaveChanges( DisableAuditing );
                 } );
             }
         }

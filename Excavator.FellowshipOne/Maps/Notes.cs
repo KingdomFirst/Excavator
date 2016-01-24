@@ -17,20 +17,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
     /// <summary>
     /// Partial of F1Component that holds the Notes import
     /// </summary>
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the notes.
@@ -42,12 +42,12 @@ namespace Excavator.F1
             var categoryService = new CategoryService( lookupContext );
             var personService = new PersonService( lookupContext );
 
-            var noteTypes = new NoteTypeService( lookupContext ).Queryable().ToList();
-            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE ) );
+            var noteTypes = new NoteTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) );
 
-            var importedUsers = new UserLoginService( lookupContext ).Queryable()
+            var importedUsers = new UserLoginService( lookupContext ).Queryable().AsNoTracking()
                 .Where( u => u.ForeignId != null )
-                .ToDictionary( t => t.ForeignId.AsType<int?>(), t => t.PersonId );
+                .ToDictionary( t => t.ForeignId, t => t.PersonId );
 
             var noteList = new List<Note>();
 
@@ -60,8 +60,23 @@ namespace Excavator.F1
                 string text = row["Note_Text"] as string;
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
+                var noteTypeActive = row["NoteTypeActive"] as Boolean?;
+
+                bool noteArchived = false;
+                if ( row.Columns.FirstOrDefault( v => v.Name.Equals( "IsInactive" ) ) != null )
+                {
+                    /* =====================================================================
+                    *  the NoteArchived column *should* work, but OrcaMDF won't read it...
+                    *  instead check for a manually added column: IsInactive int null
+                    *       var noteActive = row["NoteArchived"] as Boolean?;
+                    *       if ( noteActive == null ) throw new NullReferenceException();
+                    /* ===================================================================== */
+                    var rowInactiveValue = row["IsInactive"] as int?;
+                    noteArchived = rowInactiveValue.Equals( 1 );
+                }
+
                 var personKeys = GetPersonKeys( individualId, householdId );
-                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) )
+                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteTypeActive == true && !noteArchived )
                 {
                     DateTime? dateCreated = row["NoteCreated"] as DateTime?;
                     string noteType = row["Note_Type_Name"] as string;
@@ -78,9 +93,8 @@ namespace Excavator.F1
                     text = text.Replace( "&amp;", "&" );
                     text = text.Replace( "&quot;", @"""" );
                     text = text.Replace( "&#x0D", string.Empty );
-                    text = text.Trim();
 
-                    note.Text = text;
+                    note.Text = text.Trim();
 
                     int? userId = row["NoteCreatedByUserID"] as int?;
                     if ( userId != null && importedUsers.ContainsKey( userId ) )
@@ -113,12 +127,13 @@ namespace Excavator.F1
                         newNoteType.EntityTypeId = personalNoteType.EntityTypeId;
                         newNoteType.EntityTypeQualifierColumn = string.Empty;
                         newNoteType.EntityTypeQualifierValue = string.Empty;
-                        //newNoteType.UserSelectable = true;
+                        newNoteType.UserSelectable = true;
                         newNoteType.IsSystem = false;
                         newNoteType.Name = noteType;
+                        newNoteType.Order = 0;
 
                         lookupContext.NoteTypes.Add( newNoteType );
-                        lookupContext.SaveChanges( DisableAudit );
+                        lookupContext.SaveChanges( DisableAuditing );
 
                         noteTypes.Add( newNoteType );
                         note.NoteTypeId = newNoteType.Id;
@@ -160,7 +175,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.Notes.AddRange( noteList );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
     }

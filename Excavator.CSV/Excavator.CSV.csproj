@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>d26f0545</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>5c369674</NuGetPackageImportStamp>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
@@ -36,7 +36,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DotLiquid">
-      <HintPath>..\packages\Embeds\DotLiquid.dll</HintPath>
+      <HintPath>..\packages\Rock\DotLiquid.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="EntityFramework">
@@ -46,11 +46,10 @@
       <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="LumenWorks.Framework.IO">
-      <HintPath>..\packages\Embeds\LumenWorks.Framework.IO.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\LumenWorksCsvReader.3.9\lib\net20\LumenWorks.Framework.IO.dll</HintPath>
     </Reference>
     <Reference Include="Rock">
-      <HintPath>..\packages\Embeds\Rock.dll</HintPath>
+      <HintPath>..\packages\Rock\Rock.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -66,7 +65,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CSVComponent.cs" />
-    <Compile Include="CsvDataModel.cs" />
+    <Compile Include="CSVInstance.cs" />
+    <Compile Include="Maps\Metrics.cs" />
     <Compile Include="Maps\Family.cs" />
     <Compile Include="Maps\Individual.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

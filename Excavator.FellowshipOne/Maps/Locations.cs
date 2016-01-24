@@ -17,17 +17,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.MetaData;
-using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 
 namespace Excavator.F1
 {
-    partial class F1Component
+    public partial class F1Component
     {
         /// <summary>
         /// Maps the family address.
@@ -39,7 +39,7 @@ namespace Excavator.F1
             var lookupContext = new RockContext();
             var locationService = new LocationService( lookupContext );
 
-            List<GroupMember> familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable()
+            List<GroupMember> familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable().AsNoTracking()
                 .Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
 
             var groupLocationDefinedType = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ), lookupContext );
@@ -63,7 +63,7 @@ namespace Excavator.F1
                 otherGroupLocationType.Order = 0;
 
                 lookupContext.DefinedValues.Add( otherGroupLocationType );
-                lookupContext.SaveChanges( DisableAudit );
+                lookupContext.SaveChanges( DisableAuditing );
 
                 otherGroupLocationTypeId = otherGroupLocationType.Id;
             }
@@ -96,11 +96,11 @@ namespace Excavator.F1
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
-                        Location familyAddress = Extensions.GetWithoutVerify( street1, street2, city, state, zip, country, false );
+                        Location familyAddress = locationService.Get( street1, street2, city, state, zip, country, verifyLocation: false );
 
                         if ( familyAddress != null )
                         {
-                            familyAddress.CreatedByPersonAliasId = ImportPersonAlias.Id;
+                            familyAddress.CreatedByPersonAliasId = ImportPersonAliasId;
                             familyAddress.Name = familyGroup.Name;
                             familyAddress.IsActive = true;
 
@@ -173,7 +173,7 @@ namespace Excavator.F1
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
                 rockContext.GroupLocations.AddRange( newGroupLocations );
-                rockContext.SaveChanges( DisableAudit );
+                rockContext.SaveChanges( DisableAuditing );
             } );
         }
     }

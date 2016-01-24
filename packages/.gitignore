@@ -1,6 +1,6 @@
 #specific folders
 *
 !.gitignore
-!Embeds
-!Embeds/*
+!Rock
+!Rock/*
 !repositories.config

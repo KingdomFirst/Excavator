@@ -26,3 +26,4 @@ bak
 /scaffolding.config
 *.mdf
 *.sln.GhostDoc.xml
+/Excavator/bin/Excavator.Example.dll

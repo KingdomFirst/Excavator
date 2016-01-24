@@ -63,12 +63,12 @@ namespace Excavator.CSV
         /// The local data store, contains Database and TableNode list
         /// because multiple files can be uploaded
         /// </summary>
-        private List<CsvDataModel> CsvDataToImport { get; set; }
+        private List<CSVInstance> CsvDataToImport { get; set; }
 
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
-        private PersonAlias ImportPersonAlias;
+        private int? ImportPersonAliasId;
 
         /// <summary>
         /// The person entity type identifier
@@ -110,15 +110,15 @@ namespace Excavator.CSV
 
             if ( CsvDataToImport == null )
             {
-                CsvDataToImport = new List<CsvDataModel>();
-                TableNodes = new List<DatabaseNode>();
+                CsvDataToImport = new List<CSVInstance>();
+                DataNodes = new List<DataNode>();
             }
 
             //a local tableNode object, which will track this one of multiple CSV files that may be imported
-            List<DatabaseNode> tableNodes = new List<DatabaseNode>();
-            CsvDataToImport.Add( new CsvDataModel( fileName ) { TableNodes = tableNodes, RecordType = GetRecordTypeFromFilename( fileName ) } );
+            var tableNodes = new List<DataNode>();
+            CsvDataToImport.Add( new CSVInstance( fileName ) { TableNodes = tableNodes, RecordType = GetRecordTypeFromFilename( fileName ) } );
 
-            var tableItem = new DatabaseNode();
+            var tableItem = new DataNode();
             tableItem.Name = Path.GetFileNameWithoutExtension( fileName );
             int currentIndex = 0;
 
@@ -127,17 +127,17 @@ namespace Excavator.CSV
             {
                 foreach ( var columnName in dbPreview.GetFieldHeaders() )
                 {
-                    var childItem = new DatabaseNode();
+                    var childItem = new DataNode();
                     childItem.Name = columnName;
                     childItem.NodeType = typeof( string );
                     childItem.Value = firstRow[currentIndex] ?? string.Empty;
-                    childItem.Table.Add( tableItem );
-                    tableItem.Columns.Add( childItem );
+                    childItem.Parent.Add( tableItem );
+                    tableItem.Children.Add( childItem );
                     currentIndex++;
                 }
 
                 tableNodes.Add( tableItem );
-                TableNodes.Add( tableItem ); //this is to maintain compatibility with the base Excavator object.
+                DataNodes.Add( tableItem ); //this is to maintain compatibility with the base Excavator object.
             }
 
             return tableNodes.Count() > 0 ? true : false;
@@ -148,38 +148,40 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="tableName">Name of the table to preview.</param>
         /// <returns></returns>
-        public new DataTable PreviewData( string nodeId )
-        {
-            foreach ( var dataNode in CsvDataToImport )
-            {
-                var node = dataNode.TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Columns.Any( c => c.Id == nodeId ) ).FirstOrDefault();
-                if ( node != null && node.Columns.Any() )
-                {
-                    var dataTable = new DataTable();
-                    dataTable.Columns.Add( "File", typeof( string ) );
-                    foreach ( var column in node.Columns )
-                    {
-                        dataTable.Columns.Add( column.Name, column.NodeType );
-                    }
+        //public override DataTable PreviewData( string nodeId )
+        //{
+        //    foreach ( var dataNode in CsvDataToImport )
+        //    {
+        //        var node = dataNode.TableNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+        //        if ( node != null && node.Children.Any() )
+        //        {
+        //            var dataTable = new DataTable();
+        //            dataTable.Columns.Add( "File", typeof( string ) );
+        //            foreach ( var column in node.Children )
+        //            {
+        //                dataTable.Columns.Add( column.Name, column.NodeType );
+        //            }
 
-                    var rowPreview = dataTable.NewRow();
-                    foreach ( var column in node.Columns )
-                    {
-                        rowPreview[column.Name] = column.Value ?? DBNull.Value;
-                    }
+        //            var rowPreview = dataTable.NewRow();
+        //            foreach ( var column in node.Children )
+        //            {
+        //                rowPreview[column.Name] = column.Value ?? DBNull.Value;
+        //            }
 
-                    dataTable.Rows.Add( rowPreview );
-                    return dataTable;
-                }
-            }
-            return null;
-        }
+        //            dataTable.Rows.Add( rowPreview );
+        //            return dataTable;
+        //        }
+        //    }
+        //    return null;
+        //}
 
         /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
-        public override int TransformData( string importUser = null )
+        public override int TransformData( Dictionary<string, string> settings )
         {
+            var importUser = settings["ImportUser"];
+
             int completed = 0;
             ReportProgress( 0, "Starting health checks..." );
             if ( !LoadExistingData( importUser ) )
@@ -188,24 +190,29 @@ namespace Excavator.CSV
             }
 
             // only import things that the user checked
-            List<CsvDataModel> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
+            List<CSVInstance> selectedCsvData = CsvDataToImport.Where( c => c.TableNodes.Any( n => n.Checked != false ) ).ToList();
 
             ReportProgress( 0, "Starting data import..." );
+
             // Person data is important, so load it first
-            if ( selectedCsvData.Any( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ) )
+            if ( selectedCsvData.Any( d => d.RecordType == CSVInstance.RockDataType.INDIVIDUAL ) )
             {
-                selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CsvDataModel.RockDataType.INDIVIDUAL ).ToList();
+                selectedCsvData = selectedCsvData.OrderByDescending( d => d.RecordType == CSVInstance.RockDataType.INDIVIDUAL ).ToList();
             }
 
             foreach ( var csvData in selectedCsvData )
             {
-                if ( csvData.RecordType == CsvDataModel.RockDataType.INDIVIDUAL )
+                if ( csvData.RecordType == CSVInstance.RockDataType.INDIVIDUAL )
                 {
                     completed += LoadIndividuals( csvData );
                 }
-                else if ( csvData.RecordType == CsvDataModel.RockDataType.FAMILY )
+                else if ( csvData.RecordType == CSVInstance.RockDataType.FAMILY )
                 {
                     completed += LoadFamily( csvData );
+                }
+                else if ( csvData.RecordType == CSVInstance.RockDataType.METRICS )
+                {
+                    completed += LoadMetrics( csvData );
                 }
             } //read all files
 
@@ -232,7 +239,7 @@ namespace Excavator.CSV
                 }
             }
 
-            ImportPersonAlias = new PersonAliasService( lookupContext ).Get( importPerson.Id );
+            ImportPersonAliasId = importPerson.PrimaryAliasId;
 
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
@@ -240,7 +247,8 @@ namespace Excavator.CSV
             ReportProgress( 0, "Checking for existing people..." );
 
             // Don't track groups in this context, just use it as a static reference
-            ImportedPeople = lookupContext.Groups.AsNoTracking().Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignId != null ).ToList();
+            ImportedPeople = lookupContext.Groups.AsNoTracking()
+                .Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignKey != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 
@@ -267,7 +275,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
         /// <returns></returns>
-        private bool FileTypeMatches( CsvDataModel.RockDataType filetype, string name )
+        private bool FileTypeMatches( CSVInstance.RockDataType filetype, string name )
         {
             if ( name.ToUpper().StartsWith( filetype.ToString() ) )
             {
@@ -284,7 +292,7 @@ namespace Excavator.CSV
         private bool FileIsKnown( string fileName )
         {
             string name = GetFileRootName( fileName );
-            foreach ( var filetype in Extensions.Get<CsvDataModel.RockDataType>() )
+            foreach ( var filetype in Extensions.Get<CSVInstance.RockDataType>() )
             {
                 if ( FileTypeMatches( filetype, name ) )
                 {
@@ -300,10 +308,10 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <returns></returns>
-        private CsvDataModel.RockDataType GetRecordTypeFromFilename( string filename )
+        private CSVInstance.RockDataType GetRecordTypeFromFilename( string filename )
         {
             string name = GetFileRootName( filename );
-            foreach ( var filetype in Extensions.Get<CsvDataModel.RockDataType>() )
+            foreach ( var filetype in Extensions.Get<CSVInstance.RockDataType>() )
             {
                 if ( FileTypeMatches( filetype, name ) )
                 {
@@ -311,7 +319,7 @@ namespace Excavator.CSV
                 }
             }
 
-            return CsvDataModel.RockDataType.NONE;
+            return CSVInstance.RockDataType.NONE;
         }
 
         #endregion File Processing Methods
@@ -378,6 +386,20 @@ namespace Excavator.CSV
         private const int SecondaryState = 13;
         private const int SecondaryZip = 14;
         private const int SecondaryCountry = 15;
+
+        #endregion Family Constants
+
+        #region Metrics Constants
+
+        /*
+         * Definition for the Metrics.csv import file:
+         */
+
+        private const int MetricCampus = 0;
+        private const int MetricName = 1;
+        private const int MetricValue = 2;
+        private const int MetricService = 3;
+        private const int MetricCategory = 4;
 
         #endregion Family Constants
     }
