@@ -273,6 +273,7 @@ namespace Excavator.F1
 
             // F1 attributes: IndividualId, HouseholdId
             // Core attributes: PreviousChurch, Position, Employer, School
+            var previousNameAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "PreviousName", StringComparison.InvariantCultureIgnoreCase ) ) );
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "PreviousChurch", StringComparison.InvariantCultureIgnoreCase ) ) );
             var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "MembershipDate", StringComparison.InvariantCultureIgnoreCase ) ) );
             var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "FirstVisit", StringComparison.InvariantCultureIgnoreCase ) ) );
@@ -436,6 +437,12 @@ namespace Excavator.F1
 
                         // HouseholdId already defined in scope
                         AddPersonAttribute( HouseholdIdAttribute, person, householdId.ToString() );
+
+                        string previousName = row["Former_Name"] as string;
+                        if ( previousName != null )
+                        {
+                            AddPersonAttribute( previousNameAttribute, person, previousName );
+                        }
 
                         string previousChurch = row["Former_Church"] as string;
                         if ( previousChurch != null )
@@ -935,7 +942,7 @@ namespace Excavator.F1
         /// <param name="value">The value.</param>
         protected static void AddPersonAttribute( AttributeCache attribute, Person person, string value )
         {
-            if ( !string.IsNullOrWhiteSpace( value ) )
+            if ( attribute != null && !string.IsNullOrWhiteSpace( value ) )
             {
                 person.Attributes.Add( attribute.Key, attribute );
                 person.AttributeValues.Add( attribute.Key, new AttributeValueCache()
