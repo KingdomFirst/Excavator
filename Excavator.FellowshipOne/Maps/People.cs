@@ -273,7 +273,6 @@ namespace Excavator.F1
 
             // F1 attributes: IndividualId, HouseholdId
             // Core attributes: PreviousChurch, Position, Employer, School
-            var previousNameAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "PreviousName", StringComparison.InvariantCultureIgnoreCase ) ) );
             var previousChurchAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "PreviousChurch", StringComparison.InvariantCultureIgnoreCase ) ) );
             var membershipDateAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "MembershipDate", StringComparison.InvariantCultureIgnoreCase ) ) );
             var firstVisitAttribute = AttributeCache.Read( personAttributes.FirstOrDefault( a => a.Key.Equals( "FirstVisit", StringComparison.InvariantCultureIgnoreCase ) ) );
@@ -284,6 +283,7 @@ namespace Excavator.F1
 
             var familyList = new List<Group>();
             var visitorList = new List<Group>();
+            var previousNamesList = new List<PersonPreviousName>();
             var householdCampusList = new List<string>();
 
             int completed = 0;
@@ -425,6 +425,15 @@ namespace Excavator.F1
                             person.SystemNote = status_comment;
                         }
 
+                        string previousName = row["Former_Name"] as string;
+                        if ( previousName != null )
+                        {
+                            var rockPreviousName = new PersonPreviousName();
+                            rockPreviousName.LastName = previousName;
+                            rockPreviousName.PersonAlias.Guid = person.Guid;
+                            previousNamesList.Add( rockPreviousName );
+                        }
+
                         // set a processing flag to keep visitors from receiving household info
                         person.ReviewReasonNote = familyRoleId.ToString();
 
@@ -437,12 +446,6 @@ namespace Excavator.F1
 
                         // HouseholdId already defined in scope
                         AddPersonAttribute( HouseholdIdAttribute, person, householdId.ToString() );
-
-                        string previousName = row["Former_Name"] as string;
-                        if ( previousName != null )
-                        {
-                            AddPersonAttribute( previousNameAttribute, person, previousName );
-                        }
 
                         string previousChurch = row["Former_Church"] as string;
                         if ( previousChurch != null )
@@ -541,10 +544,11 @@ namespace Excavator.F1
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
-                        SavePeople( familyList, visitorList, ownerRole, childRoleId, inviteeRoleId, invitedByRoleId, canCheckInRoleId, allowCheckInByRoleId );
+                        SavePeople( familyList, visitorList, previousNamesList, ownerRole, childRoleId, inviteeRoleId, invitedByRoleId, canCheckInRoleId, allowCheckInByRoleId );
 
                         familyList.Clear();
                         visitorList.Clear();
+                        previousNamesList.Clear();
                         ReportPartialProgress();
                     }
                 }
@@ -553,7 +557,7 @@ namespace Excavator.F1
             // Save any remaining families in the batch
             if ( familyList.Any() )
             {
-                SavePeople( familyList, visitorList, ownerRole, childRoleId, inviteeRoleId, invitedByRoleId, canCheckInRoleId, allowCheckInByRoleId );
+                SavePeople( familyList, visitorList, previousNamesList, ownerRole, childRoleId, inviteeRoleId, invitedByRoleId, canCheckInRoleId, allowCheckInByRoleId );
             }
 
             ReportProgress( 100, string.Format( "Finished person import: {0:N0} people imported.", completed ) );
@@ -570,7 +574,7 @@ namespace Excavator.F1
         /// <param name="invitedByRoleId">The invited by role identifier.</param>
         /// <param name="canCheckInRoleId">The can check in role identifier.</param>
         /// <param name="allowCheckInByRoleId">The allow check in by role identifier.</param>
-        private void SavePeople( List<Group> familyList, List<Group> visitorList, GroupTypeRole ownerRole, int childRoleId, int inviteeRoleId, int invitedByRoleId, int canCheckInRoleId, int allowCheckInByRoleId )
+        private void SavePeople( List<Group> familyList, List<Group> visitorList, List<PersonPreviousName> previousNamesList, GroupTypeRole ownerRole, int childRoleId, int inviteeRoleId, int invitedByRoleId, int canCheckInRoleId, int allowCheckInByRoleId )
         {
             var rockContext = new RockContext();
             var groupMemberService = new GroupMemberService( rockContext );
