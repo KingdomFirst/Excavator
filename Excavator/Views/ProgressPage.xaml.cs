@@ -124,7 +124,13 @@ namespace Excavator
             }
             catch ( Exception ex )
             {
-                App.LogException( "Transform Data", ex.ToString() );
+                var exception = ex.ToString();
+                if ( ex.InnerException != null )
+                {
+                    exception = ex.InnerException.ToString();
+                }
+
+                App.LogException( "Transform Data", exception );
             }
         }
 
