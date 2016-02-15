@@ -30,23 +30,23 @@ namespace Excavator.F1
 {
     public class People : F1Component, IFellowshipOne
     {
-
-        RockContext lookupContext = new RockContext();
-        List<Group> businessList = new List<Group>();
+        private RockContext lookupContext = new RockContext();
+        private List<Group> businessList = new List<Group>();
 
         // Record status: Active, Inactive, Pending
-        int? statusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
-        int? statusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
-        int? statusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
+        private int? statusActiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE ) ).Id;
+
+        private int? statusInactiveId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE ) ).Id;
+        private int? statusPendingId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING ) ).Id;
 
         // Record type: Business
-        int? businessRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS ) ).Id;
+        private int? businessRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS ) ).Id;
 
         // Group role: Adult
         //int groupRoleId = new GroupTypeRoleService( lookupContext ).Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
 
         // Group type: Family
-        int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+        private int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
         /// <summary>
         /// Maps the specified table data.
@@ -283,7 +283,7 @@ namespace Excavator.F1
 
             var familyList = new List<Group>();
             var visitorList = new List<Group>();
-            var previousNamesList = new List<PersonPreviousName>();
+            var previousNamesList = new Dictionary<Guid, string>();
             var householdCampusList = new List<string>();
 
             int completed = 0;
@@ -428,10 +428,7 @@ namespace Excavator.F1
                         string previousName = row["Former_Name"] as string;
                         if ( previousName != null )
                         {
-                            var rockPreviousName = new PersonPreviousName();
-                            rockPreviousName.LastName = previousName;
-                            rockPreviousName.PersonAlias.Guid = person.Guid;
-                            previousNamesList.Add( rockPreviousName );
+                            previousNamesList.Add( person.Guid, previousName );
                         }
 
                         // set a processing flag to keep visitors from receiving household info
@@ -574,7 +571,7 @@ namespace Excavator.F1
         /// <param name="invitedByRoleId">The invited by role identifier.</param>
         /// <param name="canCheckInRoleId">The can check in role identifier.</param>
         /// <param name="allowCheckInByRoleId">The allow check in by role identifier.</param>
-        private void SavePeople( List<Group> familyList, List<Group> visitorList, List<PersonPreviousName> previousNamesList, GroupTypeRole ownerRole, int childRoleId, int inviteeRoleId, int invitedByRoleId, int canCheckInRoleId, int allowCheckInByRoleId )
+        private void SavePeople( List<Group> familyList, List<Group> visitorList, Dictionary<Guid, string> previousNamesList, GroupTypeRole ownerRole, int childRoleId, int inviteeRoleId, int invitedByRoleId, int canCheckInRoleId, int allowCheckInByRoleId )
         {
             var rockContext = new RockContext();
             var groupMemberService = new GroupMemberService( rockContext );
@@ -616,6 +613,7 @@ namespace Excavator.F1
                                 }
                             }
 
+                            // add a default person alias
                             if ( !groupMember.Person.Aliases.Any( a => a.AliasPersonId == groupMember.Person.Id ) )
                             {
                                 groupMember.Person.Aliases.Add( new PersonAlias
@@ -627,6 +625,16 @@ namespace Excavator.F1
                                 } );
                             }
 
+                            // assign the previous name
+                            if ( previousNamesList.Any( l => l.Key.Equals( groupMember.Person.Guid ) ) )
+                            {
+                                var newPreviousName = new PersonPreviousName();
+                                newPreviousName.LastName = previousNamesList[groupMember.Person.Guid];
+                                newPreviousName.PersonAlias = groupMember.Person.Aliases.FirstOrDefault();
+                                rockContext.PersonPreviousNames.Add( newPreviousName );
+                            }
+
+                            // assign the giving group
                             if ( groupMember.GroupRoleId != childRoleId )
                             {
                                 groupMember.Person.GivingGroupId = newFamilyGroup.Id;
@@ -751,6 +759,7 @@ namespace Excavator.F1
                 rockContext.ChangeTracker.DetectChanges();
                 rockContext.SaveChanges( DisableAuditing );
 
+                // add the new people to our tracking list
                 if ( familyList.Any() )
                 {
                     var familyMembers = familyList.SelectMany( gm => gm.Members );
