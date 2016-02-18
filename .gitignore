@@ -27,3 +27,12 @@ bak
 *.mdf
 *.sln.GhostDoc.xml
 /Excavator/bin/Excavator.Example.dll
+Excavator/bin/OrcaMDF.Core.dll
+Excavator/bin/EntityFramework.dll
+Excavator/bin/EntityFramework.SqlServer.dll
+Excavator/bin/Excavator.BinaryFile.dll
+Excavator/bin/Excavator.CSV.dll
+Excavator/bin/Excavator.exe
+Excavator/bin/Excavator.F1.dll
+Excavator/bin/LumenWorks.Framework.IO.dll
+Excavator/bin/Excavator.exe.config

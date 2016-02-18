@@ -19,10 +19,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Data;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using Excavator.Utility;
 using LumenWorks.Framework.IO.Csv;
+using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -68,7 +70,7 @@ namespace Excavator.CSV
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
-        private int? ImportPersonAliasId;
+        protected static int? ImportPersonAliasId;
 
         /// <summary>
         /// The person entity type identifier
@@ -89,6 +91,26 @@ namespace Excavator.CSV
         /// The list of current campuses
         /// </summary>
         private List<Campus> CampusList;
+
+        /// <summary>
+        /// All imported batches. Used in Batches & Contributions
+        /// </summary>
+        protected static Dictionary<int, int?> ImportedBatches;
+
+        /// <summary>
+        /// All the people keys who've been imported
+        /// </summary>
+        protected static List<PersonKeys> ImportedPeopleKeys;
+
+        // Existing entity types
+
+        protected static int TextFieldTypeId;
+        protected static int IntegerFieldTypeId;
+
+        // Custom attribute types
+
+        protected static AttributeCache IndividualIdAttribute;
+        protected static AttributeCache HouseholdIdAttribute;
 
         #endregion Fields
 
@@ -255,6 +277,124 @@ namespace Excavator.CSV
             return true;
         }
 
+        /// <summary>
+        /// Loads Rock data that's used globally by the transform
+        /// </summary>
+        private void LoadExistingRockData( )
+        {
+            var lookupContext = new RockContext();
+            var attributeValueService = new AttributeValueService( lookupContext );
+            var attributeService = new AttributeService( lookupContext );
+
+            IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
+            TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
+            PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
+            CampusList = new CampusService( lookupContext ).Queryable().ToList();
+
+            int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
+            int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
+            int userLoginTypeId = EntityTypeCache.Read( "Rock.Model.UserLogin" ).Id;
+
+            int visitInfoCategoryId = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
+                .Where( c => c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
+
+            // Look up and create attributes for F1 unique identifiers if they don't exist
+            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).AsNoTracking().ToList();
+
+            var householdAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "ForeignHouseholdId", StringComparison.InvariantCultureIgnoreCase ) );
+            if ( householdAttribute == null )
+            {
+                householdAttribute = new Rock.Model.Attribute();
+                householdAttribute.Key = "ForeignHouseholdId";
+                householdAttribute.Name = "Foreign Household Id";
+                householdAttribute.FieldTypeId = IntegerFieldTypeId;
+                householdAttribute.EntityTypeId = PersonEntityTypeId;
+                householdAttribute.EntityTypeQualifierValue = string.Empty;
+                householdAttribute.EntityTypeQualifierColumn = string.Empty;
+                householdAttribute.Description = "The household identifier used during import";
+                householdAttribute.DefaultValue = string.Empty;
+                householdAttribute.IsMultiValue = false;
+                householdAttribute.IsRequired = false;
+                householdAttribute.Order = 0;
+
+                lookupContext.Attributes.Add( householdAttribute );
+                lookupContext.SaveChanges( DisableAuditing );
+                personAttributes.Add( householdAttribute );
+            }
+
+            var individualAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "ForeignIndividualId", StringComparison.InvariantCultureIgnoreCase ) );
+            if ( individualAttribute == null )
+            {
+                individualAttribute = new Rock.Model.Attribute();
+                individualAttribute.Key = "ForeignIndividualId";
+                individualAttribute.Name = "Foreign Individual Id";
+                individualAttribute.FieldTypeId = IntegerFieldTypeId;
+                individualAttribute.EntityTypeId = PersonEntityTypeId;
+                individualAttribute.EntityTypeQualifierValue = string.Empty;
+                individualAttribute.EntityTypeQualifierColumn = string.Empty;
+                individualAttribute.Description = "The individual identifier used during import";
+                individualAttribute.DefaultValue = string.Empty;
+                individualAttribute.IsMultiValue = false;
+                individualAttribute.IsRequired = false;
+                individualAttribute.Order = 0;
+
+                lookupContext.Attributes.Add( individualAttribute );
+                lookupContext.SaveChanges( DisableAuditing );
+                personAttributes.Add( individualAttribute );
+            }
+
+            var aliasIdList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
+                .Select( pa => new
+                {
+                    PersonAliasId = pa.Id,
+                    PersonId = pa.PersonId,
+                    IndividualId = pa.ForeignId,
+                    FamilyRole = pa.Person.ReviewReasonNote
+                } ).ToList();
+            var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).AsNoTracking()
+                .Select( av => new
+                {
+                    PersonId = ( int )av.EntityId,
+                    HouseholdId = av.Value
+                } ).ToList();
+
+            ImportedPeopleKeys = householdIdList.GroupJoin( aliasIdList,
+                household => household.PersonId,
+                aliases => aliases.PersonId,
+                ( household, aliases ) => new PersonKeys
+                {
+                    PersonAliasId = aliases.Select( a => a.PersonAliasId ).FirstOrDefault(),
+                    PersonId = household.PersonId,
+                    IndividualId = aliases.Select( a => a.IndividualId ).FirstOrDefault(),
+                    HouseholdId = Convert.ToInt32(household.HouseholdId),
+                    FamilyRoleId = aliases.Select( a => a.FamilyRole.ConvertToEnum<FamilyRole>( 0 ) ).FirstOrDefault()
+                }
+                ).ToList();
+
+            ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
+                .Where( b => b.ForeignId != null )
+                .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
+        }
+
+        /// <summary>
+        /// Gets the person keys.
+        /// </summary>
+        /// <param name="individualId">The individual identifier.</param>
+        /// <param name="householdId">The household identifier.</param>
+        /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
+        /// <returns></returns>
+        protected static PersonKeys GetPersonKeys( int? individualId = null )
+        {
+            if ( individualId != null )
+            {
+                return ImportedPeopleKeys.FirstOrDefault( p => p.IndividualId == individualId );
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         #endregion Methods
 
         #region File Processing Methods
@@ -285,6 +425,7 @@ namespace Excavator.CSV
             return false;
         }
 
+        /// <summary>
         /// Checks if the file matches a known format.
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
@@ -402,5 +543,56 @@ namespace Excavator.CSV
         private const int MetricCategory = 4;
 
         #endregion Family Constants
+
+        #region Contribution Constants
+
+        /*
+         * Definition for the Contribution.csv import file:
+         */
+
+        private const int IndividualID = 0;
+        private const int PledgeDriveName = 1;
+        private const int FundName = 2;
+        private const int SubFundName = 3;
+        private const int FundGLAccount = 4;
+        private const int SubFundGLAccount = 5;
+        private const int FundIsActive = 6;
+        private const int ReceivedDate = 7;
+        private const int Amount = 8;
+        private const int CheckNumber = 9;
+        private const int Memo = 10;
+        private const int ContributionTypeName = 11;
+        private const int StatedValue = 12;
+        private const int TrueValue = 13;
+        private const int LiquidationCost = 14;
+        private const int ContributionID = 15;
+        private const int BatchID = 16;
+        private const int BatchName = 17;
+        private const int BatchDate = 18;
+        private const int BatchAmount = 19;
+
+        #endregion Contribution Constants
+
+        #region Pledge Constants
+
+        /*
+         * Definition for the Pledge.csv import file:
+         * Columns already numbered from Individuals file:
+         * private const int IndividualID = 0;
+         * private const int PledgeDriveName = 1;
+         * private const int FundName = 2;
+         * private const int SubFundName = 3;
+         * private const int FundGLAccount = 4;
+         * private const int SubFundGLAccount = 5;
+         * private const int FundIsActive = 6;
+         */
+
+        private const int PerPaymentAmount = 7;
+        private const int PledgeFrequencyName = 8;
+        private const int TotalPledge = 9;
+        private const int StartDate = 10;
+        private const int EndDate = 11;
+
+        #endregion Pledge Constants
     }
 }

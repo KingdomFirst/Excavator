@@ -35,6 +35,8 @@ namespace Excavator.CSV
             FAMILY,
             INDIVIDUAL,
             METRICS,
+            CONTRIBUTION,
+            PLEDGE,
             NONE
         };
 
