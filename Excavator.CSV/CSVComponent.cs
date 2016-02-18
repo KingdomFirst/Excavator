@@ -236,6 +236,16 @@ namespace Excavator.CSV
                 {
                     completed += LoadMetrics( csvData );
                 }
+                else if ( csvData.RecordType == CSVInstance.RockDataType.PLEDGE )
+                {
+                    completed += MapPledge( csvData );
+                }
+                else if ( csvData.RecordType == CSVInstance.RockDataType.CONTRIBUTION )
+                {
+                    completed += MapBatch( csvData );
+                    completed += MapContribution( csvData );
+                    
+                }
             } //read all files
 
             ReportProgress( 100, string.Format( "Completed import: {0:N0} rows processed.", completed ) );
@@ -551,25 +561,22 @@ namespace Excavator.CSV
          */
 
         private const int IndividualID = 0;
-        private const int PledgeDriveName = 1;
-        private const int FundName = 2;
-        private const int SubFundName = 3;
-        private const int FundGLAccount = 4;
-        private const int SubFundGLAccount = 5;
-        private const int FundIsActive = 6;
-        private const int ReceivedDate = 7;
-        private const int Amount = 8;
-        private const int CheckNumber = 9;
-        private const int Memo = 10;
-        private const int ContributionTypeName = 11;
-        private const int StatedValue = 12;
-        private const int TrueValue = 13;
-        private const int LiquidationCost = 14;
-        private const int ContributionID = 15;
-        private const int BatchID = 16;
-        private const int BatchName = 17;
-        private const int BatchDate = 18;
-        private const int BatchAmount = 19;
+        private const int FundName = 1;
+        private const int SubFundName = 2;
+        private const int FundGLAccount = 3;
+        private const int SubFundGLAccount = 4;
+        private const int FundIsActive = 5;
+        private const int ReceivedDate = 6;
+        private const int CheckNumber = 7;
+        private const int Memo = 8;
+        private const int ContributionTypeName = 9;
+        private const int Amount = 10;
+        private const int StatedValue = 11;
+        private const int ContributionID = 12;
+        private const int BatchID = 13;
+        private const int BatchName = 14;
+        private const int BatchDate = 15;
+        private const int BatchAmount = 16;
 
         #endregion Contribution Constants
 
@@ -579,19 +586,17 @@ namespace Excavator.CSV
          * Definition for the Pledge.csv import file:
          * Columns already numbered from Individuals file:
          * private const int IndividualID = 0;
-         * private const int PledgeDriveName = 1;
-         * private const int FundName = 2;
-         * private const int SubFundName = 3;
-         * private const int FundGLAccount = 4;
-         * private const int SubFundGLAccount = 5;
-         * private const int FundIsActive = 6;
+         * private const int FundName = 1;
+         * private const int SubFundName = 2;
+         * private const int FundGLAccount = 3;
+         * private const int SubFundGLAccount = 4;
+         * private const int FundIsActive = 5;
          */
 
-        private const int PerPaymentAmount = 7;
-        private const int PledgeFrequencyName = 8;
-        private const int TotalPledge = 9;
-        private const int StartDate = 10;
-        private const int EndDate = 11;
+        private const int PledgeFrequencyName = 6;
+        private const int TotalPledge = 7;
+        private const int StartDate = 8;
+        private const int EndDate = 9;
 
         #endregion Pledge Constants
     }

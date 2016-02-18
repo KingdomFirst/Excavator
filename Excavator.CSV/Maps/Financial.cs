@@ -20,7 +20,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="csvData">The table data.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void MapBatch( CSVInstance csvData )
+        private int MapBatch( CSVInstance csvData )
         {
             var batchStatusClosed = Rock.Model.BatchStatus.Closed;
             var newBatches = new List<FinancialBatch>();
@@ -105,6 +105,7 @@ namespace Excavator.CSV
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
+            return completed;
         }
 
         /// <summary>
@@ -125,8 +126,7 @@ namespace Excavator.CSV
         /// Maps the contribution.
         /// </summary>
         /// <param name="csvData">The table data.</param>
-        /// <param name="selectedColumns">The selected columns.</param>
-        private void MapContribution( CSVInstance csvData, List<string> selectedColumns = null )
+        private int MapContribution( CSVInstance csvData )
         {
             var lookupContext = new RockContext();
             int transactionEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialTransaction" ).Id;
@@ -379,6 +379,7 @@ namespace Excavator.CSV
             }
 
             ReportProgress( 100, string.Format( "Finished contribution import: {0:N0} contributions imported.", completed ) );
+            return completed;
         }
 
         /// <summary>
@@ -400,7 +401,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="queryable">The queryable.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        private void MapPledge( CSVInstance csvData )
+        private int MapPledge( CSVInstance csvData )
         {
             var lookupContext = new RockContext();
             var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
@@ -524,6 +525,7 @@ namespace Excavator.CSV
             }
 
             ReportProgress( 100, string.Format( "Finished pledge import: {0:N0} pledges imported.", completed ) );
+            return completed;
         }
 
         /// <summary>
