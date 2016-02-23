@@ -140,7 +140,7 @@ namespace Excavator.CSV
             var newFamilyList = new List<Group>();
             var newVisitorList = new List<Group>();
             var newNoteList = new List<Note>();
-            
+
             int completed = 0;
             int newFamilies = 0;
             ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignKey != null ) ) ) );
@@ -170,12 +170,12 @@ namespace Excavator.CSV
                     person.SystemNote = string.Format( "Imported via Excavator on {0}", ImportDateTime );
                     person.RecordTypeValueId = personRecordTypeId;
                     person.CreatedByPersonAliasId = ImportPersonAliasId;
-                    string firstName = row[FirstName];
-                    string nickName = row[NickName];
+                    string firstName = row[FirstName].Left( 50 );
+                    string nickName = row[NickName].Left( 50 );
                     person.FirstName = firstName;
                     person.NickName = string.IsNullOrWhiteSpace( nickName ) ? firstName : nickName;
-                    person.MiddleName = row[MiddleName];
-                    person.LastName = row[LastName];
+                    person.MiddleName = row[MiddleName].Left( 50 );
+                    person.LastName = row[LastName].Left( 50 );
 
                     DateTime createdDateValue;
                     if ( DateTime.TryParseExact( row[CreatedDate], dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out createdDateValue ) )
@@ -422,7 +422,7 @@ namespace Excavator.CSV
                     }
 
                     person.EmailPreference = emailPreference;
-                    string primaryEmail = row[Email].Trim();
+                    string primaryEmail = row[Email].Trim().Left( 75 );
                     if ( !string.IsNullOrWhiteSpace( primaryEmail ) )
                     {
                         if ( primaryEmail.IsEmail() )
