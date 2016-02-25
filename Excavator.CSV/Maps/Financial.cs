@@ -307,7 +307,7 @@ namespace Excavator.CSV
                             accountList.Add( parentAccount );
                         }
 
-                        if ( subFund != null )
+                        if ( !String.IsNullOrWhiteSpace( subFund ) )
                         {
                             int? campusFundId = null;
                             // assign a campus if the subfund is a campus fund
