@@ -210,7 +210,7 @@ namespace Excavator.CSV
                         transaction.Summary = summary;
                     }
 
-                    string batchIdKey = row[BatchID];
+                    string batchIdKey = row[ContributionBatchID];
                     int? batchId = batchIdKey.AsType<int?>();
                     if ( batchId != null && ImportedBatches.Any( b => b.Key.Equals( batchId ) ) )
                     {
@@ -362,7 +362,7 @@ namespace Excavator.CSV
                     completed++;
                     if ( completed % (ReportingNumber * 10) < 1 )
                     {
-                        ReportProgress( 0, string.Format( "{0:N0} contributions imported ({1}% complete).", completed ) );
+                        ReportProgress( 0, string.Format( "{0:N0} contributions imported.", completed ) );
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
@@ -507,7 +507,7 @@ namespace Excavator.CSV
                         completed++;
                         if ( completed % (ReportingNumber * 10) < 1 )
                         {
-                            ReportProgress( 0, string.Format( "{0:N0} pledges imported ({1}% complete).", completed ) );
+                            ReportProgress( 0, string.Format( "{0:N0} pledges imported.", completed ) );
                         }
                         else if ( completed % ReportingNumber < 1 )
                         {

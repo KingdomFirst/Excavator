@@ -100,7 +100,7 @@ namespace Excavator.CSV
         /// <summary>
         /// All the people keys who've been imported
         /// </summary>
-        protected static List<PersonKeys> ImportedPeopleKeys;
+        protected static List<PersonKeysNoFamily> ImportedPeopleKeys;
 
         // Existing entity types
 
@@ -240,11 +240,13 @@ namespace Excavator.CSV
                 {
                     completed += MapPledge( csvData );
                 }
-                else if ( csvData.RecordType == CSVInstance.RockDataType.CONTRIBUTION )
+                else if ( csvData.RecordType == CSVInstance.RockDataType.BATCH )
                 {
                     completed += MapBatch( csvData );
+                }
+                else if ( csvData.RecordType == CSVInstance.RockDataType.CONTRIBUTION )
+                {
                     completed += MapContribution( csvData );
-                    
                 }
             } //read all files
 
@@ -284,116 +286,28 @@ namespace Excavator.CSV
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 
-            return true;
-        }
-
-        /// <summary>
-        /// Loads Rock data that's used globally by the transform
-        /// </summary>
-        private void LoadExistingRockData( )
-        {
-            var lookupContext = new RockContext();
-            var attributeValueService = new AttributeValueService( lookupContext );
-            var attributeService = new AttributeService( lookupContext );
-
-            IntegerFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.INTEGER ) ).Id;
-            TextFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ) ).Id;
-            PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
-            CampusList = new CampusService( lookupContext ).Queryable().ToList();
-
-            int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
-            int batchEntityTypeId = EntityTypeCache.Read( "Rock.Model.FinancialBatch" ).Id;
-            int userLoginTypeId = EntityTypeCache.Read( "Rock.Model.UserLogin" ).Id;
-
-            int visitInfoCategoryId = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
-                .Where( c => c.Name == "Visit Information" ).Select( c => c.Id ).FirstOrDefault();
-
-            // Look up and create attributes for F1 unique identifiers if they don't exist
-            var personAttributes = attributeService.GetByEntityTypeId( PersonEntityTypeId ).AsNoTracking().ToList();
-
-            var householdAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "ForeignHouseholdId", StringComparison.InvariantCultureIgnoreCase ) );
-            if ( householdAttribute == null )
-            {
-                householdAttribute = new Rock.Model.Attribute();
-                householdAttribute.Key = "ForeignHouseholdId";
-                householdAttribute.Name = "Foreign Household Id";
-                householdAttribute.FieldTypeId = IntegerFieldTypeId;
-                householdAttribute.EntityTypeId = PersonEntityTypeId;
-                householdAttribute.EntityTypeQualifierValue = string.Empty;
-                householdAttribute.EntityTypeQualifierColumn = string.Empty;
-                householdAttribute.Description = "The household identifier used during import";
-                householdAttribute.DefaultValue = string.Empty;
-                householdAttribute.IsMultiValue = false;
-                householdAttribute.IsRequired = false;
-                householdAttribute.Order = 0;
-
-                lookupContext.Attributes.Add( householdAttribute );
-                lookupContext.SaveChanges( DisableAuditing );
-                personAttributes.Add( householdAttribute );
-            }
-
-            var individualAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "ForeignIndividualId", StringComparison.InvariantCultureIgnoreCase ) );
-            if ( individualAttribute == null )
-            {
-                individualAttribute = new Rock.Model.Attribute();
-                individualAttribute.Key = "ForeignIndividualId";
-                individualAttribute.Name = "Foreign Individual Id";
-                individualAttribute.FieldTypeId = IntegerFieldTypeId;
-                individualAttribute.EntityTypeId = PersonEntityTypeId;
-                individualAttribute.EntityTypeQualifierValue = string.Empty;
-                individualAttribute.EntityTypeQualifierColumn = string.Empty;
-                individualAttribute.Description = "The individual identifier used during import";
-                individualAttribute.DefaultValue = string.Empty;
-                individualAttribute.IsMultiValue = false;
-                individualAttribute.IsRequired = false;
-                individualAttribute.Order = 0;
-
-                lookupContext.Attributes.Add( individualAttribute );
-                lookupContext.SaveChanges( DisableAuditing );
-                personAttributes.Add( individualAttribute );
-            }
-
-            var aliasIdList = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
-                .Select( pa => new
+            ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
+                .Where( pa => pa.ForeignKey != null )
+                .Select( pa => new PersonKeysNoFamily
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId,
-                    FamilyRole = pa.Person.ReviewReasonNote
+                    IndividualId = pa.ForeignId
                 } ).ToList();
-            var householdIdList = attributeValueService.GetByAttributeId( householdAttribute.Id ).AsNoTracking()
-                .Select( av => new
-                {
-                    PersonId = ( int )av.EntityId,
-                    HouseholdId = av.Value
-                } ).ToList();
-
-            ImportedPeopleKeys = householdIdList.GroupJoin( aliasIdList,
-                household => household.PersonId,
-                aliases => aliases.PersonId,
-                ( household, aliases ) => new PersonKeys
-                {
-                    PersonAliasId = aliases.Select( a => a.PersonAliasId ).FirstOrDefault(),
-                    PersonId = household.PersonId,
-                    IndividualId = aliases.Select( a => a.IndividualId ).FirstOrDefault(),
-                    HouseholdId = Convert.ToInt32(household.HouseholdId),
-                    FamilyRoleId = aliases.Select( a => a.FamilyRole.ConvertToEnum<FamilyRole>( 0 ) ).FirstOrDefault()
-                }
-                ).ToList();
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
                 .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
+
+            return true;
         }
 
         /// <summary>
         /// Gets the person keys.
         /// </summary>
         /// <param name="individualId">The individual identifier.</param>
-        /// <param name="householdId">The household identifier.</param>
-        /// <param name="includeVisitors">if set to <c>true</c> [include visitors].</param>
         /// <returns></returns>
-        protected static PersonKeys GetPersonKeys( int? individualId = null )
+        protected static PersonKeysNoFamily GetPersonKeys( int? individualId = null )
         {
             if ( individualId != null )
             {
@@ -554,6 +468,19 @@ namespace Excavator.CSV
 
         #endregion Family Constants
 
+        #region Batch Constants
+
+        /*
+         * Definition for the Contribution.csv import file:
+         */
+
+        private const int BatchID = 0;
+        private const int BatchName = 1;
+        private const int BatchDate = 2;
+        private const int BatchAmount = 3;
+
+        #endregion Batch Constants
+
         #region Contribution Constants
 
         /*
@@ -573,10 +500,7 @@ namespace Excavator.CSV
         private const int Amount = 10;
         private const int StatedValue = 11;
         private const int ContributionID = 12;
-        private const int BatchID = 13;
-        private const int BatchName = 14;
-        private const int BatchDate = 15;
-        private const int BatchAmount = 16;
+        private const int ContributionBatchID = 13;
 
         #endregion Contribution Constants
 
