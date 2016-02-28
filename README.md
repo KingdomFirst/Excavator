@@ -10,7 +10,7 @@ Twitter: [![@ExcavatorApp](http://i.imgur.com/7mMQxUt.png)](https://twitter.com/
 
 Excavator converts data into [Rock RMS](http://www.rockrms.com/) from other church management systems.
 
-Imports from FellowshipOne and CSV are currently supported.  A port for Arena ChMS is in active development.
+Imports from FellowshipOne and CSV are currently supported.
 
 ## What You'll Need To Get Started
 
