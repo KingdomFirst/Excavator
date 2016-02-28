@@ -355,27 +355,6 @@ namespace Excavator.F1
                 lookupContext.SaveChanges( DisableAuditing );
             }
 
-            var previousNameAttribute = personAttributes.FirstOrDefault( a => a.Key.Equals( "PreviousName", StringComparison.InvariantCultureIgnoreCase ) );
-            if ( previousNameAttribute == null )
-            {
-                previousNameAttribute = new Rock.Model.Attribute();
-                previousNameAttribute.Key = "PreviousName";
-                previousNameAttribute.Name = "Previous Name";
-                previousNameAttribute.FieldTypeId = TextFieldTypeId;
-                previousNameAttribute.EntityTypeId = PersonEntityTypeId;
-                previousNameAttribute.EntityTypeQualifierValue = string.Empty;
-                previousNameAttribute.EntityTypeQualifierColumn = string.Empty;
-                previousNameAttribute.Description = "The person's previous name (marital or otherwise)";
-                previousNameAttribute.DefaultValue = string.Empty;
-                previousNameAttribute.IsMultiValue = false;
-                previousNameAttribute.IsRequired = false;
-                previousNameAttribute.Order = 0;
-
-                lookupContext.Attributes.Add( previousNameAttribute );
-                lookupContext.SaveChanges( DisableAuditing );
-                personAttributes.Add( previousNameAttribute );
-            }
-
             IndividualIdAttribute = AttributeCache.Read( individualAttribute.Id );
             HouseholdIdAttribute = AttributeCache.Read( householdAttribute.Id );
             InFellowshipLoginAttribute = AttributeCache.Read( infellowshipLoginAttribute.Id );

@@ -21,6 +21,7 @@ using System.Data.Entity;
 using System.Linq;
 using Excavator.Utility;
 using OrcaMDF.Core.MetaData;
+using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -96,7 +97,8 @@ namespace Excavator.F1
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
                         string zip = row["Postal_Code"] as string;
 
-                        Location familyAddress = locationService.Get( street1, street2, city, state, zip, country, verifyLocation: false );
+                        // restrict zip to 5 places to prevent duplicates
+                        Location familyAddress = locationService.Get( street1, street2, city, state, zip.Left( 5 ), country, verifyLocation: false );
 
                         if ( familyAddress != null )
                         {

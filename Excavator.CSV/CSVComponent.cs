@@ -19,10 +19,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Data;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using Excavator.Utility;
 using LumenWorks.Framework.IO.Csv;
+using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -68,7 +70,7 @@ namespace Excavator.CSV
         /// <summary>
         /// The person assigned to do the import
         /// </summary>
-        private int? ImportPersonAliasId;
+        protected static int? ImportPersonAliasId;
 
         /// <summary>
         /// The person entity type identifier
@@ -89,6 +91,26 @@ namespace Excavator.CSV
         /// The list of current campuses
         /// </summary>
         private List<Campus> CampusList;
+
+        /// <summary>
+        /// All imported batches. Used in Batches & Contributions
+        /// </summary>
+        protected static Dictionary<int, int?> ImportedBatches;
+
+        /// <summary>
+        /// All the people keys who've been imported
+        /// </summary>
+        protected static List<PersonKeysNoFamily> ImportedPeopleKeys;
+
+        // Existing entity types
+
+        protected static int TextFieldTypeId;
+        protected static int IntegerFieldTypeId;
+
+        // Custom attribute types
+
+        protected static AttributeCache IndividualIdAttribute;
+        protected static AttributeCache HouseholdIdAttribute;
 
         #endregion Fields
 
@@ -214,6 +236,18 @@ namespace Excavator.CSV
                 {
                     completed += LoadMetrics( csvData );
                 }
+                else if ( csvData.RecordType == CSVInstance.RockDataType.PLEDGE )
+                {
+                    completed += MapPledge( csvData );
+                }
+                else if ( csvData.RecordType == CSVInstance.RockDataType.BATCH )
+                {
+                    completed += MapBatch( csvData );
+                }
+                else if ( csvData.RecordType == CSVInstance.RockDataType.CONTRIBUTION )
+                {
+                    completed += MapContribution( csvData );
+                }
             } //read all files
 
             ReportProgress( 100, string.Format( "Completed import: {0:N0} rows processed.", completed ) );
@@ -252,7 +286,37 @@ namespace Excavator.CSV
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 
+            ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
+                .Where( pa => pa.ForeignKey != null )
+                .Select( pa => new PersonKeysNoFamily
+                {
+                    PersonAliasId = pa.Id,
+                    PersonId = pa.PersonId,
+                    IndividualId = pa.ForeignId
+                } ).ToList();
+
+            ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
+                .Where( b => b.ForeignId != null )
+                .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
+
             return true;
+        }
+
+        /// <summary>
+        /// Gets the person keys.
+        /// </summary>
+        /// <param name="individualId">The individual identifier.</param>
+        /// <returns></returns>
+        protected static PersonKeysNoFamily GetPersonKeys( int? individualId = null )
+        {
+            if ( individualId != null )
+            {
+                return ImportedPeopleKeys.FirstOrDefault( p => p.IndividualId == individualId );
+            }
+            else
+            {
+                return null;
+            }
         }
 
         #endregion Methods
@@ -285,6 +349,7 @@ namespace Excavator.CSV
             return false;
         }
 
+        /// <summary>
         /// Checks if the file matches a known format.
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
@@ -402,5 +467,61 @@ namespace Excavator.CSV
         private const int MetricCategory = 4;
 
         #endregion Family Constants
+
+        #region Batch Constants
+
+        /*
+         * Definition for the Contribution.csv import file:
+         */
+
+        private const int BatchID = 0;
+        private const int BatchName = 1;
+        private const int BatchDate = 2;
+        private const int BatchAmount = 3;
+
+        #endregion Batch Constants
+
+        #region Contribution Constants
+
+        /*
+         * Definition for the Contribution.csv import file:
+         */
+
+        private const int IndividualID = 0;
+        private const int FundName = 1;
+        private const int SubFundName = 2;
+        private const int FundGLAccount = 3;
+        private const int SubFundGLAccount = 4;
+        private const int FundIsActive = 5;
+        private const int ReceivedDate = 6;
+        private const int CheckNumber = 7;
+        private const int Memo = 8;
+        private const int ContributionTypeName = 9;
+        private const int Amount = 10;
+        private const int StatedValue = 11;
+        private const int ContributionID = 12;
+        private const int ContributionBatchID = 13;
+
+        #endregion Contribution Constants
+
+        #region Pledge Constants
+
+        /*
+         * Definition for the Pledge.csv import file:
+         * Columns already numbered from Individuals file:
+         * private const int IndividualID = 0;
+         * private const int FundName = 1;
+         * private const int SubFundName = 2;
+         * private const int FundGLAccount = 3;
+         * private const int SubFundGLAccount = 4;
+         * private const int FundIsActive = 5;
+         */
+
+        private const int PledgeFrequencyName = 6;
+        private const int TotalPledge = 7;
+        private const int StartDate = 8;
+        private const int EndDate = 9;
+
+        #endregion Pledge Constants
     }
 }

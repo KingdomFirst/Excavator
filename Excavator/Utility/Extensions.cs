@@ -385,6 +385,27 @@ namespace Excavator.Utility
     }
 
     /// <summary>
+    /// Helper class to store references to people that've been imported
+    /// </summary>
+    public class PersonKeysNoFamily
+    {
+        /// <summary>
+        /// Stores the Rock PersonAliasId
+        /// </summary>
+        public int PersonAliasId;
+
+        /// <summary>
+        /// Stores the Rock PersonId
+        /// </summary>
+        public int PersonId;
+
+        /// <summary>
+        /// Stores a Individual (Foreign) Id
+        /// </summary>
+        public int? IndividualId;
+    }
+
+    /// <summary>
     /// Helper class to store document keys
     /// </summary>
     public class DocumentKeys
