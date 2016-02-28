@@ -95,7 +95,7 @@ namespace Excavator.F1
                         string city = row["City"] as string;
                         string state = row["State"] as string;
                         string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
-                        string zip = row["Postal_Code"] as string;
+                        string zip = row["Postal_Code"] as string ?? string.Empty;
 
                         // restrict zip to 5 places to prevent duplicates
                         Location familyAddress = locationService.Get( street1, street2, city, state, zip.Left( 5 ), country, verifyLocation: false );
