@@ -838,7 +838,7 @@ namespace Excavator.F1
                         string userTitle = row["UserTitle"] as string;
                         string userPhone = row["UserPhone"] as string;
                         bool? isEnabled = row["IsUserEnabled"] as bool?;
-                        bool? isStaff = row["IsStaff"] as bool?;
+                        Boolean? isStaff = row["IsStaff"] as Boolean?;
                         bool isActive = isEnabled ?? false;
 
                         var user = new UserLogin();
