@@ -50,7 +50,7 @@ namespace Excavator.Utility
                     return typeof( byte[] );
 
                 case ColumnType.Bit:
-                    return typeof( bool );
+                    return typeof( Boolean );
 
                 case ColumnType.Char:
                 case ColumnType.NChar:
@@ -382,27 +382,6 @@ namespace Excavator.Utility
         /// Stores how the person is connected to the family
         /// </summary>
         public FamilyRole FamilyRoleId;
-    }
-
-    /// <summary>
-    /// Helper class to store references to people that've been imported
-    /// </summary>
-    public class PersonKeysNoFamily
-    {
-        /// <summary>
-        /// Stores the Rock PersonAliasId
-        /// </summary>
-        public int PersonAliasId;
-
-        /// <summary>
-        /// Stores the Rock PersonId
-        /// </summary>
-        public int PersonId;
-
-        /// <summary>
-        /// Stores a Individual (Foreign) Id
-        /// </summary>
-        public int? IndividualId;
     }
 
     /// <summary>

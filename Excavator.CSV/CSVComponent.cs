@@ -100,7 +100,7 @@ namespace Excavator.CSV
         /// <summary>
         /// All the people keys who've been imported
         /// </summary>
-        protected static List<PersonKeysNoFamily> ImportedPeopleKeys;
+        protected static List<PersonKeys> ImportedPeopleKeys;
 
         // Existing entity types
 
@@ -288,7 +288,7 @@ namespace Excavator.CSV
 
             ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
                 .Where( pa => pa.ForeignKey != null )
-                .Select( pa => new PersonKeysNoFamily
+                .Select( pa => new PersonKeys
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
@@ -297,7 +297,7 @@ namespace Excavator.CSV
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
-                .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
+                .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
 
             return true;
         }
@@ -307,7 +307,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="individualId">The individual identifier.</param>
         /// <returns></returns>
-        protected static PersonKeysNoFamily GetPersonKeys( int? individualId = null )
+        protected static PersonKeys GetPersonKeys( int? individualId = null )
         {
             if ( individualId != null )
             {
