@@ -989,14 +989,14 @@ namespace Excavator.F1
                 return;
             }
 
-            // Add a userlogin
-            var userLogin = new UserLogin
-            {
-                UserName = value,
-                EntityTypeId = authProviderEntityTypeId.Value
-            };
-            person.Users.Add( userLogin );
-            userLoginService.Add( userLogin );
+            var userLogin = new UserLogin();
+            userLogin.UserName = value.Trim();
+            userLogin.CreatedDateTime = ImportDateTime;
+            userLogin.CreatedByPersonAliasId = ImportPersonAliasId;
+            userLogin.EntityTypeId = authProviderEntityTypeId.Value;
+            userLogin.PersonId = person.Id;
+
+            rockContext.UserLogins.Add( userLogin );
             rockContext.SaveChanges( DisableAuditing );
         }
     }
