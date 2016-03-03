@@ -20,8 +20,8 @@ namespace Excavator.BinaryFile.PersonImage
         /// Maps the specified folder.
         /// </summary>
         /// <param name="folder">The folder.</param>
-        /// <param name="fileType">Type of the person image file.</param>
-        public void Map( ZipArchive folder, BinaryFileType fileType )
+        /// <param name="personImageType">Type of the person image file.</param>
+        public void Map( ZipArchive folder, BinaryFileType personImageType )
         {
             // check for existing images
             var lookupContext = new RockContext();
@@ -32,7 +32,7 @@ namespace Excavator.BinaryFile.PersonImage
             var emptyJsonObject = "{}";
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
 
-            var storageProvider = fileType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
+            var storageProvider = personImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
                 ? (ProviderComponent)DatabaseProvider
                 : (ProviderComponent)FileSystemProvider;
 
@@ -61,13 +61,18 @@ namespace Excavator.BinaryFile.PersonImage
                         rockFile.IsSystem = false;
                         rockFile.IsTemporary = false;
                         rockFile.FileName = file.Name;
-                        rockFile.BinaryFileTypeId = fileType.Id;
+                        rockFile.BinaryFileTypeId = personImageType.Id;
                         rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                         rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
                         rockFile.Description = string.Format( "Imported as {0}", file.Name );
-                        rockFile.SetStorageEntityTypeId( fileType.StorageEntityTypeId );
-                        rockFile.StorageEntitySettings = fileType.AttributeValues
-                            .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ?? emptyJsonObject;
+                        rockFile.SetStorageEntityTypeId( personImageType.StorageEntityTypeId );
+                        rockFile.StorageEntitySettings = emptyJsonObject;
+
+                        if ( personImageType.AttributeValues.Any() )
+                        {
+                            rockFile.StorageEntitySettings = personImageType.AttributeValues
+                                .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson();
+                        }
 
                         // use base stream instead of file stream to keep the byte[]
                         // NOTE: if byte[] converts to a string it will corrupt the stream

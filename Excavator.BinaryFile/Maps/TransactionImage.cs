@@ -61,8 +61,13 @@ namespace Excavator.BinaryFile
                     rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( transactionImageType.StorageEntityTypeId );
-                    rockFile.StorageEntitySettings = transactionImageType.AttributeValues
-                        .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ?? emptyJsonObject;
+                    rockFile.StorageEntitySettings = emptyJsonObject;
+
+                    if ( transactionImageType.AttributeValues.Any() )
+                    {
+                        rockFile.StorageEntitySettings = transactionImageType.AttributeValues
+                            .ToDictionary( a => a.Key, v => v.Value.Value ).ToJson();
+                    }
 
                     // use base stream instead of file stream to keep the byte[]
                     // NOTE: if byte[] converts to a string it will corrupt the stream

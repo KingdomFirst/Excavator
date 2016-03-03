@@ -838,7 +838,7 @@ namespace Excavator.F1
                         string userTitle = row["UserTitle"] as string;
                         string userPhone = row["UserPhone"] as string;
                         bool? isEnabled = row["IsUserEnabled"] as bool?;
-                        bool? isStaff = row["IsStaff"] as bool?;
+                        Boolean? isStaff = row["IsStaff"] as Boolean?;
                         bool isActive = isEnabled ?? false;
 
                         var user = new UserLogin();
@@ -989,14 +989,14 @@ namespace Excavator.F1
                 return;
             }
 
-            // Add a userlogin
-            var userLogin = new UserLogin
-            {
-                UserName = value,
-                EntityTypeId = authProviderEntityTypeId.Value
-            };
-            person.Users.Add( userLogin );
-            userLoginService.Add( userLogin );
+            var userLogin = new UserLogin();
+            userLogin.UserName = value.Trim();
+            userLogin.CreatedDateTime = ImportDateTime;
+            userLogin.CreatedByPersonAliasId = ImportPersonAliasId;
+            userLogin.EntityTypeId = authProviderEntityTypeId.Value;
+            userLogin.PersonId = person.Id;
+
+            rockContext.UserLogins.Add( userLogin );
             rockContext.SaveChanges( DisableAuditing );
         }
     }

@@ -257,13 +257,13 @@ namespace Excavator.BinaryFile
             }
 
             // load attributes on file system types to get the default storage location
-            foreach ( var type in FileTypes.Where( t => t.StorageEntityTypeId == FileSystemStorageTypeId ) )
+            foreach ( var type in FileTypes )
             {
                 type.LoadAttributes( lookupContext );
 
-                // override the configured storage location since we can't handle relative paths
-                if ( binaryTypeSettings.AllKeys.Any( k => type.Name.Equals( k ) ) )
+                if ( type.StorageEntityTypeId == FileSystemStorageTypeId && binaryTypeSettings.AllKeys.Any( k => type.Name.Equals( k ) ) )
                 {
+                    // override the configured storage location since we can't handle relative paths
                     type.AttributeValues["RootPath"].Value = binaryTypeSettings[type.Name];
                 }
             }
