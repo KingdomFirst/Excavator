@@ -439,6 +439,9 @@ namespace Excavator.CSV
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
+                        pledge.CreatedDateTime = DateTime.Now;
+                        pledge.ModifiedDateTime = DateTime.Now;
+                        pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
 
                         string frequency = row[PledgeFrequencyName].ToString().ToLower();
                         if ( !String.IsNullOrWhiteSpace( frequency ) )
