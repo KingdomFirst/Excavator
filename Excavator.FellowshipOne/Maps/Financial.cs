@@ -527,6 +527,7 @@ namespace Excavator.F1
                         var pledge = new FinancialPledge();
                         pledge.PersonAliasId = personKeys.PersonAliasId;
                         pledge.CreatedByPersonAliasId = ImportPersonAliasId;
+                        pledge.ModifiedDateTime = ImportDateTime;
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
