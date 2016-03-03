@@ -1,0 +1,3 @@
+IndividualId,FundName,SubFundName,FundLGAccount,SubFundGLAccount,FundIsActive,PledgeFrequencyName,TotalPledge,StartDate,EndDate
+25570361,General Fund,,41000,,TRUE,Weekly,150,2/1/2016,2/29/2016
+148,General Fund,Library Books,41000,41250,TRUE,One Time,25,2/14/2016,2/14/2016
