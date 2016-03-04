@@ -405,7 +405,9 @@ namespace Excavator.CSV
         {
             var lookupContext = new RockContext();
             var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
-            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking()
+               .Where( p => p.ForeignId != null )
+               .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
 
             var pledgeFrequencies = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ), lookupContext ).DefinedValues;
             int oneTimePledgeFrequencyId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
@@ -422,10 +424,20 @@ namespace Excavator.CSV
                 string amountKey = row[TotalPledge];
                 decimal? amount = amountKey.AsType<decimal?>();
                 string startDateKey = row[StartDate];
+                if ( String.IsNullOrWhiteSpace( startDateKey ) )
+                {
+                    startDateKey = "01/01/0001";
+                }
                 DateTime? startDate = startDateKey.AsType<DateTime?>();
                 string endDateKey = row[EndDate];
+                if ( String.IsNullOrWhiteSpace( endDateKey ) )
+                {
+                    endDateKey = "12/31/9999";
+                }
                 DateTime? endDate = endDateKey.AsType<DateTime?>();
-                if ( amount != null && startDate != null && endDate != null )
+                string pledgeIdKey = row[PledgeId];
+                int? pledgeId = pledgeIdKey.AsType<int?>(); 
+                if ( amount != null && !importedPledges.ContainsKey( (int)pledgeId ) )
                 {
                     string individualIdKey = row[IndividualID];
                     int? individualId = individualIdKey.AsType<int?>();
@@ -442,6 +454,8 @@ namespace Excavator.CSV
                         pledge.CreatedDateTime = ImportDateTime;
                         pledge.ModifiedDateTime = ImportDateTime;
                         pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
+                        pledge.ForeignKey = pledgeId.ToString();
+                        pledge.ForeignId = pledgeId;
 
                         string frequency = row[PledgeFrequencyName].ToString().ToLower();
                         if ( !String.IsNullOrWhiteSpace( frequency ) )
