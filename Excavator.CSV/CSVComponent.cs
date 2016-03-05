@@ -521,6 +521,7 @@ namespace Excavator.CSV
         private const int TotalPledge = 7;
         private const int StartDate = 8;
         private const int EndDate = 9;
+        private const int PledgeId = 10;
 
         #endregion Pledge Constants
     }

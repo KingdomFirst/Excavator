@@ -44,7 +44,7 @@ namespace Excavator.CSV
                     batch.AccountingSystemCode = string.Empty;
 
                     string name = row[BatchName] as string;
-                    if ( name != null )
+                    if ( !String.IsNullOrWhiteSpace( name ) )
                     {
                         name = name.Trim();
                         batch.Name = name.Left( 50 );
@@ -205,7 +205,7 @@ namespace Excavator.CSV
                     }
 
                     string summary = row[Memo] as string;
-                    if ( summary != null )
+                    if ( !String.IsNullOrWhiteSpace( summary ) )
                     {
                         transaction.Summary = summary;
                     }
@@ -232,7 +232,7 @@ namespace Excavator.CSV
                     }
 
                     string contributionType = row[ContributionTypeName].ToStringSafe().ToLower();
-                    if ( contributionType != null )
+                    if ( !String.IsNullOrWhiteSpace( contributionType ) )
                     {
                         // set default source to onsite, exceptions listed below
                         transaction.SourceTypeValueId = sourceTypeOnsite;
@@ -297,7 +297,7 @@ namespace Excavator.CSV
                     decimal? statedValue = statedValueKey.AsType<decimal?>();
                     string amountKey = row[Amount];
                     decimal? amount = amountKey.AsType<decimal?>();
-                    if ( fundName != null & amount != null )
+                    if ( !String.IsNullOrWhiteSpace( fundName ) & amount != null )
                     {
                         int transactionAccountId;
                         var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
@@ -405,7 +405,9 @@ namespace Excavator.CSV
         {
             var lookupContext = new RockContext();
             var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
-            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking()
+               .Where( p => p.ForeignId != null )
+               .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
 
             var pledgeFrequencies = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ), lookupContext ).DefinedValues;
             int oneTimePledgeFrequencyId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
@@ -422,10 +424,20 @@ namespace Excavator.CSV
                 string amountKey = row[TotalPledge];
                 decimal? amount = amountKey.AsType<decimal?>();
                 string startDateKey = row[StartDate];
+                if ( String.IsNullOrWhiteSpace( startDateKey ) )
+                {
+                    startDateKey = "01/01/0001";
+                }
                 DateTime? startDate = startDateKey.AsType<DateTime?>();
                 string endDateKey = row[EndDate];
+                if ( String.IsNullOrWhiteSpace( endDateKey ) )
+                {
+                    endDateKey = "12/31/9999";
+                }
                 DateTime? endDate = endDateKey.AsType<DateTime?>();
-                if ( amount != null && startDate != null && endDate != null )
+                string pledgeIdKey = row[PledgeId];
+                int? pledgeId = pledgeIdKey.AsType<int?>(); 
+                if ( amount != null && !importedPledges.ContainsKey( (int)pledgeId ) )
                 {
                     string individualIdKey = row[IndividualID];
                     int? individualId = individualIdKey.AsType<int?>();
@@ -439,9 +451,14 @@ namespace Excavator.CSV
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
+                        pledge.CreatedDateTime = ImportDateTime;
+                        pledge.ModifiedDateTime = ImportDateTime;
+                        pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
+                        pledge.ForeignKey = pledgeId.ToString();
+                        pledge.ForeignId = pledgeId;
 
                         string frequency = row[PledgeFrequencyName].ToString().ToLower();
-                        if ( frequency != null )
+                        if ( !String.IsNullOrWhiteSpace( frequency ) )
                         {
                             frequency = frequency.ToLower();
                             if ( frequency.Equals( "one time" ) || frequency.Equals( "as can" ) )
@@ -463,7 +480,7 @@ namespace Excavator.CSV
                         string isFundActiveKey = row[FundIsActive];
                         Boolean? isFundActive = isFundActiveKey.AsType<Boolean?>();
 
-                        if ( fundName != null )
+                        if ( !String.IsNullOrWhiteSpace( fundName ) )
                         {
                             var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
                             if ( parentAccount == null )
@@ -472,7 +489,7 @@ namespace Excavator.CSV
                                 accountList.Add( parentAccount );
                             }
 
-                            if ( subFund != null )
+                            if ( !String.IsNullOrWhiteSpace( subFund ) )
                             {
                                 int? campusFundId = null;
                                 // assign a campus if the subfund is a campus fund

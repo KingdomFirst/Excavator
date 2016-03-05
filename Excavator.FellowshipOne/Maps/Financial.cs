@@ -531,6 +531,9 @@ namespace Excavator.F1
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
+                        pledge.CreatedDateTime = ImportDateTime;
+                        pledge.ModifiedDateTime = ImportDateTime;
+                        pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
 
                         string frequency = row["Pledge_Frequency_Name"].ToString().ToLower();
                         if ( frequency != null )
