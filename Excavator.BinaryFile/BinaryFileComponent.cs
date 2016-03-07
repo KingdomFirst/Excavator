@@ -18,17 +18,21 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
 using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
+using Rock.Storage;
 using Rock.Storage.Provider;
 using Rock.Web.Cache;
 using Database = Rock.Storage.Provider.Database;
@@ -79,10 +83,37 @@ namespace Excavator.BinaryFile
         protected static FileSystem FileSystemProvider;
 
         // Database StorageEntity Type
-        protected static int? DatabaseStorageTypeId;
+        //protected static int? DatabaseStorageTypeId;
 
         // File System StorageEntity Type
-        protected static int? FileSystemStorageTypeId;
+        //protected static int? FileSystemStorageTypeId;
+
+        //private IEnumerable<ProviderComponent> _storageTypes;
+
+        [ImportMany( typeof( ProviderComponent ) )]
+        protected static IEnumerable<ProviderComponent> StorageTypes;
+
+        //{
+        //    get
+        //    {
+        //        if ( _storageTypes == null )
+        //        {
+        //            _storageTypes = new List<ProviderComponent>();
+        //        }
+
+        //        return _storageTypes;
+        //    }
+
+        //    set
+        //    {
+        //        if ( _storageTypes == value )
+        //            return;
+
+        //        _storageTypes = value;
+        //    }
+        //}
+
+        private ExcavatorComponent _selectedImportType = null;
 
         // Binary File RootPath Attribute
         protected static AttributeCache RootPathAttribute;
@@ -94,6 +125,11 @@ namespace Excavator.BinaryFile
         /// The file types
         /// </summary>
         protected static List<BinaryFileType> FileTypes;
+
+        /// <summary>
+        /// The storage providers
+        /// </summary>
+        protected static List<ProviderComponent> StorageProviders;
 
         /// <summary>
         /// The person assigned to do the import
@@ -191,11 +227,9 @@ namespace Excavator.BinaryFile
         /// </summary>
         private void LoadRockData( RockContext lookupContext = null )
         {
-            lookupContext = lookupContext ?? new RockContext();
+            LoadStorageProviders();
 
-            // initialize file providers
-            DatabaseProvider = new Rock.Storage.Provider.Database();
-            FileSystemProvider = new Rock.Storage.Provider.FileSystem();
+            lookupContext = lookupContext ?? new RockContext();
 
             // core-specified attribute guid for setting file root path
             RootPathAttribute = AttributeCache.Read( new Guid( "3CAFA34D-9208-439B-A046-CB727FB729DE" ) );
@@ -207,9 +241,10 @@ namespace Excavator.BinaryFile
             // clean up blacklist
             FileTypeBlackList = FileTypeBlackList.Select( a => a.ToLower().TrimStart( new char[] { '.', ' ' } ) );
 
-            DatabaseStorageTypeId = EntityTypeCache.GetId( typeof( Rock.Storage.Provider.Database ) );
-            FileSystemStorageTypeId = EntityTypeCache.GetId( typeof( Rock.Storage.Provider.FileSystem ) );
+            // initialize storage providers and file types
+
             FileTypes = new BinaryFileTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
+            //var storageProviders = FileTypes.Select( f => f.StorageEntityType ).Distinct().ToList();
 
             // get all the types we'll be importing
             var binaryTypeSettings = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
@@ -218,6 +253,8 @@ namespace Excavator.BinaryFile
             foreach ( var typeKey in binaryTypeSettings.AllKeys )
             {
                 var newFileType = FileTypes.FirstOrDefault( f => f.Name == typeKey );
+
+                // create new binary file type if it doesn't exist, must use an existing storage provider
                 if ( newFileType == null )
                 {
                     newFileType = new BinaryFileType();
@@ -229,30 +266,40 @@ namespace Excavator.BinaryFile
                     var typeValue = binaryTypeSettings[typeKey];
                     if ( typeValue != null )
                     {
-                        // #TODO: support additional storage types (like AWS?)
-                        newFileType.StorageEntityTypeId = typeValue.Equals( "Database" ) ? DatabaseStorageTypeId : FileSystemStorageTypeId;
-                        newFileType.Attributes = new Dictionary<string, AttributeCache>();
-                        newFileType.AttributeValues = new Dictionary<string, AttributeValueCache>();
-
-                        // save changes to binary type to get an ID
-                        lookupContext.SaveChanges();
-
-                        var newRootPath = new AttributeValue()
+                        var storageProvider = StorageProviders.FirstOrDefault( p => p.TypeName.RemoveWhitespace().Equals( typeValue.RemoveWhitespace() ) );
+                        if ( storageProvider != null )
                         {
-                            AttributeId = RootPathAttribute.Id,
-                            EntityId = newFileType.Id,
-                            Value = typeValue
-                        };
+                            newFileType.StorageEntityTypeId = storageProvider.Id;
+                            newFileType.Attributes = new Dictionary<string, AttributeCache>();
+                            newFileType.AttributeValues = new Dictionary<string, AttributeValueCache>();
 
-                        newFileType.Attributes.Add( RootPathAttribute.Key, RootPathAttribute );
-                        newFileType.AttributeValues.Add( RootPathAttribute.Key, new AttributeValueCache( newRootPath ) );
+                            // save changes to binary type to get an ID
+                            lookupContext.SaveChanges();
 
-                        // save attribute values with the current type ID
-                        lookupContext.AttributeValues.Add( newRootPath );
+                            var newRootPath = new AttributeValue()
+                            {
+                                AttributeId = RootPathAttribute.Id,
+                                EntityId = newFileType.Id,
+                                Value = typeValue
+                            };
+
+                            newFileType.Attributes.Add( RootPathAttribute.Key, RootPathAttribute );
+                            newFileType.AttributeValues.Add( RootPathAttribute.Key, new AttributeValueCache( newRootPath ) );
+
+                            // save attribute values with the current type ID
+                            lookupContext.AttributeValues.Add( newRootPath );
+                            lookupContext.SaveChanges();
+                            FileTypes.Add( newFileType );
+                        }
+                        else
+                        {
+                            LogException( "Binary File Import", string.Format( "{0} must use the name of a configured storage provider.", typeKey ) );
+                        }
                     }
-
-                    lookupContext.SaveChanges();
-                    FileTypes.Add( newFileType );
+                    else
+                    {
+                        LogException( "Binary File Import", string.Format( "{0} must specify the storage provider type.", typeKey ) );
+                    }
                 }
             }
 
@@ -261,11 +308,11 @@ namespace Excavator.BinaryFile
             {
                 type.LoadAttributes( lookupContext );
 
-                if ( type.StorageEntityTypeId == FileSystemStorageTypeId && binaryTypeSettings.AllKeys.Any( k => type.Name.Equals( k ) ) )
-                {
-                    // override the configured storage location since we can't handle relative paths
-                    type.AttributeValues["RootPath"].Value = binaryTypeSettings[type.Name];
-                }
+                //if ( type.StorageEntityTypeId == FileSystemStorageTypeId && binaryTypeSettings.AllKeys.Any( k => type.Name.Equals( k ) ) )
+                //{
+                //    // override the configured storage location since we can't handle relative paths
+                //    type.AttributeValues["RootPath"].Value = binaryTypeSettings[type.Name];
+                //}
             }
 
             // get a list of all the imported people keys
@@ -277,6 +324,41 @@ namespace Excavator.BinaryFile
                     PersonId = pa.PersonId,
                     IndividualId = pa.ForeignId,
                 } ).ToList();
+        }
+
+        /// <summary>
+        /// Loads the storage types.
+        /// </summary>
+        public void LoadStorageProviders()
+        {
+            var extensionFolder = ConfigurationManager.AppSettings["ExtensionPath"];
+            var catalog = new AggregateCatalog();
+            if ( Directory.Exists( extensionFolder ) )
+            {
+                catalog.Catalogs.Add( new DirectoryCatalog( extensionFolder, "Excavator.*.dll" ) );
+            }
+
+            string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+            UriBuilder uri = new UriBuilder( codeBase );
+            string path = Uri.UnescapeDataString( uri.Path );
+            var currentDirectory = Path.GetDirectoryName( path );
+
+            catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory, "*.dll" ) );
+
+            try
+            {
+                var container = new CompositionContainer( catalog, true );
+                container.ComposeParts( this );
+            }
+            catch ( Exception ex )
+            {
+                var exception = ex.ToString();
+                if ( ex.InnerException != null )
+                {
+                    exception = ex.InnerException.ToString();
+                }
+                LogException( "Components", exception );
+            }
         }
 
         #endregion Methods
