@@ -21,7 +21,8 @@ namespace Excavator.BinaryFile
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="transactionImageType">Type of the transaction image file.</param>
-        public void Map( ZipArchive folder, BinaryFileType transactionImageType )
+        /// <param name="storageProvider">The storage provider.</param>
+        public void Map( ZipArchive folder, BinaryFileType transactionImageType, ProviderComponent storageProvider )
         {
             var lookupContext = new RockContext();
 
@@ -30,10 +31,6 @@ namespace Excavator.BinaryFile
             var transactionIdList = new FinancialTransactionService( lookupContext )
                 .Queryable().AsNoTracking().Where( t => t.ForeignId != null )
                 .ToDictionary( t => (int)t.ForeignId, t => t.Id );
-
-            var storageProvider = transactionImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                ? (ProviderComponent)DatabaseProvider
-                : (ProviderComponent)FileSystemProvider;
 
             int completed = 0;
             int totalRows = folder.Entries.Count;

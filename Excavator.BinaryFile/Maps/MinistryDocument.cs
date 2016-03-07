@@ -22,7 +22,8 @@ namespace Excavator.BinaryFile
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="ministryFileType">Type of the ministry file.</param>
-        public void Map( ZipArchive folder, BinaryFileType ministryFileType )
+        /// <param name="storageProvider">The storage provider.</param>
+        public void Map( ZipArchive folder, BinaryFileType ministryFileType, ProviderComponent storageProvider )
         {
             var lookupContext = new RockContext();
             var personEntityTypeId = EntityTypeCache.GetId<Person>();
@@ -31,10 +32,6 @@ namespace Excavator.BinaryFile
             var existingAttributes = new AttributeService( lookupContext ).GetByFieldTypeId( fileFieldTypeId )
                 .Where( a => a.EntityTypeId == personEntityTypeId )
                 .ToDictionary( a => a.Key, a => a.Id );
-
-            var storageProvider = ministryFileType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                ? (ProviderComponent)DatabaseProvider
-                : (ProviderComponent)FileSystemProvider;
 
             var emptyJsonObject = "{}";
             var newFileList = new List<DocumentKeys>();
