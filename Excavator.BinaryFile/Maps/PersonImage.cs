@@ -119,25 +119,26 @@ namespace Excavator.BinaryFile.PersonImage
         /// <param name="newFileList">The new file list.</param>
         private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList, ProviderComponent storageProvider )
         {
+            if ( storageProvider == null )
+            {
+                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                return;
+            }
+
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
+                foreach ( var file in newFileList )
+                {
+                    storageProvider.SaveContent( file.Value );
+                    file.Value.Path = storageProvider.GetPath( file.Value );
+                }
+
                 rockContext.BinaryFiles.AddRange( newFileList.Values );
-                rockContext.SaveChanges();
+                rockContext.SaveChanges( DisableAuditing );
 
                 foreach ( var file in newFileList )
                 {
-                    if ( storageProvider != null )
-                    {
-                        storageProvider.SaveContent( file.Value );
-                        file.Value.Path = storageProvider.GetPath( file.Value );
-                    }
-                    else
-                    {
-                        LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                    }
-
-                    // associate the person with this photo
                     rockContext.People.FirstOrDefault( p => p.Id == file.Key ).PhotoId = file.Value.Id;
                 }
 
