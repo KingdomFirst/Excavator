@@ -67,6 +67,7 @@ namespace Excavator.BinaryFile
                     rockFile.FileName = file.Name;
                     rockFile.BinaryFileTypeId = ministryFileType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
+                    rockFile.ModifiedDateTime = ImportDateTime;
                     rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( ministryFileType.StorageEntityTypeId );
@@ -98,6 +99,8 @@ namespace Excavator.BinaryFile
                         newAttribute.Key = attributeKey;
                         newAttribute.Name = attributeName.Value;
                         newAttribute.Description = attributeName.Value + " created by binary file import";
+                        newAttribute.CreatedDateTime = ImportDateTime;
+                        newAttribute.ModifiedDateTime = ImportDateTime;
                         newAttribute.IsGridColumn = false;
                         newAttribute.IsMultiValue = false;
                         newAttribute.IsRequired = false;

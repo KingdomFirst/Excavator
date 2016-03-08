@@ -55,6 +55,7 @@ namespace Excavator.BinaryFile
                     rockFile.FileName = file.Name;
                     rockFile.BinaryFileTypeId = transactionImageType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
+                    rockFile.ModifiedDateTime = ImportDateTime;
                     rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( transactionImageType.StorageEntityTypeId );
