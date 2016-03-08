@@ -493,14 +493,15 @@ namespace Excavator.CSV
         private const int FundGLAccount = 3;
         private const int SubFundGLAccount = 4;
         private const int FundIsActive = 5;
-        private const int ReceivedDate = 6;
-        private const int CheckNumber = 7;
-        private const int Memo = 8;
-        private const int ContributionTypeName = 9;
-        private const int Amount = 10;
-        private const int StatedValue = 11;
-        private const int ContributionID = 12;
-        private const int ContributionBatchID = 13;
+        private const int SubFundIsActive = 6;
+        private const int ReceivedDate = 7;
+        private const int CheckNumber = 8;
+        private const int Memo = 9;
+        private const int ContributionTypeName = 10;
+        private const int Amount = 11;
+        private const int StatedValue = 12;
+        private const int ContributionID = 13;
+        private const int ContributionBatchID = 14;
 
         #endregion Contribution Constants
 
@@ -515,13 +516,14 @@ namespace Excavator.CSV
          * private const int FundGLAccount = 3;
          * private const int SubFundGLAccount = 4;
          * private const int FundIsActive = 5;
+         * private const int SubFundIsActive = 6
          */
 
-        private const int PledgeFrequencyName = 6;
-        private const int TotalPledge = 7;
-        private const int StartDate = 8;
-        private const int EndDate = 9;
-        private const int PledgeId = 10;
+        private const int PledgeFrequencyName = 7;
+        private const int TotalPledge = 8;
+        private const int StartDate = 9;
+        private const int EndDate = 10;
+        private const int PledgeId = 11;
 
         #endregion Pledge Constants
     }

@@ -293,6 +293,8 @@ namespace Excavator.CSV
                     string subFundGLAccount = row[SubFundGLAccount] as string;
                     string isFundActiveKey = row[FundIsActive];
                     Boolean? isFundActive = isFundActiveKey.AsType<Boolean?>();
+                    string isSubFundActiveKey = row[SubFundIsActive];
+                    Boolean? isSubFundActive = isSubFundActiveKey.AsType<Boolean?>();
                     string statedValueKey = row[StatedValue];
                     decimal? statedValue = statedValueKey.AsType<decimal?>();
                     string amountKey = row[Amount];
@@ -326,7 +328,7 @@ namespace Excavator.CSV
                             if ( childAccount == null )
                             {
                                 // create a child account with a campusId if it was set
-                                childAccount = AddAccount( lookupContext, subFund, subFundGLAccount, campusFundId, parentAccount.Id, isFundActive );
+                                childAccount = AddAccount( lookupContext, subFund, subFundGLAccount, campusFundId, parentAccount.Id, isSubFundActive );
                                 accountList.Add( childAccount );
                             }
 
@@ -479,6 +481,8 @@ namespace Excavator.CSV
                         string subFundGLAccount = row[SubFundGLAccount] as string;
                         string isFundActiveKey = row[FundIsActive];
                         Boolean? isFundActive = isFundActiveKey.AsType<Boolean?>();
+                        string isSubFundActiveKey = row[SubFundIsActive];
+                        Boolean? isSubFundActive = isSubFundActiveKey.AsType<Boolean?>();
 
                         if ( !String.IsNullOrWhiteSpace( fundName ) )
                         {
@@ -508,7 +512,7 @@ namespace Excavator.CSV
                                 if ( childAccount == null )
                                 {
                                     // create a child account with a campusId if it was set
-                                    childAccount = AddAccount( lookupContext, subFund, string.Empty, campusFundId, parentAccount.Id, isFundActive );
+                                    childAccount = AddAccount( lookupContext, subFund, string.Empty, campusFundId, parentAccount.Id, isSubFundActive );
                                     accountList.Add( childAccount );
                                 }
 
@@ -571,9 +575,9 @@ namespace Excavator.CSV
             lookupContext = lookupContext ?? new RockContext();
 
             var account = new FinancialAccount();
-            account.Name = fundName;
-            account.GlCode = accountGL;
-            account.PublicName = fundName;
+            account.Name = fundName.Truncate( 50 );
+            account.GlCode = accountGL.Truncate( 50 );
+            account.PublicName = fundName.Truncate( 50 );
             account.IsTaxDeductible = true;
             account.IsActive = isActive ?? true;
             account.CampusId = fundCampusId;
