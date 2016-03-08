@@ -60,11 +60,13 @@ namespace Excavator.F1
                     if ( routingNumber != null && !string.IsNullOrWhiteSpace( accountNumber ) )
                     {
                         accountNumber = accountNumber.Replace( " ", string.Empty );
-                        string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
+                        string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString().PadLeft( 9, '0' ), accountNumber );
                         if ( !importedBankAccounts.Any( a => a.PersonAliasId == personKeys.PersonAliasId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAliasId;
+                            bankAccount.CreatedDateTime = ImportDateTime;
+                            bankAccount.ModifiedDateTime = ImportDateTime;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
                             bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;

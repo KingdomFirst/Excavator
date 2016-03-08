@@ -33,6 +33,8 @@ namespace Excavator.BinaryFile.PersonImage
             var emptyJsonObject = "{}";
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
 
+            ReportProgress( 0, "Starting person images folder count" );
+
             int completed = 0;
             int totalRows = folder.Entries.Count;
             int percentage = ( totalRows - 1 ) / 100 + 1;

@@ -23,6 +23,7 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
 using System.Data.Entity;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;

@@ -32,6 +32,8 @@ namespace Excavator.BinaryFile
                 .Queryable().AsNoTracking().Where( t => t.ForeignId != null )
                 .ToDictionary( t => (int)t.ForeignId, t => t.Id );
 
+            ReportProgress( 0, "Starting transaction images folder count" );
+
             int completed = 0;
             int totalRows = folder.Entries.Count;
             int percentage = ( totalRows - 1 ) / 100 + 1;
