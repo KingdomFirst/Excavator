@@ -107,27 +107,29 @@ namespace Excavator.BinaryFile
         /// <param name="newFileList">The new file list.</param>
         private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList, ProviderComponent storageProvider )
         {
+            if ( storageProvider == null )
+            {
+                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                return;
+            }
+
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
+                foreach ( var entry in newFileList )
+                {
+                    if ( entry.Value != null )
+                    {
+                        storageProvider.SaveContent( entry.Value );
+                        entry.Value.Path = storageProvider.GetPath( entry.Value );
+                    }
+                }
+
                 rockContext.BinaryFiles.AddRange( newFileList.Values );
                 rockContext.SaveChanges();
 
                 foreach ( var entry in newFileList )
                 {
-                    if ( entry.Value != null )
-                    {
-                        if ( storageProvider != null )
-                        {
-                            storageProvider.SaveContent( entry.Value );
-                            entry.Value.Path = storageProvider.GetPath( entry.Value );
-                        }
-                        else
-                        {
-                            LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                        }
-                    }
-
                     // associate the image with the right transaction
                     var transactionImage = new FinancialTransactionImage();
                     transactionImage.TransactionId = entry.Key;

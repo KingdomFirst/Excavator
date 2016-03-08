@@ -158,27 +158,35 @@ namespace Excavator.BinaryFile
         /// <param name="newFileList">The new file list.</param>
         private static void SaveFiles( List<DocumentKeys> newFileList, ProviderComponent storageProvider )
         {
+            if ( storageProvider == null )
+            {
+                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                return;
+            }
+
+            var totalCount = newFileList.Count();
+            newFileList = newFileList.Where( f => f.File != null ).ToList();
+            var nonNullCount = newFileList.Count();
             var rockContext = new RockContext();
+
+            if(totalCount > nonNullCount)
+            {
+                LogException( "Binary File Import", string.Format( "Could not load {0} files because they were null.", totalCount - nonNullCount ) );
+            }
+
             rockContext.WrapTransaction( () =>
             {
+                foreach ( var entry in newFileList )
+                {
+                    storageProvider.SaveContent( entry.File );
+                    entry.File.Path = storageProvider.GetPath( entry.File );
+                }
+
                 rockContext.BinaryFiles.AddRange( newFileList.Select( f => f.File ) );
                 rockContext.SaveChanges();
 
-                foreach ( var entry in newFileList )
-                {
-                    if ( entry.File != null )
-                    {
-                        if ( storageProvider != null )
-                        {
-                            storageProvider.SaveContent( entry.File );
-                            entry.File.Path = storageProvider.GetPath( entry.File );
-                        }
-                        else
-                        {
-                            LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                        }
-                    }
-
+                foreach (var entry in newFileList)
+                { 
                     // set person attribute value to this binary file guid
                     var attributeValue = rockContext.AttributeValues.FirstOrDefault( p => p.AttributeId == entry.AttributeId && p.EntityId == entry.PersonId );
                     if ( attributeValue == null || attributeValue.CreatedDateTime < entry.File.CreatedDateTime )
