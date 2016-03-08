@@ -571,9 +571,9 @@ namespace Excavator.CSV
             lookupContext = lookupContext ?? new RockContext();
 
             var account = new FinancialAccount();
-            account.Name = fundName;
-            account.GlCode = accountGL;
-            account.PublicName = fundName;
+            account.Name = fundName.Truncate( 50 );
+            account.GlCode = accountGL.Truncate( 50 );
+            account.PublicName = fundName.Truncate( 50 );
             account.IsTaxDeductible = true;
             account.IsActive = isActive ?? true;
             account.CampusId = fundCampusId;
