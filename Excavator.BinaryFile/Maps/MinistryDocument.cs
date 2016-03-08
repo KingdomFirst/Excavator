@@ -164,16 +164,12 @@ namespace Excavator.BinaryFile
                 return;
             }
 
-            var totalCount = newFileList.Count();
-            newFileList = newFileList.Where( f => f.File != null ).ToList();
-            var nonNullCount = newFileList.Count();
-            var rockContext = new RockContext();
-
-            if(totalCount > nonNullCount)
+            if ( newFileList.Any( f => f.File == null ) )
             {
-                LogException( "Binary File Import", string.Format( "Could not load {0} files because they were null.", totalCount - nonNullCount ) );
+                LogException( "Binary File Import", string.Format( "Could not load {0} files because they were null.", newFileList.Count( f => f.File == null ) ) );
             }
 
+            var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
                 foreach ( var entry in newFileList )
@@ -185,8 +181,8 @@ namespace Excavator.BinaryFile
                 rockContext.BinaryFiles.AddRange( newFileList.Select( f => f.File ) );
                 rockContext.SaveChanges();
 
-                foreach (var entry in newFileList)
-                { 
+                foreach ( var entry in newFileList )
+                {
                     // set person attribute value to this binary file guid
                     var attributeValue = rockContext.AttributeValues.FirstOrDefault( p => p.AttributeId == entry.AttributeId && p.EntityId == entry.PersonId );
                     if ( attributeValue == null || attributeValue.CreatedDateTime < entry.File.CreatedDateTime )
