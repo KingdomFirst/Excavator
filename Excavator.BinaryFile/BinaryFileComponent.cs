@@ -21,6 +21,7 @@ using System.Collections.Specialized;
 using System.ComponentModel.Composition;
 using System.Configuration;
 using System.Data.Entity;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -307,7 +308,7 @@ namespace Excavator.BinaryFile
             var iBinaryFileType = typeof( IBinaryFile );
             var mappedFileTypes = iBinaryFileType.Assembly.ExportedTypes
                 .Where( p => iBinaryFileType.IsAssignableFrom( p ) && !p.IsInterface );
-            var selectedType = mappedFileTypes.FirstOrDefault( t => fileName.StartsWith( t.Name.RemoveWhitespace() ) );
+            var selectedType = mappedFileTypes.FirstOrDefault( t => fileName.StartsWith( t.Name.RemoveWhitespace(), true, CultureInfo.CurrentCulture ) );
             if ( selectedType != null )
             {
                 adapter = (IBinaryFile)Activator.CreateInstance( selectedType );
