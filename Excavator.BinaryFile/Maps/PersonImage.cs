@@ -21,7 +21,8 @@ namespace Excavator.BinaryFile.PersonImage
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="personImageType">Type of the person image file.</param>
-        public void Map( ZipArchive folder, BinaryFileType personImageType )
+        /// <param name="storageProvider">The storage provider.</param>
+        public void Map( ZipArchive folder, BinaryFileType personImageType, ProviderComponent storageProvider )
         {
             // check for existing images
             var lookupContext = new RockContext();
@@ -31,10 +32,6 @@ namespace Excavator.BinaryFile.PersonImage
 
             var emptyJsonObject = "{}";
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
-
-            var storageProvider = personImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                ? (ProviderComponent)DatabaseProvider
-                : (ProviderComponent)FileSystemProvider;
 
             int completed = 0;
             int totalRows = folder.Entries.Count;
@@ -64,6 +61,7 @@ namespace Excavator.BinaryFile.PersonImage
                         rockFile.BinaryFileTypeId = personImageType.Id;
                         rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                         rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
+                        rockFile.ModifiedDateTime = ImportDateTime;
                         rockFile.Description = string.Format( "Imported as {0}", file.Name );
                         rockFile.SetStorageEntityTypeId( personImageType.StorageEntityTypeId );
                         rockFile.StorageEntitySettings = emptyJsonObject;
