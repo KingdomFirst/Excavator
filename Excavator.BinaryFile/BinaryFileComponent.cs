@@ -219,7 +219,7 @@ namespace Excavator.BinaryFile
                     var typeValue = binaryTypeSettings[typeKey];
                     if ( typeValue != null )
                     {
-                        var storageProvider = StorageProviders.FirstOrDefault( p => p.TypeName.RemoveWhitespace().Equals( typeValue.RemoveWhitespace() ) );
+                        var storageProvider = StorageProviders.FirstOrDefault( p => p.TypeName.RemoveWhitespace().EndsWith( typeValue.RemoveWhitespace() ) );
                         if ( storageProvider != null )
                         {
                             // ensure the storage provider is active
@@ -287,8 +287,8 @@ namespace Excavator.BinaryFile
             }
 
             // add the two core storage providers
-            StorageProviders.Add( new Rock.Storage.Provider.Database() );
-            StorageProviders.Add( new Rock.Storage.Provider.FileSystem() );
+            StorageProviders.Add( new Database() );
+            StorageProviders.Add( new FileSystem() );
         }
 
         #endregion Methods
