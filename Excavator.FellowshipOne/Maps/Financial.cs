@@ -52,7 +52,7 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                var personKeys = GetPersonKeys( individualId, householdId );
+                var personKeys = GetPersonKeys( individualId, householdId, false );
                 if ( personKeys != null && personKeys.PersonAliasId > 0 )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
