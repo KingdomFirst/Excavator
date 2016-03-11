@@ -42,9 +42,15 @@ namespace Excavator.BinaryFile
             foreach ( var file in folder.Entries )
             {
                 var fileExtension = Path.GetExtension( file.Name );
+                var fileMimeType = Extensions.GetMIMEType( file.Name );
                 if ( BinaryFileComponent.FileTypeBlackList.Contains( fileExtension ) )
                 {
                     LogException( "Binary File Import", string.Format( "{0} filetype not allowed ({1})", fileExtension, file.Name ) );
+                    continue;
+                }
+                else if ( fileMimeType == null )
+                {
+                    LogException( "Binary File Import", string.Format( "{0} filetype not recognized ({1})", fileExtension, file.Name ) );
                     continue;
                 }
 
@@ -55,10 +61,10 @@ namespace Excavator.BinaryFile
                     rockFile.IsSystem = false;
                     rockFile.IsTemporary = false;
                     rockFile.FileName = file.Name;
+                    rockFile.MimeType = fileMimeType;
                     rockFile.BinaryFileTypeId = transactionImageType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
                     rockFile.ModifiedDateTime = ImportDateTime;
-                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( transactionImageType.StorageEntityTypeId );
                     rockFile.StorageEntitySettings = emptyJsonObject;

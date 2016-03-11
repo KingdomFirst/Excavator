@@ -74,10 +74,10 @@ namespace Excavator.BinaryFile
                     rockFile.IsSystem = false;
                     rockFile.IsTemporary = false;
                     rockFile.FileName = file.Name;
+                    rockFile.MimeType = fileMimeType;
                     rockFile.BinaryFileTypeId = ministryFileType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
                     rockFile.ModifiedDateTime = ImportDateTime;
-                    rockFile.MimeType = fileMimeType;
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( ministryFileType.StorageEntityTypeId );
                     rockFile.StorageEntitySettings = emptyJsonObject;
