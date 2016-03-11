@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -180,26 +181,49 @@ namespace Excavator.BinaryFile
                     entry.File.Path = storageProvider.GetPath( entry.File );
                 }
 
+                var list = newFileList.Select( f => f.File ).ToList();
+
                 rockContext.BinaryFiles.AddRange( newFileList.Select( f => f.File ) );
                 rockContext.SaveChanges();
 
-                foreach ( var entry in newFileList )
-                {
-                    // set person attribute value to this binary file guid
-                    var attributeValue = rockContext.AttributeValues.FirstOrDefault( p => p.AttributeId == entry.AttributeId && p.EntityId == entry.PersonId );
-                    if ( attributeValue == null || attributeValue.CreatedDateTime < entry.File.CreatedDateTime )
-                    {
-                        bool addToContext = attributeValue == null;
-                        attributeValue = new AttributeValue();
-                        attributeValue.EntityId = entry.PersonId;
-                        attributeValue.AttributeId = entry.AttributeId;
-                        attributeValue.Value = entry.File.Guid.ToString();
-                        attributeValue.IsSystem = false;
+                var zipFilePersonAttributes = new Dictionary<int, List<int>>();
 
-                        if ( addToContext )
+                foreach ( var entry in newFileList.OrderByDescending( f => f.File.CreatedDateTime ) )
+                {
+                    List<int> attributeList = null;
+
+                    if ( zipFilePersonAttributes.ContainsKey( entry.PersonId ) && zipFilePersonAttributes[entry.PersonId] != null )
+                    {
+                        attributeList = zipFilePersonAttributes[entry.PersonId];
+                    }
+                    else
+                    {
+                        // first document for this person in the current zip file, start a list
+                        attributeList = new List<int>();
+                        zipFilePersonAttributes.Add( entry.PersonId, attributeList );
+                    }
+
+                    if ( !attributeList.Contains( entry.AttributeId ) )
+                    {
+                        var attributeValue = rockContext.AttributeValues.FirstOrDefault( p => p.AttributeId == entry.AttributeId && p.EntityId == entry.PersonId );
+
+                        // set person attribute value to this binary file guid
+                        if ( attributeValue == null )
                         {
+                            attributeValue = new AttributeValue();
+                            attributeValue.IsSystem = false;
+                            attributeValue.EntityId = entry.PersonId;
+                            attributeValue.AttributeId = entry.AttributeId;
+                            attributeValue.Value = entry.File.Guid.ToString();
                             rockContext.AttributeValues.Add( attributeValue );
                         }
+                        else if ( attributeValue.CreatedDateTime < entry.File.CreatedDateTime )
+                        {
+                            attributeValue.Value = entry.File.Guid.ToString();
+                            rockContext.Entry( attributeValue ).State = EntityState.Modified;
+                        }
+
+                        attributeList.Add( entry.AttributeId );
                     }
                 }
 
