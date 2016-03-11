@@ -157,7 +157,7 @@ namespace Excavator.BinaryFile
             // only import things that the user checked
             foreach ( var selectedFile in DataNodes.Where( n => n.Checked != false ) )
             {
-                var selectedFileType = FileTypes.FirstOrDefault( t => selectedFile.Name.RemoveWhitespace().StartsWith( t.Name.RemoveWhitespace() ) );
+                var selectedFileType = FileTypes.FirstOrDefault( t => selectedFile.Name.RemoveWhitespace().StartsWith( t.Name.RemoveWhitespace(), StringComparison.InvariantCultureIgnoreCase ) );
                 if ( selectedFileType == null )
                 {
                     selectedFileType = FileTypes.FirstOrDefault( f => f.Name == "Default" );
