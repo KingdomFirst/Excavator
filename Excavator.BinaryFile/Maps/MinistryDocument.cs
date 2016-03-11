@@ -47,9 +47,15 @@ namespace Excavator.BinaryFile
             foreach ( var file in folder.Entries )
             {
                 var fileExtension = Path.GetExtension( file.Name );
+                var fileMimeType = Extensions.GetMIMEType( file.Name );
                 if ( BinaryFileComponent.FileTypeBlackList.Contains( fileExtension ) )
                 {
                     LogException( "Binary File Import", string.Format( "{0} filetype not allowed ({1})", fileExtension, file.Name ) );
+                    continue;
+                }
+                else if ( fileMimeType == null )
+                {
+                    LogException( "Binary File Import", string.Format( "{0} filetype not recognized ({1})", fileExtension, file.Name ) );
                     continue;
                 }
 
@@ -71,7 +77,7 @@ namespace Excavator.BinaryFile
                     rockFile.BinaryFileTypeId = ministryFileType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
                     rockFile.ModifiedDateTime = ImportDateTime;
-                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
+                    rockFile.MimeType = fileMimeType;
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( ministryFileType.StorageEntityTypeId );
                     rockFile.StorageEntitySettings = emptyJsonObject;
@@ -186,21 +192,21 @@ namespace Excavator.BinaryFile
                 rockContext.BinaryFiles.AddRange( newFileList.Select( f => f.File ) );
                 rockContext.SaveChanges();
 
-                var zipFilePersonAttributes = new Dictionary<int, List<int>>();
+                var currentPersonAttributes = new Dictionary<int, List<int>>();
 
                 foreach ( var entry in newFileList.OrderByDescending( f => f.File.CreatedDateTime ) )
                 {
                     List<int> attributeList = null;
 
-                    if ( zipFilePersonAttributes.ContainsKey( entry.PersonId ) && zipFilePersonAttributes[entry.PersonId] != null )
+                    if ( currentPersonAttributes.ContainsKey( entry.PersonId ) && currentPersonAttributes[entry.PersonId] != null )
                     {
-                        attributeList = zipFilePersonAttributes[entry.PersonId];
+                        attributeList = currentPersonAttributes[entry.PersonId];
                     }
                     else
                     {
                         // first document for this person in the current zip file, start a list
                         attributeList = new List<int>();
-                        zipFilePersonAttributes.Add( entry.PersonId, attributeList );
+                        currentPersonAttributes.Add( entry.PersonId, attributeList );
                     }
 
                     if ( !attributeList.Contains( entry.AttributeId ) )
