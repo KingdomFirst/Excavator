@@ -26,7 +26,7 @@ namespace Excavator.CSV
             var locationService = new LocationService( lookupContext );
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            int numImportedFamilies = ImportedPeople.Count();
+            int numImportedFamilies = ImportedFamilies.Count();
 
             int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
@@ -53,7 +53,7 @@ namespace Excavator.CSV
 
                 if ( rowFamilyKey != null && rowFamilyKey != currentFamilyGroup.ForeignKey )
                 {
-                    currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignKey == rowFamilyKey );
+                    currentFamilyGroup = ImportedFamilies.FirstOrDefault( g => g.ForeignKey == rowFamilyKey );
                     if ( currentFamilyGroup == null )
                     {
                         currentFamilyGroup = new Group();
@@ -189,7 +189,7 @@ namespace Excavator.CSV
                 } );
 
                 // Add these new families to the global list
-                ImportedPeople.AddRange( newFamilyList );
+                ImportedFamilies.AddRange( newFamilyList );
             }
 
             // Now save locations
@@ -198,7 +198,7 @@ namespace Excavator.CSV
                 // Set updated family id on locations
                 foreach ( var locationPair in newGroupLocations )
                 {
-                    int? familyGroupId = ImportedPeople.Where( g => g.ForeignKey == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
+                    int? familyGroupId = ImportedFamilies.Where( g => g.ForeignKey == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
                     if ( familyGroupId != null )
                     {
                         locationPair.Key.GroupId = (int)familyGroupId;
