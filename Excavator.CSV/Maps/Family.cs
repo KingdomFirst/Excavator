@@ -26,7 +26,7 @@ namespace Excavator.CSV
             var locationService = new LocationService( lookupContext );
             int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            int numImportedFamilies = ImportedPeople.Select( p => p.ForeignId ).Distinct().Count();
+            int numImportedFamilies = ImportedPeople.Count( g => g.ForeignKey != null );
 
             int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
             int workLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
