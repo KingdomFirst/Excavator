@@ -143,7 +143,7 @@ namespace Excavator.CSV
 
             int completed = 0;
             int newFamilies = 0;
-            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeople.Count( p => p.Members.Any( m => m.Person.ForeignKey != null ) ) ) );
+            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedFamilies.Count( g => g.Members.Any( m => m.Person.ForeignKey != null ) ) ) );
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
@@ -159,7 +159,7 @@ namespace Excavator.CSV
                 int? rowPersonId = rowPersonKey.AsType<int?>();
 
                 // Check that this person isn't already in our data
-                var personExists = ImportedPeople.Any( p => p.Members.Any( m => m.Person.ForeignKey == rowPersonKey ) );
+                var personExists = ImportedFamilies.Any( g => g.Members.Any( m => m.Person.ForeignKey == rowPersonKey ) );
                 if ( !personExists )
                 {
                     #region person create
@@ -522,7 +522,7 @@ namespace Excavator.CSV
                     if ( rowFamilyKey != currentFamilyGroup.ForeignKey )
                     {
                         // person not part of the previous family, see if that family exists or create a new one
-                        currentFamilyGroup = ImportedPeople.FirstOrDefault( p => p.ForeignKey == rowFamilyKey );
+                        currentFamilyGroup = ImportedFamilies.FirstOrDefault( g => g.ForeignKey == rowFamilyKey );
                         if ( currentFamilyGroup == null )
                         {
                             currentFamilyGroup = CreateFamilyGroup( row[FamilyName], rowFamilyKey );
@@ -647,7 +647,7 @@ namespace Excavator.CSV
                     rockContext.Groups.AddRange( newFamilyList );
                     rockContext.SaveChanges( DisableAuditing );
 
-                    ImportedPeople.AddRange( newFamilyList );
+                    ImportedFamilies.AddRange( newFamilyList );
 
                     foreach ( var familyGroups in newFamilyList.GroupBy<Group, string>( g => g.ForeignKey ) )
                     {

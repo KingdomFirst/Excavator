@@ -83,9 +83,9 @@ namespace Excavator.CSV
         private int FamilyGroupTypeId;
 
         /// <summary>
-        /// All the people who've been imported
+        /// All the family groups who've been imported
         /// </summary>
-        private List<Group> ImportedPeople;
+        private List<Group> ImportedFamilies;
 
         /// <summary>
         /// The list of current campuses
@@ -281,7 +281,7 @@ namespace Excavator.CSV
             ReportProgress( 0, "Checking for existing people..." );
 
             // Don't track groups in this context, just use it as a static reference
-            ImportedPeople = lookupContext.Groups.AsNoTracking()
+            ImportedFamilies = lookupContext.Groups.AsNoTracking()
                 .Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignKey != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
