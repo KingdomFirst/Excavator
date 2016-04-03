@@ -367,6 +367,7 @@ namespace Excavator.CSV
                             currentNumber.CreatedByPersonAliasId = ImportPersonAliasId;
                             currentNumber.Extension = extension.Left( 20 );
                             currentNumber.Number = normalizedNumber.TrimStart( new Char[] { '0' } ).Left( 20 );
+                            currentNumber.NumberFormatted = PhoneNumber.FormattedNumber( currentNumber.CountryCode, currentNumber.Number );
                             currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
                                 .Select( v => (int?)v.Id ).FirstOrDefault();
                             if ( numberPair.Key == "Mobile" )
