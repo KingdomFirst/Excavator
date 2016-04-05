@@ -35,10 +35,10 @@ Downloaded .exe and .dll files on Windows are blocked to prevent users from acci
 
 For each .exe and .dll file in the directory:
 1. Right-click on the individual file (unfortunately you can't unblock in bulk).
-1. Select Properties to open the properties window.
-1. Check the "Unblock" checkbox.
-1. Click "Apply".
-1. Click "OK".
+2. Select Properties to open the properties window.
+3. Check the "Unblock" checkbox.
+4. Click "Apply".
+5. Click "OK".
 
 ![Unblock each file in the directory.](/UnblockTutorialAnimation.gif?raw=true "Optional Title")
 
