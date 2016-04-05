@@ -20,7 +20,7 @@ Imports from FellowshipOne and CSV are currently supported.
 - Excavator files( see below for download )
 
 ## Downloads
-- [Excavator.zip](https://github.com/NewSpring/Excavator/raw/master/Excavator.zip)
+- [Excavator.zip](https://github.com/NewSpring/Excavator/raw/master/Excavator.zip) (see below for instructions!)
 
 ## What If I Have A Problem?
 - If you have a problem with the import, please file an issue on Github: [Excavator Issues](https://github.com/NewSpring/Excavator/issues)
@@ -31,7 +31,7 @@ Please note that the master branch contains fully-tested code; develop branch is
 
 ## Does Excavator crash after opening or trying to use it?
 
-Downloaded .exe and .dll files on Windows are blocked to prevent users from accidentally downloading and running malicious applications. Once you download Excavator.zip, follow the guide below to unblock all the contents of the zip file at one time.
+Downloaded .exe and .dll files on Windows are blocked to prevent users from accidentally downloading and running malicious applications. If you've just downloaded Excavator.zip, follow the guide below to unblock all the contents of the zip file at once.
 
 If you've already extracted the contents of Excavator.zip, make sure to unblock each file by doing the following:
 
