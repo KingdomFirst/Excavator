@@ -369,12 +369,14 @@ namespace Excavator.Utility
         public int PersonId;
 
         /// <summary>
-        /// Stores a Individual (Foreign) Id
+        /// Stores a Foreign Person Id
+        /// Using "Individual" to distinguish from Rock Person.
         /// </summary>
         public int? IndividualId;
 
         /// <summary>
-        /// Stores a Household (Group) Id
+        /// Stores a Foreign Group Id
+        /// Using "Household" to distinguish from Rock Group.
         /// </summary>
         public int? HouseholdId;
 

@@ -21,7 +21,8 @@ namespace Excavator.BinaryFile.PersonImage
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="personImageType">Type of the person image file.</param>
-        public void Map( ZipArchive folder, BinaryFileType personImageType )
+        /// <param name="storageProvider">The storage provider.</param>
+        public void Map( ZipArchive folder, BinaryFileType personImageType, ProviderComponent storageProvider )
         {
             // check for existing images
             var lookupContext = new RockContext();
@@ -31,10 +32,6 @@ namespace Excavator.BinaryFile.PersonImage
 
             var emptyJsonObject = "{}";
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
-
-            var storageProvider = personImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                ? (ProviderComponent)DatabaseProvider
-                : (ProviderComponent)FileSystemProvider;
 
             ReportProgress( 0, "Starting person images folder count" );
 
@@ -66,6 +63,7 @@ namespace Excavator.BinaryFile.PersonImage
                         rockFile.BinaryFileTypeId = personImageType.Id;
                         rockFile.MimeType = Extensions.GetMIMEType( file.Name );
                         rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
+                        rockFile.ModifiedDateTime = ImportDateTime;
                         rockFile.Description = string.Format( "Imported as {0}", file.Name );
                         rockFile.SetStorageEntityTypeId( personImageType.StorageEntityTypeId );
                         rockFile.StorageEntitySettings = emptyJsonObject;
@@ -123,25 +121,26 @@ namespace Excavator.BinaryFile.PersonImage
         /// <param name="newFileList">The new file list.</param>
         private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList, ProviderComponent storageProvider )
         {
+            if ( storageProvider == null )
+            {
+                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                return;
+            }
+
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
+                foreach ( var file in newFileList )
+                {
+                    storageProvider.SaveContent( file.Value );
+                    file.Value.Path = storageProvider.GetPath( file.Value );
+                }
+
                 rockContext.BinaryFiles.AddRange( newFileList.Values );
-                rockContext.SaveChanges();
+                rockContext.SaveChanges( DisableAuditing );
 
                 foreach ( var file in newFileList )
                 {
-                    if ( storageProvider != null )
-                    {
-                        storageProvider.SaveContent( file.Value );
-                        file.Value.Path = storageProvider.GetPath( file.Value );
-                    }
-                    else
-                    {
-                        LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                    }
-
-                    // associate the person with this photo
                     rockContext.People.FirstOrDefault( p => p.Id == file.Key ).PhotoId = file.Value.Id;
                 }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -22,7 +23,8 @@ namespace Excavator.BinaryFile
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="ministryFileType">Type of the ministry file.</param>
-        public void Map( ZipArchive folder, BinaryFileType ministryFileType )
+        /// <param name="storageProvider">The storage provider.</param>
+        public void Map( ZipArchive folder, BinaryFileType ministryFileType, ProviderComponent storageProvider )
         {
             var lookupContext = new RockContext();
             var personEntityTypeId = EntityTypeCache.GetId<Person>();
@@ -31,10 +33,6 @@ namespace Excavator.BinaryFile
             var existingAttributes = new AttributeService( lookupContext ).GetByFieldTypeId( fileFieldTypeId )
                 .Where( a => a.EntityTypeId == personEntityTypeId )
                 .ToDictionary( a => a.Key, a => a.Id );
-
-            var storageProvider = ministryFileType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                ? (ProviderComponent)DatabaseProvider
-                : (ProviderComponent)FileSystemProvider;
 
             var emptyJsonObject = "{}";
             var newFileList = new List<DocumentKeys>();
@@ -49,9 +47,15 @@ namespace Excavator.BinaryFile
             foreach ( var file in folder.Entries )
             {
                 var fileExtension = Path.GetExtension( file.Name );
+                var fileMimeType = Extensions.GetMIMEType( file.Name );
                 if ( BinaryFileComponent.FileTypeBlackList.Contains( fileExtension ) )
                 {
                     LogException( "Binary File Import", string.Format( "{0} filetype not allowed ({1})", fileExtension, file.Name ) );
+                    continue;
+                }
+                else if ( fileMimeType == null )
+                {
+                    LogException( "Binary File Import", string.Format( "{0} filetype not recognized ({1})", fileExtension, file.Name ) );
                     continue;
                 }
 
@@ -70,9 +74,10 @@ namespace Excavator.BinaryFile
                     rockFile.IsSystem = false;
                     rockFile.IsTemporary = false;
                     rockFile.FileName = file.Name;
+                    rockFile.MimeType = fileMimeType;
                     rockFile.BinaryFileTypeId = ministryFileType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
-                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
+                    rockFile.ModifiedDateTime = ImportDateTime;
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( ministryFileType.StorageEntityTypeId );
                     rockFile.StorageEntitySettings = emptyJsonObject;
@@ -103,6 +108,8 @@ namespace Excavator.BinaryFile
                         newAttribute.Key = attributeKey;
                         newAttribute.Name = attributeName.Value;
                         newAttribute.Description = attributeName.Value + " created by binary file import";
+                        newAttribute.CreatedDateTime = ImportDateTime;
+                        newAttribute.ModifiedDateTime = ImportDateTime;
                         newAttribute.IsGridColumn = false;
                         newAttribute.IsMultiValue = false;
                         newAttribute.IsRequired = false;
@@ -160,42 +167,69 @@ namespace Excavator.BinaryFile
         /// <param name="newFileList">The new file list.</param>
         private static void SaveFiles( List<DocumentKeys> newFileList, ProviderComponent storageProvider )
         {
+            if ( storageProvider == null )
+            {
+                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                return;
+            }
+
+            if ( newFileList.Any( f => f.File == null ) )
+            {
+                LogException( "Binary File Import", string.Format( "Could not load {0} files because they were null.", newFileList.Count( f => f.File == null ) ) );
+            }
+
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
+                foreach ( var entry in newFileList )
+                {
+                    storageProvider.SaveContent( entry.File );
+                    entry.File.Path = storageProvider.GetPath( entry.File );
+                }
+
+                var list = newFileList.Select( f => f.File ).ToList();
+
                 rockContext.BinaryFiles.AddRange( newFileList.Select( f => f.File ) );
                 rockContext.SaveChanges();
 
-                foreach ( var entry in newFileList )
+                var currentPersonAttributes = new Dictionary<int, List<int>>();
+
+                foreach ( var entry in newFileList.OrderByDescending( f => f.File.CreatedDateTime ) )
                 {
-                    if ( entry.File != null )
+                    List<int> attributeList = null;
+
+                    if ( currentPersonAttributes.ContainsKey( entry.PersonId ) && currentPersonAttributes[entry.PersonId] != null )
                     {
-                        if ( storageProvider != null )
-                        {
-                            storageProvider.SaveContent( entry.File );
-                            entry.File.Path = storageProvider.GetPath( entry.File );
-                        }
-                        else
-                        {
-                            LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                        }
+                        attributeList = currentPersonAttributes[entry.PersonId];
+                    }
+                    else
+                    {
+                        // first document for this person in the current zip file, start a list
+                        attributeList = new List<int>();
+                        currentPersonAttributes.Add( entry.PersonId, attributeList );
                     }
 
-                    // set person attribute value to this binary file guid
-                    var attributeValue = rockContext.AttributeValues.FirstOrDefault( p => p.AttributeId == entry.AttributeId && p.EntityId == entry.PersonId );
-                    if ( attributeValue == null || attributeValue.CreatedDateTime < entry.File.CreatedDateTime )
+                    if ( !attributeList.Contains( entry.AttributeId ) )
                     {
-                        bool addToContext = attributeValue == null;
-                        attributeValue = new AttributeValue();
-                        attributeValue.EntityId = entry.PersonId;
-                        attributeValue.AttributeId = entry.AttributeId;
-                        attributeValue.Value = entry.File.Guid.ToString();
-                        attributeValue.IsSystem = false;
+                        var attributeValue = rockContext.AttributeValues.FirstOrDefault( p => p.AttributeId == entry.AttributeId && p.EntityId == entry.PersonId );
 
-                        if ( addToContext )
+                        // set person attribute value to this binary file guid
+                        if ( attributeValue == null )
                         {
+                            attributeValue = new AttributeValue();
+                            attributeValue.IsSystem = false;
+                            attributeValue.EntityId = entry.PersonId;
+                            attributeValue.AttributeId = entry.AttributeId;
+                            attributeValue.Value = entry.File.Guid.ToString();
                             rockContext.AttributeValues.Add( attributeValue );
                         }
+                        else if ( attributeValue.CreatedDateTime < entry.File.CreatedDateTime )
+                        {
+                            attributeValue.Value = entry.File.Guid.ToString();
+                            rockContext.Entry( attributeValue ).State = EntityState.Modified;
+                        }
+
+                        attributeList.Add( entry.AttributeId );
                     }
                 }
 
