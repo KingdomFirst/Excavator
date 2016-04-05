@@ -1,6 +1,6 @@
 ## Welcome to Excavator!
 
-Build Status: [![Stories in Ready](https://badge.waffle.io/newspring/excavator.png?label=ready&title=Ready)](https://waffle.io/newspring/excavator)
+Appveyor Status: ![](https://ci.appveyor.com/api/projects/status/github/newspring/excavator?branch=master&svg=true)
 
 Chat Room: [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NewSpring/Excavator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -31,11 +31,13 @@ Please note that the master branch contains fully-tested code; develop branch is
 
 ## Does Excavator crash after opening or trying to use it?
 
-Downloaded .exe and .dll files on Windows are blocked to prevent users from accidentally downloading and running malicious applications. Once you've extracted the contents of Excavator.zip, make sure to unblock the files by doing the following:
+Downloaded .exe and .dll files on Windows are blocked to prevent users from accidentally downloading and running malicious applications. Once you download Excavator.zip, follow the guide below to unblock all the contents of the zip file at one time.
+
+If you've already extracted the contents of Excavator.zip, make sure to unblock each file by doing the following:
 
 For each .exe and .dll file in the directory:
 
-1. Right-click on the individual file (unfortunately you can't unblock in bulk).
+1. Right-click on the individual file
 2. Select Properties to open the properties window.
 3. Check the "Unblock" checkbox.
 4. Click "Apply".
