@@ -29,6 +29,20 @@ Imports from FellowshipOne and CSV are currently supported.
 
 Please note that the master branch contains fully-tested code; develop branch is beta/in-progress.
 
+## Does Excavator crash after opening or trying to use it?
+
+Downloaded .exe and .dll files on Windows are blocked to prevent users from accidentally downloading and running malicious applications. Once you've extracted the contents of Excavator.zip, make sure to unblock the files by doing the following:
+
+For each .exe and .dll file in the directory:
+
+1. Right-click on the individual file (unfortunately you can't unblock in bulk).
+2. Select Properties to open the properties window.
+3. Check the "Unblock" checkbox.
+4. Click "Apply".
+5. Click "OK".
+
+![Unblock each file in the directory.](/UnblockTutorialAnimation.gif?raw=true "Optional Title")
+
 ## Other Questions?
 Take a look at the [Wiki](https://github.com/NewSpring/Excavator/wiki) or the [FAQ](https://github.com/NewSpring/Excavator/wiki/Frequently-Asked-Questions)
 
