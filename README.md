@@ -34,6 +34,7 @@ Please note that the master branch contains fully-tested code; develop branch is
 Downloaded .exe and .dll files on Windows are blocked to prevent users from accidentally downloading and running malicious applications. Once you've extracted the contents of Excavator.zip, make sure to unblock the files by doing the following:
 
 For each .exe and .dll file in the directory:
+
 1. Right-click on the individual file (unfortunately you can't unblock in bulk).
 2. Select Properties to open the properties window.
 3. Check the "Unblock" checkbox.
