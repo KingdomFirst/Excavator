@@ -167,6 +167,7 @@ namespace Excavator.BinaryFile
                 IBinaryFile worker = IMapAdapterFactory.GetAdapter( selectedFile.Name );
                 if ( worker != null && selectedFileType != null )
                 {
+                    ReportProgress( 0, string.Format( "Starting {0} file import", selectedFileType.Name ) );
                     var selectedProvider = StorageProviders.FirstOrDefault( p => selectedFileType.StorageEntityTypeId == p.EntityType.Id );
                     worker.Map( archiveFolder, selectedFileType, selectedProvider );
                     totalCount += archiveFolder.Entries.Count;

@@ -37,8 +37,6 @@ namespace Excavator.BinaryFile
             var emptyJsonObject = "{}";
             var newFileList = new List<DocumentKeys>();
 
-            ReportProgress( 0, "Starting ministry documents folder count" );
-
             int completed = 0;
             int totalRows = folder.Entries.Count;
             int percentage = ( totalRows - 1 ) / 100 + 1;
