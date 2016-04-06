@@ -167,7 +167,7 @@ namespace Excavator.BinaryFile
                 IBinaryFile worker = IMapAdapterFactory.GetAdapter( selectedFile.Name );
                 if ( worker != null && selectedFileType != null )
                 {
-                    ReportProgress( 0, string.Format( "Using file path ", selectedFileType.AttributeValues.ToDictionary( a => a.Key, v => v.Value.Value ).ToJson() ) );
+                    ReportProgress( 0, string.Format( "Using file path ", selectedFileType.AttributeValues.ToDictionary( a => a.Key, v => v.Value.Value ).ToJson().ToString() ) );
                     ReportProgress( 0, string.Format( "Starting {0} file import", selectedFileType.Name ) );
                     var selectedProvider = StorageProviders.FirstOrDefault( p => selectedFileType.StorageEntityTypeId == p.EntityType.Id );
                     worker.Map( archiveFolder, selectedFileType, selectedProvider );
