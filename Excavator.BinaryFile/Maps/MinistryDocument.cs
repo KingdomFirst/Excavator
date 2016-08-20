@@ -93,9 +93,16 @@ namespace Excavator.BinaryFile
                         rockFile.ContentStream = new MemoryStream( fileContent.BaseStream.ReadBytesToEnd() );
                     }
 
-                    var attributePattern = "[A-Za-z]+";
-                    var attributeName = Regex.Match( parsedFileName[3], attributePattern );
+                    var attributePattern = "[A-Za-z0-9-]+";
+                    var attributeName = Regex.Match( parsedFileName[3].RemoveWhitespace(), attributePattern );
                     var attributeKey = attributeName.Value.RemoveWhitespace();
+
+                    // change key to default key for Background Check Documents
+                    if ( attributeKey == "BackgroundCheck" )
+                    {
+                        attributeKey = "BackgroundCheckDocument";
+                    }
+
                     if ( !existingAttributes.ContainsKey( attributeKey ) )
                     {
                         var newAttribute = new Attribute();
