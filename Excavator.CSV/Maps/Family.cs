@@ -45,7 +45,7 @@ namespace Excavator.CSV
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
-            while ( ( row = csvData.Database.FirstOrDefault() ) != null )
+            while ( (row = csvData.Database.FirstOrDefault()) != null )
             {
                 string rowFamilyKey = row[FamilyId];
                 int? rowFamilyId = rowFamilyKey.AsType<int?>();
@@ -80,6 +80,7 @@ namespace Excavator.CSV
                             familyCampus = new Campus();
                             familyCampus.IsSystem = false;
                             familyCampus.Name = campusName;
+                            familyCampus.ShortCode = campusName.RemoveWhitespace();
                             lookupContext.Campuses.Add( familyCampus );
                             lookupContext.SaveChanges( DisableAuditing );
                             CampusList.Add( familyCampus );
@@ -140,7 +141,7 @@ namespace Excavator.CSV
                     }
 
                     completed++;
-                    if ( completed % ( ReportingNumber * 10 ) < 1 )
+                    if ( completed % (ReportingNumber * 10) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
                     }
@@ -166,6 +167,7 @@ namespace Excavator.CSV
             }
 
             lookupContext.SaveChanges();
+            DetachAllInContext( lookupContext );
             lookupContext.Dispose();
 
             ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added or updated.", completed ) );
@@ -182,7 +184,7 @@ namespace Excavator.CSV
             // First save any unsaved families
             if ( newFamilyList.Any() )
             {
-                rockContext.WrapTransaction( () =>
+                rockContext.WrapTransaction( ( ) =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
                     rockContext.SaveChanges( DisableAuditing );
@@ -198,15 +200,15 @@ namespace Excavator.CSV
                 // Set updated family id on locations
                 foreach ( var locationPair in newGroupLocations )
                 {
-                    int? familyGroupId = ImportedFamilies.Where( g => g.ForeignKey == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
+                    int? familyGroupId = ImportedFamilies.Where( g => g.ForeignKey == locationPair.Value ).Select( g => ( int? )g.Id ).FirstOrDefault();
                     if ( familyGroupId != null )
                     {
-                        locationPair.Key.GroupId = (int)familyGroupId;
+                        locationPair.Key.GroupId = ( int )familyGroupId;
                     }
                 }
 
                 // Save locations
-                rockContext.WrapTransaction( () =>
+                rockContext.WrapTransaction( ( ) =>
                 {
                     rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.GroupLocations.AddRange( newGroupLocations.Keys );
