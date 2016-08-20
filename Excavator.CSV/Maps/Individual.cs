@@ -143,11 +143,12 @@ namespace Excavator.CSV
 
             int completed = 0;
             int newFamilies = 0;
-            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedFamilies.Count( g => g.Members.Any( m => m.Person.ForeignKey != null ) ) ) );
+            int newPeople = 0;
+            ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeopleKeys.Count() ) );
 
             string[] row;
-            // Uses a look-ahead enumerator: this call will move to the next record immediately
-            while ( ( row = csvData.Database.FirstOrDefault() ) != null )
+            row = csvData.Database.FirstOrDefault();
+            while ( row != null )
             {
                 int groupRoleId = adultRoleId;
                 bool isFamilyRelationship = true;
@@ -255,7 +256,7 @@ namespace Excavator.CSV
                     else
                     {
                         person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Value == "Unknown" )
-                            .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                            .Select( dv => ( int? )dv.Id ).FirstOrDefault();
                     }
 
                     string familyRole = row[FamilyRole];
@@ -369,7 +370,7 @@ namespace Excavator.CSV
                             currentNumber.Number = normalizedNumber.TrimStart( new Char[] { '0' } ).Left( 20 );
                             currentNumber.NumberFormatted = PhoneNumber.FormattedNumber( currentNumber.CountryCode, currentNumber.Number );
                             currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
-                                .Select( v => (int?)v.Id ).FirstOrDefault();
+                                .Select( v => ( int? )v.Id ).FirstOrDefault();
                             if ( numberPair.Key == "Mobile" )
                             {
                                 switch ( smsAllowed.Trim().ToLower() )
@@ -442,7 +443,7 @@ namespace Excavator.CSV
                     {
                         // Add school if it doesn't exist
                         Guid schoolGuid;
-                        var schoolExists = schoolDefinedType.DefinedValues.Any( s => s.Value.Equals( schoolName ) );
+                        var schoolExists = lookupContext.DefinedValues.Any( s => s.DefinedTypeId == schoolDefinedType.Id && s.Value.Equals( schoolName ) );
                         if ( !schoolExists )
                         {
                             var newSchool = new DefinedValue();
@@ -457,7 +458,7 @@ namespace Excavator.CSV
                         }
                         else
                         {
-                            schoolGuid = schoolDefinedType.DefinedValues.FirstOrDefault( s => s.Value.Equals( schoolName ) ).Guid;
+                            schoolGuid = lookupContext.DefinedValues.FirstOrDefault( s => s.Value.Equals( schoolName ) ).Guid;
                         }
 
                         AddPersonAttribute( schoolAttribute, person, schoolGuid.ToString().ToUpper() );
@@ -555,12 +556,21 @@ namespace Excavator.CSV
                         }
                     }
 
+                    // look ahead 1 row
+                    string rowNextFamilyKey = "-1";
+                    if ( (row = csvData.Database.FirstOrDefault()) != null )
+                    {
+                        rowNextFamilyKey = row[FamilyId];
+                    }
+
+                    newPeople++;
                     completed++;
-                    if ( completed % ( ReportingNumber * 10 ) < 1 )
+                    if ( completed % (ReportingNumber * 10) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
                     }
-                    else if ( completed % ReportingNumber < 1 )
+
+                    if ( newPeople >= ReportingNumber && rowNextFamilyKey != currentFamilyGroup.ForeignKey )
                     {
                         SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
                         lookupContext.SaveChanges();
@@ -571,7 +581,12 @@ namespace Excavator.CSV
                         newFamilyList.Clear();
                         newVisitorList.Clear();
                         newNoteList.Clear();
+                        newPeople = 0;
                     }
+                }
+                else
+                {
+                    row = csvData.Database.FirstOrDefault();
                 }
             }
 
@@ -583,6 +598,7 @@ namespace Excavator.CSV
 
             // Save any changes to existing families
             lookupContext.SaveChanges();
+            DetachAllInContext( lookupContext );
             lookupContext.Dispose();
 
             ReportProgress( 0, string.Format( "Finished individual import: {0:N0} families and {1:N0} people added.", newFamilies, completed ) );
@@ -643,7 +659,7 @@ namespace Excavator.CSV
             if ( newFamilyList.Any() )
             {
                 var rockContext = new RockContext();
-                rockContext.WrapTransaction( () =>
+                rockContext.WrapTransaction( ( ) =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
                     rockContext.SaveChanges( DisableAuditing );
@@ -688,14 +704,15 @@ namespace Excavator.CSV
                                 }
 
                                 // Set aliases on this person
-                                if ( !person.Aliases.Any( a => a.AliasPersonId == person.Id ) )
+                                if ( !person.Aliases.Any( a => a.PersonId == person.Id ) )
                                 {
                                     person.Aliases.Add( new PersonAlias
                                     {
                                         AliasPersonId = person.Id,
                                         AliasPersonGuid = person.Guid,
                                         ForeignKey = person.ForeignKey,
-                                        ForeignId = person.ForeignId
+                                        ForeignId = person.ForeignId,
+                                        PersonId = person.Id
                                     } );
                                 }
 
