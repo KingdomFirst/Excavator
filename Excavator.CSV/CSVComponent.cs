@@ -73,6 +73,11 @@ namespace Excavator.CSV
         protected static int? ImportPersonAliasId;
 
         /// <summary>
+        /// The anonymous giver record
+        /// </summary>
+        protected static int? AnonymousGiverAliasId;
+
+        /// <summary>
         /// The person entity type identifier
         /// </summary>
         private int PersonEntityTypeId;
@@ -227,6 +232,11 @@ namespace Excavator.CSV
                 if ( csvData.RecordType == CSVInstance.RockDataType.INDIVIDUAL )
                 {
                     completed += LoadIndividuals( csvData );
+
+                    //
+                    // Refresh the list of imported people for other record types to use.
+                    //
+                    LoadPersonKeys( new RockContext() );
                 }
                 else if ( csvData.RecordType == CSVInstance.RockDataType.FAMILY )
                 {
@@ -275,6 +285,19 @@ namespace Excavator.CSV
 
             ImportPersonAliasId = importPerson.PrimaryAliasId;
 
+            var anonymousGiver = personService.GetByFullName( "Anonymous, Giver", includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
+            if ( anonymousGiver == null )
+            {
+                anonymousGiver = personService.Queryable().FirstOrDefault( p => p.Guid.ToString().ToUpper() == "802235DC-3CA5-94B0-4326-AACE71180F48" );
+                if ( anonymousGiver == null )
+                {
+                    LogException( "CheckExistingImport", "The named Anonymous Giving user was not found, and none could be created." );
+                    return false;
+                }
+            }
+
+            AnonymousGiverAliasId = anonymousGiver.PrimaryAliasId;
+
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
@@ -286,19 +309,12 @@ namespace Excavator.CSV
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 
-            ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
-                .Where( pa => pa.ForeignKey != null )
-                .Select( pa => new PersonKeys
-                {
-                    PersonAliasId = pa.Id,
-                    PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId
-                } ).ToList();
+            LoadPersonKeys( lookupContext );
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
-                .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
-
+                .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
+            
             return true;
         }
 
@@ -319,7 +335,44 @@ namespace Excavator.CSV
             }
         }
 
+        protected static void LoadPersonKeys( RockContext lookupContext )
+        {
+            ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
+                .Where( pa => pa.ForeignKey != null )
+                .Select( pa => new PersonKeys
+                {
+                    PersonAliasId = pa.Id,
+                    PersonId = pa.PersonId,
+                    IndividualId = pa.ForeignId
+                } ).ToList();
+        }
+
         #endregion Methods
+
+        #region Convenience Methods
+
+        /// <summary>
+        /// Detach all entity objects from the change tracker that is associated with
+        /// the given RockContext. Any entity that is stored (for example in an Imported...
+        /// variable) should be detached before the function ends. If it is explicitely
+        /// attached and then not detached then when it is attached to another context
+        /// an exception "An entity object cannot be referenced by multiple instances
+        /// of IEntityChangeTracker" occurs.
+        /// 
+        /// Taken from: http://stackoverflow.com/questions/2465933/how-to-clean-up-an-entity-framework-object-context
+        /// </summary>
+        public static void DetachAllInContext( RockContext context )
+        {
+            foreach ( var dbEntityEntry in context.ChangeTracker.Entries() )
+            {
+                if ( dbEntityEntry.Entity != null )
+                {
+                    dbEntityEntry.State = EntityState.Detached;
+                }
+            }
+        }
+                
+        #endregion
 
         #region File Processing Methods
 
