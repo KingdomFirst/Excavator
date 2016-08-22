@@ -33,7 +33,7 @@ namespace Excavator.CSV
             {
                 string batchIdKey = row[BatchID];
                 int? batchId = batchIdKey.AsType<int?>();
-                if ( batchId != null && !ImportedBatches.ContainsKey( (int)batchId ) )
+                if ( batchId != null && !ImportedBatches.ContainsKey( ( int )batchId ) )
                 {
                     var batch = new FinancialBatch();
                     batch.CreatedByPersonAliasId = ImportPersonAliasId;
@@ -49,7 +49,7 @@ namespace Excavator.CSV
                         name = name.Trim();
                         batch.Name = name.Left( 50 );
                         batch.CampusId = CampusList.Where( c => name.StartsWith( c.Name ) || name.StartsWith( c.ShortCode ) )
-                            .Select( c => (int?)c.Id ).FirstOrDefault();
+                            .Select( c => ( int? )c.Id ).FirstOrDefault();
                     }
 
                     string batchDateKey = row[BatchDate];
@@ -69,14 +69,14 @@ namespace Excavator.CSV
 
                     newBatches.Add( batch );
                     completed++;
-                    if ( completed % ( ReportingNumber * 10 ) < 1 )
+                    if ( completed % (ReportingNumber * 10) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} batches imported.", completed ) );
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveFinancialBatches( newBatches );
-                        newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
+                        newBatches.ForEach( b => ImportedBatches.Add( ( int )b.ForeignId, ( int? )b.Id ) );
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -101,7 +101,7 @@ namespace Excavator.CSV
             if ( newBatches.Any() )
             {
                 SaveFinancialBatches( newBatches );
-                newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
+                newBatches.ForEach( b => ImportedBatches.Add( ( int )b.ForeignId, ( int? )b.Id ) );
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -137,7 +137,7 @@ namespace Excavator.CSV
             int currencyTypeCash = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ) ).Id;
             int currencyTypeCheck = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ) ).Id;
             int currencyTypeCreditCard = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ) ).Id;
-            int? currencyTypeNonCash = currencyTypes.DefinedValues.Where( dv => dv.Value.Equals( "Non-Cash" ) ).Select( dv => (int?)dv.Id ).FirstOrDefault();
+            int? currencyTypeNonCash = currencyTypes.DefinedValues.Where( dv => dv.Value.Equals( "Non-Cash" ) ).Select( dv => ( int? )dv.Id ).FirstOrDefault();
             if ( currencyTypeNonCash == null )
             {
                 var newTenderNonCash = new DefinedValue();
@@ -169,7 +169,7 @@ namespace Excavator.CSV
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable().AsNoTracking()
                .Where( c => c.ForeignId != null )
-               .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
+               .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
 
             // List for batching new contributions
             var newTransactions = new List<FinancialTransaction>();
@@ -185,7 +185,7 @@ namespace Excavator.CSV
                 string contributionIdKey = row[ContributionID];
                 int? contributionId = contributionIdKey.AsType<int?>();
 
-                if ( contributionId != null && !importedContributions.ContainsKey( (int)contributionId ) )
+                if ( contributionId != null && !importedContributions.ContainsKey( ( int )contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
                     transaction.CreatedByPersonAliasId = ImportPersonAliasId;
@@ -200,6 +200,12 @@ namespace Excavator.CSV
                     {
                         giverAliasId = personKeys.PersonAliasId;
                         transaction.CreatedByPersonAliasId = giverAliasId;
+                        transaction.AuthorizedPersonAliasId = giverAliasId;
+                        transaction.ProcessedByPersonAliasId = giverAliasId;
+                    }
+                    else if ( AnonymousGiverAliasId != null && AnonymousGiverAliasId > 0 )
+                    {
+                        giverAliasId = AnonymousGiverAliasId;
                         transaction.AuthorizedPersonAliasId = giverAliasId;
                         transaction.ProcessedByPersonAliasId = giverAliasId;
                     }
@@ -345,7 +351,7 @@ namespace Excavator.CSV
                         }
 
                         var transactionDetail = new FinancialTransactionDetail();
-                        transactionDetail.Amount = (decimal)amount;
+                        transactionDetail.Amount = ( decimal )amount;
                         transactionDetail.CreatedDateTime = receivedDate;
                         transactionDetail.AccountId = transactionAccountId;
                         transaction.TransactionDetails.Add( transactionDetail );
@@ -355,7 +361,7 @@ namespace Excavator.CSV
                             transaction.RefundDetails = new FinancialTransactionRefund();
                             transaction.RefundDetails.CreatedDateTime = receivedDate;
                             transaction.RefundDetails.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Value.Contains( summary ) )
-                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                                .Select( dv => ( int? )dv.Id ).FirstOrDefault();
                             transaction.RefundDetails.RefundReasonSummary = summary;
                         }
                     }
@@ -438,8 +444,8 @@ namespace Excavator.CSV
                 }
                 DateTime? endDate = endDateKey.AsType<DateTime?>();
                 string pledgeIdKey = row[PledgeId];
-                int? pledgeId = pledgeIdKey.AsType<int?>(); 
-                if ( amount != null && !importedPledges.ContainsKey( (int)pledgeId ) )
+                int? pledgeId = pledgeIdKey.AsType<int?>();
+                if ( amount != null && !importedPledges.ContainsKey( ( int )pledgeId ) )
                 {
                     string individualIdKey = row[IndividualID];
                     int? individualId = individualIdKey.AsType<int?>();
@@ -450,20 +456,20 @@ namespace Excavator.CSV
                         var pledge = new FinancialPledge();
                         pledge.PersonAliasId = personKeys.PersonAliasId;
                         pledge.CreatedByPersonAliasId = ImportPersonAliasId;
-                        pledge.StartDate = (DateTime)startDate;
-                        pledge.EndDate = (DateTime)endDate;
-                        pledge.TotalAmount = (decimal)amount;
+                        pledge.StartDate = ( DateTime )startDate;
+                        pledge.EndDate = ( DateTime )endDate;
+                        pledge.TotalAmount = ( decimal )amount;
                         pledge.CreatedDateTime = ImportDateTime;
                         pledge.ModifiedDateTime = ImportDateTime;
                         pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
-                        pledge.ForeignKey = pledgeId.ToString();
+                        pledge.ForeignKey = pledgeIdKey;
                         pledge.ForeignId = pledgeId;
 
                         string frequency = row[PledgeFrequencyName].ToString().ToLower();
                         if ( !String.IsNullOrWhiteSpace( frequency ) )
                         {
                             frequency = frequency.ToLower();
-                            if ( frequency.Equals( "one time" ) || frequency.Equals( "as can" ) )
+                            if ( frequency.Equals( "one time" ) || frequency.Equals( "one-time" ) || frequency.Equals( "as can" ) )
                             {
                                 pledge.PledgeFrequencyValueId = oneTimePledgeFrequencyId;
                             }

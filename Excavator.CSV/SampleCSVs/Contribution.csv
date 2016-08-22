@@ -1,0 +1,8 @@
+IndividualID,FundName,SubFundName,FundGLAccount,SubFundGLAcount,FundIsActive,SubFundIsActive,ReceivedDate,CheckNumber,Memo,ContributionTypeName,Amount,StatedValue,ContributionID,ContributionBatchID
+25570361,General Fund,,41000,,1,,2/7/2016,123,,Check,25,25,1,1
+146,General Fund,,41000,,1,,2/7/2016,,,Cash,25,25,2,1
+25570361,General Fund,,41000,,1,,2/14/2016,125,,Check,125,125,3,2
+146,General Fund,,41000,,1,,2/14/2016,,,Cash,50,50,4,2
+148,General Fund,Library Books,41000,41250,1,1,2/14/2016,,,Cash,25,25,5,2
+140,General Fund,,41000,,1,,2/21/2016,127,,Check,50,50,6,3
+146,General Fund,,41000,,1,,2/21/2016,,,Cash,100,100,7,3
