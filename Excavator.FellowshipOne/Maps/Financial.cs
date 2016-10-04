@@ -52,7 +52,7 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                var personKeys = GetPersonKeys( individualId, householdId );
+                var personKeys = GetPersonKeys( individualId, householdId, false );
                 if ( personKeys != null && personKeys.PersonAliasId > 0 )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
@@ -60,11 +60,13 @@ namespace Excavator.F1
                     if ( routingNumber != null && !string.IsNullOrWhiteSpace( accountNumber ) )
                     {
                         accountNumber = accountNumber.Replace( " ", string.Empty );
-                        string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString(), accountNumber );
+                        string encodedNumber = FinancialPersonBankAccount.EncodeAccountNumber( routingNumber.ToString().PadLeft( 9, '0' ), accountNumber );
                         if ( !importedBankAccounts.Any( a => a.PersonAliasId == personKeys.PersonAliasId && a.AccountNumberSecured == encodedNumber ) )
                         {
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAliasId;
+                            bankAccount.CreatedDateTime = ImportDateTime;
+                            bankAccount.ModifiedDateTime = ImportDateTime;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
                             bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;
@@ -531,6 +533,9 @@ namespace Excavator.F1
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
+                        pledge.CreatedDateTime = ImportDateTime;
+                        pledge.ModifiedDateTime = ImportDateTime;
+                        pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
 
                         string frequency = row["Pledge_Frequency_Name"].ToString().ToLower();
                         if ( frequency != null )

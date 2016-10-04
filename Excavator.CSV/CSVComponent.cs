@@ -73,6 +73,11 @@ namespace Excavator.CSV
         protected static int? ImportPersonAliasId;
 
         /// <summary>
+        /// The anonymous giver record
+        /// </summary>
+        protected static int? AnonymousGiverAliasId;
+
+        /// <summary>
         /// The person entity type identifier
         /// </summary>
         private int PersonEntityTypeId;
@@ -83,9 +88,9 @@ namespace Excavator.CSV
         private int FamilyGroupTypeId;
 
         /// <summary>
-        /// All the people who've been imported
+        /// All the family groups who've been imported
         /// </summary>
-        private List<Group> ImportedPeople;
+        private List<Group> ImportedFamilies;
 
         /// <summary>
         /// The list of current campuses
@@ -227,6 +232,11 @@ namespace Excavator.CSV
                 if ( csvData.RecordType == CSVInstance.RockDataType.INDIVIDUAL )
                 {
                     completed += LoadIndividuals( csvData );
+
+                    //
+                    // Refresh the list of imported people for other record types to use.
+                    //
+                    LoadPersonKeys( new RockContext() );
                 }
                 else if ( csvData.RecordType == CSVInstance.RockDataType.FAMILY )
                 {
@@ -275,30 +285,36 @@ namespace Excavator.CSV
 
             ImportPersonAliasId = importPerson.PrimaryAliasId;
 
+            var anonymousGiver = personService.GetByFullName( "Anonymous, Giver", includeDeceased: false, allowFirstNameOnly: true ).FirstOrDefault();
+            if ( anonymousGiver == null )
+            {
+                anonymousGiver = personService.Queryable().FirstOrDefault( p => p.Guid.ToString().ToUpper() == "802235DC-3CA5-94B0-4326-AACE71180F48" );
+                if ( anonymousGiver == null )
+                {
+                    LogException( "CheckExistingImport", "The named Anonymous Giving user was not found, and none could be created." );
+                    return false;
+                }
+            }
+
+            AnonymousGiverAliasId = anonymousGiver.PrimaryAliasId;
+
             PersonEntityTypeId = EntityTypeCache.Read( "Rock.Model.Person" ).Id;
             FamilyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
             ReportProgress( 0, "Checking for existing people..." );
 
             // Don't track groups in this context, just use it as a static reference
-            ImportedPeople = lookupContext.Groups.AsNoTracking()
+            ImportedFamilies = lookupContext.Groups.AsNoTracking()
                 .Where( g => g.GroupTypeId == FamilyGroupTypeId && g.ForeignKey != null ).ToList();
 
             CampusList = new CampusService( lookupContext ).Queryable().ToList();
 
-            ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
-                .Where( pa => pa.ForeignKey != null )
-                .Select( pa => new PersonKeys
-                {
-                    PersonAliasId = pa.Id,
-                    PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId
-                } ).ToList();
+            LoadPersonKeys( lookupContext );
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
-                .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
-
+                .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
+            
             return true;
         }
 
@@ -319,7 +335,44 @@ namespace Excavator.CSV
             }
         }
 
+        protected static void LoadPersonKeys( RockContext lookupContext )
+        {
+            ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
+                .Where( pa => pa.ForeignKey != null )
+                .Select( pa => new PersonKeys
+                {
+                    PersonAliasId = pa.Id,
+                    PersonId = pa.PersonId,
+                    IndividualId = pa.ForeignId
+                } ).ToList();
+        }
+
         #endregion Methods
+
+        #region Convenience Methods
+
+        /// <summary>
+        /// Detach all entity objects from the change tracker that is associated with
+        /// the given RockContext. Any entity that is stored (for example in an Imported...
+        /// variable) should be detached before the function ends. If it is explicitely
+        /// attached and then not detached then when it is attached to another context
+        /// an exception "An entity object cannot be referenced by multiple instances
+        /// of IEntityChangeTracker" occurs.
+        /// 
+        /// Taken from: http://stackoverflow.com/questions/2465933/how-to-clean-up-an-entity-framework-object-context
+        /// </summary>
+        public static void DetachAllInContext( RockContext context )
+        {
+            foreach ( var dbEntityEntry in context.ChangeTracker.Entries() )
+            {
+                if ( dbEntityEntry.Entity != null )
+                {
+                    dbEntityEntry.State = EntityState.Detached;
+                }
+            }
+        }
+                
+        #endregion
 
         #region File Processing Methods
 
@@ -493,14 +546,15 @@ namespace Excavator.CSV
         private const int FundGLAccount = 3;
         private const int SubFundGLAccount = 4;
         private const int FundIsActive = 5;
-        private const int ReceivedDate = 6;
-        private const int CheckNumber = 7;
-        private const int Memo = 8;
-        private const int ContributionTypeName = 9;
-        private const int Amount = 10;
-        private const int StatedValue = 11;
-        private const int ContributionID = 12;
-        private const int ContributionBatchID = 13;
+        private const int SubFundIsActive = 6;
+        private const int ReceivedDate = 7;
+        private const int CheckNumber = 8;
+        private const int Memo = 9;
+        private const int ContributionTypeName = 10;
+        private const int Amount = 11;
+        private const int StatedValue = 12;
+        private const int ContributionID = 13;
+        private const int ContributionBatchID = 14;
 
         #endregion Contribution Constants
 
@@ -515,12 +569,14 @@ namespace Excavator.CSV
          * private const int FundGLAccount = 3;
          * private const int SubFundGLAccount = 4;
          * private const int FundIsActive = 5;
+         * private const int SubFundIsActive = 6
          */
 
-        private const int PledgeFrequencyName = 6;
-        private const int TotalPledge = 7;
-        private const int StartDate = 8;
-        private const int EndDate = 9;
+        private const int PledgeFrequencyName = 7;
+        private const int TotalPledge = 8;
+        private const int StartDate = 9;
+        private const int EndDate = 10;
+        private const int PledgeId = 11;
 
         #endregion Pledge Constants
     }

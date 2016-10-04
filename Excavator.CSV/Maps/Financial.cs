@@ -33,7 +33,7 @@ namespace Excavator.CSV
             {
                 string batchIdKey = row[BatchID];
                 int? batchId = batchIdKey.AsType<int?>();
-                if ( batchId != null && !ImportedBatches.ContainsKey( (int)batchId ) )
+                if ( batchId != null && !ImportedBatches.ContainsKey( ( int )batchId ) )
                 {
                     var batch = new FinancialBatch();
                     batch.CreatedByPersonAliasId = ImportPersonAliasId;
@@ -44,12 +44,12 @@ namespace Excavator.CSV
                     batch.AccountingSystemCode = string.Empty;
 
                     string name = row[BatchName] as string;
-                    if ( name != null )
+                    if ( !String.IsNullOrWhiteSpace( name ) )
                     {
                         name = name.Trim();
                         batch.Name = name.Left( 50 );
                         batch.CampusId = CampusList.Where( c => name.StartsWith( c.Name ) || name.StartsWith( c.ShortCode ) )
-                            .Select( c => (int?)c.Id ).FirstOrDefault();
+                            .Select( c => ( int? )c.Id ).FirstOrDefault();
                     }
 
                     string batchDateKey = row[BatchDate];
@@ -69,14 +69,14 @@ namespace Excavator.CSV
 
                     newBatches.Add( batch );
                     completed++;
-                    if ( completed % ( ReportingNumber * 10 ) < 1 )
+                    if ( completed % (ReportingNumber * 10) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} batches imported.", completed ) );
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveFinancialBatches( newBatches );
-                        newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
+                        newBatches.ForEach( b => ImportedBatches.Add( ( int )b.ForeignId, ( int? )b.Id ) );
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -101,7 +101,7 @@ namespace Excavator.CSV
             if ( newBatches.Any() )
             {
                 SaveFinancialBatches( newBatches );
-                newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
+                newBatches.ForEach( b => ImportedBatches.Add( ( int )b.ForeignId, ( int? )b.Id ) );
             }
 
             ReportProgress( 100, string.Format( "Finished batch import: {0:N0} batches imported.", completed ) );
@@ -137,7 +137,7 @@ namespace Excavator.CSV
             int currencyTypeCash = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH ) ) ).Id;
             int currencyTypeCheck = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ) ) ).Id;
             int currencyTypeCreditCard = currencyTypes.DefinedValues.FirstOrDefault( dv => dv.Guid.Equals( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) ) ).Id;
-            int? currencyTypeNonCash = currencyTypes.DefinedValues.Where( dv => dv.Value.Equals( "Non-Cash" ) ).Select( dv => (int?)dv.Id ).FirstOrDefault();
+            int? currencyTypeNonCash = currencyTypes.DefinedValues.Where( dv => dv.Value.Equals( "Non-Cash" ) ).Select( dv => ( int? )dv.Id ).FirstOrDefault();
             if ( currencyTypeNonCash == null )
             {
                 var newTenderNonCash = new DefinedValue();
@@ -169,7 +169,7 @@ namespace Excavator.CSV
             // Get all imported contributions
             var importedContributions = new FinancialTransactionService( lookupContext ).Queryable().AsNoTracking()
                .Where( c => c.ForeignId != null )
-               .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
+               .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
 
             // List for batching new contributions
             var newTransactions = new List<FinancialTransaction>();
@@ -185,7 +185,7 @@ namespace Excavator.CSV
                 string contributionIdKey = row[ContributionID];
                 int? contributionId = contributionIdKey.AsType<int?>();
 
-                if ( contributionId != null && !importedContributions.ContainsKey( (int)contributionId ) )
+                if ( contributionId != null && !importedContributions.ContainsKey( ( int )contributionId ) )
                 {
                     var transaction = new FinancialTransaction();
                     transaction.CreatedByPersonAliasId = ImportPersonAliasId;
@@ -203,9 +203,15 @@ namespace Excavator.CSV
                         transaction.AuthorizedPersonAliasId = giverAliasId;
                         transaction.ProcessedByPersonAliasId = giverAliasId;
                     }
+                    else if ( AnonymousGiverAliasId != null && AnonymousGiverAliasId > 0 )
+                    {
+                        giverAliasId = AnonymousGiverAliasId;
+                        transaction.AuthorizedPersonAliasId = giverAliasId;
+                        transaction.ProcessedByPersonAliasId = giverAliasId;
+                    }
 
                     string summary = row[Memo] as string;
-                    if ( summary != null )
+                    if ( !String.IsNullOrWhiteSpace( summary ) )
                     {
                         transaction.Summary = summary;
                     }
@@ -232,7 +238,7 @@ namespace Excavator.CSV
                     }
 
                     string contributionType = row[ContributionTypeName].ToStringSafe().ToLower();
-                    if ( contributionType != null )
+                    if ( !String.IsNullOrWhiteSpace( contributionType ) )
                     {
                         // set default source to onsite, exceptions listed below
                         transaction.SourceTypeValueId = sourceTypeOnsite;
@@ -293,14 +299,16 @@ namespace Excavator.CSV
                     string subFundGLAccount = row[SubFundGLAccount] as string;
                     string isFundActiveKey = row[FundIsActive];
                     Boolean? isFundActive = isFundActiveKey.AsType<Boolean?>();
+                    string isSubFundActiveKey = row[SubFundIsActive];
+                    Boolean? isSubFundActive = isSubFundActiveKey.AsType<Boolean?>();
                     string statedValueKey = row[StatedValue];
                     decimal? statedValue = statedValueKey.AsType<decimal?>();
                     string amountKey = row[Amount];
                     decimal? amount = amountKey.AsType<decimal?>();
-                    if ( fundName != null & amount != null )
+                    if ( !String.IsNullOrWhiteSpace( fundName ) & amount != null )
                     {
                         int transactionAccountId;
-                        var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
+                        var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName.Truncate( 50 ) ) && a.CampusId == null );
                         if ( parentAccount == null )
                         {
                             parentAccount = AddAccount( lookupContext, fundName, fundGLAccount, null, null, isFundActive );
@@ -322,11 +330,11 @@ namespace Excavator.CSV
                             // add info to easily find/assign this fund in the view
                             subFund = string.Format( "{0} {1}", subFund, fundName );
 
-                            var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                            var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund.Truncate( 50 ) ) && c.ParentAccountId == parentAccount.Id );
                             if ( childAccount == null )
                             {
                                 // create a child account with a campusId if it was set
-                                childAccount = AddAccount( lookupContext, subFund, subFundGLAccount, campusFundId, parentAccount.Id, isFundActive );
+                                childAccount = AddAccount( lookupContext, subFund, subFundGLAccount, campusFundId, parentAccount.Id, isSubFundActive );
                                 accountList.Add( childAccount );
                             }
 
@@ -343,7 +351,7 @@ namespace Excavator.CSV
                         }
 
                         var transactionDetail = new FinancialTransactionDetail();
-                        transactionDetail.Amount = (decimal)amount;
+                        transactionDetail.Amount = ( decimal )amount;
                         transactionDetail.CreatedDateTime = receivedDate;
                         transactionDetail.AccountId = transactionAccountId;
                         transaction.TransactionDetails.Add( transactionDetail );
@@ -353,7 +361,7 @@ namespace Excavator.CSV
                             transaction.RefundDetails = new FinancialTransactionRefund();
                             transaction.RefundDetails.CreatedDateTime = receivedDate;
                             transaction.RefundDetails.RefundReasonValueId = refundReasons.Where( dv => summary != null && dv.Value.Contains( summary ) )
-                                .Select( dv => (int?)dv.Id ).FirstOrDefault();
+                                .Select( dv => ( int? )dv.Id ).FirstOrDefault();
                             transaction.RefundDetails.RefundReasonSummary = summary;
                         }
                     }
@@ -405,7 +413,9 @@ namespace Excavator.CSV
         {
             var lookupContext = new RockContext();
             var accountList = new FinancialAccountService( lookupContext ).Queryable().AsNoTracking().ToList();
-            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking().ToList();
+            var importedPledges = new FinancialPledgeService( lookupContext ).Queryable().AsNoTracking()
+               .Where( p => p.ForeignId != null )
+               .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
 
             var pledgeFrequencies = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY ), lookupContext ).DefinedValues;
             int oneTimePledgeFrequencyId = pledgeFrequencies.FirstOrDefault( f => f.Guid == new Guid( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME ) ).Id;
@@ -422,10 +432,20 @@ namespace Excavator.CSV
                 string amountKey = row[TotalPledge];
                 decimal? amount = amountKey.AsType<decimal?>();
                 string startDateKey = row[StartDate];
+                if ( String.IsNullOrWhiteSpace( startDateKey ) )
+                {
+                    startDateKey = "01/01/0001";
+                }
                 DateTime? startDate = startDateKey.AsType<DateTime?>();
                 string endDateKey = row[EndDate];
+                if ( String.IsNullOrWhiteSpace( endDateKey ) )
+                {
+                    endDateKey = "12/31/9999";
+                }
                 DateTime? endDate = endDateKey.AsType<DateTime?>();
-                if ( amount != null && startDate != null && endDate != null )
+                string pledgeIdKey = row[PledgeId];
+                int? pledgeId = pledgeIdKey.AsType<int?>();
+                if ( amount != null && !importedPledges.ContainsKey( ( int )pledgeId ) )
                 {
                     string individualIdKey = row[IndividualID];
                     int? individualId = individualIdKey.AsType<int?>();
@@ -436,15 +456,20 @@ namespace Excavator.CSV
                         var pledge = new FinancialPledge();
                         pledge.PersonAliasId = personKeys.PersonAliasId;
                         pledge.CreatedByPersonAliasId = ImportPersonAliasId;
-                        pledge.StartDate = (DateTime)startDate;
-                        pledge.EndDate = (DateTime)endDate;
-                        pledge.TotalAmount = (decimal)amount;
+                        pledge.StartDate = ( DateTime )startDate;
+                        pledge.EndDate = ( DateTime )endDate;
+                        pledge.TotalAmount = ( decimal )amount;
+                        pledge.CreatedDateTime = ImportDateTime;
+                        pledge.ModifiedDateTime = ImportDateTime;
+                        pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
+                        pledge.ForeignKey = pledgeIdKey;
+                        pledge.ForeignId = pledgeId;
 
                         string frequency = row[PledgeFrequencyName].ToString().ToLower();
-                        if ( frequency != null )
+                        if ( !String.IsNullOrWhiteSpace( frequency ) )
                         {
                             frequency = frequency.ToLower();
-                            if ( frequency.Equals( "one time" ) || frequency.Equals( "as can" ) )
+                            if ( frequency.Equals( "one time" ) || frequency.Equals( "one-time" ) || frequency.Equals( "as can" ) )
                             {
                                 pledge.PledgeFrequencyValueId = oneTimePledgeFrequencyId;
                             }
@@ -462,17 +487,19 @@ namespace Excavator.CSV
                         string subFundGLAccount = row[SubFundGLAccount] as string;
                         string isFundActiveKey = row[FundIsActive];
                         Boolean? isFundActive = isFundActiveKey.AsType<Boolean?>();
+                        string isSubFundActiveKey = row[SubFundIsActive];
+                        Boolean? isSubFundActive = isSubFundActiveKey.AsType<Boolean?>();
 
-                        if ( fundName != null )
+                        if ( !String.IsNullOrWhiteSpace( fundName ) )
                         {
-                            var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
+                            var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName.Truncate( 50 ) ) && a.CampusId == null );
                             if ( parentAccount == null )
                             {
                                 parentAccount = AddAccount( lookupContext, fundName, string.Empty, null, null, isFundActive );
                                 accountList.Add( parentAccount );
                             }
 
-                            if ( subFund != null )
+                            if ( !String.IsNullOrWhiteSpace( subFund ) )
                             {
                                 int? campusFundId = null;
                                 // assign a campus if the subfund is a campus fund
@@ -487,11 +514,11 @@ namespace Excavator.CSV
                                 // add info to easily find/assign this fund in the view
                                 subFund = string.Format( "{0} {1}", subFund, fundName );
 
-                                var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                                var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund.Truncate( 50 ) ) && c.ParentAccountId == parentAccount.Id );
                                 if ( childAccount == null )
                                 {
                                     // create a child account with a campusId if it was set
-                                    childAccount = AddAccount( lookupContext, subFund, string.Empty, campusFundId, parentAccount.Id, isFundActive );
+                                    childAccount = AddAccount( lookupContext, subFund, string.Empty, campusFundId, parentAccount.Id, isSubFundActive );
                                     accountList.Add( childAccount );
                                 }
 
@@ -554,9 +581,9 @@ namespace Excavator.CSV
             lookupContext = lookupContext ?? new RockContext();
 
             var account = new FinancialAccount();
-            account.Name = fundName;
-            account.GlCode = accountGL;
-            account.PublicName = fundName;
+            account.Name = fundName.Truncate( 50 );
+            account.GlCode = accountGL.Truncate( 50 );
+            account.PublicName = fundName.Truncate( 50 );
             account.IsTaxDeductible = true;
             account.IsActive = isActive ?? true;
             account.CampusId = fundCampusId;

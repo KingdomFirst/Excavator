@@ -21,7 +21,8 @@ namespace Excavator.BinaryFile
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="transactionImageType">Type of the transaction image file.</param>
-        public void Map( ZipArchive folder, BinaryFileType transactionImageType )
+        /// <param name="storageProvider">The storage provider.</param>
+        public void Map( ZipArchive folder, BinaryFileType transactionImageType, ProviderComponent storageProvider )
         {
             var lookupContext = new RockContext();
 
@@ -31,10 +32,6 @@ namespace Excavator.BinaryFile
                 .Queryable().AsNoTracking().Where( t => t.ForeignId != null )
                 .ToDictionary( t => (int)t.ForeignId, t => t.Id );
 
-            var storageProvider = transactionImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
-                ? (ProviderComponent)DatabaseProvider
-                : (ProviderComponent)FileSystemProvider;
-
             int completed = 0;
             int totalRows = folder.Entries.Count;
             int percentage = ( totalRows - 1 ) / 100 + 1;
@@ -43,9 +40,15 @@ namespace Excavator.BinaryFile
             foreach ( var file in folder.Entries )
             {
                 var fileExtension = Path.GetExtension( file.Name );
+                var fileMimeType = Extensions.GetMIMEType( file.Name );
                 if ( BinaryFileComponent.FileTypeBlackList.Contains( fileExtension ) )
                 {
                     LogException( "Binary File Import", string.Format( "{0} filetype not allowed ({1})", fileExtension, file.Name ) );
+                    continue;
+                }
+                else if ( fileMimeType == null )
+                {
+                    LogException( "Binary File Import", string.Format( "{0} filetype not recognized ({1})", fileExtension, file.Name ) );
                     continue;
                 }
 
@@ -56,9 +59,10 @@ namespace Excavator.BinaryFile
                     rockFile.IsSystem = false;
                     rockFile.IsTemporary = false;
                     rockFile.FileName = file.Name;
+                    rockFile.MimeType = fileMimeType;
                     rockFile.BinaryFileTypeId = transactionImageType.Id;
                     rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
-                    rockFile.MimeType = Extensions.GetMIMEType( file.Name );
+                    rockFile.ModifiedDateTime = ImportDateTime;
                     rockFile.Description = string.Format( "Imported as {0}", file.Name );
                     rockFile.SetStorageEntityTypeId( transactionImageType.StorageEntityTypeId );
                     rockFile.StorageEntitySettings = emptyJsonObject;
@@ -109,27 +113,29 @@ namespace Excavator.BinaryFile
         /// <param name="newFileList">The new file list.</param>
         private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList, ProviderComponent storageProvider )
         {
+            if ( storageProvider == null )
+            {
+                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                return;
+            }
+
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
+                foreach ( var entry in newFileList )
+                {
+                    if ( entry.Value != null )
+                    {
+                        storageProvider.SaveContent( entry.Value );
+                        entry.Value.Path = storageProvider.GetPath( entry.Value );
+                    }
+                }
+
                 rockContext.BinaryFiles.AddRange( newFileList.Values );
                 rockContext.SaveChanges();
 
                 foreach ( var entry in newFileList )
                 {
-                    if ( entry.Value != null )
-                    {
-                        if ( storageProvider != null )
-                        {
-                            storageProvider.SaveContent( entry.Value );
-                            entry.Value.Path = storageProvider.GetPath( entry.Value );
-                        }
-                        else
-                        {
-                            LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                        }
-                    }
-
                     // associate the image with the right transaction
                     var transactionImage = new FinancialTransactionImage();
                     transactionImage.TransactionId = entry.Key;
