@@ -43,7 +43,6 @@ namespace Excavator.CSV
         {
             var lookupContext = new RockContext();
             var groupTypeRoleService = new GroupTypeRoleService( lookupContext );
-            var groupMemberService = new GroupMemberService( lookupContext );
 
             // Marital statuses: Married, Single, Separated, etc
             var maritalStatusTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS ), lookupContext ).DefinedValues;
@@ -72,7 +71,6 @@ namespace Excavator.CSV
             int? personRecordTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON ), lookupContext ).Id;
 
             // Group roles: Owner, Adult, Child, others
-            GroupTypeRole ownerRole = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER ) );
             int adultRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT ) ).Id;
             int childRoleId = groupTypeRoleService.Get( new Guid( Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD ) ).Id;
 
@@ -91,14 +89,7 @@ namespace Excavator.CSV
 
             // Text field type id
             int textFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.TEXT ), lookupContext ).Id;
-            int dateFieldTypeId = FieldTypeCache.Read( new Guid( Rock.SystemGuid.FieldType.DATE ), lookupContext ).Id;
-
-            // Attribute entity type id
-            int attributeEntityTypeId = EntityTypeCache.Read( "Rock.Model.Attribute" ).Id;
-
-            // Visit info category
-            var visitInfoCategory = new CategoryService( lookupContext ).GetByEntityTypeId( attributeEntityTypeId )
-                    .Where( c => c.Name == "Visit Information" ).FirstOrDefault();
+            
 
             // Look for custom attributes in the Individual file
             var allFields = csvData.TableNodes.FirstOrDefault().Children.Select( ( node, index ) => new { node = node, index = index } ).ToList();
@@ -137,13 +128,13 @@ namespace Excavator.CSV
             var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             var currentFamilyGroup = new Group();
-            var newFamilyList = new List<Group>();
-            var newVisitorList = new List<Group>();
+            var newVisitorFamilies = new HashSet<Group>();
             var newNoteList = new List<Note>();
 
             int completed = 0;
-            int newFamilies = 0;
+            int newFamilyCount = 0;
             int newPeople = 0;
+            bool newFamilyGroup = false;
             ReportProgress( 0, string.Format( "Starting Individual import ({0:N0} already exist).", ImportedPeopleKeys.Count() ) );
 
             string[] row;
@@ -156,7 +147,6 @@ namespace Excavator.CSV
                 string rowFamilyName = row[FamilyName];
                 string rowFamilyKey = row[FamilyId];
                 string rowPersonKey = row[PersonId];
-                int? rowFamilyId = rowFamilyKey.AsType<int?>();
                 int? rowPersonId = rowPersonKey.AsType<int?>();
 
                 // Check that this person isn't already in our data
@@ -527,9 +517,7 @@ namespace Excavator.CSV
                         currentFamilyGroup = ImportedFamilies.FirstOrDefault( g => g.ForeignKey == rowFamilyKey );
                         if ( currentFamilyGroup == null )
                         {
-                            currentFamilyGroup = CreateFamilyGroup( row[FamilyName], rowFamilyKey );
-                            newFamilyList.Add( currentFamilyGroup );
-                            newFamilies++;
+                            currentFamilyGroup = GetFamilyGroup(rowFamilyKey) ?? CreateFamilyGroup( rowFamilyName, rowFamilyKey );
                         }
                         else
                         {
@@ -542,17 +530,15 @@ namespace Excavator.CSV
                     else
                     {
                         // person is part of this family group, check if they're a visitor
-                        if ( isFamilyRelationship || currentFamilyGroup.Members.Count() < 1 )
+                        if ( isFamilyRelationship || currentFamilyGroup.Members.Count < 1 )
                         {
                             currentFamilyGroup.Members.Add( groupMember );
                         }
                         else
                         {
-                            var visitorFamily = CreateFamilyGroup( person.LastName + " Family", rowFamilyKey );
+                            var visitorFamily = GetFamilyGroup(rowFamilyKey) ?? CreateFamilyGroup( person.LastName + " Family", rowFamilyKey );
                             visitorFamily.Members.Add( groupMember );
-                            newFamilyList.Add( visitorFamily );
-                            newVisitorList.Add( visitorFamily );
-                            newFamilies++;
+                            newVisitorFamilies.Add(visitorFamily);
                         }
                     }
 
@@ -570,16 +556,17 @@ namespace Excavator.CSV
                         ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
                     }
 
-                    if ( newPeople >= ReportingNumber && rowNextFamilyKey != currentFamilyGroup.ForeignKey )
+                    if ( (newPeople >= ReportingNumber && rowNextFamilyKey != currentFamilyGroup.ForeignKey) || newFamilyGroup  )
                     {
-                        SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
+                        SaveIndividuals( newVisitorFamilies, newNoteList );
                         lookupContext.SaveChanges();
                         ReportPartialProgress();
 
                         // Clear out variables
                         currentFamilyGroup = new Group();
-                        newFamilyList.Clear();
-                        newVisitorList.Clear();
+                        newFamilyCount += NewFamilies.Count;
+                        NewFamilies.Clear();
+                        newVisitorFamilies.Clear();
                         newNoteList.Clear();
                         newPeople = 0;
                     }
@@ -591,9 +578,9 @@ namespace Excavator.CSV
             }
 
             // Save any changes to new families
-            if ( newFamilyList.Any() )
+            if ( NewFamilies.Any() )
             {
-                SaveIndividuals( newFamilyList, newVisitorList, newNoteList );
+                SaveIndividuals( newVisitorFamilies, newNoteList );
             }
 
             // Save any changes to existing families
@@ -601,32 +588,31 @@ namespace Excavator.CSV
             DetachAllInContext( lookupContext );
             lookupContext.Dispose();
 
-            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} families and {1:N0} people added.", newFamilies, completed ) );
+            ReportProgress( 0, string.Format( "Finished individual import: {0:N0} families and {1:N0} people added.", newFamilyCount, completed ) );
             return completed;
         }
 
-        /// <summary>
-        /// Creates the family group.
-        /// </summary>
-        /// <param name="rowFamilyName">Name of the row family.</param>
-        /// <param name="rowFamilyKey">The row family identifier.</param>
-        /// <returns></returns>
-        private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyKey )
+        private Group GetFamilyGroup(string rowFamilyKey)
         {
-            var familyGroup = new Group();
-            if ( !string.IsNullOrWhiteSpace( rowFamilyName ) )
-            {
-                familyGroup.Name = rowFamilyName;
-            }
-            else
-            {
-                familyGroup.Name = string.Format( "Family Group {0}", rowFamilyKey );
-            }
+            return NewFamilies.FirstOrDefault(g => g.ForeignKey == rowFamilyKey);
+        }
 
-            familyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
-            familyGroup.GroupTypeId = FamilyGroupTypeId;
-            familyGroup.ForeignKey = rowFamilyKey;
-            familyGroup.ForeignId = rowFamilyKey.AsType<int?>();
+
+        private Group CreateFamilyGroup( string rowFamilyName, string rowFamilyKey)
+        {
+            var familyGroup = new Group
+            {
+                Name =
+                    !string.IsNullOrWhiteSpace(rowFamilyName)
+                        ? rowFamilyName
+                        : string.Format("Family Group {0}", rowFamilyKey),
+                CreatedByPersonAliasId = ImportPersonAliasId,
+                GroupTypeId = FamilyGroupTypeId,
+                ForeignKey = rowFamilyKey,
+                ForeignId = rowFamilyKey.AsType<int?>()
+            };
+
+            NewFamilies.Add(familyGroup);
             return familyGroup;
         }
 
@@ -654,27 +640,27 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="newFamilyList">The family list.</param>
         /// <param name="visitorList">The optional visitor list.</param>
-        private void SaveIndividuals( List<Group> newFamilyList, List<Group> visitorList = null, List<Note> newNoteList = null )
+        private void SaveIndividuals( ICollection<Group> visitorList = null, List<Note> newNoteList = null )
         {
-            if ( newFamilyList.Any() )
+            if ( NewFamilies.Any() )
             {
                 var rockContext = new RockContext();
                 rockContext.WrapTransaction( ( ) =>
                 {
-                    rockContext.Groups.AddRange( newFamilyList );
+                    rockContext.Groups.AddRange( NewFamilies );
                     rockContext.SaveChanges( DisableAuditing );
 
-                    ImportedFamilies.AddRange( newFamilyList );
+                    ImportedFamilies.AddRange( NewFamilies );
 
-                    foreach ( var familyGroups in newFamilyList.GroupBy<Group, string>( g => g.ForeignKey ) )
+                    foreach ( var familyGroups in NewFamilies.GroupBy( g => g.ForeignKey ) )
                     {
-                        bool visitorsExist = visitorList.Any() && familyGroups.Any();
+                        bool visitorsExist = visitorList != null && visitorList.Any() && familyGroups.Any();
                         foreach ( var newFamilyGroup in familyGroups )
                         {
                             foreach ( var person in newFamilyGroup.Members.Select( m => m.Person ) )
                             {
                                 // Set notes on this person
-                                if ( newNoteList.Any( n => n.ForeignKey == person.ForeignKey ) )
+                                if ( newNoteList != null && newNoteList.Any( n => n.ForeignKey == person.ForeignKey ) )
                                 {
                                     newNoteList.Where( n => n.ForeignKey == person.ForeignKey ).ToList()
                                         .ForEach( n => n.EntityId = person.Id );
