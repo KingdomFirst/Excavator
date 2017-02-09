@@ -52,7 +52,7 @@ namespace Excavator.F1
             {
                 int? individualId = row["Individual_ID"] as int?;
                 int? householdId = row["Household_ID"] as int?;
-                var personKeys = GetPersonKeys( individualId, householdId, false );
+                var personKeys = GetPersonKeys( individualId, householdId );
                 if ( personKeys != null && personKeys.PersonAliasId > 0 )
                 {
                     int? routingNumber = row["Routing_Number"] as int?;
@@ -65,8 +65,6 @@ namespace Excavator.F1
                         {
                             var bankAccount = new FinancialPersonBankAccount();
                             bankAccount.CreatedByPersonAliasId = ImportPersonAliasId;
-                            bankAccount.CreatedDateTime = ImportDateTime;
-                            bankAccount.ModifiedDateTime = ImportDateTime;
                             bankAccount.AccountNumberSecured = encodedNumber;
                             bankAccount.AccountNumberMasked = accountNumber.ToString().Masked();
                             bankAccount.PersonAliasId = (int)personKeys.PersonAliasId;
@@ -322,13 +320,16 @@ namespace Excavator.F1
                         transaction.ModifiedDateTime = ImportDateTime;
                     }
 
-                    string cardType = row["Card_Type"] as string;
-                    string cardLastFour = row["Last_Four"] as string;
-                    string contributionType = row["Contribution_Type_Name"].ToStringSafe().ToLower();
-                    if ( contributionType != null )
+                    var contributionFields = row.Columns.Select( c => c.Name ).ToList();
+                    string cardType = contributionFields.Contains( "Card_Type" ) ? row["Card_Type"] as string : string.Empty;
+                    string cardLastFour = contributionFields.Contains( "Last_Four" ) ? row["Last_Four"] as string : string.Empty;
+                    string contributionType = contributionFields.Contains( "Contribution_Type_Name" ) ? row["Contribution_Type_Name"] as string : string.Empty;
+
+                    if ( !string.IsNullOrEmpty( contributionType ) )
                     {
                         // set default source to onsite, exceptions listed below
                         transaction.SourceTypeValueId = sourceTypeOnsite;
+                        contributionType = contributionType.ToLower();
 
                         int? paymentCurrencyTypeId = null, creditCardTypeId = null;
 
@@ -350,7 +351,7 @@ namespace Excavator.F1
                             paymentCurrencyTypeId = currencyTypeCreditCard;
                             transaction.SourceTypeValueId = sourceTypeWebsite;
 
-                            if ( cardType != null )
+                            if ( !string.IsNullOrEmpty( cardType ) )
                             {
                                 creditCardTypeId = creditCardTypes.Where( t => t.Value.Equals( cardType ) ).Select( t => (int?)t.Id ).FirstOrDefault();
                             }
@@ -386,11 +387,11 @@ namespace Excavator.F1
                         transaction.SourceTypeValueId = sourceTypeKiosk;
                     }
 
-                    string fundName = row["Fund_Name"] as string;
-                    string subFund = row["Sub_Fund_Name"] as string;
-                    string fundGLAccount = row["Fund_GL_Account"] as string;
-                    string subFundGLAccount = row["Sub_Fund_GL_Account"] as string;
-                    Boolean? isFundActive = row["Fund_Is_active"] as Boolean?;
+                    string fundName = contributionFields.Contains( "Fund_Name" ) ? row["Fund_Name"] as string : string.Empty;
+                    string subFund = contributionFields.Contains( "Sub_Fund_Name" ) ? row["Sub_Fund_Name"] as string : string.Empty;
+                    string fundGLAccount = contributionFields.Contains( "Fund_GL_Account" ) ? row["Fund_GL_Account"] as string : string.Empty;
+                    string subFundGLAccount = contributionFields.Contains( "Sub_Fund_GL_Account" ) ? row["Sub_Fund_GL_Account"] as string : string.Empty;
+                    string isFundActive = contributionFields.Contains( "Fund_Is_active" ) ? row["Fund_Is_active"] as string : null;
                     decimal? statedValue = row["Stated_Value"] as decimal?;
                     decimal? amount = row["Amount"] as decimal?;
                     if ( fundName != null & amount != null )
@@ -399,7 +400,7 @@ namespace Excavator.F1
                         var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
                         if ( parentAccount == null )
                         {
-                            parentAccount = AddAccount( lookupContext, fundName, fundGLAccount, null, null, isFundActive );
+                            parentAccount = AddAccount( lookupContext, fundName, fundGLAccount, null, null, isFundActive.AsBooleanOrNull() );
                             accountList.Add( parentAccount );
                         }
 
@@ -422,7 +423,7 @@ namespace Excavator.F1
                             if ( childAccount == null )
                             {
                                 // create a child account with a campusId if it was set
-                                childAccount = AddAccount( lookupContext, subFund, subFundGLAccount, campusFundId, parentAccount.Id, isFundActive );
+                                childAccount = AddAccount( lookupContext, subFund, subFundGLAccount, campusFundId, parentAccount.Id, isFundActive.AsBooleanOrNull() );
                                 accountList.Add( childAccount );
                             }
 
@@ -533,9 +534,6 @@ namespace Excavator.F1
                         pledge.StartDate = (DateTime)startDate;
                         pledge.EndDate = (DateTime)endDate;
                         pledge.TotalAmount = (decimal)amount;
-                        pledge.CreatedDateTime = ImportDateTime;
-                        pledge.ModifiedDateTime = ImportDateTime;
-                        pledge.ModifiedByPersonAliasId = ImportPersonAliasId;
 
                         string frequency = row["Pledge_Frequency_Name"].ToString().ToLower();
                         if ( frequency != null )
@@ -646,14 +644,15 @@ namespace Excavator.F1
             lookupContext = lookupContext ?? new RockContext();
 
             var account = new FinancialAccount();
-            account.Name = fundName;
+            account.Name = fundName.Left( 50 );
+            account.PublicName = fundName.Left( 50 );
             account.GlCode = accountGL;
-            account.PublicName = fundName;
             account.IsTaxDeductible = true;
             account.IsActive = isActive ?? true;
             account.CampusId = fundCampusId;
             account.ParentAccountId = parentAccountId;
             account.CreatedByPersonAliasId = ImportPersonAliasId;
+            account.Order = 0;
 
             lookupContext.FinancialAccounts.Add( account );
             lookupContext.SaveChanges( DisableAuditing );
