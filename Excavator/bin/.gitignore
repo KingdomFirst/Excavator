@@ -7,3 +7,5 @@
 #Specific files
 *.xml
 *.dll.config
+*.dll
+!Excavator.*.dll
