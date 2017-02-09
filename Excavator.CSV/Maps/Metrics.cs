@@ -64,7 +64,7 @@ namespace Excavator.CSV
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
-            while ( (row = csvData.Database.FirstOrDefault()) != null )
+            while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
                 string metricCampus = row[MetricCampus];
                 string metricName = row[MetricName];
@@ -103,7 +103,7 @@ namespace Excavator.CSV
 
                     if ( valueDate.HasValue )
                     {
-                        var timeFrame = ( DateTime )valueDate;
+                        var timeFrame = (DateTime)valueDate;
                         if ( timeFrame.TimeOfDay.TotalSeconds > 0 )
                         {
                             metricName = string.Format( "{0} {1}", timeFrame.ToString( "HH:mm" ), metricName );
@@ -126,7 +126,7 @@ namespace Excavator.CSV
                         currentMetric.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentMetric.CreatedDateTime = ImportDateTime;
 
-                        metricService.Add( currentMetric );                        
+                        metricService.Add( currentMetric );
                         lookupContext.SaveChanges();
 
                         if ( currentMetric.MetricCategories == null || !currentMetric.MetricCategories.Any( a => a.CategoryId == metricCategoryId ) )
@@ -139,7 +139,7 @@ namespace Excavator.CSV
                     }
 
                     var campusId = campuses.Where( c => c.Name == metricCampus || c.ShortCode == metricCampus )
-                        .Select( c => ( int? )c.Id ).FirstOrDefault();
+                        .Select( c => (int?)c.Id ).FirstOrDefault();
 
                     // create values for this metric
                     var metricValue = new MetricValue();
@@ -154,7 +154,7 @@ namespace Excavator.CSV
                     metricValues.Add( metricValue );
 
                     completed++;
-                    if ( completed % (ReportingNumber * 10) < 1 )
+                    if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} metrics imported.", completed ) );
                     }
@@ -186,7 +186,7 @@ namespace Excavator.CSV
         private void SaveMetrics( List<MetricValue> metricValues )
         {
             var rockContext = new RockContext();
-            rockContext.WrapTransaction( ( ) =>
+            rockContext.WrapTransaction( () =>
             {
                 rockContext.MetricValues.AddRange( metricValues );
                 rockContext.SaveChanges( DisableAuditing );
