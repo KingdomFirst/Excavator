@@ -397,7 +397,7 @@ namespace Excavator.F1
                     if ( fundName != null & amount != null )
                     {
                         int transactionAccountId;
-                        var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
+                        var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName.Left( 50 ) ) && a.CampusId == null );
                         if ( parentAccount == null )
                         {
                             parentAccount = AddAccount( lookupContext, fundName, fundGLAccount, null, null, isFundActive.AsBooleanOrNull() );
@@ -419,7 +419,7 @@ namespace Excavator.F1
                             // add info to easily find/assign this fund in the view
                             subFund = string.Format( "{0} {1}", subFund, fundName );
 
-                            var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                            var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund.Left( 50 ) ) && c.ParentAccountId == parentAccount.Id );
                             if ( childAccount == null )
                             {
                                 // create a child account with a campusId if it was set
@@ -555,7 +555,7 @@ namespace Excavator.F1
                         string subFund = row["Sub_Fund_Name"] as string;
                         if ( fundName != null )
                         {
-                            var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName ) && a.CampusId == null );
+                            var parentAccount = accountList.FirstOrDefault( a => a.Name.Equals( fundName.Left( 50 ) ) && a.CampusId == null );
                             if ( parentAccount == null )
                             {
                                 parentAccount = AddAccount( lookupContext, fundName, string.Empty, null, null, null );
@@ -577,7 +577,7 @@ namespace Excavator.F1
                                 // add info to easily find/assign this fund in the view
                                 subFund = string.Format( "{0} {1}", subFund, fundName );
 
-                                var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund ) && c.ParentAccountId == parentAccount.Id );
+                                var childAccount = accountList.FirstOrDefault( c => c.Name.Equals( subFund.Left( 50 ) ) && c.ParentAccountId == parentAccount.Id );
                                 if ( childAccount == null )
                                 {
                                     // create a child account with a campusId if it was set
