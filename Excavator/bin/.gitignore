@@ -7,3 +7,4 @@
 #Specific files
 *.xml
 *.dll.config
+*.dll
