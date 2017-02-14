@@ -92,6 +92,8 @@ namespace Excavator.CSV
         /// </summary>
         private List<Group> ImportedFamilies;
 
+        private List<Group> NewFamilies = new List<Group>();
+
         /// <summary>
         /// The list of current campuses
         /// </summary>
