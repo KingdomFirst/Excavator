@@ -535,8 +535,8 @@ namespace Excavator.CSV
         #region Contribution Constants
 
         /*
-         * Definition for the Contribution.csv import file:
-         */
+          * Definition for the Contribution.csv import file:
+          */
 
         private const int IndividualID = 0;
         private const int FundName = 1;
@@ -553,6 +553,7 @@ namespace Excavator.CSV
         private const int StatedValue = 12;
         private const int ContributionID = 13;
         private const int ContributionBatchID = 14;
+        private const int ContributionCreditCardType = 15;
 
         #endregion Contribution Constants
 
@@ -560,7 +561,8 @@ namespace Excavator.CSV
 
         /*
          * Definition for the Pledge.csv import file:
-         * Columns already numbered from Individuals file:
+         *
+         * Columns already numbered from Contribution file:
          * private const int IndividualID = 0;
          * private const int FundName = 1;
          * private const int SubFundName = 2;
@@ -575,6 +577,8 @@ namespace Excavator.CSV
         private const int StartDate = 9;
         private const int EndDate = 10;
         private const int PledgeId = 11;
+        private const int PledgeCreatedDate = 12;
+        private const int PledgeModifiedDate = 13;
 
         #endregion Pledge Constants
     }
