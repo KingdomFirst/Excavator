@@ -185,11 +185,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controls\LogDialog.xaml.cs">
+    <Compile Include="Views\LogDialog.xaml.cs">
       <DependentUpon>LogDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\LogViewModel.cs" />
-    <Compile Include="Controls\SqlConnector.xaml.cs">
+    <Compile Include="Views\SqlConnector.xaml.cs">
       <DependentUpon>SqlConnector.xaml</DependentUpon>
     </Compile>
     <Page Include="Views\App.xaml">
@@ -213,7 +213,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\LogDialog.xaml">
+    <Page Include="Views\LogDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -242,7 +242,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\SqlConnector.xaml">
+    <Page Include="Views\SqlConnector.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -49,6 +49,14 @@
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="OrcaMDF.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rock\OrcaMDF.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="OrcaMDF.Framework, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rock\OrcaMDF.Framework.dll</HintPath>
+    </Reference>
     <Reference Include="Rock">
       <HintPath>..\packages\Rock\Rock.dll</HintPath>
       <Private>False</Private>
@@ -86,5 +94,4 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-
 </Project>
