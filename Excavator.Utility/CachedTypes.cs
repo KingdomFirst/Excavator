@@ -108,33 +108,5 @@ namespace Excavator.Utility
         public static int AllowCheckInByKnownRelationshipId = groupTypeRoleService.Get( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_ALLOW_CHECK_IN_BY.AsGuid() ).Id;
         public static int KnownRelationshipOwnerRoleId = groupTypeRoleService.Get( Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER.AsGuid() ).Id;
         public static int ImpliedRelationshipOwnerRoleId = groupTypeRoleService.Get( Rock.SystemGuid.GroupRole.GROUPROLE_IMPLIED_RELATIONSHIPS_OWNER.AsGuid() ).Id;
-
-        // Category Types
-
-        public static int AllChurchCategoryId = CategoryCache.Read( "5A94E584-35F0-4214-91F1-D72531CC6325".AsGuid() ).Id; // Prayer Parent Cagetory for All Church
-
-        /// <summary>
-        /// Parses the benevolence status.
-        /// </summary>
-        /// <param name="value">The status value ID.</param>
-        /// <returns></returns>
-        public static int? ParseBenevolenceStatus( string value )
-        {
-            switch ( value.Trim() )
-            {
-                case "Approved":
-                case "Given":
-                case "Provided":
-                    return BenevolenceApprovedStatusId;
-
-                case "Declined":
-                case "Refused":
-                case "Denied":
-                    return BenevolenceDeniedStatusId;
-
-                default:
-                    return BenevolencePendingStatusId;
-            }
-        }
     }
 }

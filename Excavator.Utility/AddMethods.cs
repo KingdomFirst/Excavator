@@ -39,7 +39,7 @@ namespace Excavator.Utility
                     IsSystem = false,
                     DefinedTypeId = definedType.Id,
                     Value = value,
-                    Description = "Imported with Bulldozer"
+                    Description = "Imported with Excavator"
                 };
 
                 var maxOrder = definedType.DefinedValues.Max( v => (int?)v.Order );
@@ -1018,9 +1018,6 @@ namespace Excavator.Utility
                 return false;
             }
 
-            // removed old code, see prior commit for history
-            // https://repo.kingdomfirstsolutions.com/KFS/Bulldozer/blob/c42603752c0243c68c700512491599aa03b825fd/Bulldozer/Utility/AddMethods.cs#L956
-
             return true;
         }
 
@@ -1093,7 +1090,7 @@ namespace Excavator.Utility
             groupTypeRole.Order = orders.Any() ? orders.Max() + 1 : 0;
 
             groupTypeRole.Name = value;
-            groupTypeRole.Description = "Imported with Bulldozer";
+            groupTypeRole.Description = "Imported with Excavator";
 
             GroupTypeCache.Flush( typeId );
 
