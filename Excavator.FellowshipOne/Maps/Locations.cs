@@ -1,30 +1,14 @@
-﻿// <copyright>
-// Copyright 2013 by the Spark Development Network
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using Excavator.Utility;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using static Excavator.Utility.CachedTypes;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.F1
 {
@@ -34,52 +18,42 @@ namespace Excavator.F1
         /// Maps the family address.
         /// </summary>
         /// <param name="tableData">The table data.</param>
-        /// <returns></returns>
-        private void MapFamilyAddress( IQueryable<Row> tableData )
+        /// <param name="totalRows">The total rows.</param>
+        private void MapFamilyAddress( IQueryable<Row> tableData, long totalRows = 0 )
         {
             var lookupContext = new RockContext();
             var locationService = new LocationService( lookupContext );
 
-            List<GroupMember> familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable().AsNoTracking()
-                .Where( gm => gm.Group.GroupType.Guid == new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ).ToList();
+            var familyGroupMemberList = new GroupMemberService( lookupContext ).Queryable().AsNoTracking()
+                .Where( gm => gm.Group.GroupType.Guid.Equals( new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ) ) ).ToList();
 
-            var groupLocationDefinedType = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ), lookupContext );
-            int homeGroupLocationTypeId = groupLocationDefinedType.DefinedValues
-                .FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
-            int workGroupLocationTypeId = groupLocationDefinedType.DefinedValues
-                .FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
-            int previousGroupLocationTypeId = groupLocationDefinedType.DefinedValues
-                .FirstOrDefault( dv => dv.Guid == new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS ) ).Id;
+            var customLocationTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE ), lookupContext ).DefinedValues;
 
-            string otherGroupLocationName = "Other (Imported)";
-            int? otherGroupLocationTypeId = groupLocationDefinedType.DefinedValues
-                .Where( dv => dv.TypeName == otherGroupLocationName )
-                .Select( dv => (int?)dv.Id ).FirstOrDefault();
-            if ( otherGroupLocationTypeId == null )
+            const string otherGroupLocationName = "Other (Imported)";
+            var otherGroupLocationTypeId = customLocationTypes.Where( dv => dv.TypeName == otherGroupLocationName )
+                .Select( v => (int?)v.Id ).FirstOrDefault();
+            if ( !otherGroupLocationTypeId.HasValue )
             {
-                var otherGroupLocationType = new DefinedValue();
-                otherGroupLocationType.Value = otherGroupLocationName;
-                otherGroupLocationType.DefinedTypeId = groupLocationDefinedType.Id;
-                otherGroupLocationType.IsSystem = false;
-                otherGroupLocationType.Order = 0;
-
-                lookupContext.DefinedValues.Add( otherGroupLocationType );
-                lookupContext.SaveChanges( DisableAuditing );
-
+                var otherGroupLocationType = AddDefinedValue( lookupContext, Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE, otherGroupLocationName );
+                customLocationTypes.Add( otherGroupLocationType );
                 otherGroupLocationTypeId = otherGroupLocationType.Id;
             }
 
             var newGroupLocations = new List<GroupLocation>();
 
-            int completed = 0;
-            int totalRows = tableData.Count();
-            int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying address import ({0:N0} found).", totalRows ) );
+            if ( totalRows == 0 )
+            {
+                totalRows = tableData.Count();
+            }
+
+            var completed = 0;
+            var percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, $"Verifying address import ({totalRows:N0} found)." );
 
             foreach ( var row in tableData.Where( r => r != null ) )
             {
-                int? individualId = row["Individual_ID"] as int?;
-                int? householdId = row["Household_ID"] as int?;
+                var individualId = row["Individual_ID"] as int?;
+                var householdId = row["Household_ID"] as int?;
                 var personKeys = GetPersonKeys( individualId, householdId, includeVisitors: false );
                 if ( personKeys != null )
                 {
@@ -90,15 +64,15 @@ namespace Excavator.F1
                     {
                         var groupLocation = new GroupLocation();
 
-                        string street1 = row["Address_1"] as string;
-                        string street2 = row["Address_2"] as string;
-                        string city = row["City"] as string;
-                        string state = row["State"] as string;
-                        string country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
-                        string zip = row["Postal_Code"] as string ?? string.Empty;
+                        var street1 = row["Address_1"] as string;
+                        var street2 = row["Address_2"] as string;
+                        var city = row["City"] as string;
+                        var state = row["State"] as string;
+                        var country = row["country"] as string; // NOT A TYPO: F1 has property in lower-case
+                        var zip = row["Postal_Code"] as string ?? string.Empty;
 
                         // restrict zip to 5 places to prevent duplicates
-                        Location familyAddress = locationService.Get( street1, street2, city, state, zip.Left( 5 ), country, verifyLocation: false );
+                        var familyAddress = locationService.Get( street1, street2, city, state, zip.Left( 5 ), country, verifyLocation: false );
 
                         if ( familyAddress != null )
                         {
@@ -108,26 +82,28 @@ namespace Excavator.F1
 
                             groupLocation.GroupId = familyGroup.Id;
                             groupLocation.LocationId = familyAddress.Id;
-                            groupLocation.IsMailingLocation = true;
-                            groupLocation.IsMappedLocation = true;
+                            groupLocation.IsMailingLocation = false;
+                            groupLocation.IsMappedLocation = false;
 
-                            string addressType = row["Address_Type"].ToString().ToLower();
-                            if ( addressType.Equals( "primary" ) )
+                            var addressType = row["Address_Type"].ToString();
+                            if ( addressType.Equals( "Primary", StringComparison.CurrentCultureIgnoreCase ) )
                             {
-                                groupLocation.GroupLocationTypeValueId = homeGroupLocationTypeId;
+                                groupLocation.GroupLocationTypeValueId = HomeLocationTypeId;
+                                groupLocation.IsMailingLocation = true;
+                                groupLocation.IsMappedLocation = true;
                             }
-                            else if ( addressType.Equals( "business" ) || addressType.ToLower().Equals( "org" ) )
+                            else if ( addressType.Equals( "Business", StringComparison.CurrentCultureIgnoreCase ) || addressType.StartsWith( "Org", StringComparison.CurrentCultureIgnoreCase ) )
                             {
-                                groupLocation.GroupLocationTypeValueId = workGroupLocationTypeId;
+                                groupLocation.GroupLocationTypeValueId = WorkLocationTypeId;
                             }
-                            else if ( addressType.Equals( "previous" ) )
+                            else if ( addressType.Equals( "Previous", StringComparison.CurrentCultureIgnoreCase ) )
                             {
-                                groupLocation.GroupLocationTypeValueId = previousGroupLocationTypeId;
+                                groupLocation.GroupLocationTypeValueId = PreviousLocationTypeId;
                             }
-                            else if ( !string.IsNullOrEmpty( addressType ) )
+                            else if ( !string.IsNullOrWhiteSpace( addressType ) )
                             {
                                 // look for existing group location types, otherwise mark as imported
-                                var customTypeId = groupLocationDefinedType.DefinedValues.Where( dv => dv.Value.ToLower().Equals( addressType ) )
+                                var customTypeId = customLocationTypes.Where( dv => dv.Value.Equals( addressType, StringComparison.CurrentCultureIgnoreCase ) )
                                     .Select( dv => (int?)dv.Id ).FirstOrDefault();
                                 groupLocation.GroupLocationTypeValueId = customTypeId ?? otherGroupLocationTypeId;
                             }
@@ -137,8 +113,8 @@ namespace Excavator.F1
 
                             if ( completed % percentage < 1 )
                             {
-                                int percentComplete = completed / percentage;
-                                ReportProgress( percentComplete, string.Format( "{0:N0} addresses imported ({1}% complete).", completed, percentComplete ) );
+                                var percentComplete = completed / percentage;
+                                ReportProgress( percentComplete, $"{completed:N0} addresses imported ({percentComplete}% complete)." );
                             }
                             else if ( completed % ReportingNumber < 1 )
                             {
@@ -161,7 +137,7 @@ namespace Excavator.F1
                 SaveFamilyAddress( newGroupLocations );
             }
 
-            ReportProgress( 100, string.Format( "Finished address import: {0:N0} addresses imported.", completed ) );
+            ReportProgress( 100, $"Finished address import: {completed:N0} addresses imported." );
         }
 
         /// <summary>

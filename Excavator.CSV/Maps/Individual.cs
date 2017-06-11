@@ -1,21 +1,4 @@
-﻿// <copyright>
-// Copyright 2013 by the Spark Development Network
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Globalization;
@@ -256,7 +239,7 @@ namespace Excavator.CSV
                     else
                     {
                         person.MaritalStatusValueId = maritalStatusTypes.Where( dv => dv.Value == "Unknown" )
-                            .Select( dv => ( int? )dv.Id ).FirstOrDefault();
+                            .Select( dv => (int?)dv.Id ).FirstOrDefault();
                     }
 
                     string familyRole = row[FamilyRole];
@@ -370,7 +353,7 @@ namespace Excavator.CSV
                             currentNumber.Number = normalizedNumber.TrimStart( new Char[] { '0' } ).Left( 20 );
                             currentNumber.NumberFormatted = PhoneNumber.FormattedNumber( currentNumber.CountryCode, currentNumber.Number );
                             currentNumber.NumberTypeValueId = numberTypeValues.Where( v => v.Value.Equals( numberPair.Key ) )
-                                .Select( v => ( int? )v.Id ).FirstOrDefault();
+                                .Select( v => (int?)v.Id ).FirstOrDefault();
                             if ( numberPair.Key == "Mobile" )
                             {
                                 switch ( smsAllowed.Trim().ToLower() )
@@ -558,14 +541,14 @@ namespace Excavator.CSV
 
                     // look ahead 1 row
                     string rowNextFamilyKey = "-1";
-                    if ( (row = csvData.Database.FirstOrDefault()) != null )
+                    if ( ( row = csvData.Database.FirstOrDefault() ) != null )
                     {
                         rowNextFamilyKey = row[FamilyId];
                     }
 
                     newPeople++;
                     completed++;
-                    if ( completed % (ReportingNumber * 10) < 1 )
+                    if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
                         ReportProgress( 0, string.Format( "{0:N0} people imported.", completed ) );
                     }
@@ -659,7 +642,7 @@ namespace Excavator.CSV
             if ( newFamilyList.Any() )
             {
                 var rockContext = new RockContext();
-                rockContext.WrapTransaction( ( ) =>
+                rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
                     rockContext.SaveChanges( DisableAuditing );
