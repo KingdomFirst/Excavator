@@ -51,7 +51,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="OrcaMDF.Core">
-      <HintPath>..\packages\OrcaMDF.Core.1.0.0.0\lib\net35\OrcaMDF.Core.dll</HintPath>
+      <HintPath>..\packages\Rock\OrcaMDF.Core.dll</HintPath>
     </Reference>
     <Reference Include="Rock">
       <HintPath>..\packages\Rock\Rock.dll</HintPath>
