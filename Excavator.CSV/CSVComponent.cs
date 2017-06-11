@@ -489,14 +489,15 @@ namespace Excavator.CSV
         #region Metrics Constants
 
         /*
-         * Definition for the Metrics.csv import file:
-         */
+             * Definition for the Metrics.csv import file:
+             */
 
         private const int MetricCampus = 0;
         private const int MetricName = 1;
         private const int MetricValue = 2;
         private const int MetricService = 3;
         private const int MetricCategory = 4;
+        private const int MetricNote = 5;
 
         #endregion Family Constants
 
