@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Excavator.F1
+namespace Excavator.F1.Model
 {
     using System;
     using System.Collections.Generic;
