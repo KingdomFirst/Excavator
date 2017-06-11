@@ -1,23 +1,7 @@
-﻿// <copyright>
-// Copyright 2013 by the Spark Development Network
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Configuration;
+using System.Data.Entity.Validation;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
@@ -45,7 +29,7 @@ namespace Excavator
                 excavator = parameter;
                 excavator.ProgressUpdated += new ReportProgress( UpdateInterface );
 
-                BackgroundWorker bwImportData = new BackgroundWorker();
+                var bwImportData = new BackgroundWorker();
                 bwImportData.DoWork += bwImportData_DoWork;
                 bwImportData.RunWorkerCompleted += bwImportData_RunWorkerCompleted;
                 bwImportData.WorkerReportsProgress = true;
@@ -97,7 +81,7 @@ namespace Excavator
         /// </summary>
         /// <param name="progress">The progress.</param>
         /// <param name="status">The status.</param>
-        private void UpdateInterface( int progress, string status )
+        private void UpdateInterface( long progress, string status )
         {
             this.Dispatcher.Invoke( (Action)( () =>
             {
@@ -125,7 +109,25 @@ namespace Excavator
             catch ( Exception ex )
             {
                 var exception = ex.ToString();
-                if ( ex.InnerException != null )
+                if ( ex is DbEntityValidationException )
+                {
+                    var validationErrors = ( (DbEntityValidationException)ex ).EntityValidationErrors;
+                    if ( validationErrors.Any() )
+                    {
+                        foreach ( var eve in validationErrors )
+                        {
+                            ExcavatorComponent.LogException( string.Format( "{0} (Foreign Key: {1})", eve.Entry.Entity.GetType().Name, eve.Entry.Property( "ForeignKey" ).CurrentValue ), string.Format( "Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                                eve.Entry.Entity.GetType().Name, eve.Entry.State ) );
+                            foreach ( var ve in eve.ValidationErrors )
+                            {
+                                ExcavatorComponent.LogException( ve.PropertyName, string.Format( "- Property: \"{0}\", Error: \"{1}\"",
+                                    ve.PropertyName, ve.ErrorMessage ) );
+                            }
+                        }
+                        exception = validationErrors.FirstOrDefault().ValidationErrors.ToString();
+                    }
+                }
+                else if ( ex.InnerException != null )
                 {
                     exception = ex.InnerException.ToString();
                 }
@@ -163,7 +165,7 @@ namespace Excavator
 
             btnClose.Visibility = Visibility.Visible;
 
-            BackgroundWorker bwTransformData = sender as BackgroundWorker;
+            var bwTransformData = sender as BackgroundWorker;
             bwTransformData.RunWorkerCompleted -= new RunWorkerCompletedEventHandler( bwImportData_RunWorkerCompleted );
             bwTransformData.DoWork -= new DoWorkEventHandler( bwImportData_DoWork );
             bwTransformData.Dispose();
