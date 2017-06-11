@@ -1,35 +1,20 @@
-﻿// <copyright>
-// Copyright 2013 by the Spark Development Network
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
-using Rock.Model;
+using Rock.Data;
 
 namespace Excavator.Utility
 {
     /// <summary>
     /// Extensions to the base components
     /// </summary>
-    public static class Extensions
+    public static partial class Extensions
     {
         /// <summary>
         /// Gets the C# type from a SQL or OrcaMDF type.
@@ -103,21 +88,39 @@ namespace Excavator.Utility
         }
 
         /// <summary>
+        /// Gets the MIME type of the file.
+        /// </summary>
+        /// <param name="fileName">Name of the file.</param>
+        /// <returns></returns>
+        public static string GetMIMEType( string fileName )
+        {
+            //get file extension
+            var extension = Path.GetExtension( fileName ).ToLowerInvariant();
+
+            if ( extension.Length > 0 &&
+                MIMETypesDictionary.ContainsKey( extension.Remove( 0, 1 ) ) )
+            {
+                return MIMETypesDictionary[extension.Remove( 0, 1 )];
+            }
+            return "application/octet-stream";
+        }
+
+        /// <summary>
         /// Strips the whitespace.
         /// </summary>
         /// <param name="str">The string.</param>
         /// <returns></returns>
         public static string RemoveWhitespace( this string str )
         {
-            StringBuilder sb = new StringBuilder();
+            var stringBuilder = new StringBuilder();
             foreach ( char c in str )
             {
                 if ( !char.IsWhiteSpace( c ) )
                 {
-                    sb.Append( c );
+                    stringBuilder.Append( c );
                 }
             }
-            return sb.ToString();
+            return stringBuilder.ToString();
         }
 
         /// <summary>
@@ -131,21 +134,117 @@ namespace Excavator.Utility
         }
 
         /// <summary>
-        /// Gets the MIME type of the file.
+        /// Parse the string as a date time value. If the parse was unsuccessful then return
+        /// the defaultValue.
         /// </summary>
-        /// <param name="fileName">Name of the file.</param>
+        /// <param name="stringValue">The string value.</param>
+        /// <param name="defaultValue">The default value.</param>
         /// <returns></returns>
-        public static string GetMIMEType( string fileName )
+        public static DateTime? ParseDateOrDefault( string stringValue, DateTime? defaultValue )
         {
-            //get file extension
-            string extension = Path.GetExtension( fileName ).ToLowerInvariant();
+            DateTime parsed;
+            var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy",
+                                      "M/d/yyyy", "M/dd/yyyy",
+                                      "M/d/yyyy h:mm:ss tt", "M/d/yyyy h:mm tt",
+                                      "MM/dd/yyyy hh:mm:ss", "M/d/yyyy h:mm:ss",
+                                      "M/d/yyyy hh:mm tt", "M/d/yyyy hh tt",
+                                      "M/d/yyyy h:mm", "M/d/yyyy h:mm",
+                                      "MM/dd/yyyy hh:mm", "M/dd/yyyy hh:mm",
+                                      "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm:ss.fff", "yyyy-MM-dd HH:mm:ss.fff tt" };
 
-            if ( extension.Length > 0 &&
-                MIMETypesDictionary.ContainsKey( extension.Remove( 0, 1 ) ) )
+            if ( DateTime.TryParseExact( stringValue, dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed ) )
             {
-                return MIMETypesDictionary[extension.Remove( 0, 1 )];
+                return parsed;
             }
-            return "application/octet-stream";
+            else
+            {
+                return defaultValue;
+            }
+        }
+
+        /// <summary>
+        /// Parse the string as a boolean value. If the parse was unsuccessful then return
+        /// the defaultValue instead. Valid values are: TRUE, T, YES, Y, FALSE, F, NO, N, or any numeric value.
+        /// </summary>
+        /// <param name="stringValue">The string value.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <returns></returns>
+        public static bool? ParseBoolOrDefault( string stringValue, bool? defaultValue )
+        {
+            bool parsed;
+
+            if ( TryParseBool( stringValue, out parsed ) )
+            {
+                return parsed;
+            }
+            else
+            {
+                return defaultValue;
+            }
+        }
+
+        /// <summary>
+        /// Legal values: Case insensitive strings TRUE/FALSE, T/F, YES/NO, Y/N, numbers (0 =&gt; false, non-zero =&gt; true)
+        /// Similar to "bool.TryParse(string text, out bool)" except that it handles values other than 'true'/'false' and handles numbers like C/C++
+        /// Taken from: http://stackoverflow.com/questions/9191924/why-bool-try-parse-not-parsing-value-to-true-or-false
+        /// </summary>
+        /// <param name="inVal">The in value.</param>
+        /// <param name="retVal">if set to <c>true</c> [ret value].</param>
+        /// <returns></returns>
+        public static bool TryParseBool( object inVal, out bool retVal )
+        {
+            // There are a couple of built-in ways to convert values to boolean, but unfortunately they skip things like YES/NO, 1/0, T/F
+            //bool.TryParse(string, out bool retVal) (.NET 4.0 Only); Convert.ToBoolean(object) (requires try/catch)
+            inVal = ( inVal ?? "" ).ToString().Trim().ToUpper();
+            switch ( (string)inVal )
+            {
+                case "TRUE":
+                case "T":
+                case "YES":
+                case "Y":
+                    retVal = true;
+                    return true;
+
+                case "FALSE":
+                case "F":
+                case "NO":
+                case "N":
+                    retVal = false;
+                    return true;
+
+                default:
+                    // If value can be parsed as a number, 0==false, non-zero==true (old C/C++ usage)
+                    double number;
+                    if ( double.TryParse( (string)inVal, out number ) )
+                    {
+                        retVal = ( number != 0 );
+                        return true;
+                    }
+                    // If not a valid value for conversion, return false (not parsed)
+                    retVal = false;
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Detach all entity objects from the change tracker that is associated with
+        /// the given RockContext. Any entity that is stored (for example in an Imported...
+        /// variable) should be detached before the function ends. If it is explicitely
+        /// attached and then not detached then when it is attached to another context
+        /// an exception "An entity object cannot be referenced by multiple instances
+        /// of IEntityChangeTracker" occurs.
+        /// Taken from: http://stackoverflow.com/questions/2465933/how-to-clean-up-an-entity-framework-object-context
+        /// </summary>
+        /// <param name="context">The context.</param>
+        public static void DetachAllInContext( RockContext context )
+        {
+            foreach ( var dbEntityEntry in context.ChangeTracker.Entries() )
+            {
+                if ( dbEntityEntry.Entity != null )
+                {
+                    dbEntityEntry.State = EntityState.Detached;
+                }
+            }
         }
 
         /// <summary>
@@ -343,67 +442,5 @@ namespace Excavator.Utility
             {"xyz", "chemical/x-xyz"},
             {"zip", "application/zip"}
         };
-    }
-
-    // Flag to designate household role
-    public enum FamilyRole
-    {
-        Adult = 0,
-        Child = 1,
-        Visitor = 2
-    };
-
-    /// <summary>
-    /// Helper class to store references to people that've been imported
-    /// </summary>
-    public class PersonKeys
-    {
-        /// <summary>
-        /// Stores the Rock PersonAliasId
-        /// </summary>
-        public int PersonAliasId;
-
-        /// <summary>
-        /// Stores the Rock PersonId
-        /// </summary>
-        public int PersonId;
-
-        /// <summary>
-        /// Stores a Foreign Person Id
-        /// Using "Individual" to distinguish from Rock Person.
-        /// </summary>
-        public int? IndividualId;
-
-        /// <summary>
-        /// Stores a Foreign Group Id
-        /// Using "Household" to distinguish from Rock Group.
-        /// </summary>
-        public int? HouseholdId;
-
-        /// <summary>
-        /// Stores how the person is connected to the family
-        /// </summary>
-        public FamilyRole FamilyRoleId;
-    }
-
-    /// <summary>
-    /// Helper class to store document keys
-    /// </summary>
-    public class DocumentKeys
-    {
-        /// <summary>
-        /// Stores the Rock PersonId
-        /// </summary>
-        public int PersonId;
-
-        /// <summary>
-        /// Stores the attribute linked to this document
-        /// </summary>
-        public int AttributeId;
-
-        /// <summary>
-        /// Stores the actual document
-        /// </summary>
-        public BinaryFile File;
     }
 }
