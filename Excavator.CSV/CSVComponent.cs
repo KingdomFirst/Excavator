@@ -308,16 +308,30 @@ namespace Excavator.CSV
         /// <returns></returns>
         protected static PersonKeys GetPersonKeys( int? individualId = null )
         {
-            if ( individualId != null )
+            return individualId.HasValue ? ImportedPeopleKeys.FirstOrDefault( p => p.PersonForeignId == individualId ) : null;
+        }
+
+        /// <summary>
+        /// Gets the person keys.
+        /// </summary>
+        /// <param name="individualKey">The individual identifier.</param>
+        /// <returns></returns>
+        protected static PersonKeys GetPersonKeys( string individualKey = null )
+        {
+            if ( individualKey.AsIntegerOrNull() != null )
             {
-                return ImportedPeopleKeys.FirstOrDefault( p => p.PersonForeignId == individualId );
+                return GetPersonKeys( individualKey.AsIntegerOrNull() );
             }
             else
             {
-                return null;
+                return !string.IsNullOrWhiteSpace( individualKey ) ? ImportedPeopleKeys.FirstOrDefault( p => p.PersonForeignKey == individualKey ) : null;
             }
         }
 
+        /// <summary>
+        /// Loads the person keys.
+        /// </summary>
+        /// <param name="lookupContext">The lookup context.</param>
         protected static void LoadPersonKeys( RockContext lookupContext )
         {
             ImportedPeopleKeys = new PersonAliasService( lookupContext ).Queryable().AsNoTracking()
@@ -326,7 +340,8 @@ namespace Excavator.CSV
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    PersonForeignId = pa.ForeignId
+                    PersonForeignId = pa.ForeignId,
+                    PersonForeignKey = pa.ForeignKey
                 } ).ToList();
         }
 
