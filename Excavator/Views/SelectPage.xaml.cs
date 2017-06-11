@@ -19,11 +19,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Excavator.Utility;
 
 namespace Excavator
 {

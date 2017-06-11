@@ -10,6 +10,7 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Storage;
 using Rock.Web.Cache;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.BinaryFile
 {
@@ -65,7 +66,7 @@ namespace Excavator.BinaryFile
                 // 3. Filename
 
                 var personForeignId = parsedFileName[2].AsType<int?>();
-                var personKeys = BinaryFileComponent.ImportedPeople.FirstOrDefault( p => p.IndividualId == personForeignId );
+                var personKeys = BinaryFileComponent.ImportedPeople.FirstOrDefault( p => p.PersonForeignId == personForeignId );
                 if ( personKeys != null )
                 {
                     var rockFile = new Rock.Model.BinaryFile();

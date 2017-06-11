@@ -194,7 +194,6 @@
       <DependentUpon>ConnectPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\DataNode.cs" />
-    <Compile Include="Utility\Extensions.cs" />
     <Compile Include="Views\SelectPage.xaml.cs">
       <DependentUpon>SelectPage.xaml</DependentUpon>
     </Compile>

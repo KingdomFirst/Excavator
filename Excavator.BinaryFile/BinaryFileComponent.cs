@@ -18,12 +18,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
 using System.Data.Entity;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -37,6 +35,7 @@ using Rock.Storage;
 using Rock.Storage.Provider;
 using Rock.Web.Cache;
 using Database = Rock.Storage.Provider.Database;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.BinaryFile
 {
@@ -255,7 +254,7 @@ namespace Excavator.BinaryFile
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId,
+                    PersonForeignId = pa.ForeignId,
                 } ).ToList();
         }
 

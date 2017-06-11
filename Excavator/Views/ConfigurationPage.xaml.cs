@@ -16,12 +16,8 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Configuration;
 using System.Windows;
-using System.Windows.Controls;
-using Excavator.Utility;
 
 namespace Excavator
 {

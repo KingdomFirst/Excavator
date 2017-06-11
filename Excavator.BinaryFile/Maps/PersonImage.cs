@@ -48,7 +48,7 @@ namespace Excavator.BinaryFile.PersonImage
                 }
 
                 var personForeignId = Path.GetFileNameWithoutExtension( file.Name ).AsType<int?>();
-                var personKeys = BinaryFileComponent.ImportedPeople.FirstOrDefault( p => p.IndividualId == personForeignId );
+                var personKeys = BinaryFileComponent.ImportedPeople.FirstOrDefault( p => p.PersonForeignId == personForeignId );
                 if ( personKeys != null )
                 {
                     // only import the most recent profile photo

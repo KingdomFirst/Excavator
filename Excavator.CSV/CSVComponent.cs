@@ -28,6 +28,7 @@ using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.CSV
 {
@@ -313,8 +314,8 @@ namespace Excavator.CSV
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
-                .ToDictionary( t => ( int )t.ForeignId, t => ( int? )t.Id );
-            
+                .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
+
             return true;
         }
 
@@ -327,7 +328,7 @@ namespace Excavator.CSV
         {
             if ( individualId != null )
             {
-                return ImportedPeopleKeys.FirstOrDefault( p => p.IndividualId == individualId );
+                return ImportedPeopleKeys.FirstOrDefault( p => p.PersonForeignId == individualId );
             }
             else
             {
@@ -343,7 +344,7 @@ namespace Excavator.CSV
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId
+                    PersonForeignId = pa.ForeignId
                 } ).ToList();
         }
 
@@ -358,7 +359,7 @@ namespace Excavator.CSV
         /// attached and then not detached then when it is attached to another context
         /// an exception "An entity object cannot be referenced by multiple instances
         /// of IEntityChangeTracker" occurs.
-        /// 
+        ///
         /// Taken from: http://stackoverflow.com/questions/2465933/how-to-clean-up-an-entity-framework-object-context
         /// </summary>
         public static void DetachAllInContext( RockContext context )
@@ -371,7 +372,7 @@ namespace Excavator.CSV
                 }
             }
         }
-                
+
         #endregion
 
         #region File Processing Methods
