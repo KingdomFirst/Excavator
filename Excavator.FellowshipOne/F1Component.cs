@@ -100,11 +100,23 @@ namespace Excavator.F1
 
             foreach ( var table in tables )
             {
+                // ignore tables that can't be read successfully
+                Row rowData = null;
+                try
+                {
+                    rowData = scanner.ScanTable( table.Name ).FirstOrDefault();
+                }
+                catch
+                {
+                    LogException( string.Empty, $"Could not get data preview for {table.Name}. A blank record will preview instead." );
+                }
+
                 var tableItem = new DataNode
                 {
                     Name = table.Name
                 };
 
+                // get the table schema
                 foreach ( var column in Database.Dmvs.Columns.Where( x => x.ObjectID == table.ObjectID ) )
                 {
                     var childItem = new DataNode
@@ -112,6 +124,17 @@ namespace Excavator.F1
                         Name = column.Name,
                         Value = DBNull.Value
                     };
+
+                    // try to read data for this table
+                    if ( rowData != null )
+                    {
+                        var dataColumn = rowData.Columns.FirstOrDefault( d => d.Name == column.Name );
+                        if ( dataColumn != null )
+                        {
+                            childItem.NodeType = GetSQLType( dataColumn.Type );
+                            childItem.Value = rowData[dataColumn] ?? DBNull.Value;
+                        }
+                    }
 
                     childItem.Parent.Add( tableItem );
                     tableItem.Children.Add( childItem );
