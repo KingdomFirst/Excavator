@@ -368,7 +368,7 @@ namespace Excavator.CSV
                         var extensionIndex = numberPair.Value.LastIndexOf( 'x' ) > 0 ? numberPair.Value.LastIndexOf( 'x' ) : numberPair.Value.Length;
                         if ( countryIndex >= 0 )
                         {
-                            countryCode = numberPair.Value.Substring( countryIndex, countryIndex + 3 ).AsNumeric();
+                            countryCode = numberPair.Value.Substring( countryIndex, countryIndex + 3 );
                             normalizedNumber = numberPair.Value.Substring( countryIndex + 3, extensionIndex - 3 ).AsNumeric().TrimStart( new Char[] { '0' } );
                             extension = numberPair.Value.Substring( extensionIndex );
                         }
