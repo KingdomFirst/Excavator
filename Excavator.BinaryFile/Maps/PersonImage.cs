@@ -3,11 +3,11 @@ using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Storage;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.BinaryFile.PersonImage
 {
@@ -21,8 +21,7 @@ namespace Excavator.BinaryFile.PersonImage
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="personImageType">Type of the person image file.</param>
-        /// <param name="storageProvider">The storage provider.</param>
-        public void Map( ZipArchive folder, BinaryFileType personImageType, ProviderComponent storageProvider )
+        public void Map( ZipArchive folder, BinaryFileType personImageType )
         {
             // check for existing images
             var lookupContext = new RockContext();
@@ -33,36 +32,42 @@ namespace Excavator.BinaryFile.PersonImage
             var emptyJsonObject = "{}";
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
 
-            int completed = 0;
-            int totalRows = folder.Entries.Count;
-            int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying files import ({0:N0} found.", totalRows ) );
+            var storageProvider = personImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
+                ? (ProviderComponent)DatabaseProvider
+                : (ProviderComponent)FileSystemProvider;
+
+            var completedItems = 0;
+            var totalEntries = folder.Entries.Count;
+            var percentage = ( totalEntries - 1 ) / 100 + 1;
+            ReportProgress( 0, string.Format( "Verifying person images import ({0:N0} found.", totalEntries ) );
 
             foreach ( var file in folder.Entries )
             {
                 var fileExtension = Path.GetExtension( file.Name );
-                if ( BinaryFileComponent.FileTypeBlackList.Contains( fileExtension ) )
+                if ( FileTypeBlackList.Contains( fileExtension ) )
                 {
                     LogException( "Binary File Import", string.Format( "{0} filetype not allowed ({1})", fileExtension, file.Name ) );
                     continue;
                 }
 
                 var personForeignId = Path.GetFileNameWithoutExtension( file.Name ).AsType<int?>();
-                var personKeys = BinaryFileComponent.ImportedPeople.FirstOrDefault( p => p.IndividualId == personForeignId );
+                var personKeys = ImportedPeople.FirstOrDefault( p => p.PersonForeignId == personForeignId );
                 if ( personKeys != null )
                 {
                     // only import the most recent profile photo
                     if ( !existingImageList.ContainsKey( personKeys.PersonId ) || existingImageList[personKeys.PersonId].Value < file.LastWriteTime.DateTime )
                     {
-                        var rockFile = new Rock.Model.BinaryFile();
-                        rockFile.IsSystem = false;
-                        rockFile.IsTemporary = false;
-                        rockFile.FileName = file.Name;
-                        rockFile.BinaryFileTypeId = personImageType.Id;
-                        rockFile.MimeType = Extensions.GetMIMEType( file.Name );
-                        rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
-                        rockFile.ModifiedDateTime = ImportDateTime;
-                        rockFile.Description = string.Format( "Imported as {0}", file.Name );
+                        var rockFile = new Rock.Model.BinaryFile
+                        {
+                            IsSystem = false,
+                            IsTemporary = false,
+                            FileName = file.Name,
+                            BinaryFileTypeId = personImageType.Id,
+                            MimeType = GetMIMEType( file.Name ),
+                            CreatedDateTime = file.LastWriteTime.DateTime,
+                            Description = string.Format( "Imported as {0}", file.Name )
+                        };
+
                         rockFile.SetStorageEntityTypeId( personImageType.StorageEntityTypeId );
                         rockFile.StorageEntitySettings = emptyJsonObject;
 
@@ -82,13 +87,13 @@ namespace Excavator.BinaryFile.PersonImage
                         newFileList.Add( personKeys.PersonId, rockFile );
                     }
 
-                    completed++;
-                    if ( completed % percentage < 1 )
+                    completedItems++;
+                    if ( completedItems % percentage < 1 )
                     {
-                        int percentComplete = completed / percentage;
-                        ReportProgress( percentComplete, string.Format( "{0:N0} files imported ({1}% complete).", completed, percentComplete ) );
+                        var percentComplete = completedItems / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} person image files imported ({1}% complete).", completedItems, percentComplete ) );
                     }
-                    else if ( completed % ReportingNumber < 1 )
+                    else if ( completedItems % ReportingNumber < 1 )
                     {
                         SaveFiles( newFileList, storageProvider );
 
@@ -110,35 +115,36 @@ namespace Excavator.BinaryFile.PersonImage
                 SaveFiles( newFileList, storageProvider );
             }
 
-            ReportProgress( 100, string.Format( "Finished files import: {0:N0} addresses imported.", completed ) );
+            lookupContext.Dispose();
+            ReportProgress( 100, string.Format( "Finished files import: {0:N0} person images imported.", completedItems ) );
         }
 
         /// <summary>
         /// Saves the files.
         /// </summary>
         /// <param name="newFileList">The new file list.</param>
+        /// <param name="storageProvider">The storage provider.</param>
         private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList, ProviderComponent storageProvider )
         {
-            if ( storageProvider == null )
-            {
-                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                return;
-            }
-
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
-                foreach ( var file in newFileList )
-                {
-                    storageProvider.SaveContent( file.Value );
-                    file.Value.Path = storageProvider.GetPath( file.Value );
-                }
-
                 rockContext.BinaryFiles.AddRange( newFileList.Values );
-                rockContext.SaveChanges( DisableAuditing );
+                rockContext.SaveChanges();
 
                 foreach ( var file in newFileList )
                 {
+                    if ( storageProvider != null )
+                    {
+                        storageProvider.SaveContent( file.Value );
+                        file.Value.Path = storageProvider.GetPath( file.Value );
+                    }
+                    else
+                    {
+                        LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                    }
+
+                    // associate the person with this photo
                     rockContext.People.FirstOrDefault( p => p.Id == file.Key ).PhotoId = file.Value.Id;
                 }
 

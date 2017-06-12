@@ -1,29 +1,13 @@
-﻿// <copyright>
-// Copyright 2013 by the Spark Development Network
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Text.RegularExpressions;
 using OrcaMDF.Core.MetaData;
 using Rock;
 using Rock.Data;
 using Rock.Model;
+using static Excavator.Utility.CachedTypes;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.F1
 {
@@ -33,121 +17,195 @@ namespace Excavator.F1
     public partial class F1Component
     {
         /// <summary>
-        /// Maps the notes.
+        /// Maps the contact form data.
         /// </summary>
         /// <param name="tableData">The table data.</param>
-        public void MapNotes( IQueryable<Row> tableData )
+        /// <param name="totalRows">The total rows.</param>
+        public void MapContactFormData( IQueryable<Row> tableData, long totalRows = 0 )
         {
             var lookupContext = new RockContext();
-            var categoryService = new CategoryService( lookupContext );
-            var personService = new PersonService( lookupContext );
 
-            var noteTypes = new NoteTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
-            var personalNoteType = noteTypes.FirstOrDefault( nt => nt.Guid == new Guid( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE ) );
+            var importedCommunicationCount = new CommunicationService( lookupContext ).Queryable().Count( c => c.ForeignKey != null );
+            var importedNoteCount = new NoteService( lookupContext ).Queryable().Count( n => n.ForeignKey != null );
 
-            var importedUsers = new UserLoginService( lookupContext ).Queryable().AsNoTracking()
-                .Where( u => u.ForeignId != null )
-                .ToDictionary( t => t.ForeignId, t => t.PersonId );
-
+            var communicationList = new List<Communication>();
             var noteList = new List<Note>();
 
-            int completed = 0;
-            int totalRows = tableData.Count();
-            int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying note import ({0:N0} found).", totalRows ) );
+            if ( totalRows == 0 )
+            {
+                totalRows = tableData.Count();
+            }
+
+            var completedItems = 0;
+            var percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, $"Verifying contact items ({totalRows:N0} found, {importedNoteCount + importedCommunicationCount:N0} already exist)." );
+
             foreach ( var row in tableData.Where( r => r != null ) )
             {
-                string text = row["Note_Text"] as string;
-                int? individualId = row["Individual_ID"] as int?;
-                int? householdId = row["Household_ID"] as int?;
-                var noteTypeActive = row["NoteTypeActive"] as Boolean?;
+                // ContactFormData joins to IndividualContactNotes on ContactInstItemID
+                var itemForeignKey = row["ContactInstItemID"] as int?;
+                var householdId = row["HouseholdID"] as int?;
+                var itemIndividualId = row["ContactItemIndividualID"] as int?;
+                var individualId = row["ContactIndividualID"] as int?;
+                var createdDate = row["ContactActivityDate"] as DateTime?;
+                var modifiedDate = row["ContactDatetime"] as DateTime?;
+                var itemType = row["ContactFormName"] as string;
+                var itemCaption = row["ContactItemName"] as string;
+                var noteText1 = row["ContactNote"] as string;
+                var noteText2 = row["ContactItemNote"] as string;
+                var itemUserId = row["ContactItemAssignedUserID"] as int?;
+                var contactUserId = row["ContactAssignedUserID"] as int?;
+                var initialContactUserId = row["InitialContactCreatedByUserID"] as int?;
+                var isConfidential = row["IsContactItemConfidential"] as int?;
+                var itemText = !string.IsNullOrWhiteSpace( noteText1 ) ? $"{noteText1}<br>{noteText2}" : noteText2 ?? string.Empty;
 
-                bool noteArchived = false;
-                if ( row.Columns.FirstOrDefault( v => v.Name.Equals( "IsInactive" ) ) != null )
+                // look up the person this contact form is for
+                var personKeys = GetPersonKeys( itemIndividualId ?? individualId, householdId );
+                if ( personKeys != null && ( !string.IsNullOrWhiteSpace( itemCaption ) || !string.IsNullOrWhiteSpace( itemText ) ) )
                 {
-                    /* =====================================================================
-                    *  the NoteArchived column *should* work, but OrcaMDF won't read it...
-                    *  instead check for a manually added column: IsInactive int null
-                    *       var noteActive = row["NoteArchived"] as Boolean?;
-                    *       if ( noteActive == null ) throw new NullReferenceException();
-                    /* ===================================================================== */
-                    var rowInactiveValue = row["IsInactive"] as int?;
-                    noteArchived = rowInactiveValue.Equals( 1 );
-                }
-
-                var personKeys = GetPersonKeys( individualId, householdId );
-                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteTypeActive == true && !noteArchived )
-                {
-                    DateTime? dateCreated = row["NoteCreated"] as DateTime?;
-                    string noteType = row["Note_Type_Name"] as string;
-
-                    var note = new Note();
-                    note.CreatedDateTime = dateCreated;
-                    note.EntityId = personKeys.PersonId;
-
-                    // These replace methods don't like being chained together
-                    text = Regex.Replace( text, @"\t|\&nbsp;", " " );
-                    text = text.Replace( "&#45;", "-" );
-                    text = text.Replace( "&lt;", "<" );
-                    text = text.Replace( "&gt;", ">" );
-                    text = text.Replace( "&amp;", "&" );
-                    text = text.Replace( "&quot;", @"""" );
-                    text = text.Replace( "&#x0D", string.Empty );
-
-                    note.Text = text.Trim();
-
-                    int? userId = row["NoteCreatedByUserID"] as int?;
-                    if ( userId != null && importedUsers.ContainsKey( userId ) )
+                    var assignedUserId = itemUserId ?? contactUserId ?? initialContactUserId ?? 0;
+                    var userPersonAliasId = PortalUsers.ContainsKey( assignedUserId ) ? (int?)PortalUsers[assignedUserId] : null;
+                    if ( itemType.Equals( "Email", StringComparison.CurrentCultureIgnoreCase ) )
                     {
-                        var userKeys = ImportedPeople.FirstOrDefault( p => p.PersonId == (int)importedUsers[userId] );
-                        if ( userKeys != null )
+                        // create the recipient list for this contact
+                        var recipients = new List<CommunicationRecipient> {
+                            new CommunicationRecipient {
+                                Status = CommunicationRecipientStatus.Delivered,
+                                PersonAliasId = personKeys.PersonAliasId,
+                                CreatedDateTime = createdDate ?? modifiedDate,
+                                CreatedByPersonAliasId = userPersonAliasId,
+                                ModifiedByPersonAliasId = userPersonAliasId,
+                                ForeignKey = personKeys.PersonForeignId.ToString(),
+                                ForeignId = personKeys.PersonForeignId
+                            }
+                        };
+
+                        // create an email record for this contact form
+                        var emailSubject = !string.IsNullOrWhiteSpace( itemCaption ) ? itemCaption.Left( 100 ) : itemText.Left( 100 );
+                        var communication = AddCommunication( lookupContext, EmailCommunicationMediumTypeId, emailSubject, itemText, false,
+                            CommunicationStatus.Approved, recipients, false, createdDate ?? modifiedDate, itemForeignKey.ToString(), userPersonAliasId );
+
+                        communicationList.Add( communication );
+                    }
+                    else
+                    {
+                        //strip campus from note type
+                        var campusId = GetCampusId( itemType );
+                        if ( campusId.HasValue )
                         {
-                            note.CreatedByPersonAliasId = userKeys.PersonAliasId;
+                            itemType = StripPrefix( itemType, campusId );
                         }
+
+                        // create a note for this contact form
+                        var note = AddEntityNote( lookupContext, PersonEntityTypeId, personKeys.PersonId, itemCaption, itemText, false, false, itemType,
+                            null, false, createdDate ?? modifiedDate, itemForeignKey.ToString(), userPersonAliasId );
+
+                        noteList.Add( note );
                     }
 
-                    int? matchingNoteTypeId = null;
-                    if ( !noteType.StartsWith( "General", StringComparison.InvariantCultureIgnoreCase ) )
+                    completedItems++;
+
+                    if ( completedItems % percentage < 1 )
                     {
-                        matchingNoteTypeId = noteTypes.Where( nt => nt.Name == noteType ).Select( i => (int?)i.Id ).FirstOrDefault();
+                        var percentComplete = completedItems / percentage;
+                        ReportProgress( percentComplete, $"{completedItems:N0} contact items imported ({percentComplete}% complete)." );
                     }
-                    else
+                    else if ( completedItems % ReportingNumber < 1 )
                     {
-                        matchingNoteTypeId = personalNoteType.Id;
-                    }
+                        SaveCommunications( communicationList );
+                        SaveNotes( noteList );
+                        ReportPartialProgress();
 
-                    if ( matchingNoteTypeId != null )
+                        communicationList.Clear();
+                        noteList.Clear();
+                    }
+                }
+            }
+
+            if ( communicationList.Any() || noteList.Any() )
+            {
+                SaveCommunications( communicationList );
+                SaveNotes( noteList );
+            }
+
+            ReportProgress( 100, $"Finished contact item import: {completedItems:N0} items imported." );
+        }
+
+        /// <summary>
+        /// Maps the individual contact notes.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <param name="totalRows">The total rows.</param>
+        public void MapIndividualContactNotes( IQueryable<Row> tableData, long totalRows = 0 )
+        {
+            var lookupContext = new RockContext();
+
+            var importedNotes = new NoteService( lookupContext ).Queryable().Where( n => n.ForeignId != null )
+                .ToDictionary( n => n.ForeignId, n => n.Id );
+
+            var noteList = new List<Note>();
+            int? confidentialNoteTypeId = null;
+
+            if ( totalRows == 0 )
+            {
+                totalRows = tableData.Count();
+            }
+
+            var completedItems = 0;
+            var percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, $"Verifying contact notes ({totalRows:N0} found, {importedNotes.Count:N0} already exist)." );
+
+            foreach ( var row in tableData.Where( r => r != null ) )
+            {
+                var userId = row["UserID"] as int?;
+                var individualId = row["IndividualID"] as int?;
+                var itemForeignKey = row["ContactInstItemID"] as int?;
+                var createdDate = row["IndividualContactDatetime"] as DateTime?;
+                var noteText = row["IndividualContactNote"] as string;
+                var confidentialText = row["ConfidentialNote"] as string;
+
+                var personKeys = GetPersonKeys( individualId, null );
+                if ( personKeys != null && ( !string.IsNullOrWhiteSpace( noteText ) || !string.IsNullOrWhiteSpace( confidentialText ) ) )
+                {
+                    int? creatorAliasId = null;
+                    if ( userId.HasValue && PortalUsers.ContainsKey( (int)userId ) )
                     {
-                        note.NoteTypeId = (int)matchingNoteTypeId;
+                        creatorAliasId = PortalUsers[(int)userId];
                     }
-                    else
+
+                    var noteId = 0;
+                    if ( importedNotes.ContainsKey( itemForeignKey ) )
                     {
-                        // create the note type
-                        var newNoteType = new NoteType();
-                        newNoteType.EntityTypeId = personalNoteType.EntityTypeId;
-                        newNoteType.EntityTypeQualifierColumn = string.Empty;
-                        newNoteType.EntityTypeQualifierValue = string.Empty;
-                        newNoteType.UserSelectable = true;
-                        newNoteType.IsSystem = false;
-                        newNoteType.Name = noteType;
-                        newNoteType.Order = 0;
-
-                        lookupContext.NoteTypes.Add( newNoteType );
-                        lookupContext.SaveChanges( DisableAuditing );
-
-                        noteTypes.Add( newNoteType );
-                        note.NoteTypeId = newNoteType.Id;
+                        noteId = importedNotes[itemForeignKey];
                     }
 
-                    noteList.Add( note );
-                    completed++;
-
-                    if ( completed % percentage < 1 )
+                    // add a confidential note
+                    if ( !string.IsNullOrWhiteSpace( confidentialText ) )
                     {
-                        int percentComplete = completed / percentage;
-                        ReportProgress( percentComplete, string.Format( "{0:N0} notes imported ({1}% complete).", completed, percentComplete ) );
+                        var confidential = AddEntityNote( lookupContext, PersonEntityTypeId, personKeys.PersonId, string.Empty, confidentialText, false, false,
+                            "Confidential Note", confidentialNoteTypeId, false, createdDate, itemForeignKey.ToString() );
+                        confidentialNoteTypeId = confidential.NoteTypeId;
+
+                        noteList.Add( confidential );
                     }
-                    else if ( completed % ReportingNumber < 1 )
+
+                    // add a normal note
+                    if ( !string.IsNullOrWhiteSpace( noteText ) )
+                    {
+                        var note = AddEntityNote( lookupContext, PersonEntityTypeId, personKeys.PersonId, string.Empty, noteText, false, false,
+                            null, PersonalNoteTypeId, false, createdDate, itemForeignKey.ToString() );
+                        note.Id = noteId;
+
+                        noteList.Add( note );
+                    }
+
+                    completedItems++;
+                    if ( completedItems % percentage < 1 )
+                    {
+                        var percentComplete = completedItems / percentage;
+                        ReportProgress( percentComplete, $"{completedItems:N0} notes imported ({percentComplete}% complete)." );
+                    }
+                    else if ( completedItems % ReportingNumber < 1 )
                     {
                         SaveNotes( noteList );
                         ReportPartialProgress();
@@ -161,20 +219,127 @@ namespace Excavator.F1
                 SaveNotes( noteList );
             }
 
-            ReportProgress( 100, string.Format( "Finished note import: {0:N0} notes imported.", completed ) );
+            ReportProgress( 100, $"Finished contact note import: {completedItems:N0} notes imported." );
+        }
+
+        /// <summary>
+        /// Maps the notes.
+        /// </summary>
+        /// <param name="tableData">The table data.</param>
+        /// <param name="totalRows">The total rows.</param>
+        public void MapNotes( IQueryable<Row> tableData, long totalRows = 0 )
+        {
+            var lookupContext = new RockContext();
+
+            var importedUsers = new UserLoginService( lookupContext ).Queryable().AsNoTracking()
+                .Where( u => u.ForeignId != null )
+                .ToDictionary( t => t.ForeignId, t => t.PersonId );
+
+            var noteList = new List<Note>();
+
+            if ( totalRows == 0 )
+            {
+                totalRows = tableData.Count();
+            }
+
+            var completedItems = 0;
+            var percentage = ( totalRows - 1 ) / 100 + 1;
+            ReportProgress( 0, $"Verifying note import ({totalRows:N0} found)." );
+            foreach ( var row in tableData.Where( r => r != null ) )
+            {
+                var noteType = row["Note_Type_Name"] as string;
+                var text = row["Note_Text"] as string;
+                var individualId = row["Individual_ID"] as int?;
+                var householdId = row["Household_ID"] as int?;
+                var noteTypeActive = row["NoteTypeActive"] as bool?;
+                var noteArchived = row["NoteArchived"] as bool?;
+                var noteTextArchived = row["NoteTextArchived"] as bool?;
+                var dateCreated = row["NoteCreated"] as DateTime?;
+
+                // see if pre-import helper fix is present
+                var noteArchivedFlag = row["NoteArchived"] as int?;
+                var noteTextArchivedFlag = row["NoteTextArchived"] as int?;
+                noteArchived = noteArchived.HasValue ? noteArchived : noteArchivedFlag > 0;
+                noteTextArchived = noteTextArchived.HasValue ? noteTextArchived : noteTextArchivedFlag > 0;
+
+                var noteExcluded = noteArchived == true || noteTextArchived == true;
+                var personKeys = GetPersonKeys( individualId, householdId );
+                if ( personKeys != null && !string.IsNullOrWhiteSpace( text ) && noteTypeActive == true && !noteExcluded )
+                {
+                    int? creatorAliasId = null;
+                    var userId = row["NoteCreatedByUserID"] as int?;
+
+                    if ( userId.HasValue && PortalUsers.ContainsKey( (int)userId ) )
+                    {
+                        creatorAliasId = PortalUsers[(int)userId];
+                    }
+
+                    var noteTypeId = noteType.StartsWith( "General", StringComparison.InvariantCultureIgnoreCase ) ? (int?)PersonalNoteTypeId : null;
+                    var note = AddEntityNote( lookupContext, PersonEntityTypeId, personKeys.PersonId, string.Empty, text, false, false, noteType, noteTypeId, false, dateCreated,
+                        $"Note imported {ImportDateTime}", creatorAliasId );
+
+                    noteList.Add( note );
+                    completedItems++;
+
+                    if ( completedItems % percentage < 1 )
+                    {
+                        var percentComplete = completedItems / percentage;
+                        ReportProgress( percentComplete, $"{completedItems:N0} notes imported ({percentComplete}% complete)." );
+                    }
+                    else if ( completedItems % ReportingNumber < 1 )
+                    {
+                        SaveNotes( noteList );
+                        ReportPartialProgress();
+                        noteList.Clear();
+                    }
+                }
+            }
+
+            if ( noteList.Any() )
+            {
+                SaveNotes( noteList );
+            }
+
+            ReportProgress( 100, $"Finished note import: {completedItems:N0} notes imported." );
+        }
+
+        /// <summary>
+        /// Saves the communications.
+        /// </summary>
+        /// <param name="communicationList">The communication list.</param>
+        private static void SaveCommunications( List<Communication> communicationList )
+        {
+            var rockContext = new RockContext();
+            rockContext.WrapTransaction( () =>
+            {
+                rockContext.Communications.AddRange( communicationList );
+                rockContext.SaveChanges( DisableAuditing );
+            } );
         }
 
         /// <summary>
         /// Saves the notes.
         /// </summary>
         /// <param name="noteList">The note list.</param>
-        private void SaveNotes( List<Note> noteList )
+        private static void SaveNotes( List<Note> noteList )
         {
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
                 rockContext.Configuration.AutoDetectChangesEnabled = false;
-                rockContext.Notes.AddRange( noteList );
+                rockContext.Notes.AddRange( noteList.Where( n => n.Id == 0 ) );
+
+                foreach ( var note in noteList.Where( n => n.Id > 0 ) )
+                {
+                    var existingNote = rockContext.Notes.FirstOrDefault( n => n.Id == note.Id );
+                    if ( existingNote != null )
+                    {
+                        existingNote.Text += note.Text;
+                        rockContext.Entry( existingNote ).State = EntityState.Modified;
+                    }
+                }
+
+                rockContext.ChangeTracker.DetectChanges();
                 rockContext.SaveChanges( DisableAuditing );
             } );
         }

@@ -51,7 +51,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="OrcaMDF.Core">
-      <HintPath>..\packages\OrcaMDF.Core.1.0.0.0\lib\net35\OrcaMDF.Core.dll</HintPath>
+      <HintPath>..\packages\Rock\OrcaMDF.Core.dll</HintPath>
     </Reference>
     <Reference Include="Rock">
       <HintPath>..\packages\Rock\Rock.dll</HintPath>
@@ -74,6 +74,7 @@
     <Compile Include="Maps\Communication.cs" />
     <Compile Include="Maps\Financial.cs" />
     <Compile Include="Maps\Locations.cs" />
+    <Compile Include="Maps\Users.cs" />
     <Compile Include="Model\Group_Attendance.cs" />
     <Compile Include="Model\GiftednessProgram.cs" />
     <Compile Include="Model\IndividualGiftedness.cs" />
@@ -107,6 +108,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Excavator.Utility\Excavator.Utility.csproj">
+      <Project>{42dc1a5d-0637-4595-90f6-fa97dac69e95}</Project>
+      <Name>Excavator.Utility</Name>
+    </ProjectReference>
     <ProjectReference Include="..\excavator\Excavator.csproj">
       <Project>{6c4100b7-6b6b-40d7-a150-deba50512c95}</Project>
       <Name>Excavator</Name>

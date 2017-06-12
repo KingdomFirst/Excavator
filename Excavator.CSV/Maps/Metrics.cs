@@ -6,6 +6,7 @@ using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.CSV
 {
@@ -28,10 +29,16 @@ namespace Excavator.CSV
             var metricSourceTypes = DefinedTypeCache.Read( new Guid( Rock.SystemGuid.DefinedType.METRIC_SOURCE_TYPE ) ).DefinedValues;
             var metricManualSource = metricSourceTypes.FirstOrDefault( m => m.Guid == new Guid( Rock.SystemGuid.DefinedValue.METRIC_SOURCE_VALUE_TYPE_MANUAL ) );
 
-            var metricEntityTypeId = EntityTypeCache.Read<Rock.Model.MetricCategory>( false, lookupContext ).Id;
-            var campusEntityTypeId = EntityTypeCache.Read<Rock.Model.Campus>( false, lookupContext ).Id;
+            var scheduleService = new ScheduleService( lookupContext );
+            var scheduleMetrics = scheduleService.Queryable().AsNoTracking()
+                .Where( s => s.Category.Guid == new Guid( Rock.SystemGuid.Category.SCHEDULE_SERVICE_TIMES ) ).ToList();
+            var scheduleCategoryId = categoryService.Queryable().AsNoTracking()
+                .Where( c => c.Guid == new Guid( Rock.SystemGuid.Category.SCHEDULE_SERVICE_TIMES ) ).FirstOrDefault().Id;
 
-            var campuses = CampusCache.All();
+            var metricEntityTypeId = EntityTypeCache.Read<MetricCategory>( false, lookupContext ).Id;
+            var campusEntityTypeId = EntityTypeCache.Read<Campus>( false, lookupContext ).Id;
+            var scheduleEntityTypeId = EntityTypeCache.Read<Schedule>( false, lookupContext ).Id;
+
             var allMetrics = metricService.Queryable().AsNoTracking().ToList();
             var metricCategories = categoryService.Queryable().AsNoTracking()
                 .Where( c => c.EntityType.Guid == new Guid( Rock.SystemGuid.EntityType.METRICCATEGORY ) ).ToList();
@@ -69,6 +76,7 @@ namespace Excavator.CSV
                 string metricCampus = row[MetricCampus];
                 string metricName = row[MetricName];
                 string metricCategoryString = row[MetricCategory];
+                string metricNote = row[MetricNote];
 
                 if ( !string.IsNullOrEmpty( metricName ) )
                 {
@@ -101,15 +109,6 @@ namespace Excavator.CSV
                         metricCategoryId = newMetricCategory.Id;
                     }
 
-                    if ( valueDate.HasValue )
-                    {
-                        var timeFrame = (DateTime)valueDate;
-                        if ( timeFrame.TimeOfDay.TotalSeconds > 0 )
-                        {
-                            metricName = string.Format( "{0} {1}", timeFrame.ToString( "HH:mm" ), metricName );
-                        }
-                    }
-
                     // create metric if it doesn't exist
                     currentMetric = allMetrics.FirstOrDefault( m => m.Title == metricName && m.MetricCategories.Any( c => c.CategoryId == metricCategoryId ) );
                     if ( currentMetric == null )
@@ -125,6 +124,11 @@ namespace Excavator.CSV
                         currentMetric.SourceValueTypeId = metricManualSource.Id;
                         currentMetric.CreatedByPersonAliasId = ImportPersonAliasId;
                         currentMetric.CreatedDateTime = ImportDateTime;
+                        currentMetric.ForeignKey = string.Format( "Metric imported {0}", ImportDateTime );
+
+                        currentMetric.MetricPartitions = new List<MetricPartition>();
+                        currentMetric.MetricPartitions.Add( new MetricPartition { Label = "Campus", EntityTypeId = campusEntityTypeId, Metric = currentMetric } );
+                        currentMetric.MetricPartitions.Add( new MetricPartition { Label = "Service", EntityTypeId = scheduleEntityTypeId, Metric = currentMetric } );
 
                         metricService.Add( currentMetric );
                         lookupContext.SaveChanges();
@@ -138,9 +142,6 @@ namespace Excavator.CSV
                         allMetrics.Add( currentMetric );
                     }
 
-                    var campusId = campuses.Where( c => c.Name == metricCampus || c.ShortCode == metricCampus )
-                        .Select( c => (int?)c.Id ).FirstOrDefault();
-
                     // create values for this metric
                     var metricValue = new MetricValue();
                     metricValue.MetricValueType = MetricValueType.Measure;
@@ -151,6 +152,66 @@ namespace Excavator.CSV
                     metricValue.Note = string.Empty;
                     metricValue.XValue = string.Empty;
                     metricValue.YValue = value;
+                    metricValue.ForeignKey = string.Format( "Metric Value imported {0}", ImportDateTime );
+                    metricValue.Note = metricNote;
+
+                    if ( valueDate.HasValue )
+                    {
+                        var metricPartitionScheduleId = currentMetric.MetricPartitions.FirstOrDefault( p => p.Label == "Service" ).Id;
+
+                        var date = (DateTime)valueDate;
+                        var scheduleName = date.DayOfWeek.ToString();
+
+                        if ( date.TimeOfDay.TotalSeconds > 0 )
+                        {
+                            scheduleName = scheduleName + string.Format( " {0}", date.ToString( "hh:mm" ) ) + string.Format( "{0}", date.ToString( "tt" ).ToLower() );
+                        }
+
+                        if ( !scheduleMetrics.Any( s => s.Name == scheduleName ) )
+                        {
+                            Schedule newSchedule = new Schedule();
+                            newSchedule.Name = scheduleName;
+                            newSchedule.CategoryId = scheduleCategoryId;
+                            newSchedule.CreatedByPersonAliasId = ImportPersonAliasId;
+                            newSchedule.CreatedDateTime = ImportDateTime;
+                            newSchedule.ForeignKey = string.Format( "Metric Schedule imported {0}", ImportDateTime );
+
+                            scheduleMetrics.Add( newSchedule );
+                            lookupContext.Schedules.Add( newSchedule );
+                            lookupContext.SaveChanges();
+                        }
+
+                        var scheduleId = scheduleMetrics.FirstOrDefault( s => s.Name == scheduleName ).Id;
+
+                        metricValue.MetricValuePartitions.Add( new MetricValuePartition { MetricPartitionId = metricPartitionScheduleId, EntityId = scheduleId } );
+                    }
+
+                    if ( !string.IsNullOrWhiteSpace( metricCampus ) )
+                    {
+                        var campus = CampusList.Where( c => c.Name.Equals( metricCampus, StringComparison.InvariantCultureIgnoreCase )
+                                || c.ShortCode.Equals( metricCampus, StringComparison.InvariantCultureIgnoreCase ) ).FirstOrDefault();
+
+                        if ( campus == null )
+                        {
+                            var newCampus = new Campus();
+                            newCampus.IsSystem = false;
+                            newCampus.Name = metricCampus;
+                            newCampus.ShortCode = metricCampus.RemoveWhitespace();
+                            newCampus.IsActive = true;
+                            lookupContext.Campuses.Add( newCampus );
+                            lookupContext.SaveChanges( DisableAuditing );
+                            CampusList.Add( newCampus );
+                            campus = newCampus;
+                        }
+
+                        if ( campus != null )
+                        {
+                            var metricPartitionCampusId = currentMetric.MetricPartitions.FirstOrDefault( p => p.Label == "Campus" ).Id;
+
+                            metricValue.MetricValuePartitions.Add( new MetricValuePartition { MetricPartitionId = metricPartitionCampusId, EntityId = campus.Id } );
+                        }
+                    }
+
                     metricValues.Add( metricValue );
 
                     completed++;

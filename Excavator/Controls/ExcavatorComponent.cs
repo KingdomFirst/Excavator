@@ -1,21 +1,4 @@
-﻿// <copyright>
-// Copyright 2013 by the Spark Development Network
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -28,7 +11,7 @@ namespace Excavator
     /// </summary>
     /// <param name="value">The value.</param>
     /// <param name="status">The status.</param>
-    public delegate void ReportProgress( int value, string status );
+    public delegate void ReportProgress( long value, string status );
 
     /// <summary>
     /// Excavator holds the base methods and properties needed to convert data to Rock
@@ -38,7 +21,7 @@ namespace Excavator
         #region Fields
 
         /// <summary>
-        /// Gets the full name of the excavator type.
+        /// Gets the full name of the Excavator type.
         /// </summary>
         /// <value>
         /// The name of the database being imported.
@@ -65,6 +48,16 @@ namespace Excavator
         public int ReportingNumber = 100;
 
         /// <summary>
+        /// Determine if the anonymous giver should be required
+        /// </summary>
+        public Boolean requireAnonymousGiver = true;
+
+        /// <summary>
+        /// Determine if the Individual List should be refreshed after every save. Warning, this will slow the process.
+        /// </summary>
+        public Boolean refreshIndividualListEachCycle = false;
+
+        /// <summary>
         /// Holds a reference to the data nodes loaded in memory
         /// </summary>
         public List<DataNode> DataNodes;
@@ -84,7 +77,7 @@ namespace Excavator
         #region Methods
 
         /// <summary>
-        /// Returns the full name of this excavator type.
+        /// Returns the full name of this Excavator type.
         /// </summary>
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
@@ -97,17 +90,18 @@ namespace Excavator
         /// <summary>
         /// Loads the database into memory and fills a DataNode instance.
         /// </summary>
+        /// <param name="fileName">Name of the file.</param>
         /// <returns></returns>
         public abstract bool LoadSchema( string fileName );
 
         /// <summary>
         /// Previews the data.
         /// </summary>
-        /// <param name="tableName">Name of the table to preview.</param>
+        /// <param name="nodeId">The node identifier.</param>
         /// <returns></returns>
         public virtual DataTable PreviewData( string nodeId )
         {
-            var node = DataNodes.Where( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) ).FirstOrDefault();
+            var node = DataNodes.FirstOrDefault( n => n.Id.Equals( nodeId ) || n.Children.Any( c => c.Id == nodeId ) );
             if ( node != null && node.Children.Any() )
             {
                 var dataTable = new DataTable();
@@ -150,12 +144,9 @@ namespace Excavator
         /// </summary>
         /// <param name="progress">The progress.</param>
         /// <param name="status">The status.</param>
-        public void ReportProgress( int progress, string status )
+        public void ReportProgress( long progress, string status )
         {
-            if ( ProgressUpdated != null )
-            {
-                ProgressUpdated( progress, Environment.NewLine + DateTime.Now.ToLongTimeString() + "  " + status );
-            }
+            ProgressUpdated?.Invoke( progress, Environment.NewLine + DateTime.Now.ToLongTimeString() + "  " + status );
         }
 
         /// <summary>

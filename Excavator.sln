@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3242E8A3-0FB6-4866-81E2-F840039F20BC}"
 EndProject
@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C9FA4C
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Excavator.BinaryFile", "Excavator.BinaryFile\Excavator.BinaryFile.csproj", "{2C3AE45A-41B6-4913-9BA7-829246A72CF7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Excavator.Utility", "Excavator.Utility\Excavator.Utility.csproj", "{42DC1A5D-0637-4595-90F6-FA97DAC69E95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,6 +48,10 @@ Global
 		{2C3AE45A-41B6-4913-9BA7-829246A72CF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C3AE45A-41B6-4913-9BA7-829246A72CF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C3AE45A-41B6-4913-9BA7-829246A72CF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42DC1A5D-0637-4595-90F6-FA97DAC69E95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42DC1A5D-0637-4595-90F6-FA97DAC69E95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42DC1A5D-0637-4595-90F6-FA97DAC69E95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42DC1A5D-0637-4595-90F6-FA97DAC69E95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

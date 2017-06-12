@@ -27,8 +27,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Windows;
-using System.Windows.Markup;
-using Excavator.Utility;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 

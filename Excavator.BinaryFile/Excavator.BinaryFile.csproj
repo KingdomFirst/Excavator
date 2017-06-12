@@ -74,6 +74,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Excavator.Utility\Excavator.Utility.csproj">
+      <Project>{42dc1a5d-0637-4595-90f6-fa97dac69e95}</Project>
+      <Name>Excavator.Utility</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Excavator\Excavator.csproj">
       <Project>{6c4100b7-6b6b-40d7-a150-deba50512c95}</Project>
       <Name>Excavator</Name>
