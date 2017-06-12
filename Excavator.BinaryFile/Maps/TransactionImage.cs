@@ -3,11 +3,11 @@ using System.Data.Entity;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Storage;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.BinaryFile
 {
@@ -21,49 +21,48 @@ namespace Excavator.BinaryFile
         /// </summary>
         /// <param name="folder">The folder.</param>
         /// <param name="transactionImageType">Type of the transaction image file.</param>
-        /// <param name="storageProvider">The storage provider.</param>
-        public void Map( ZipArchive folder, BinaryFileType transactionImageType, ProviderComponent storageProvider )
+        public void Map( ZipArchive folder, BinaryFileType transactionImageType )
         {
             var lookupContext = new RockContext();
 
             var emptyJsonObject = "{}";
             var newFileList = new Dictionary<int, Rock.Model.BinaryFile>();
-            var transactionIdList = new FinancialTransactionService( lookupContext )
+            var importedTransactions = new FinancialTransactionService( lookupContext )
                 .Queryable().AsNoTracking().Where( t => t.ForeignId != null )
                 .ToDictionary( t => (int)t.ForeignId, t => t.Id );
 
-            int completed = 0;
-            int totalRows = folder.Entries.Count;
-            int percentage = ( totalRows - 1 ) / 100 + 1;
-            ReportProgress( 0, string.Format( "Verifying files import ({0:N0} found.", totalRows ) );
+            var storageProvider = transactionImageType.StorageEntityTypeId == DatabaseProvider.EntityType.Id
+                ? (ProviderComponent)DatabaseProvider
+                : (ProviderComponent)FileSystemProvider;
+
+            var completedItems = 0;
+            var totalEntries = folder.Entries.Count;
+            var percentage = ( totalEntries - 1 ) / 100 + 1;
+            ReportProgress( 0, string.Format( "Verifying transaction images import ({0:N0} found.", totalEntries ) );
 
             foreach ( var file in folder.Entries )
             {
                 var fileExtension = Path.GetExtension( file.Name );
-                var fileMimeType = Extensions.GetMIMEType( file.Name );
-                if ( BinaryFileComponent.FileTypeBlackList.Contains( fileExtension ) )
+                if ( FileTypeBlackList.Contains( fileExtension ) )
                 {
                     LogException( "Binary File Import", string.Format( "{0} filetype not allowed ({1})", fileExtension, file.Name ) );
                     continue;
                 }
-                else if ( fileMimeType == null )
-                {
-                    LogException( "Binary File Import", string.Format( "{0} filetype not recognized ({1})", fileExtension, file.Name ) );
-                    continue;
-                }
 
-                int? transactionId = Path.GetFileNameWithoutExtension( file.Name ).AsType<int?>();
-                if ( transactionId != null && transactionIdList.ContainsKey( (int)transactionId ) )
+                var foreignTransactionId = Path.GetFileNameWithoutExtension( file.Name ).AsType<int?>();
+                if ( foreignTransactionId != null && importedTransactions.ContainsKey( (int)foreignTransactionId ) )
                 {
-                    var rockFile = new Rock.Model.BinaryFile();
-                    rockFile.IsSystem = false;
-                    rockFile.IsTemporary = false;
-                    rockFile.FileName = file.Name;
-                    rockFile.MimeType = fileMimeType;
-                    rockFile.BinaryFileTypeId = transactionImageType.Id;
-                    rockFile.CreatedDateTime = file.LastWriteTime.DateTime;
-                    rockFile.ModifiedDateTime = ImportDateTime;
-                    rockFile.Description = string.Format( "Imported as {0}", file.Name );
+                    var rockFile = new Rock.Model.BinaryFile
+                    {
+                        IsSystem = false,
+                        IsTemporary = false,
+                        FileName = file.Name,
+                        BinaryFileTypeId = transactionImageType.Id,
+                        CreatedDateTime = file.LastWriteTime.DateTime,
+                        MimeType = GetMIMEType( file.Name ),
+                        Description = string.Format( "Imported as {0}", file.Name )
+                    };
+
                     rockFile.SetStorageEntityTypeId( transactionImageType.StorageEntityTypeId );
                     rockFile.StorageEntitySettings = emptyJsonObject;
 
@@ -80,15 +79,16 @@ namespace Excavator.BinaryFile
                         rockFile.ContentStream = new MemoryStream( fileContent.BaseStream.ReadBytesToEnd() );
                     }
 
-                    newFileList.Add( transactionIdList[(int)transactionId], rockFile );
+                    // add this transaction image to the Rock transaction
+                    newFileList.Add( importedTransactions[(int)foreignTransactionId], rockFile );
 
-                    completed++;
-                    if ( completed % percentage < 1 )
+                    completedItems++;
+                    if ( completedItems % percentage < 1 )
                     {
-                        int percentComplete = completed / percentage;
-                        ReportProgress( percentComplete, string.Format( "{0:N0} files imported ({1}% complete).", completed, percentComplete ) );
+                        var percentComplete = completedItems / percentage;
+                        ReportProgress( percentComplete, string.Format( "{0:N0} transaction image files imported ({1}% complete).", completedItems, percentComplete ) );
                     }
-                    else if ( completed % ReportingNumber < 1 )
+                    else if ( completedItems % ReportingNumber < 1 )
                     {
                         SaveFiles( newFileList, storageProvider );
 
@@ -104,43 +104,45 @@ namespace Excavator.BinaryFile
                 SaveFiles( newFileList, storageProvider );
             }
 
-            ReportProgress( 100, string.Format( "Finished files import: {0:N0} addresses imported.", completed ) );
+            ReportProgress( 100, string.Format( "Finished files import: {0:N0} transaction images imported.", completedItems ) );
         }
 
         /// <summary>
         /// Saves the files.
         /// </summary>
         /// <param name="newFileList">The new file list.</param>
+        /// <param name="storageProvider">The storage provider.</param>
         private static void SaveFiles( Dictionary<int, Rock.Model.BinaryFile> newFileList, ProviderComponent storageProvider )
         {
-            if ( storageProvider == null )
-            {
-                LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
-                return;
-            }
-
             var rockContext = new RockContext();
             rockContext.WrapTransaction( () =>
             {
-                foreach ( var entry in newFileList )
-                {
-                    if ( entry.Value != null )
-                    {
-                        storageProvider.SaveContent( entry.Value );
-                        entry.Value.Path = storageProvider.GetPath( entry.Value );
-                    }
-                }
-
                 rockContext.BinaryFiles.AddRange( newFileList.Values );
                 rockContext.SaveChanges();
 
                 foreach ( var entry in newFileList )
                 {
+                    if ( entry.Value != null )
+                    {
+                        if ( storageProvider != null )
+                        {
+                            storageProvider.SaveContent( entry.Value );
+                            entry.Value.Path = storageProvider.GetPath( entry.Value );
+                        }
+                        else
+                        {
+                            LogException( "Binary File Import", string.Format( "Could not load provider {0}.", storageProvider.ToString() ) );
+                        }
+                    }
+
                     // associate the image with the right transaction
-                    var transactionImage = new FinancialTransactionImage();
-                    transactionImage.TransactionId = entry.Key;
-                    transactionImage.BinaryFileId = entry.Value.Id;
-                    transactionImage.Order = 0;
+                    var transactionImage = new FinancialTransactionImage
+                    {
+                        TransactionId = entry.Key,
+                        BinaryFileId = entry.Value.Id,
+                        Order = 0
+                    };
+
                     rockContext.FinancialTransactions.FirstOrDefault( t => t.Id == entry.Key )
                         .Images.Add( transactionImage );
                 }

@@ -6,7 +6,8 @@ using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
+using static Excavator.Utility.CachedTypes;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.CSV
 {
@@ -24,12 +25,6 @@ namespace Excavator.CSV
             // Required variables
             var lookupContext = new RockContext();
             var locationService = new LocationService( lookupContext );
-            int familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
-
-            int numImportedFamilies = ImportedFamilies.Count();
-
-            int homeLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME ) ).Id;
-            int workLocationTypeId = DefinedValueCache.Read( new Guid( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK ) ).Id;
 
             var newGroupLocations = new Dictionary<GroupLocation, string>();
             var currentFamilyGroup = new Group();
@@ -38,49 +33,55 @@ namespace Excavator.CSV
 
             var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
-            string currentFamilyKey = string.Empty;
-            int completed = 0;
+            var currentFamilyKey = string.Empty;
+            var completed = 0;
 
-            ReportProgress( 0, string.Format( "Starting family import ({0:N0} already exist).", numImportedFamilies ) );
+            ReportProgress( 0, $"Starting family import ({ImportedFamilies.Count:N0} already exist)." );
 
             string[] row;
             // Uses a look-ahead enumerator: this call will move to the next record immediately
-            while ( (row = csvData.Database.FirstOrDefault()) != null )
+            while ( ( row = csvData.Database.FirstOrDefault() ) != null )
             {
-                string rowFamilyKey = row[FamilyId];
-                int? rowFamilyId = rowFamilyKey.AsType<int?>();
-                string rowFamilyName = row[FamilyName];
+                var rowFamilyKey = row[FamilyId];
+                var rowFamilyId = rowFamilyKey.AsType<int?>();
+                var rowFamilyName = row[FamilyName];
 
                 if ( rowFamilyKey != null && rowFamilyKey != currentFamilyGroup.ForeignKey )
                 {
                     currentFamilyGroup = ImportedFamilies.FirstOrDefault( g => g.ForeignKey == rowFamilyKey );
                     if ( currentFamilyGroup == null )
                     {
-                        currentFamilyGroup = new Group();
-                        currentFamilyGroup.ForeignKey = rowFamilyKey;
-                        currentFamilyGroup.ForeignId = rowFamilyId;
-                        currentFamilyGroup.Name = row[FamilyName];
-                        currentFamilyGroup.CreatedByPersonAliasId = ImportPersonAliasId;
-                        currentFamilyGroup.GroupTypeId = familyGroupTypeId;
+                        currentFamilyGroup = new Group
+                        {
+                            ForeignKey = rowFamilyKey,
+                            ForeignId = rowFamilyId,
+                            Name = row[FamilyName],
+                            CreatedByPersonAliasId = ImportPersonAliasId,
+                            GroupTypeId = FamilyGroupTypeId
+                        };
                         newFamilyList.Add( currentFamilyGroup );
                     }
                     else
                     {
+                        currentFamilyGroup.Name = row[FamilyName];
                         lookupContext.Groups.Attach( currentFamilyGroup );
                     }
 
                     // Set the family campus
-                    string campusName = row[Campus];
+                    var campusName = row[Campus];
                     if ( !string.IsNullOrWhiteSpace( campusName ) )
                     {
-                        var familyCampus = CampusList.Where( c => c.Name.Equals( campusName, StringComparison.InvariantCultureIgnoreCase )
-                            || c.ShortCode.Equals( campusName, StringComparison.InvariantCultureIgnoreCase ) ).FirstOrDefault();
+                        var familyCampus = CampusList.FirstOrDefault( c => c.Name.Equals( campusName, StringComparison.InvariantCultureIgnoreCase )
+                            || c.ShortCode.Equals( campusName, StringComparison.InvariantCultureIgnoreCase ) );
                         if ( familyCampus == null )
                         {
-                            familyCampus = new Campus();
-                            familyCampus.IsSystem = false;
-                            familyCampus.Name = campusName;
-                            familyCampus.ShortCode = campusName.RemoveWhitespace();
+                            familyCampus = new Campus
+                            {
+                                IsSystem = false,
+                                Name = campusName,
+                                ShortCode = campusName.RemoveWhitespace(),
+                                IsActive = true
+                            };
                             lookupContext.Campuses.Add( familyCampus );
                             lookupContext.SaveChanges( DisableAuditing );
                             CampusList.Add( familyCampus );
@@ -90,41 +91,45 @@ namespace Excavator.CSV
                     }
 
                     // Add the family addresses since they exist in this file
-                    string famAddress = row[Address];
-                    string famAddress2 = row[Address2];
-                    string famCity = row[City];
-                    string famState = row[State];
-                    string famZip = row[Zip];
-                    string famCountry = row[Country];
+                    var famAddress = row[Address];
+                    var famAddress2 = row[Address2];
+                    var famCity = row[City];
+                    var famState = row[State];
+                    var famZip = row[Zip];
+                    var famCountry = row[Country];
 
-                    Location primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry, verifyLocation: false );
+                    var primaryAddress = locationService.Get( famAddress, famAddress2, famCity, famState, famZip, famCountry, verifyLocation: false );
 
-                    if ( primaryAddress != null )
+                    if ( primaryAddress != null && currentFamilyGroup.GroupLocations.Count == 0 )
                     {
-                        var primaryLocation = new GroupLocation();
-                        primaryLocation.LocationId = primaryAddress.Id;
-                        primaryLocation.IsMailingLocation = true;
-                        primaryLocation.IsMappedLocation = true;
-                        primaryLocation.GroupLocationTypeValueId = homeLocationTypeId;
+                        var primaryLocation = new GroupLocation
+                        {
+                            LocationId = primaryAddress.Id,
+                            IsMailingLocation = true,
+                            IsMappedLocation = true,
+                            GroupLocationTypeValueId = HomeLocationTypeId
+                        };
                         newGroupLocations.Add( primaryLocation, rowFamilyKey );
                     }
 
-                    string famSecondAddress = row[SecondaryAddress];
-                    string famSecondAddress2 = row[SecondaryAddress2];
-                    string famSecondCity = row[SecondaryCity];
-                    string famSecondState = row[SecondaryState];
-                    string famSecondZip = row[SecondaryZip];
-                    string famSecondCountry = row[SecondaryCountry];
+                    var famSecondAddress = row[SecondaryAddress];
+                    var famSecondAddress2 = row[SecondaryAddress2];
+                    var famSecondCity = row[SecondaryCity];
+                    var famSecondState = row[SecondaryState];
+                    var famSecondZip = row[SecondaryZip];
+                    var famSecondCountry = row[SecondaryCountry];
 
-                    Location secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, verifyLocation: false );
+                    var secondaryAddress = locationService.Get( famSecondAddress, famSecondAddress2, famSecondCity, famSecondState, famSecondZip, famSecondCountry, verifyLocation: false );
 
-                    if ( secondaryAddress != null )
+                    if ( secondaryAddress != null && currentFamilyGroup.GroupLocations.Count < 2 )
                     {
-                        var secondaryLocation = new GroupLocation();
-                        secondaryLocation.LocationId = secondaryAddress.Id;
-                        secondaryLocation.IsMailingLocation = true;
-                        secondaryLocation.IsMappedLocation = true;
-                        secondaryLocation.GroupLocationTypeValueId = workLocationTypeId;
+                        var secondaryLocation = new GroupLocation
+                        {
+                            LocationId = secondaryAddress.Id,
+                            IsMailingLocation = true,
+                            IsMappedLocation = false,
+                            GroupLocationTypeValueId = PreviousLocationTypeId
+                        };
                         newGroupLocations.Add( secondaryLocation, rowFamilyKey );
                     }
 
@@ -141,9 +146,9 @@ namespace Excavator.CSV
                     }
 
                     completed++;
-                    if ( completed % (ReportingNumber * 10) < 1 )
+                    if ( completed % ( ReportingNumber * 10 ) < 1 )
                     {
-                        ReportProgress( 0, string.Format( "{0:N0} families imported.", completed ) );
+                        ReportProgress( 0, $"{completed:N0} families imported." );
                     }
                     else if ( completed % ReportingNumber < 1 )
                     {
@@ -170,13 +175,15 @@ namespace Excavator.CSV
             DetachAllInContext( lookupContext );
             lookupContext.Dispose();
 
-            ReportProgress( 0, string.Format( "Finished family import: {0:N0} families added or updated.", completed ) );
+            ReportProgress( 0, $"Finished family import: {completed:N0} families added or updated." );
             return completed;
         }
 
         /// <summary>
         /// Saves all family changes.
         /// </summary>
+        /// <param name="newFamilyList">The new family list.</param>
+        /// <param name="newGroupLocations">The new group locations.</param>
         private void SaveFamilies( List<Group> newFamilyList, Dictionary<GroupLocation, string> newGroupLocations )
         {
             var rockContext = new RockContext();
@@ -184,7 +191,7 @@ namespace Excavator.CSV
             // First save any unsaved families
             if ( newFamilyList.Any() )
             {
-                rockContext.WrapTransaction( ( ) =>
+                rockContext.WrapTransaction( () =>
                 {
                     rockContext.Groups.AddRange( newFamilyList );
                     rockContext.SaveChanges( DisableAuditing );
@@ -200,19 +207,17 @@ namespace Excavator.CSV
                 // Set updated family id on locations
                 foreach ( var locationPair in newGroupLocations )
                 {
-                    int? familyGroupId = ImportedFamilies.Where( g => g.ForeignKey == locationPair.Value ).Select( g => ( int? )g.Id ).FirstOrDefault();
+                    var familyGroupId = ImportedFamilies.Where( g => g.ForeignKey == locationPair.Value ).Select( g => (int?)g.Id ).FirstOrDefault();
                     if ( familyGroupId != null )
                     {
-                        locationPair.Key.GroupId = ( int )familyGroupId;
+                        locationPair.Key.GroupId = (int)familyGroupId;
                     }
                 }
 
                 // Save locations
-                rockContext.WrapTransaction( ( ) =>
+                rockContext.WrapTransaction( () =>
                 {
-                    rockContext.Configuration.AutoDetectChangesEnabled = false;
                     rockContext.GroupLocations.AddRange( newGroupLocations.Keys );
-                    rockContext.ChangeTracker.DetectChanges();
                     rockContext.SaveChanges( DisableAuditing );
                 } );
             }

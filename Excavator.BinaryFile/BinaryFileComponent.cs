@@ -1,41 +1,21 @@
-﻿// <copyright>
-// Copyright 2013 by the Spark Development Network
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
-using System.ComponentModel.Composition.Hosting;
 using System.Configuration;
 using System.Data.Entity;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
-using Rock.Storage;
 using Rock.Storage.Provider;
 using Rock.Web.Cache;
+using static Excavator.Utility.CachedTypes;
+using static Excavator.Utility.Extensions;
 using Database = Rock.Storage.Provider.Database;
 
 namespace Excavator.BinaryFile
@@ -49,7 +29,7 @@ namespace Excavator.BinaryFile
         #region Fields
 
         /// <summary>
-        /// Gets the full name of the excavator type.
+        /// Gets the full name of the Excavator type.
         /// </summary>
         /// <value>
         /// The name of the database being imported.
@@ -70,6 +50,24 @@ namespace Excavator.BinaryFile
             get { return ".zip"; }
         }
 
+        /// <summary>
+        /// All the people who've been imported
+        /// </summary>
+        protected static List<PersonKeys> ImportedPeople;
+
+        /// <summary>
+        /// The database provider
+        /// </summary>
+        protected static Database DatabaseProvider;
+
+        /// <summary>
+        /// The filesystem provider
+        /// </summary>
+        protected static FileSystem FileSystemProvider;
+
+        // Binary File RootPath Attribute
+        protected static AttributeCache RootPathAttribute;
+
         // Maintains compatibility with core blacklist
         protected static IEnumerable<string> FileTypeBlackList;
 
@@ -82,15 +80,6 @@ namespace Excavator.BinaryFile
         /// The person assigned to do the import
         /// </summary>
         protected static int? ImportPersonAliasId;
-
-        /// All the people who've been imported
-        protected static List<PersonKeys> ImportedPeople;
-
-        /// <summary>
-        /// The available storage provider types
-        /// </summary>
-        [ImportMany]
-        protected List<ProviderComponent> StorageProviders = new List<ProviderComponent>();
 
         #endregion Fields
 
@@ -127,18 +116,20 @@ namespace Excavator.BinaryFile
                 }
             }
 
+            previewFolder.Dispose();
             DataNodes.Add( folderItem );
-
             return DataNodes.Count() > 0 ? true : false;
         }
 
         /// <summary>
         /// Transforms the data from the dataset.
         /// </summary>
+        /// <param name="settings">The settings.</param>
+        /// <returns></returns>
         public override int TransformData( Dictionary<string, string> settings )
         {
             var importUser = settings["ImportUser"];
-            int totalCount = 0;
+            var totalCount = 0;
 
             ReportProgress( 0, "Starting health checks..." );
             var rockContext = new RockContext();
@@ -157,19 +148,14 @@ namespace Excavator.BinaryFile
             // only import things that the user checked
             foreach ( var selectedFile in DataNodes.Where( n => n.Checked != false ) )
             {
-                var selectedFileType = FileTypes.FirstOrDefault( t => selectedFile.Name.RemoveWhitespace().StartsWith( t.Name.RemoveWhitespace(), StringComparison.InvariantCultureIgnoreCase ) );
-                if ( selectedFileType == null )
-                {
-                    selectedFileType = FileTypes.FirstOrDefault( f => f.Name == "Default" );
-                }
+                var defaultFileType = FileTypes.FirstOrDefault( f => f.Name == "Ministry Document" );
+                var specificFileType = FileTypes.FirstOrDefault( t => selectedFile.Name.RemoveWhitespace().StartsWith( t.Name.RemoveWhitespace() ) );
 
                 var archiveFolder = new ZipArchive( new FileStream( selectedFile.Path, FileMode.Open ) );
-                IBinaryFile worker = IMapAdapterFactory.GetAdapter( selectedFile.Name );
-                if ( worker != null && selectedFileType != null )
+                var worker = IMapAdapterFactory.GetAdapter( selectedFile.Name.RemoveWhitespace() );
+                if ( worker != null )
                 {
-                    ReportProgress( 0, string.Format( "Starting {0} file import", selectedFileType.Name ) );
-                    var selectedProvider = StorageProviders.FirstOrDefault( p => selectedFileType.StorageEntityTypeId == p.EntityType.Id );
-                    worker.Map( archiveFolder, selectedFileType, selectedProvider );
+                    worker.Map( archiveFolder, specificFileType ?? defaultFileType );
                     totalCount += archiveFolder.Entries.Count;
                 }
                 else
@@ -186,14 +172,17 @@ namespace Excavator.BinaryFile
         /// <summary>
         /// Loads Rock data that's used globally by the transform
         /// </summary>
-        private void LoadRockData( RockContext lookupContext = null )
+        /// <param name="lookupContext">The lookup context.</param>
+        private static void LoadRockData( RockContext lookupContext = null )
         {
             lookupContext = lookupContext ?? new RockContext();
 
-            // initialize storage providers and file types
-            LoadStorageProviders();
+            // initialize file providers
+            DatabaseProvider = new Database();
+            FileSystemProvider = new FileSystem();
 
-            FileTypes = new BinaryFileTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
+            // core-specified attribute guid for setting file root path
+            RootPathAttribute = AttributeCache.Read( new Guid( "3CAFA34D-9208-439B-A046-CB727FB729DE" ) );
 
             // core-specified blacklist files
             FileTypeBlackList = ( GlobalAttributesCache.Read().GetValue( "ContentFiletypeBlacklist" )
@@ -201,51 +190,62 @@ namespace Excavator.BinaryFile
 
             // clean up blacklist
             FileTypeBlackList = FileTypeBlackList.Select( a => a.ToLower().TrimStart( new char[] { '.', ' ' } ) );
+            FileTypes = new BinaryFileTypeService( lookupContext ).Queryable().AsNoTracking().ToList();
 
-            // get all the file types we'll be importing
+            // get all the types we'll be importing
             var binaryTypeSettings = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
 
-            // create any custom types that don't exist yet
+            // create any custom types defined in settings that don't exist yet
             foreach ( var typeKey in binaryTypeSettings.AllKeys )
             {
-                var fileType = FileTypes.FirstOrDefault( f => f.Name == typeKey );
-
-                // create new binary file type if it doesn't exist
-                if ( fileType == null )
+                if ( !FileTypes.Any( f => f.Name == typeKey ) )
                 {
-                    fileType = new BinaryFileType();
-                    fileType.Name = typeKey;
-                    fileType.Description = typeKey;
-                    fileType.AllowCaching = true;
+                    var newFileType = new BinaryFileType();
+                    lookupContext.BinaryFileTypes.Add( newFileType );
+                    newFileType.Name = typeKey;
+                    newFileType.Description = typeKey;
+                    newFileType.AllowCaching = true;
 
                     var typeValue = binaryTypeSettings[typeKey];
                     if ( typeValue != null )
                     {
-                        var storageProvider = StorageProviders.FirstOrDefault( p => p.TypeName.RemoveWhitespace().EndsWith( typeValue.RemoveWhitespace() ) );
-                        if ( storageProvider != null )
+                        // #TODO: support additional storage types (like AWS?)
+                        newFileType.StorageEntityTypeId = typeValue.Equals( "Database" ) ? DatabaseStorageTypeId : FileSystemStorageTypeId;
+                        newFileType.Attributes = new Dictionary<string, AttributeCache>();
+                        newFileType.AttributeValues = new Dictionary<string, AttributeValueCache>();
+
+                        // save changes to binary type to get an ID
+                        lookupContext.SaveChanges();
+
+                        var newRootPath = new AttributeValue()
                         {
-                            // ensure the storage provider is active
-                            fileType.StorageEntityTypeId = storageProvider.EntityType.Id;
-                            lookupContext.BinaryFileTypes.Add( fileType );
-                            lookupContext.SaveChanges();
-                            FileTypes.Add( fileType );
-                        }
-                        else
-                        {
-                            LogException( "Binary File Import", string.Format( "{0} must use the name of a configured storage provider.", typeKey ) );
-                        }
+                            AttributeId = RootPathAttribute.Id,
+                            EntityId = newFileType.Id,
+                            Value = typeValue
+                        };
+
+                        newFileType.Attributes.Add( RootPathAttribute.Key, RootPathAttribute );
+                        newFileType.AttributeValues.Add( RootPathAttribute.Key, new AttributeValueCache( newRootPath ) );
+
+                        // save attribute values with the current type ID
+                        lookupContext.AttributeValues.Add( newRootPath );
                     }
-                    else
-                    {
-                        LogException( "Binary File Import", string.Format( "{0} must specify the storage provider type.", typeKey ) );
-                    }
+
+                    lookupContext.SaveChanges();
+                    FileTypes.Add( newFileType );
                 }
             }
 
-            // load attributes on file types
+            // load attributes on file system types to get the default storage location
             foreach ( var type in FileTypes )
             {
                 type.LoadAttributes( lookupContext );
+
+                if ( type.StorageEntityTypeId == FileSystemStorageTypeId && binaryTypeSettings.AllKeys.Any( k => type.Name.Equals( k ) ) )
+                {
+                    // override the configured storage location since we can't handle relative paths
+                    type.AttributeValues["RootPath"].Value = binaryTypeSettings[type.Name];
+                }
             }
 
             // get a list of all the imported people keys
@@ -255,42 +255,9 @@ namespace Excavator.BinaryFile
                 {
                     PersonAliasId = pa.Id,
                     PersonId = pa.PersonId,
-                    IndividualId = pa.ForeignId,
+                    PersonForeignId = pa.ForeignId,
+                    PersonForeignKey = pa.ForeignKey
                 } ).ToList();
-        }
-
-        /// <summary>
-        /// Loads the storage providers.
-        /// </summary>
-        public void LoadStorageProviders()
-        {
-            // check the current directory for other storage providers
-            var catalog = new AggregateCatalog();
-            var dllUri = new UriBuilder( Assembly.GetExecutingAssembly().CodeBase );
-            var currentDirectory = Path.GetDirectoryName( Uri.UnescapeDataString( dllUri.Path ) );
-            catalog.Catalogs.Add( new DirectoryCatalog( currentDirectory, "*.dll" ) );
-
-            try
-            {
-                // make sure we don't crash/get permission errors while loading
-                var container = new CompositionContainer( catalog, true );
-                container.ComposeParts( this );
-            }
-            catch ( Exception ex )
-            {
-                // permissions error or other
-                var exception = ex.ToString();
-                if ( ex.InnerException != null )
-                {
-                    exception = ex.InnerException.ToString();
-                }
-
-                LogException( "Components", string.Format( "{0}. Please check your permissions or run as Administrator.", exception ) );
-            }
-
-            // add the two core storage providers
-            StorageProviders.Add( new Database() );
-            StorageProviders.Add( new FileSystem() );
         }
 
         #endregion Methods
@@ -303,7 +270,7 @@ namespace Excavator.BinaryFile
     /// </summary>
     public interface IBinaryFile
     {
-        void Map( ZipArchive zipData, BinaryFileType fileType, ProviderComponent storageProvider );
+        void Map( ZipArchive zipData, BinaryFileType fileType );
     }
 
     /// <summary>
@@ -313,19 +280,15 @@ namespace Excavator.BinaryFile
     {
         public static IBinaryFile GetAdapter( string fileName )
         {
-            // create the adapter so we can instantiate it later
             IBinaryFile adapter = null;
 
-            // declare the component class we're looking for
+            var configFileTypes = ConfigurationManager.GetSection( "binaryFileTypes" ) as NameValueCollection;
+
+            // by default will assume a ministry document
             var iBinaryFileType = typeof( IBinaryFile );
-
-            // get the available binary file maps
-            var binaryFileMaps = iBinaryFileType.Assembly.ExportedTypes.Where( p => iBinaryFileType.IsAssignableFrom( p ) && !p.IsInterface );
-
-            // pick the one that starts with the name of this .zip
-            var selectedType = binaryFileMaps.FirstOrDefault( t => fileName.StartsWith( t.Name.RemoveWhitespace() ) );
-
-            // assume Ministry Document (generic data type) by default
+            var mappedFileTypes = iBinaryFileType.Assembly.ExportedTypes
+                .Where( p => iBinaryFileType.IsAssignableFrom( p ) && !p.IsInterface );
+            var selectedType = mappedFileTypes.FirstOrDefault( t => fileName.StartsWith( t.Name.RemoveWhitespace() ) );
             if ( selectedType != null )
             {
                 adapter = (IBinaryFile)Activator.CreateInstance( selectedType );
