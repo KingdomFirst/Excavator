@@ -58,13 +58,25 @@ namespace Excavator.BinaryFile
                 // 1. Lastname
                 // 2. ForeignId
                 // 3. Filename
+                // 4. Doc Id
 
                 var personForeignId = parsedFileName[2].AsType<int?>();
                 var personKeys = ImportedPeople.FirstOrDefault( p => p.PersonForeignId == personForeignId );
                 if ( personKeys != null )
                 {
-                    var nameWithoutExtension = parsedFileName[3].ReplaceLastOccurrence( fileExtension, string.Empty );
-                    var attributeName = Regex.Replace( nameWithoutExtension, "\\d{4,}[.\\w]+$", string.Empty );
+                    var attributeName = string.Empty;
+                    var documentForeignId = string.Empty;
+                    if ( parsedFileName.Count() > 4 )
+                    {
+                        attributeName = parsedFileName[3];
+                        documentForeignId = parsedFileName[4];
+                    }
+                    else
+                    {
+                        var nameWithoutExtension = parsedFileName[3].ReplaceLastOccurrence( fileExtension, string.Empty );
+                        attributeName = Regex.Replace( nameWithoutExtension, "\\d{4,}[.\\w]+$", string.Empty );
+                        documentForeignId = Regex.Match( nameWithoutExtension, "\\d+$" ).Value;
+                    }
 
                     // append "Document" to attribute name to create unique attributes
                     // this matches core attribute "Background Check Document"
@@ -114,7 +126,6 @@ namespace Excavator.BinaryFile
                         }
                     }
 
-                    var documentForeignId = Regex.Match( nameWithoutExtension, "\\d+$" );
                     var rockFile = new Rock.Model.BinaryFile
                     {
                         IsSystem = false,
@@ -126,8 +137,8 @@ namespace Excavator.BinaryFile
                         CreatedDateTime = file.LastWriteTime.DateTime,
                         ModifiedDateTime = file.LastWriteTime.DateTime,
                         CreatedByPersonAliasId = ImportPersonAliasId,
-                        ForeignKey = documentForeignId.Value,
-                        ForeignId = documentForeignId.Value.AsIntegerOrNull()
+                        ForeignKey = documentForeignId,
+                        ForeignId = documentForeignId.AsIntegerOrNull()
                     };
 
                     rockFile.SetStorageEntityTypeId( attributeBinaryFileType.StorageEntityTypeId );
