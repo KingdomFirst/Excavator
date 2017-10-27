@@ -1,8 +1,9 @@
-FamilyId,FamilyName,CreatedDate,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FamilyRole,MaritalStatus,ConnectionStatus,RecordStatus,IsDeceased,HomePhone,MobilePhone,WorkPhone,Allow SMS?,Email,Is Email Active?,Allow Bulk Email?,Gender,DateOfBirth,School,GraduationDate,Anniversary,General Note,MedicalNote,Security Note,New Attribute 1,New Attribute 2
-96811879691115097A,Smith Family,10/29/04,25570361,Mr,John,Jay,Adam,Smith,,Adult,Married,Member,Active,,,+44 0827-345-1163,+1 (804) 237-9876,Yes,jsmitha@windowslive.com,Yes,Yes,Male,,Belvedere Community,6/1/08,,general note,medical,security,10/11/08,blah1
-96811879691115097A,Smith Family,,140,,Barbara,,,Smith,,Adult,,,,,,,,,,,,Female,,,,,general note,,,10/11/08,blah1
-96811879691115097A,Smith Family,,142,,Caleb,,,Smith,,Child,,,,,,,,,,,,Male,4/1/12,,,,,medical note,,10/11/08,blah1
-968111412207101120A,Meese Family,,145,Mr,Allen,,,Meese,,Adult,Married,Attendee,Active,,,8645719853,,Yes,,,,Male,1/5/83,,,,,,security,10/11/08,blah1
-968111412207101120A,Meese Family,,146,Mrs,Sara,,,Meese,,Adult,Married,Attendee,Active,,,864-938-1593,,No,smeese@gmail.com,Yes,,Female,6/9/85,,,,,,,10/11/08,blah1
-968111412207101120A,Meese Family,,147,,Oliver,,,Meese,,Child,,,,,,,,,,,,Male,5/1/11,,,,,,,,
-968111412207101120A,Meese Family,,148,,Debra,,,Meese,,Child,,,,,,,,,,,,Female,1/1/09,,,,,,,,
+FamilyId,FamilyName,CreatedDate,PersonId,Prefix,FirstName,NickName,MiddleName,LastName,Suffix,FamilyRole,MaritalStatus,ConnectionStatus,RecordStatus,IsDeceased,HomePhone,MobilePhone,WorkPhone,Allow SMS?,Email,Is Email Active?,Allow Bulk Email?,Gender,DateOfBirth,School,GraduationDate,Anniversary,General Note,MedicalNote,Security Note,Baptism Date,New Attribute 2
+96811879691115097A,Smith Family,38289,25570361,Mr,John,Jay,Adam,Smith,,Adult,Married,Member,Active,,,+44 0827-345-1163,+1 (804) 237-9876,Yes,jsmitha@windowslive.com,Yes,Yes,Male,,Belvedere Community, 06/01/2008,,general note,medical,security, 10/11/2008,blah1
+96811879691115097A,Smith Family,,140,,Barbara,,,Smith,,Adult,,,,,,,,,,,,Female,,,,,general note,,, 10/11/2008,blah1
+96811879691115097A,Smith Family,,142,,Caleb,,,Smith,,Child,,,,,,,,,,,,Male, 04/01/2012,,,,,medical note,, 10/11/2008,blah1
+968111412207101120A,Meese Family,,145,Mr,Allen,,,Meese,,Adult,Married,Attendee,Active,,,8645719853,,Yes,,,,Male, 01/05/1983,,,,,,security,,blah1
+968111412207101120A,Meese Family,,146,Mrs,Sara,,,Meese,,Adult,Married,Attendee,Active,,,864-938-1593,,No,smeese@gmail.com,Yes,,Female, 06/09/1985,,,,,,,,blah1
+968111412207101120A,Meese Family,,147,,Oliver,,,Meese,,Child,,,,,,,,,,,,Male, 05/01/2011,,,,,,,,
+968111412207101120A,Meese Family,,148,,Debra,,,Meese,,Child,,,,,,,,,,,,Female, 01/01/2009,,,,,,,,
+968111412207101120A,Meese Family,,149,,Oliver,,,Meese,,Child,,,,,,,,,,,,, 01/01/2009,,,,,,, 01/05/2009,
