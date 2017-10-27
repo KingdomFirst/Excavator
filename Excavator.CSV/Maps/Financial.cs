@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using Excavator.Utility;
 using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 using static Excavator.Utility.CachedTypes;
-using static Excavator.Utility.Extensions;
 
 namespace Excavator.CSV
 {
@@ -25,6 +23,7 @@ namespace Excavator.CSV
         private int MapBatch( CSVInstance csvData )
         {
             var newBatches = new List<FinancialBatch>();
+            var earliestBatchDate = ImportDateTime;
 
             var completed = 0;
             ReportProgress( 0, $"Verifying batch import ({ImportedBatches.Count:N0} already exist)." );
@@ -61,6 +60,11 @@ namespace Excavator.CSV
                     {
                         batch.BatchStartDateTime = batchDate;
                         batch.BatchEndDateTime = batchDate;
+
+                        if ( earliestBatchDate > batchDate )
+                        {
+                            earliestBatchDate = (DateTime)batchDate;
+                        }
                     }
 
                     var amountKey = row[BatchAmount];
@@ -94,7 +98,8 @@ namespace Excavator.CSV
                     CreatedDateTime = ImportDateTime,
                     CreatedByPersonAliasId = ImportPersonAliasId,
                     Status = BatchStatus.Closed,
-                    Name = $"Default Batch (Imported {ImportDateTime})",
+                    BatchStartDateTime = earliestBatchDate,
+                    Name = $"Default Batch {ImportDateTime}",
                     ControlAmount = 0.0m,
                     ForeignKey = "0",
                     ForeignId = 0
