@@ -64,11 +64,10 @@ namespace Excavator.CSV
             // Add any attributes if they don't already exist
             if ( customAttributes.Any() )
             {
-                foreach ( var newAttributePair in customAttributes.Where( ca => !personAttributes.Any( a => a.Key == ca.Value ) ) )
+                foreach ( var avp in customAttributes.Where( ca => !personAttributes.Any( a => a.Name.Equals( ca.Value, StringComparison.InvariantCultureIgnoreCase ) ) ) )
                 {
-                    var newAttribute = AddEntityAttribute( lookupContext, PersonEntityTypeId, string.Empty, string.Empty,
-                        newAttributePair.Value.RemoveWhitespace(), string.Empty, newAttributePair.Value, string.Empty,
-                        TextFieldTypeId, true, null, null, ImportPersonAliasId
+                    var newAttribute = AddEntityAttribute( lookupContext, PersonEntityTypeId, string.Empty, string.Empty, string.Empty,
+                        string.Empty, avp.Value, string.Empty, TextFieldTypeId, true, null, null, ImportPersonAliasId
                     );
 
                     personAttributes.Add( newAttribute );
