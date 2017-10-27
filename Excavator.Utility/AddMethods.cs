@@ -9,7 +9,6 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
-using Excavator;
 using Rock.Web.Cache;
 using static Excavator.Utility.CachedTypes;
 using Attribute = Rock.Model.Attribute;
@@ -494,15 +493,17 @@ namespace Excavator.Utility
 
             if ( !string.IsNullOrWhiteSpace( attributeForeignKey ) )
             {
-                attribute = attributeService.GetByEntityTypeId( entityTypeId )
+                attribute = attributeService.GetByEntityTypeId( entityTypeId ).Include( "Categories" )
                     .FirstOrDefault( a => a.ForeignKey == attributeForeignKey );
             }
             else
             {
-                attribute = attributeService.GetByEntityTypeId( entityTypeId )
-                    .FirstOrDefault( a => a.Name.ToUpper() == attributeName.ToUpper() &&
-                    ( ( string.IsNullOrEmpty( categoryName ) && a.Categories.Count == 0 ) ||
-                      ( !string.IsNullOrEmpty( categoryName ) && a.Categories.Count( c => c.Name.ToUpper() == categoryName.ToUpper() ) > 0 ) ) );
+                attribute = attributeService.GetByEntityTypeId( entityTypeId ).Include( "Categories" )
+                    .FirstOrDefault( a =>
+                        ( a.Name.Replace( " ", "" ).ToUpper() == attributeName.Replace( " ", "" ).ToUpper() || a.Key == attributeName )
+                    &&
+                        ( ( string.IsNullOrEmpty( categoryName ) ) || ( a.Categories.Count( c => c.Name.ToUpper() == categoryName.ToUpper() ) > 0 ) )
+                    );
             }
 
             return attribute;
@@ -654,25 +655,10 @@ namespace Excavator.Utility
             //
             // Get a reference to the existing attribute if there is one.
             //
-            if ( !string.IsNullOrWhiteSpace( foreignKey ) )
+            attribute = FindEntityAttribute( rockContext, categoryName, attributeName, entityTypeId, foreignKey );
+            if ( attribute != null )
             {
-                attribute = attributeService.GetByEntityTypeId( entityTypeId ).Include( "Categories" )
-                    .FirstOrDefault( a => a.ForeignKey == foreignKey );
-                if ( attribute != null )
-                {
-                    newAttribute = false;
-                }
-            }
-            else
-            {
-                attribute = attributeService.GetByEntityTypeId( entityTypeId ).Include( "Categories" )
-                    .FirstOrDefault( a => a.Name.ToUpper() == attributeName.ToUpper() &&
-                    ( ( string.IsNullOrEmpty( categoryName ) && a.Categories.Count == 0 ) ||
-                      ( !string.IsNullOrEmpty( categoryName ) && a.Categories.Count( c => c.Name.ToUpper() == categoryName.ToUpper() ) > 0 ) ) );
-                if ( attribute != null )
-                {
-                    newAttribute = false;
-                }
+                newAttribute = false;
             }
 
             //
