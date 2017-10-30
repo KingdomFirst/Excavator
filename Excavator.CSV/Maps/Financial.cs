@@ -7,6 +7,7 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 using static Excavator.Utility.CachedTypes;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.CSV
 {
@@ -54,9 +55,8 @@ namespace Excavator.CSV
                             .Select( c => (int?)c.Id ).FirstOrDefault();
                     }
 
-                    var batchDateKey = row[BatchDate];
-                    var batchDate = batchDateKey.AsType<DateTime?>();
-                    if ( batchDate != null )
+                    var batchDate = ParseDateOrDefault( row[BatchDate], null);
+                    if ( batchDate.HasValue )
                     {
                         batch.BatchStartDateTime = batchDate;
                         batch.BatchEndDateTime = batchDate;
@@ -83,7 +83,19 @@ namespace Excavator.CSV
                     else if ( completed % ReportingNumber < 1 )
                     {
                         SaveFinancialBatches( newBatches );
-                        newBatches.ForEach( b => ImportedBatches.Add( (int)b.ForeignId, (int?)b.Id ) );
+
+                        foreach ( var b in newBatches )
+                        {
+                            if ( !ImportedBatches.ContainsKey( (int)b.ForeignId ) )
+                            {
+                                ImportedBatches.Add( (int)b.ForeignId, b.Id );
+                            }
+                            else
+                            {
+                                LogException( "DuplicateBatch", string.Format( "BatchId #{0} is a duplicate and will be skipped. Please check the source data.", b.ForeignId ) );
+                            }
+                        }
+
                         newBatches.Clear();
                         ReportPartialProgress();
                     }
@@ -245,9 +257,8 @@ namespace Excavator.CSV
                         transaction.BatchId = defaultBatchId;
                     }
 
-                    var receivedDateKey = row[ReceivedDate];
-                    var receivedDate = receivedDateKey.AsType<DateTime?>();
-                    if ( receivedDate != null )
+                    var receivedDate = ParseDateOrDefault( row[ReceivedDate], null );
+                    if ( receivedDate.HasValue )
                     {
                         transaction.TransactionDateTime = receivedDate;
                         transaction.CreatedDateTime = receivedDate;
@@ -461,30 +472,10 @@ namespace Excavator.CSV
             {
                 var amountKey = row[TotalPledge];
                 var amount = amountKey.AsType<decimal?>();
-                var startDateKey = row[StartDate];
-                if ( string.IsNullOrWhiteSpace( startDateKey ) )
-                {
-                    startDateKey = "01/01/0001";
-                }
-                var startDate = startDateKey.AsType<DateTime?>();
-                var endDateKey = row[EndDate];
-                if ( string.IsNullOrWhiteSpace( endDateKey ) )
-                {
-                    endDateKey = "12/31/9999";
-                }
-                var endDate = endDateKey.AsType<DateTime?>();
-                var createdDateKey = row[PledgeCreatedDate];
-                if ( string.IsNullOrWhiteSpace( createdDateKey ) )
-                {
-                    createdDateKey = ImportDateTime.ToString();
-                }
-                var createdDate = createdDateKey.AsType<DateTime?>();
-                var modifiedDateKey = row[PledgeModifiedDate];
-                if ( string.IsNullOrWhiteSpace( modifiedDateKey ) )
-                {
-                    modifiedDateKey = ImportDateTime.ToString();
-                }
-                var modifiedDate = modifiedDateKey.AsType<DateTime?>();
+                var startDate = ParseDateOrDefault( row[StartDate], new DateTime( 1, 1, 1 ) );
+                var endDate = ParseDateOrDefault( row[EndDate], new DateTime( 9999, 12, 31 ) );
+                var createdDate = ParseDateOrDefault( row[PledgeCreatedDate], ImportDateTime );
+                var modifiedDate = ParseDateOrDefault( row[PledgeModifiedDate], ImportDateTime );
 
                 var pledgeIdKey = row[PledgeId];
                 var pledgeId = pledgeIdKey.AsType<int?>();
