@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Globalization;
 using System.Linq;
 using Excavator.Utility;
 using Rock;
@@ -73,9 +72,6 @@ namespace Excavator.CSV
                     personAttributes.Add( newAttribute );
                 }
             }
-
-            // Set the supported date formats
-            var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy" };
 
             var currentFamilyGroup = new Group();
             var newFamilyList = new List<Group>();
@@ -471,10 +467,10 @@ namespace Excavator.CSV
                         if ( !string.IsNullOrWhiteSpace( newAttributeValue ) )
                         {
                             // check if this attribute value is a date
-                            DateTime valueAsDateTime;
-                            if ( DateTime.TryParseExact( newAttributeValue, dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out valueAsDateTime ) )
+                            var valueAsDateTime = ParseDateOrDefault( newAttributeValue, null );
+                            if ( valueAsDateTime.HasValue )
                             {
-                                newAttributeValue = valueAsDateTime.ToString( "yyyy-MM-dd" );
+                                newAttributeValue = ((DateTime)valueAsDateTime).ToString( "yyyy-MM-dd" );
                             }
 
                             var newAttribute = personAttributes.Where( a => a.Key == attributePair.Value.RemoveWhitespace() )
