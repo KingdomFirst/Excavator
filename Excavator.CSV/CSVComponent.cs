@@ -10,8 +10,8 @@ using Rock;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-using static Excavator.Utility.Extensions;
 using static Excavator.Utility.CachedTypes;
+using static Excavator.Utility.Extensions;
 
 namespace Excavator.CSV
 {
@@ -56,29 +56,9 @@ namespace Excavator.CSV
         protected static int? AnonymousGiverAliasId;
 
         /// <summary>
-        /// The person attribute category entity type identifier
-        /// </summary>
-        private int PersonAttributeCategoryEntityTypeId;
-
-        /// <summary>
         /// All the family groups who've been imported
         /// </summary>
         private List<Group> ImportedFamilies;
-
-        /// <summary>
-        /// All the group types that have been imported
-        /// </summary>
-        private List<Location> ImportedLocations;
-
-        /// <summary>
-        /// All the group types that have been imported
-        /// </summary>
-        private List<GroupType> ImportedGroupTypes;
-
-        /// <summary>
-        /// All the general groups that have been imported
-        /// </summary>
-        private List<Group> ImportedGroups;
 
         /// <summary>
         /// The list of current campuses
@@ -235,6 +215,8 @@ namespace Excavator.CSV
         /// Checks the database for existing import data.
         /// returns false if an error occurred
         /// </summary>
+        /// <param name="importUser">The import user.</param>
+        /// <returns></returns>
         private bool LoadExistingData( string importUser )
         {
             var lookupContext = new RockContext();
@@ -277,6 +259,7 @@ namespace Excavator.CSV
 
             ImportedBatches = new FinancialBatchService( lookupContext ).Queryable().AsNoTracking()
                 .Where( b => b.ForeignId != null )
+                .DistinctBy( t => (int)t.ForeignId )
                 .ToDictionary( t => (int)t.ForeignId, t => (int?)t.Id );
 
             return true;
@@ -337,9 +320,9 @@ namespace Excavator.CSV
         /// attached and then not detached then when it is attached to another context
         /// an exception "An entity object cannot be referenced by multiple instances
         /// of IEntityChangeTracker" occurs.
-        ///
         /// Taken from: http://stackoverflow.com/questions/2465933/how-to-clean-up-an-entity-framework-object-context
         /// </summary>
+        /// <param name="context">The context.</param>
         public static void DetachAllInContext( RockContext context )
         {
             foreach ( var dbEntityEntry in context.ChangeTracker.Entries() )
@@ -360,7 +343,7 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
         /// <returns></returns>
-        private string GetFileRootName( string fileName )
+        private static string GetFileRootName( string fileName )
         {
             var root = Path.GetFileName( fileName ).ToLower().Replace( ".csv", string.Empty );
             return root;
@@ -369,9 +352,10 @@ namespace Excavator.CSV
         /// <summary>
         /// Checks if the file matches a known format.
         /// </summary>
-        /// <param name="fileName">Name of the file.</param>
+        /// <param name="filetype">The filetype.</param>
+        /// <param name="name">The name.</param>
         /// <returns></returns>
-        private bool FileTypeMatches( CSVInstance.RockDataType filetype, string name )
+        private static bool FileTypeMatches( CSVInstance.RockDataType filetype, string name )
         {
             if ( name.ToUpper().StartsWith( filetype.ToString() ) )
             {
@@ -386,9 +370,9 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
         /// <returns></returns>
-        private bool FileIsKnown( string fileName )
+        private static bool FileIsKnown( string fileName )
         {
-            string name = GetFileRootName( fileName );
+            var name = GetFileRootName( fileName );
             foreach ( var filetype in Extensions.Get<CSVInstance.RockDataType>() )
             {
                 if ( FileTypeMatches( filetype, name ) )
@@ -405,9 +389,9 @@ namespace Excavator.CSV
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <returns></returns>
-        private CSVInstance.RockDataType GetRecordTypeFromFilename( string filename )
+        private static CSVInstance.RockDataType GetRecordTypeFromFilename( string filename )
         {
-            string name = GetFileRootName( filename );
+            var name = GetFileRootName( filename );
             foreach ( var filetype in Extensions.Get<CSVInstance.RockDataType>() )
             {
                 if ( FileTypeMatches( filetype, name ) )
