@@ -92,7 +92,7 @@ namespace Excavator.CSV
                             }
                             else
                             {
-                                LogException( "DuplicateBatch", string.Format( "BatchId #{0} is a duplicate and will be skipped. Please check the source data.", b.ForeignId ) );
+                                LogException( "Duplicate Batch", string.Format( "Batch #{0} is a duplicate and will be skipped. Please check the source data.", b.ForeignId ) );
                             }
                         }
 
