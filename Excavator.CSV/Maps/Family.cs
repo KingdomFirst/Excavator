@@ -52,17 +52,18 @@ namespace Excavator.CSV
                         {
                             ForeignKey = rowFamilyKey,
                             ForeignId = rowFamilyId,
-                            Name = row[FamilyName],
                             CreatedByPersonAliasId = ImportPersonAliasId,
                             GroupTypeId = FamilyGroupTypeId
                         };
                         newFamilyList.Add( currentFamilyGroup );
                     }
-                    else
+                    else if ( !lookupContext.ChangeTracker.Entries<Group>().Any( g => g.Entity.ForeignId == rowFamilyId || g.Entity.ForeignKey == rowFamilyKey ) )
                     {
-                        currentFamilyGroup.Name = row[FamilyName];
+                        // track changes if not currently tracking
                         lookupContext.Groups.Attach( currentFamilyGroup );
                     }
+
+                    currentFamilyGroup.Name = row[FamilyName];
 
                     // Set the family campus
                     var campusName = row[Campus];
@@ -146,6 +147,7 @@ namespace Excavator.CSV
 
                         // Reset lookup context
                         lookupContext.SaveChanges();
+                        lookupContext.Dispose();
                         lookupContext = new RockContext();
                         locationService = new LocationService( lookupContext );
                         newFamilyList.Clear();

@@ -357,7 +357,7 @@ namespace Excavator.CSV
         /// <returns></returns>
         private static bool FileTypeMatches( CSVInstance.RockDataType filetype, string name )
         {
-            if ( name.ToUpper().StartsWith( filetype.ToString() ) )
+            if ( name.ToUpper().StartsWith( filetype.ToString() ) || name.ToUpper().EndsWith( filetype.ToString() ) )
             {
                 return true;
             }
