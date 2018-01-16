@@ -144,7 +144,7 @@ namespace Excavator.Utility
         {
             DateTime parsed;
             var dateFormats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "MM/dd/yy",
-                                      "M/d/yyyy", "M/dd/yyyy",
+                                      "M/d/yyyy", "M/dd/yyyy", "M/d/yy",
                                       "M/d/yyyy h:mm:ss tt", "M/d/yyyy h:mm tt",
                                       "MM/dd/yyyy hh:mm:ss", "M/d/yyyy h:mm:ss",
                                       "M/d/yyyy hh:mm tt", "M/d/yyyy hh tt",
