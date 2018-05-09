@@ -24,8 +24,9 @@ namespace Excavator.Utility
         /// <param name="rockContext">The rock context.</param>
         /// <param name="typeGuid">todo: describe typeGuid parameter on AddDefinedValue</param>
         /// <param name="value">The value of the new defined value.</param>
+        /// <param name="guid">The unique identifier.</param>
         /// <returns></returns>
-        public static DefinedValueCache AddDefinedValue( RockContext rockContext, string typeGuid, string value )
+        public static DefinedValueCache AddDefinedValue( RockContext rockContext, string typeGuid, string value, string guid = "" )
         {
             DefinedValueCache definedValueCache = null;
             var definedTypeGuid = typeGuid.AsGuidOrNull();
@@ -43,6 +44,11 @@ namespace Excavator.Utility
 
                 var maxOrder = definedType.DefinedValues.Max( v => (int?)v.Order );
                 definedValue.Order = maxOrder + 1 ?? 0;
+
+                if ( !string.IsNullOrWhiteSpace( guid ) )
+                {
+                    definedValue.Guid = guid.AsGuid();
+                }
 
                 DefinedTypeCache.Flush( definedType.Id );
                 DefinedValueCache.Flush( 0 );
@@ -429,30 +435,60 @@ namespace Excavator.Utility
         /// Finds an existing attribute category or adds a new one if it doesn't exist.
         /// </summary>
         /// <param name="rockContext">The RockContext to use when searching or creating categories</param>
+        /// <param name="categoryEntityTypeId">The category entity type identifier.</param>
+        /// <param name="parentCategoryId">The parent category identifier.</param>
+        /// <param name="categoryName">The name of the category to search for, whitespace and capitalization is ignored when searching</param>
+        /// <param name="findOnly">todo: describe findOnly parameter on GetAttributeCategory</param>
+        /// <param name="targetEntityQualifier">The target entity qualifier.</param>
+        /// <param name="targetEntityTypeId">todo: describe entityTypeId parameter on GetAttributeCategory</param>
+        /// <param name="importPersonAliasId">todo: describe importPeronAliasId parameter on GetAttributeCategory</param>
+        /// <returns></returns>
+        public static Category GetCategory( RockContext rockContext, int categoryEntityTypeId, int? parentCategoryId, string categoryName,
+            bool findOnly = false, string targetEntityQualifier = "", string targetEntityTypeId = "", int? importPersonAliasId = null )
+        {
+            var category = new CategoryService( rockContext ).GetByEntityTypeId( categoryEntityTypeId )
+                .FirstOrDefault( c => c.EntityTypeQualifierValue == targetEntityTypeId && c.Name.ToUpper() == categoryName.ToUpper() && ( !parentCategoryId.HasValue || c.ParentCategoryId == parentCategoryId ) );
+            if ( category == null && !findOnly )
+            {
+                category = new Category
+                {
+                    IsSystem = false,
+                    EntityTypeId = categoryEntityTypeId,
+                    EntityTypeQualifierColumn = targetEntityQualifier,
+                    EntityTypeQualifierValue = targetEntityTypeId,
+                    ParentCategoryId = parentCategoryId,
+                    Name = categoryName,
+                    Order = 0,
+                    CreatedByPersonAliasId = importPersonAliasId,
+                    ModifiedByPersonAliasId = importPersonAliasId
+                };
+
+                rockContext.Categories.Add( category );
+                rockContext.SaveChanges( DisableAuditing );
+            }
+
+            return category;
+        }
+
+        /// <summary>
+        /// Finds an existing attribute category or adds a new one if it doesn't exist.
+        /// </summary>
+        /// <param name="rockContext">The RockContext to use when searching or creating categories</param>
         /// <param name="categoryName">The name of the category to search for, whitespace and capitalization is ignored when searching</param>
         /// <param name="findOnly">todo: describe findOnly parameter on GetAttributeCategory</param>
         /// <param name="entityTypeId">todo: describe entityTypeId parameter on GetAttributeCategory</param>
-        /// <param name="importPeronAliasId">todo: describe importPeronAliasId parameter on GetAttributeCategory</param>
+        /// <param name="importPersonAliasId">todo: describe importPeronAliasId parameter on GetAttributeCategory</param>
         /// <returns>A reference to the Category object, attached to the lookupContext</returns>
-        public static Category GetAttributeCategory( RockContext rockContext, string categoryName, bool findOnly = false, int entityTypeId = -1, int? importPeronAliasId = null )
+        [Obsolete( "Use GetCategory instead with categoryEntityTypeId = AttributeEntityTypeid" )]
+        public static Category GetAttributeCategory( RockContext rockContext, string categoryName, bool findOnly = false, int entityTypeId = -1, int? importPersonAliasId = null )
         {
-            var categoryService = new CategoryService( rockContext );
-            Category category;
             if ( entityTypeId == -1 )
             {
                 entityTypeId = PersonEntityTypeId;
             }
 
-            //
-            // Try to find an existing category.
-            //
-            category = categoryService
-                .GetByEntityTypeId( AttributeEntityTypeId )
+            var category = new CategoryService( rockContext ).GetByEntityTypeId( AttributeEntityTypeId )
                 .FirstOrDefault( c => c.EntityTypeQualifierValue == entityTypeId.ToString() && c.Name.ToUpper() == categoryName.ToUpper() );
-
-            //
-            // If not found, create one.
-            //
             if ( category == null && !findOnly )
             {
                 category = new Category
@@ -463,8 +499,8 @@ namespace Excavator.Utility
                     EntityTypeQualifierValue = entityTypeId.ToString(),
                     Name = categoryName,
                     Order = 0,
-                    CreatedByPersonAliasId = importPeronAliasId,
-                    ModifiedByPersonAliasId = importPeronAliasId
+                    CreatedByPersonAliasId = importPersonAliasId,
+                    ModifiedByPersonAliasId = importPersonAliasId
                 };
 
                 rockContext.Categories.Add( category );
@@ -484,12 +520,17 @@ namespace Excavator.Utility
         /// <param name="attributeName">Name of the attribute to find or create</param>
         /// <param name="entityTypeId">The Id of the Entity Type for the attribute</param>
         /// <param name="attributeForeignKey">The Foreign Key of the attribute</param>
-        /// <returns>Attribute object of the found Entity Attribute</returns>
-        public static Attribute FindEntityAttribute( RockContext rockContext, string categoryName, string attributeName, int entityTypeId, string attributeForeignKey = null )
+        /// <param name="attributeKey">The attribute key.</param>
+        /// <returns>
+        /// Attribute object of the found Entity Attribute
+        /// </returns>
+        public static Attribute FindEntityAttribute( RockContext rockContext, string categoryName, string attributeName, int entityTypeId, string attributeForeignKey = null, string attributeKey = null )
         {
             var attributeService = new AttributeService( rockContext );
             var categoryService = new CategoryService( rockContext );
             Attribute attribute = null;
+
+            // TODO: Confirm this doesn't return a newly created attribute.
 
             if ( !string.IsNullOrWhiteSpace( attributeForeignKey ) )
             {
@@ -500,10 +541,20 @@ namespace Excavator.Utility
             {
                 attribute = attributeService.GetByEntityTypeId( entityTypeId ).Include( "Categories" )
                     .FirstOrDefault( a =>
-                        ( a.Name.Replace( " ", "" ).ToUpper() == attributeName.Replace( " ", "" ).ToUpper() || a.Key == attributeName )
-                    &&
-                        ( ( string.IsNullOrEmpty( categoryName ) ) || ( a.Categories.Count( c => c.Name.ToUpper() == categoryName.ToUpper() ) > 0 ) )
+                        (
+                            a.Name.Replace( " ", "" ).ToUpper() == attributeName.Replace( " ", "" ).ToUpper() ||
+                            a.Key == attributeName
+                        ) &&
+                        (
+                            ( string.IsNullOrEmpty( categoryName ) ) ||
+                            ( a.Categories.Count( c => c.Name.ToUpper() == categoryName.ToUpper() ) > 0 )
+                        )
                     );
+            }
+
+            if ( attribute == null && !string.IsNullOrWhiteSpace( attributeKey ) )
+            {
+                attribute = attributeService.GetByEntityTypeId( entityTypeId ).FirstOrDefault( a => a.Key == attributeKey );
             }
 
             return attribute;
@@ -527,19 +578,14 @@ namespace Excavator.Utility
         public static Communication AddCommunication( RockContext rockContext, int mediumEntityTypeId, string itemCaption, string communicationText, bool isBulkEmail, CommunicationStatus itemStatus,
            List<CommunicationRecipient> recipients = null, bool instantSave = true, DateTime? dateCreated = null, string itemForeignKey = null, int? creatorPersonAliasId = null )
         {
-            var mediumData = new Dictionary<string, string>();
-            mediumData.Add( "HtmlMessage", communicationText );
-            mediumData.Add( "FromName", string.Empty );
-            mediumData.Add( "FromAddress", string.Empty );
-            mediumData.Add( "DefaultPlainText", communicationText );
-
             var communication = new Communication
             {
                 Subject = itemCaption,
+                Message = communicationText,
+                FromName = string.Empty,
+                FromEmail = string.Empty,
                 IsBulkCommunication = isBulkEmail,
                 Status = itemStatus,
-                MediumData = mediumData,
-                MediumEntityTypeId = mediumEntityTypeId,
                 CreatedDateTime = dateCreated,
                 CreatedByPersonAliasId = creatorPersonAliasId,
                 SenderPersonAliasId = creatorPersonAliasId,
@@ -557,6 +603,62 @@ namespace Excavator.Utility
             }
 
             return communication;
+        }
+
+        /// <summary>
+        /// Adds the prayer request.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="categoryId">The category identifier.</param>
+        /// <param name="requestorAliasId">The requestor alias identifier.</param>
+        /// <param name="requestFirst">The request first.</param>
+        /// <param name="requestLast">The request last.</param>
+        /// <param name="requestEmail">The request email.</param>
+        /// <param name="requestText">The request text.</param>
+        /// <param name="requestAnswer">The request answer.</param>
+        /// <param name="isActive">if set to <c>true</c> [is active].</param>
+        /// <param name="instantSave">if set to <c>true</c> [instant save].</param>
+        /// <param name="dateCreated">The date created.</param>
+        /// <param name="dateApproved">The date approved.</param>
+        /// <param name="itemForeignKey">The item foreign key.</param>
+        /// <param name="creatorPersonAliasId">The creator person alias identifier.</param>
+        /// <returns></returns>
+        public static PrayerRequest AddPrayerRequest( RockContext rockContext, int? categoryId, int requestorAliasId, string requestFirst, string requestLast,
+            string requestEmail, string requestText, string requestAnswer, bool isActive, bool instantSave = true, DateTime? dateCreated = null, DateTime? dateApproved = null,
+            string itemForeignKey = null, int? creatorPersonAliasId = null )
+        {
+            if ( string.IsNullOrWhiteSpace( requestFirst ) || string.IsNullOrWhiteSpace( requestText ) )
+            {
+                return null;
+            }
+
+            var request = new PrayerRequest
+            {
+                CategoryId = categoryId,
+                RequestedByPersonAliasId = requestorAliasId,
+                FirstName = requestFirst,
+                LastName = requestLast,
+                IsActive = isActive,
+                IsApproved = true,
+                Text = requestText,
+                EnteredDateTime = dateCreated ?? Excavator.ExcavatorComponent.ImportDateTime,
+                ExpirationDate = ( dateCreated ?? Excavator.ExcavatorComponent.ImportDateTime ).AddDays( 14 ),
+                CreatedDateTime = dateCreated,
+                ApprovedOnDateTime = dateApproved,
+                CreatedByPersonAliasId = creatorPersonAliasId,
+                ApprovedByPersonAliasId = creatorPersonAliasId,
+                ForeignKey = itemForeignKey,
+                ForeignId = itemForeignKey.AsIntegerOrNull()
+            };
+
+            if ( instantSave )
+            {
+                rockContext = rockContext ?? new RockContext();
+                rockContext.PrayerRequests.Add( request );
+                rockContext.SaveChanges();
+            }
+
+            return request;
         }
 
         /// <summary>
@@ -640,14 +742,15 @@ namespace Excavator.Utility
         /// <param name="definedTypeForeignId">Used to determine if a Defined Type should be created from scratch or link to an existing, imported Defined Type</param>
         /// <param name="definedTypeForeignKey">Used to determine if a Defined Type should be created from scratch or link to an existing, imported Defined Type</param>
         /// <param name="importPersonAliasId">todo: describe importPersonAliasId parameter on AddEntityAttribute</param>
+        /// <param name="attributeTypeString">The attribute type string.</param>
         /// <returns>
         /// Newly created Entity Attribute
         /// </returns>
         public static Attribute AddEntityAttribute( RockContext rockContext, int entityTypeId, string entityTypeQualifierName, string entityTypeQualifierValue, string foreignKey,
-            string categoryName, string attributeName, string key, int fieldTypeId, bool instantSave = true, int? definedTypeForeignId = null, string definedTypeForeignKey = null, int? importPersonAliasId = null )
+            string categoryName, string attributeName, string key, int fieldTypeId, bool instantSave = true, int? definedTypeForeignId = null, string definedTypeForeignKey = null
+            , int? importPersonAliasId = null, string attributeTypeString = "" )
         {
             rockContext = rockContext ?? new RockContext();
-            var attributeService = new AttributeService( rockContext );
             AttributeQualifier attributeQualifier;
             Attribute attribute;
             var newAttribute = true;
@@ -655,7 +758,7 @@ namespace Excavator.Utility
             //
             // Get a reference to the existing attribute if there is one.
             //
-            attribute = FindEntityAttribute( rockContext, categoryName, attributeName, entityTypeId, foreignKey );
+            attribute = FindEntityAttribute( rockContext, categoryName, attributeName, entityTypeId, foreignKey, key );
             if ( attribute != null )
             {
                 newAttribute = false;
@@ -759,69 +862,116 @@ namespace Excavator.Utility
 
                     attribute.AttributeQualifiers.Add( attributeQualifier );
                 }
-                else if ( fieldTypeId == DefinedValueFieldTypeId )
+                else if ( fieldTypeId == DefinedValueFieldTypeId || fieldTypeId == ValueListFieldTypeId )
                 {
-                    var typeService = new DefinedTypeService( rockContext );
-                    DefinedType definedType = null;
+                    var useDefinedValue = false;
 
-                    // Check for the defined type by the original name only, id, or key.
-                    var definedTypeExists = typeService.Queryable().Any( t => t.Name.Equals( attributeName + " Defined Type" )
-                        || ( definedTypeForeignId.HasValue && t.ForeignId.HasValue && t.ForeignId == definedTypeForeignId )
-                        || ( !( definedTypeForeignKey == null || definedTypeForeignKey.Trim() == string.Empty ) && !( t.ForeignKey == null || t.ForeignKey.Trim() == string.Empty ) && t.ForeignKey.Equals( definedTypeForeignKey, StringComparison.CurrentCultureIgnoreCase ) )
-                        );
-
-                    if ( !definedTypeExists )
+                    if ( fieldTypeId == DefinedValueFieldTypeId || attributeTypeString == "VL" )
                     {
-                        definedType = new DefinedType
+                        useDefinedValue = true;
+                    }
+
+                    if ( useDefinedValue )
+                    {
+                        var typeService = new DefinedTypeService( rockContext );
+                        DefinedType definedType = null;
+
+                        // Check for the defined type by the original name only, id, or key.
+                        var definedTypeExists = typeService.Queryable().Any( t => t.Name.Equals( attributeName + " Defined Type" )
+                            || ( definedTypeForeignId.HasValue && t.ForeignId.HasValue && t.ForeignId == definedTypeForeignId )
+                            || ( !( definedTypeForeignKey == null || definedTypeForeignKey.Trim() == string.Empty ) && !( t.ForeignKey == null || t.ForeignKey.Trim() == string.Empty ) && t.ForeignKey.Equals( definedTypeForeignKey, StringComparison.CurrentCultureIgnoreCase ) )
+                            );
+
+                        if ( !definedTypeExists )
                         {
-                            IsSystem = false,
-                            Order = 0,
-                            FieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.TEXT, rockContext ).Id,
-                            Name = attributeName.Left( 87 ) + " Defined Type",
-                            Description = attributeName + " Defined Type created by import",
-                            ForeignId = definedTypeForeignId,
-                            ForeignKey = definedTypeForeignKey
+                            definedType = new DefinedType
+                            {
+                                IsSystem = false,
+                                Order = 0,
+                                FieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.TEXT, rockContext ).Id,
+                                Name = attributeName.Left( 87 ) + " Defined Type",
+                                Description = attributeName + " Defined Type created by import",
+                                ForeignId = definedTypeForeignId,
+                                ForeignKey = definedTypeForeignKey
+                            };
+
+                            typeService.Add( definedType );
+                            rockContext.SaveChanges();
+                        }
+                        else
+                        {
+                            definedType = typeService.Queryable().FirstOrDefault( t => t.Name.Equals( attributeName + " Defined Type" ) || ( t.ForeignId != null && t.ForeignId == definedTypeForeignId ) || ( !( t.ForeignKey == null || t.ForeignKey.Trim() == string.Empty ) && t.ForeignKey == definedTypeForeignKey ) );
+                        }
+
+                        attribute.Description = attributeName + " Defined Type created by import";
+
+                        //
+                        // Add defined value attribute qualifier with Id
+                        //
+                        attributeQualifier = new AttributeQualifier
+                        {
+                            Key = "definedtype",
+                            Value = definedType.Id.ToString(),
+                            IsSystem = false
                         };
 
-                        typeService.Add( definedType );
-                        rockContext.SaveChanges();
+                        attribute.AttributeQualifiers.Add( attributeQualifier );
                     }
                     else
                     {
-                        definedType = typeService.Queryable().FirstOrDefault( t => t.Name.Equals( attributeName + " Defined Type" ) || ( t.ForeignId != null && t.ForeignId == definedTypeForeignId ) || ( !( t.ForeignKey == null || t.ForeignKey.Trim() == string.Empty ) && t.ForeignKey == definedTypeForeignKey ) );
+                        //
+                        // Add defined value attribute qualifier
+                        //
+                        attributeQualifier = new AttributeQualifier
+                        {
+                            Key = "definedtype",
+                            Value = "",
+                            IsSystem = false
+                        };
+
+                        attribute.AttributeQualifiers.Add( attributeQualifier );
                     }
 
-                    attribute.Description = attributeName + " Defined Type created by import";
-
-                    //
-                    // Add defined value attribute qualifiers
-                    //
-                    attributeQualifier = new AttributeQualifier
+                    if ( fieldTypeId == DefinedValueFieldTypeId )
                     {
-                        Key = "definedtype",
-                        Value = definedType.Id.ToString(),
-                        IsSystem = false
-                    };
+                        attributeQualifier = new AttributeQualifier
+                        {
+                            Key = "allowmultiple",
+                            Value = "False",
+                            IsSystem = false
+                        };
 
-                    attribute.AttributeQualifiers.Add( attributeQualifier );
+                        attribute.AttributeQualifiers.Add( attributeQualifier );
 
-                    attributeQualifier = new AttributeQualifier
+                        attributeQualifier = new AttributeQualifier
+                        {
+                            Key = "displaydescription",
+                            Value = "false",
+                            IsSystem = false
+                        };
+
+                        attribute.AttributeQualifiers.Add( attributeQualifier );
+                    }
+                    else if ( fieldTypeId == ValueListFieldTypeId )
                     {
-                        Key = "allowmultiple",
-                        Value = "False",
-                        IsSystem = false
-                    };
+                        attributeQualifier = new AttributeQualifier
+                        {
+                            Key = "customvalues",
+                            Value = "",
+                            IsSystem = false
+                        };
 
-                    attribute.AttributeQualifiers.Add( attributeQualifier );
+                        attribute.AttributeQualifiers.Add( attributeQualifier );
 
-                    attributeQualifier = new AttributeQualifier
-                    {
-                        Key = "displaydescription",
-                        Value = "false",
-                        IsSystem = false
-                    };
+                        attributeQualifier = new AttributeQualifier
+                        {
+                            Key = "valueprompt",
+                            Value = "",
+                            IsSystem = false
+                        };
 
-                    attribute.AttributeQualifiers.Add( attributeQualifier );
+                        attribute.AttributeQualifiers.Add( attributeQualifier );
+                    }
                 }
                 else if ( fieldTypeId == SingleSelectFieldTypeId )
                 {
@@ -850,6 +1000,28 @@ namespace Excavator.Utility
                 }
             }
 
+            // Create a reference to Category if they provided a name.
+            if ( !string.IsNullOrEmpty( categoryName ) )
+            {
+                var category = GetCategory( rockContext, AttributeEntityTypeId, null, categoryName, true, "EntityTypeId", entityTypeId.ToString() );
+                if ( category == null )
+                {
+                    category = GetCategory( rockContext, AttributeEntityTypeId, null, categoryName, false, "EntityTypeId", entityTypeId.ToString() );
+                }
+
+                // ensure it is part of the Attribute's categories.
+                if ( !attribute.Categories.Any( c => c.Id == category.Id ) )
+                {
+                    attribute.Categories.Add( category );
+                }
+            }
+
+            if ( !newAttribute && string.IsNullOrWhiteSpace( attribute.ForeignKey ) && !string.IsNullOrWhiteSpace( foreignKey ) )
+            {
+                attribute.ForeignKey = foreignKey;
+                attribute.ForeignId = foreignKey.AsIntegerOrNull();
+            }
+
             if ( instantSave )
             {
                 if ( newAttribute )
@@ -873,8 +1045,11 @@ namespace Excavator.Utility
         /// <param name="value">The string-value to set the attribute to, must be parseable into the target type</param>
         /// <param name="changes">List to place any changes string into, or null. If null and instantSave is true then the History entry is saved instantly</param>
         /// <param name="csv">Bool to indicate this call was made via CSV maps. Important for how the save is processed.</param>
-        /// <returns>true if the attribute value was successfuly coerced into the target type</returns>
-        public static bool AddEntityAttributeValue( RockContext rockContext, Attribute attribute, IHasAttributes entity, string value, List<string> changes = null, bool csv = false )
+        /// <param name="foreignKey">The foreign key.</param>
+        /// <returns>
+        /// true if the attribute value was successfuly coerced into the target type
+        /// </returns>
+        public static bool AddEntityAttributeValue( RockContext rockContext, Attribute attribute, IHasAttributes entity, string value, List<string> changes = null, bool csv = false, string foreignKey = null )
         {
             rockContext = rockContext ?? new RockContext();
             string newValue = null;
@@ -933,6 +1108,58 @@ namespace Excavator.Utility
 
                 newValue = definedValueGuid.ToString().ToUpper();
             }
+            else if ( attribute.FieldTypeId == ValueListFieldTypeId )
+            {
+                int definedTypeId;
+
+                definedTypeId = attribute.AttributeQualifiers.FirstOrDefault( aq => aq.Key == "definedtype" ).Value.AsInteger();
+                var attributeValueTypes = DefinedTypeCache.Read( definedTypeId, rockContext );
+
+                //
+                // Check for multiple and walk the loop
+                //
+                var valueList = new List<string>();
+                var values = value.Split( new char[] { '^' }, StringSplitOptions.RemoveEmptyEntries ).ToList();
+                foreach ( var v in values )
+                {
+                    if ( definedTypeId > 0 )
+                    {
+                        //
+                        // Add the defined value if it doesn't exist.
+                        //
+                        var attributeExists = attributeValueTypes.DefinedValues.Any( a => a.Value.Equals( v ) );
+                        if ( !attributeExists )
+                        {
+                            var newDefinedValue = new DefinedValue
+                            {
+                                DefinedTypeId = attributeValueTypes.Id,
+                                Value = v,
+                                Order = 0
+                            };
+
+                            DefinedTypeCache.Flush( attributeValueTypes.Id );
+
+                            rockContext.DefinedValues.Add( newDefinedValue );
+                            rockContext.SaveChanges( DisableAuditing );
+
+                            valueList.Add( newDefinedValue.Id.ToString() );
+                        }
+                        else
+                        {
+                            valueList.Add( attributeValueTypes.DefinedValues.FirstOrDefault( a => a.Value.Equals( v ) ).Id.ToString() );
+                        }
+                    }
+                    else
+                    {
+                        valueList.Add( v );
+                    }
+                }
+
+                //
+                // Convert list of Ids to single pipe delimited string
+                //
+                newValue = valueList.AsDelimited( "|", "|" );
+            }
             else if ( attribute.FieldTypeId == EncryptedTextFieldTypeId )
             {
                 newValue = Encryption.EncryptString( value );
@@ -970,6 +1197,8 @@ namespace Excavator.Utility
                     if ( originalValue != newValue )
                     {
                         attributeValue.Value = newValue;
+                        attributeValue.ForeignKey = foreignKey;
+                        attributeValue.ForeignId = foreignKey.AsType<int?>();
                     }
                 }
                 else
@@ -1005,6 +1234,183 @@ namespace Excavator.Utility
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Returns a new Attribute Value for the provided information.
+        /// </summary>
+        /// <param name="rockContext">The RockContext object to work in for database access</param>
+        /// <param name="attribute">The attribute of the value to set</param>
+        /// <param name="entity">The Entity for which the attribute is being saved</param>
+        /// <param name="value">The string-value to set the attribute to, must be parseable into the target type</param>
+        /// <param name="foreignKey">The string-value to set the attribute foreign key to</param>
+        /// <returns>true if the attribute value was successfuly coerced into the target type</returns>
+        public static AttributeValue CreateEntityAttributeValue( RockContext rockContext, Attribute attribute, IHasAttributes entity, string value, string foreignKey = null )
+        {
+            AttributeValue attributeValue = null;
+
+            rockContext = rockContext ?? new RockContext();
+
+            string newValue = null;
+
+            //
+            // Determine the field type and coerce the value into that type.
+            //
+            if ( attribute.FieldTypeId == DateFieldTypeId )
+            {
+                var dateValue = ParseDateOrDefault( value, null );
+                if ( dateValue != null && dateValue != DefaultDateTime && dateValue != DefaultSQLDateTime )
+                {
+                    newValue = ( (DateTime)dateValue ).ToString( "s" );
+                }
+            }
+            else if ( attribute.FieldTypeId == BooleanFieldTypeId )
+            {
+                var boolValue = ParseBoolOrDefault( value, null );
+                if ( boolValue != null )
+                {
+                    newValue = ( (bool)boolValue ).ToString();
+                }
+            }
+            else if ( attribute.FieldTypeId == DefinedValueFieldTypeId )
+            {
+                Guid definedValueGuid;
+                int definedTypeId;
+
+                definedTypeId = int.Parse( attribute.AttributeQualifiers.FirstOrDefault( aq => aq.Key == "definedtype" ).Value );
+                var attributeValueTypes = DefinedTypeCache.Read( definedTypeId, rockContext );
+
+                //
+                // Add the defined value if it doesn't exist.
+                //
+                var attributeExists = attributeValueTypes.DefinedValues.Any( a => a.Value.Equals( value ) );
+                if ( !attributeExists )
+                {
+                    var newDefinedValue = new DefinedValue
+                    {
+                        DefinedTypeId = attributeValueTypes.Id,
+                        Value = value,
+                        Order = 0
+                    };
+
+                    DefinedTypeCache.Flush( attributeValueTypes.Id );
+
+                    var dvRockContext = new RockContext();
+                    dvRockContext.Configuration.AutoDetectChangesEnabled = false;
+                    dvRockContext.DefinedValues.Add( newDefinedValue );
+                    dvRockContext.SaveChanges( DisableAuditing );
+
+                    definedValueGuid = newDefinedValue.Guid;
+                }
+                else
+                {
+                    definedValueGuid = attributeValueTypes.DefinedValues.FirstOrDefault( a => a.Value.Equals( value ) ).Guid;
+                }
+
+                newValue = definedValueGuid.ToString().ToUpper();
+            }
+            else if ( attribute.FieldTypeId == ValueListFieldTypeId )
+            {
+                int definedTypeId;
+
+                definedTypeId = attribute.AttributeQualifiers.FirstOrDefault( aq => aq.Key == "definedtype" ).Value.AsInteger();
+                var attributeValueTypes = DefinedTypeCache.Read( definedTypeId, rockContext );
+
+                var dvRockContext = new RockContext();
+                dvRockContext.Configuration.AutoDetectChangesEnabled = false;
+
+                //
+                // Check for multiple and walk the loop
+                //
+                var valueList = new List<string>();
+                var values = value.Split( new char[] { '^' }, StringSplitOptions.RemoveEmptyEntries ).ToList();
+                foreach ( var v in values )
+                {
+                    if ( definedTypeId > 0 )
+                    {
+                        //
+                        // Add the defined value if it doesn't exist.
+                        //
+                        var attributeExists = attributeValueTypes.DefinedValues.Any( a => a.Value.Equals( v ) );
+                        if ( !attributeExists )
+                        {
+                            var newDefinedValue = new DefinedValue
+                            {
+                                DefinedTypeId = attributeValueTypes.Id,
+                                Value = v,
+                                Order = 0
+                            };
+
+                            DefinedTypeCache.Flush( attributeValueTypes.Id );
+
+                            dvRockContext.DefinedValues.Add( newDefinedValue );
+                            dvRockContext.SaveChanges( DisableAuditing );
+
+                            valueList.Add( newDefinedValue.Id.ToString() );
+                        }
+                        else
+                        {
+                            valueList.Add( attributeValueTypes.DefinedValues.FirstOrDefault( a => a.Value.Equals( v ) ).Id.ToString() );
+                        }
+                    }
+                    else
+                    {
+                        valueList.Add( v );
+                    }
+                }
+
+                //
+                // Convert list of Ids to single pipe delimited string
+                //
+                newValue = valueList.AsDelimited( "|", "|" );
+            }
+            else if ( attribute.FieldTypeId == EncryptedTextFieldTypeId )
+            {
+                newValue = Encryption.EncryptString( value );
+            }
+            else
+            {
+                newValue = value;
+            }
+
+            // set the value on the entity
+            if ( !string.IsNullOrWhiteSpace( newValue ) )
+            {
+                if ( entity.Id > 0 )
+                {
+                    var attributeValueService = new AttributeValueService( rockContext );
+
+                    attributeValue = rockContext.AttributeValues.Local.AsQueryable().FirstOrDefault( av => av.AttributeId == attribute.Id && av.EntityId == entity.Id );
+                    if ( attributeValue == null )
+                    {
+                        attributeValue = attributeValueService.GetByAttributeIdAndEntityId( attribute.Id, entity.Id );
+                    }
+
+                    if ( attributeValue == null )
+                    {
+                        attributeValue = new AttributeValue
+                        {
+                            EntityId = entity.Id,
+                            AttributeId = attribute.Id
+                        };
+
+                        attributeValueService.Add( attributeValue );
+                    }
+                    var originalValue = attributeValue.Value;
+                    if ( originalValue != newValue )
+                    {
+                        attributeValue.Value = newValue;
+                        attributeValue.ForeignKey = foreignKey;
+                        attributeValue.ForeignId = foreignKey.AsType<int?>();
+                    }
+                    else
+                    {
+                        attributeValue = null;
+                    }
+                }
+            }
+
+            return attributeValue;
         }
 
         /// <summary>
@@ -1060,7 +1466,7 @@ namespace Excavator.Utility
         /// <param name="rockContext"></param>
         /// <param name="type">The GUID of the group type to add this role to.</param>
         /// <param name="value">The value of the new role.</param>
-        public static void AddGroupRole( RockContext rockContext, string type, string value )
+        public static int AddGroupRole( RockContext rockContext, string type, string value )
         {
             var groupTypeRoleService = new GroupTypeRoleService( rockContext );
             var groupTypeRole = new GroupTypeRole();
@@ -1082,6 +1488,8 @@ namespace Excavator.Utility
 
             groupTypeRoleService.Add( groupTypeRole );
             rockContext.SaveChanges( DisableAuditing );
+
+            return groupTypeRole.Id;
         }
 
         /// <summary>
@@ -1178,15 +1586,18 @@ namespace Excavator.Utility
         /// <param name="lastName">The last name for whom the request was submitted.</param>
         /// <param name="email">The email for whom the request was submitted.</param>
         /// <param name="expireDate">The date that the prayer request expires. Default: 14 days after request date.</param>
-        /// <param name="allowComments">Flag to determine if the prayer request should allow comments. Default: <c>true</c>></param>
+        /// <param name="allowComments">Flag to determine if the prayer request should allow comments. Default: <c>true</c>&gt;</param>
         /// <param name="isPublic">Flag to determine if the prayer request should be public. Default: <c>true</c></param>
         /// <param name="isApproved">Flag to determine if the prayer request is approved. Default: <c>true</c></param>
         /// <param name="approvedDate">Date the prayer request was approved. Default: <c>ImportDateTime</c></param>
-        /// <param name="approvedById">Alias Id of who approved the prayer request. Default: <c>null</c></param>
-        /// <param name="createdById">Alias Id of who entered the prayer request. Default: <c>null</c></param>
-        /// <param name="requestedById">Alias Id of who submitted the prayer request. Default: <c>null</c></param>
+        /// <param name="approvedByAliasId">The approved by alias identifier.</param>
+        /// <param name="createdByAliasId">The created by alias identifier.</param>
+        /// <param name="requestedByAliasId">The requested by alias identifier.</param>
+        /// <param name="answerText">The answer text.</param>
         /// <param name="instantSave">Flag to determine if the prayer request should be saved to the rockContext prior to return. Default: <c>true</c></param>
-        /// <returns>A newly created prayer request.</returns>
+        /// <returns>
+        /// A newly created prayer request.
+        /// </returns>
         public static PrayerRequest AddPrayerRequest( RockContext rockContext, string categoryName, string requestText, string requestDate, string foreignKey, string firstName,
             string lastName = "", string email = "", string expireDate = "", bool? allowComments = true, bool? isPublic = true, bool? isApproved = true, string approvedDate = "",
             int? approvedByAliasId = null, int? createdByAliasId = null, int? requestedByAliasId = null, string answerText = "", bool instantSave = true )
@@ -1203,7 +1614,7 @@ namespace Excavator.Utility
 
                 if ( prayerRequest == null )
                 {
-                    var prayerRequestDate = (DateTime)ParseDateOrDefault( requestDate, ExcavatorComponent.ImportDateTime );
+                    var prayerRequestDate = (DateTime)ParseDateOrDefault( requestDate, Excavator.ExcavatorComponent.ImportDateTime );
 
                     prayerRequest = new PrayerRequest
                     {
@@ -1216,7 +1627,7 @@ namespace Excavator.Utility
                         AllowComments = allowComments,
                         IsPublic = isPublic,
                         IsApproved = isApproved,
-                        ApprovedOnDateTime = (bool)isApproved ? ParseDateOrDefault( approvedDate, ExcavatorComponent.ImportDateTime ) : null,
+                        ApprovedOnDateTime = (bool)isApproved ? ParseDateOrDefault( approvedDate, Excavator.ExcavatorComponent.ImportDateTime ) : null,
                         ApprovedByPersonAliasId = approvedByAliasId,
                         CreatedByPersonAliasId = createdByAliasId,
                         RequestedByPersonAliasId = requestedByAliasId,
@@ -1302,7 +1713,10 @@ namespace Excavator.Utility
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
         /// <param name="gatewayName">The name of the gateway to be added to Rock.</param>
-        /// <returns>A newly created financial gateway.</returns>
+        /// <param name="instantSave">if set to <c>true</c> [instant save].</param>
+        /// <returns>
+        /// A newly created financial gateway.
+        /// </returns>
         public static FinancialGateway AddFinancialGateway( RockContext rockContext, string gatewayName, bool instantSave = true )
         {
             var gateway = new FinancialGateway();
