@@ -28,7 +28,10 @@ namespace Excavator.F1
             var importedCommunicationCount = new CommunicationService( lookupContext ).Queryable().Count( c => c.ForeignKey != null );
             var importedNoteCount = new NoteService( lookupContext ).Queryable().Count( n => n.ForeignKey != null );
 
+            var prayerRequestors = new Dictionary<int, Person>();
+
             var communicationList = new List<Communication>();
+            var prayerList = new List<PrayerRequest>();
             var noteList = new List<Note>();
 
             if ( totalRows == 0 )
@@ -49,7 +52,9 @@ namespace Excavator.F1
                 var individualId = row["ContactIndividualID"] as int?;
                 var createdDate = row["ContactActivityDate"] as DateTime?;
                 var modifiedDate = row["ContactDatetime"] as DateTime?;
+                var approvalDate = row["ContactFormLastUpdatedDate"] as DateTime?;
                 var itemType = row["ContactFormName"] as string;
+                var itemStatus = row["ContactStatus"] as string;
                 var itemCaption = row["ContactItemName"] as string;
                 var noteText1 = row["ContactNote"] as string;
                 var noteText2 = row["ContactItemNote"] as string;
@@ -87,9 +92,27 @@ namespace Excavator.F1
 
                         communicationList.Add( communication );
                     }
+                    else if ( !string.IsNullOrWhiteSpace( itemCaption ) && itemCaption.EndsWith( "Prayer Request", StringComparison.CurrentCultureIgnoreCase ) )
+                    {
+                        // create a prayer request
+                        Person requestor = null;
+                        prayerRequestors.TryGetValue( personKeys.PersonId, out requestor );
+                        if ( requestor == null )
+                        {
+                            requestor = lookupContext.People.FirstOrDefault( p => p.Id.Equals( personKeys.PersonId ) );
+                            prayerRequestors.Add( personKeys.PersonId, requestor );
+                        }
+
+                        var request = AddPrayerRequest( lookupContext, null, personKeys.PersonAliasId, requestor.FirstName, requestor.LastName, requestor.Email, itemText ?? itemCaption, string.Empty,
+                            !itemStatus.Equals( "Closed", StringComparison.CurrentCultureIgnoreCase ), false, createdDate ?? modifiedDate, approvalDate, itemForeignKey.ToString(), userPersonAliasId );
+                        if ( request != null )
+                        {
+                            prayerList.Add( request );
+                        }
+                    }
                     else
                     {
-                        //strip campus from note type
+                        //strip campus from type
                         var campusId = GetCampusId( itemType );
                         if ( campusId.HasValue )
                         {
@@ -113,10 +136,12 @@ namespace Excavator.F1
                     else if ( completedItems % ReportingNumber < 1 )
                     {
                         SaveCommunications( communicationList );
+                        SavePrayerRequests( prayerList );
                         SaveNotes( noteList );
                         ReportPartialProgress();
 
                         communicationList.Clear();
+                        prayerList.Clear();
                         noteList.Clear();
                     }
                 }
@@ -125,6 +150,7 @@ namespace Excavator.F1
             if ( communicationList.Any() || noteList.Any() )
             {
                 SaveCommunications( communicationList );
+                SavePrayerRequests( prayerList );
                 SaveNotes( noteList );
             }
 
@@ -142,6 +168,8 @@ namespace Excavator.F1
 
             var importedNotes = new NoteService( lookupContext ).Queryable().Where( n => n.ForeignId != null )
                 .ToDictionary( n => n.ForeignId, n => n.Id );
+            var importedRequests = new PrayerRequestService( lookupContext ).Queryable().Where( r => r.ForeignId != null )
+                .ToDictionary( r => r.ForeignId, r => r.Id );
 
             var noteList = new List<Note>();
             int? confidentialNoteTypeId = null;
@@ -174,26 +202,38 @@ namespace Excavator.F1
                     }
 
                     var noteId = 0;
-                    if ( importedNotes.ContainsKey( itemForeignKey ) )
-                    {
-                        noteId = importedNotes[itemForeignKey];
-                    }
+                    var noteEntityId = personKeys.PersonId;
+                    var noteEntityTypeId = PersonEntityTypeId;
+                    var noteTypeId = PersonalNoteTypeId;
 
                     // add a confidential note
                     if ( !string.IsNullOrWhiteSpace( confidentialText ) )
                     {
-                        var confidential = AddEntityNote( lookupContext, PersonEntityTypeId, personKeys.PersonId, string.Empty, confidentialText, false, false,
+                        var confidential = AddEntityNote( lookupContext, noteEntityTypeId, noteEntityId, string.Empty, confidentialText, false, false,
                             "Confidential Note", confidentialNoteTypeId, false, createdDate, itemForeignKey.ToString() );
                         confidentialNoteTypeId = confidential.NoteTypeId;
 
                         noteList.Add( confidential );
                     }
 
-                    // add a normal note
+                    // this is new or an update to timeline note
+                    if ( importedNotes.ContainsKey( itemForeignKey ) )
+                    {
+                        noteId = importedNotes[itemForeignKey];
+                    }
+                    // note this as a prayer request comment
+                    else if ( importedRequests.ContainsKey( itemForeignKey ) )
+                    {
+                        noteEntityTypeId = PrayerRequestTypeId;
+                        noteEntityId = importedRequests[itemForeignKey];
+                        noteTypeId = PrayerNoteTypeId;
+                    }
+
+                    // add the note text
                     if ( !string.IsNullOrWhiteSpace( noteText ) )
                     {
-                        var note = AddEntityNote( lookupContext, PersonEntityTypeId, personKeys.PersonId, string.Empty, noteText, false, false,
-                            null, PersonalNoteTypeId, false, createdDate, itemForeignKey.ToString() );
+                        var note = AddEntityNote( lookupContext, noteEntityTypeId, noteEntityId, string.Empty, noteText, false, false,
+                            null, noteTypeId, false, createdDate, itemForeignKey.ToString() );
                         note.Id = noteId;
 
                         noteList.Add( note );
@@ -309,12 +349,32 @@ namespace Excavator.F1
         /// <param name="communicationList">The communication list.</param>
         private static void SaveCommunications( List<Communication> communicationList )
         {
-            var rockContext = new RockContext();
-            rockContext.WrapTransaction( () =>
+            if ( communicationList.Count > 0 )
             {
-                rockContext.Communications.AddRange( communicationList );
-                rockContext.SaveChanges( DisableAuditing );
-            } );
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
+                {
+                    rockContext.Communications.AddRange( communicationList );
+                    rockContext.SaveChanges( DisableAuditing );
+                } );
+            }
+        }
+
+        /// <summary>
+        /// Saves the prayer requests.
+        /// </summary>
+        /// <param name="prayerList">The prayer list.</param>
+        private static void SavePrayerRequests( List<PrayerRequest> prayerList )
+        {
+            if ( prayerList.Count > 0 )
+            {
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
+                {
+                    rockContext.PrayerRequests.AddRange( prayerList );
+                    rockContext.SaveChanges( DisableAuditing );
+                } );
+            }
         }
 
         /// <summary>
@@ -323,25 +383,28 @@ namespace Excavator.F1
         /// <param name="noteList">The note list.</param>
         private static void SaveNotes( List<Note> noteList )
         {
-            var rockContext = new RockContext();
-            rockContext.WrapTransaction( () =>
+            if ( noteList.Count > 0 )
             {
-                rockContext.Configuration.AutoDetectChangesEnabled = false;
-                rockContext.Notes.AddRange( noteList.Where( n => n.Id == 0 ) );
-
-                foreach ( var note in noteList.Where( n => n.Id > 0 ) )
+                var rockContext = new RockContext();
+                rockContext.WrapTransaction( () =>
                 {
-                    var existingNote = rockContext.Notes.FirstOrDefault( n => n.Id == note.Id );
-                    if ( existingNote != null )
-                    {
-                        existingNote.Text += note.Text;
-                        rockContext.Entry( existingNote ).State = EntityState.Modified;
-                    }
-                }
+                    rockContext.Configuration.AutoDetectChangesEnabled = false;
+                    rockContext.Notes.AddRange( noteList.Where( n => n.Id == 0 ) );
 
-                rockContext.ChangeTracker.DetectChanges();
-                rockContext.SaveChanges( DisableAuditing );
-            } );
+                    foreach ( var note in noteList.Where( n => n.Id > 0 ) )
+                    {
+                        var existingNote = rockContext.Notes.FirstOrDefault( n => n.Id == note.Id );
+                        if ( existingNote != null )
+                        {
+                            existingNote.Text += note.Text;
+                            rockContext.Entry( existingNote ).State = EntityState.Modified;
+                        }
+                    }
+
+                    rockContext.ChangeTracker.DetectChanges();
+                    rockContext.SaveChanges( DisableAuditing );
+                } );
+            }
         }
     }
 }
