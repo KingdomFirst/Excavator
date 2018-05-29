@@ -32,6 +32,7 @@ namespace Excavator.Utility
         public static int IntegerFieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.INTEGER.AsGuid() ).Id;
         public static int TextFieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.TEXT.AsGuid() ).Id;
         public static int EncryptedTextFieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.ENCRYPTED_TEXT.AsGuid() ).Id;
+        public static int ValueListFieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.VALUE_LIST.AsGuid() ).Id;
 
         // Entity Types
 
@@ -39,11 +40,16 @@ namespace Excavator.Utility
         public static int BatchEntityTypeId = EntityTypeCache.Read( typeof( FinancialBatch ) ).Id;
         public static int PersonEntityTypeId = EntityTypeCache.Read( typeof( Person ) ).Id;
         public static int UserLoginTypeId = EntityTypeCache.Read( typeof( UserLogin ) ).Id;
+        public static int PrayerRequestTypeId = EntityTypeCache.Read( typeof( PrayerRequest ) ).Id;
         public static int TransactionEntityTypeId = EntityTypeCache.Read( typeof( FinancialTransaction ) ).Id;
         public static int DatabaseStorageTypeId = EntityTypeCache.Read( typeof( Rock.Storage.Provider.Database ) ).Id;
         public static int FileSystemStorageTypeId = EntityTypeCache.Read( typeof( Rock.Storage.Provider.FileSystem ) ).Id;
         public static int EmailCommunicationMediumTypeId = EntityTypeCache.Read( typeof( Rock.Communication.Medium.Email ) ).Id;
         public static int TestGatewayTypeId = EntityTypeCache.Read( typeof( Rock.Financial.TestGateway ) ).Id;
+
+        public static int MetricCategoryEntityTypeId = EntityTypeCache.Read( typeof( MetricCategory ) ).Id;
+        public static int CampusEntityTypeId = EntityTypeCache.Read( typeof( Campus ) ).Id;
+        public static int ScheduleEntityTypeId = EntityTypeCache.Read( typeof( Schedule ) ).Id;
 
         // Group Types
 
@@ -65,9 +71,14 @@ namespace Excavator.Utility
         public static int PersonRecordTypeId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
         public static int BusinessRecordTypeId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS.AsGuid() ).Id;
 
-        public static int MemberConnectionStatusId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER.AsGuid() ).Id;
-        public static int AttendeeConnectionStatusId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE.AsGuid() ).Id;
-        public static int VisitorConnectionStatusId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR.AsGuid() ).Id;
+        private static DefinedValueService definedValueService = new DefinedValueService( new RockContext() );
+        private static DefinedValue MemberConnectionStatusIdOrNull = definedValueService.Get( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER.AsGuid() );
+        private static DefinedValue AttendeeConnectionStatusIdOrNull = definedValueService.Get( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE.AsGuid() );
+        private static DefinedValue VisitorConnectionStatusIdOrNull = definedValueService.Get( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR.AsGuid() );
+
+        public static int MemberConnectionStatusId = ( MemberConnectionStatusIdOrNull != null ? MemberConnectionStatusIdOrNull.Id : Extensions.AddDefinedValue( new RockContext(), Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS, "Member", Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_MEMBER ).Id );
+        public static int AttendeeConnectionStatusId = ( AttendeeConnectionStatusIdOrNull != null ? AttendeeConnectionStatusIdOrNull.Id : Extensions.AddDefinedValue( new RockContext(), Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS, "Attendee", Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_ATTENDEE ).Id );
+        public static int VisitorConnectionStatusId = ( VisitorConnectionStatusIdOrNull != null ? VisitorConnectionStatusIdOrNull.Id : Extensions.AddDefinedValue( new RockContext(), Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS, "Visitor", Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR ).Id );
 
         public static int ConnectionStatusTypeId = DefinedTypeCache.Read( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS.AsGuid() ).Id;
         public static int ActivePersonRecordStatusId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() ).Id;
@@ -82,6 +93,7 @@ namespace Excavator.Utility
         public static int TransactionSourceTypeKioskId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_KIOSK.AsGuid() ).Id;
 
         public static int GroupTypeMeetingLocationId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_MEETING_LOCATION.AsGuid() ).Id;
+        public static int GroupTypeCheckinTemplateId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE.AsGuid() ).Id;
         public static int DeviceTypeCheckinKioskId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.DEVICE_TYPE_CHECKIN_KIOSK.AsGuid() ).Id;
 
         public static int BenevolenceApprovedStatusId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.BENEVOLENCE_APPROVED.AsGuid() ).Id;
@@ -95,6 +107,7 @@ namespace Excavator.Utility
         // Note Types
 
         public static int PersonalNoteTypeId = NoteTypeCache.Read( Rock.SystemGuid.NoteType.PERSON_TIMELINE_NOTE.AsGuid() ).Id;
+        public static int PrayerNoteTypeId = NoteTypeCache.Read( Rock.SystemGuid.NoteType.PRAYER_COMMENT.AsGuid() ).Id;
 
         // Relationship Types
 

@@ -420,7 +420,7 @@ namespace Excavator
             {
                 App.LogException( "Next Page", ex.ToString() );
                 lblDbConnect.Style = (Style)FindResource( "labelStyleAlert" );
-                DbConnectMsg = "Unable to save the database connection: " + ex.InnerException.ToString();
+                DbConnectMsg = "Unable to save the database connection: " + ex.InnerException;
                 lblDbConnect.Visibility = Visibility.Visible;
             }
         }

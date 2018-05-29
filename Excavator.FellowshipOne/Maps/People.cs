@@ -365,9 +365,6 @@ namespace Excavator.F1
                             {
                                 person.ConnectionStatusValueId = VisitorConnectionStatusId;
                                 person.RecordStatusValueId = ActivePersonRecordStatusId;
-
-                                // F1 can designate visitors by member status or household position
-                                familyRoleId = FamilyRole.Visitor;
                             }
                             else if ( memberStatus.Equals( "Deceased", StringComparison.CurrentCultureIgnoreCase ) )
                             {
